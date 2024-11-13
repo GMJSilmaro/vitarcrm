@@ -1,6 +1,5 @@
 import { getAuth } from 'firebase/auth';
-import { app } from '../../firebase';
-import { serverLogActivity } from '../../utils/serverLogActivity';
+import { app } from '@/firebase';
 
 const COOKIE_OPTIONS = {
   path: '/',
@@ -19,12 +18,7 @@ export default async function handler(req, res) {
   const workerId = req.cookies.workerId;
 
   try {
-    // Log the start of logout process
-    await serverLogActivity(workerId, 'LOGOUT_INITIATED', {
-      timestamp: new Date().toISOString(),
-      userAgent: req.headers['user-agent'],
-      ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
-    });
+   
 
     // Sign out from Firebase
     await auth.signOut();
@@ -65,11 +59,7 @@ export default async function handler(req, res) {
           }
         });
 
-        // Log successful SAP B1 logout
-        await serverLogActivity(workerId, 'SAP_B1_LOGOUT_SUCCESS', {
-          timestamp: new Date().toISOString(),
-          sessionId: b1Session.substring(0, 8) + '...' // Log only part of the session ID for security
-        });
+   
       } catch (error) {
         console.warn('Failed to invalidate SAP B1 session:', error);
         // Log SAP B1 logout failure
@@ -80,26 +70,13 @@ export default async function handler(req, res) {
       }
     }
 
-    // Log successful logout
-    await serverLogActivity(workerId, 'LOGOUT_SUCCESS', {
-      timestamp: new Date().toISOString(),
-      clearedCookies: cookiesToClear
-    });
-
     return res.status(200).json({ 
       message: 'Logout successful',
       cleared: cookiesToClear
     });
   } catch (error) {
     console.error('Logout error:', error);
-    
-    // Log logout failure
-    await serverLogActivity(workerId, 'LOGOUT_FAILED', {
-      timestamp: new Date().toISOString(),
-      error: error.message,
-      stack: error.stack
-    });
-    
+  
     // Attempt to clear cookies even if logout fails
     const emergencyCookieClear = [
       'customToken=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT',

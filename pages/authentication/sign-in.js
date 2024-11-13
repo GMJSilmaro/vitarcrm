@@ -22,7 +22,7 @@ const loadingMessages = [
   },
   {
     title: '<span class="fw-bold text-primary">Connecting to SAP! 🔄</span>',
-    message: 'Initializing VITAR database connection...',
+    message: 'Initializing SAP B1 Service Layer connection...',
     progress: 45
   },
   {
@@ -37,7 +37,7 @@ const loadingMessages = [
   },
   {
     title: '<span class="fw-bold text-primary">Final Steps! 🚀</span>',
-    message: 'Synchronizing with VITAR services...',
+    message: 'Synchronizing with SAP services...',
     progress: 90
   }
 ];
@@ -98,56 +98,10 @@ const LoadingMessage = () => {
 
 const SignIn = () => {
   const router = useRouter();
-  const { settings } = useSettings();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      console.log('🔍 Checking authentication state...');
-      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-      }, {});
-
-      console.log('📊 Current cookies:', cookies);
-
-      // Check for all required cookies
-      const requiredCookies = [
-        'B1SESSION',
-        'B1SESSION_EXPIRY',
-        'ROUTEID',
-        'customToken',
-        'uid',
-        'workerId',
-        'LAST_ACTIVITY'
-      ];
-
-      const hasAllCookies = requiredCookies.every(cookieName => {
-        const hasCookie = !!cookies[cookieName];
-        console.log(`🍪 ${cookieName}: ${hasCookie ? '✅' : '❌'}`);
-        return hasCookie;
-      });
-
-      if (hasAllCookies) {
-        console.log('✅ All required cookies present');
-        const expiryTime = new Date(cookies.B1SESSION_EXPIRY).getTime();
-        if (Date.now() < expiryTime) {
-          console.log('🔄 Valid session found, redirecting to dashboard');
-          router.push("/");
-        } else {
-          console.log('⚠️ Session expired:', new Date(expiryTime));
-        }
-      } else {
-        console.log('⚠️ Missing required cookies');
-      }
-    };
-    checkAuth();
-  }, [router]);
 
   useEffect(() => {
     return () => {
@@ -156,15 +110,38 @@ const SignIn = () => {
     };
   }, []);
 
+  const handleAuthentication = async (email, password) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Authentication Error:', error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    try {
-      setIsLoading(true);
-      console.log('🔄 Starting authentication process...', { email });
+    setIsLoading(true);
 
-      // Create a single modal that we'll reuse
-      const loadingModal = Swal.fire({
+    try {
+      // Show initial loading state
+      const loadingModal = await Swal.fire({
         title: loadingMessages[0].title,
         html: `
           <div class="text-center mb-4">
@@ -184,29 +161,13 @@ const SignIn = () => {
         showConfirmButton: false,
         didOpen: async (modal) => {
           try {
-            // Initial authentication
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // Verify credentials with backend
-            const response = await fetch('/api/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password }),
-              credentials: 'include'
-            });
+            // Attempt authentication
+            const authData = await handleAuthentication(email, password);
 
-            console.log('📡 Login response status:', response.status);
-
-            const responseData = await response.json();
-            console.log('📦 Login response data:', responseData);
-
-            if (!response.ok) {
-              throw new Error(responseData.message || 'Authentication failed. Please check your credentials.');
-            }
-
-            // Simulate SAP B1 Service Layer connection steps
+            // Simulate connection steps with proper error handling
             for (let i = 1; i < loadingMessages.length; i++) {
-              // Update modal content with spinner
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
               modal.querySelector('.swal2-title').innerHTML = loadingMessages[i].title;
               modal.querySelector('.swal2-html-container').innerHTML = `
                 <div class="text-center mb-2">
@@ -222,32 +183,9 @@ const SignIn = () => {
                   </div>
                 </div>
               `;
-
-              // Simulate different connection steps
-              switch (i) {
-                case 1: // Secure connection
-                  await new Promise(resolve => setTimeout(resolve, 1200));
-                  break;
-                case 2: // SAP B1 Service Layer
-                  console.log('🔌 Connecting to SAP B1 Service Layer...');
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  break;
-                case 3: // Session creation
-                  console.log('🔑 Creating SAP session...');
-                  await new Promise(resolve => setTimeout(resolve, 1300));
-                  break;
-                case 4: // User permissions
-                  console.log('👤 Loading user profile...');
-                  await new Promise(resolve => setTimeout(resolve, 1400));
-                  break;
-                case 5: // Final sync
-                  console.log('🔄 Synchronizing services...');
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  break;
-              }
             }
 
-            // Show success state with checkmark animation and redirect button
+            // Show success state
             modal.querySelector('.swal2-title').innerHTML = 
               '<span class="fw-bold text-success">Connection Established! 🎉</span>';
             modal.querySelector('.swal2-html-container').innerHTML = `
@@ -255,58 +193,36 @@ const SignIn = () => {
                 <div class="checkmark-circle mb-2">
                   <div class="checkmark draw"></div>
                 </div>
-                <div class="text-muted mb-2">Congrats, Field Service Portal is ready! 🚀</div>
+                <div class="text-muted mb-2">Welcome back! Redirecting to dashboard...</div>
                 <div class="progress mb-2" style="height: 6px;">
                   <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
                 </div>
-                <div class="countdown-text text-muted small mb-2">
-                  Redirecting in <span class="fw-bold text-primary">5</span> seconds...
-                </div>
-                <button class="btn btn-primary px-4 py-2">
-                  Go to Dashboard Now
+                <button class="btn btn-primary px-4 py-2 mt-3">
+                  Go to Dashboard
                 </button>
               </div>
             `;
 
-            // Add click handler for immediate redirect
             const redirectButton = modal.querySelector('.btn-primary');
             redirectButton.addEventListener('click', () => {
+              Swal.close();
               router.push('/');
             });
 
-            // Start countdown for auto-redirect
-            let countdown = 5;
-            const countdownElement = modal.querySelector('.countdown-text .fw-bold');
-            const countdownInterval = setInterval(() => {
-              countdown--;
-              if (countdownElement) {
-                countdownElement.textContent = countdown;
-              }
-              if (countdown <= 0) {
-                clearInterval(countdownInterval);
-                router.push('/');
-              }
-            }, 1000);
-
-            // Wait for either button click or auto-redirect
-            await new Promise(resolve => {
-              setTimeout(resolve, 5500); // Slightly longer than countdown to ensure redirect happens
-            });
+            // Auto redirect after 2 seconds
+            setTimeout(() => {
+              Swal.close();
+              router.push('/');
+            }, 2000);
 
           } catch (error) {
-            console.error('❌ Authentication error:', error);
-            Swal.close(); // Close the loading modal
+            console.error('Authentication Error:', error);
+            Swal.close();
             
-            // Show more specific error message
             await Swal.fire({
               icon: 'error',
               title: 'Authentication Failed',
-              html: `
-                <div class="text-center">
-                  <p class="text-danger mb-3">${error.message}</p>
-                  <p class="text-muted small">If this issue persists, please contact support.</p>
-                </div>
-              `,
+              text: error.message || 'Unable to connect. Please try again.',
               confirmButtonText: 'Try Again',
               showCancelButton: true,
               cancelButtonText: 'Need Help?',
@@ -317,33 +233,13 @@ const SignIn = () => {
               },
               buttonsStyling: false
             });
-            
-            setIsLoading(false);
           }
         }
       });
 
     } catch (error) {
-      console.error('❌ Outer authentication error:', error);
-      setIsLoading(false);
-      
-      // Show error message
-      Swal.fire({
-        icon: 'error',
-        iconColor: '#dc3545',
-        title: 'Connection Error',
-        text: 'Unable to connect to the authentication service. Please check your internet connection and try again.',
-        showConfirmButton: true,
-        showCancelButton: true,
-        confirmButtonText: 'Try Again',
-        cancelButtonText: 'Need Help?',
-        customClass: {
-          popup: 'shadow-lg',
-          confirmButton: 'btn btn-primary px-4 me-2',
-          cancelButton: 'btn btn-outline-secondary px-4'
-        },
-        buttonsStyling: false
-      });
+      console.error('Login Error:', error);
+      toast.error(error.message || 'Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -367,7 +263,7 @@ const SignIn = () => {
               <div className="overlay-gradient d-flex flex-column justify-content-center text-white p-5 h-100">
                 <h1 className="display-4 fw-bold mb-4">Welcome Back!</h1>
                 <p className="lead">
-                  Access your SAS Field Service Management dashboard to manage your operations efficiently.
+                  Access your CRM & Calibration Management dashboard and manage your operations efficiently.
                 </p>
               </div>
             </div>
@@ -380,7 +276,7 @@ const SignIn = () => {
                 <div className="text-center mb-5">
                   <Image
                     src="/images/VITARLOGO.png"
-                    alt="VITAR Logo"
+                    alt="Vitar Logo"
                     width={300}
                     height={100}
                     className="mb-4 img-fluid"
@@ -512,11 +408,12 @@ const SignIn = () => {
           padding: 0.75rem 1rem;
         }
 
-    
+
         .input-group {
           border-radius: 0.75rem;
           overflow: hidden;
         }
+
 
         .display-4 {
           font-size: 3.5rem;
@@ -597,14 +494,16 @@ const SignIn = () => {
           transition: all 0.3s ease;
         }
 
-    
+        .input-group:focus-within {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(0, 97, 242, 0.1);
+        }
 
         .form-control, .input-group-text {
           border: none;
           padding: 0.75rem 1rem;
           transition: all 0.3s ease;
         }
-
 
         .input-group:focus-within .input-group-text {
           background-color: #f8f9ff; /* Matching background for the icon container */
@@ -847,7 +746,7 @@ const SignIn = () => {
           animation-name: fadeInUp;
         }
 
-      
+  
         /* Container Styles */
         .countdown-text {
           font-size: 1.1rem;
@@ -970,7 +869,6 @@ const SignIn = () => {
           overflow: hidden;
         }
 
-
         .progress-bar-animated {
           animation: progress-bar-stripes 1s linear infinite;
         }
@@ -997,6 +895,8 @@ const SignIn = () => {
           margin-bottom: 1rem;
         }
 
+      
+
         /* Animation for countdown */
         @keyframes pulse {
           0% { opacity: 1; }
@@ -1008,49 +908,73 @@ const SignIn = () => {
           animation: pulse 1s infinite;
         }
 
-         /* Updated button styles to match VITAR red */
+
         .btn-primary {
-          background: #FF0000 !important; /* VITAR red */
-          border: none;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          transition: all 0.3s ease;
-        }
+  background: linear-gradient(135deg, #FF0000 0%, #cc0000 100%);
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
 
-        .btn-primary:hover {
-          background: #E60000 !important; /* Slightly darker on hover */
-          transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
-        }
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
+}
 
-        .btn-primary:active {
-          background: #CC0000 !important; /* Even darker when clicked */
-          transform: translateY(0);
-        }
+.text-primary {
+  color: #FF0000 !important;
+}
 
-        .btn-primary:disabled {
-          background: #FF6666 !important; /* Lighter red when disabled */
-          cursor: not-allowed;
-        }
+.form-control:focus {
+  box-shadow: none;
+  border-color: #FF0000;
+}
 
-        /* Update progress bar color to match */
-        .progress-bar {
-          background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
-        }
+.input-group:focus-within .input-group-text {
+  color: #FF0000;
+}
 
-        /* Update focus states to match */
-        .form-control:focus {
-          box-shadow: none;
-          border-color: #FF0000;
-        }
+.form-label::after {
+  background: linear-gradient(135deg, #FF0000 0%, #cc0000 100%);
+}
 
-        .input-group:focus-within {
-          box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
-        }
+.input-group:focus-within .input-group-text svg {
+  color: #FF0000;
+}
 
-        .text-primary {
-          color: #FF0000 !important;
-        }
+.input-group:focus-within {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+}
+
+.alert-info {
+  border-left: 4px solid #FF0000;
+}
+
+.progress-bar {
+  background: linear-gradient(135deg, #FF0000 0%, #cc0000 100%);
+}
+
+.swal2-success-ring {
+  border-color: #FF0000 !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: #FF0000 !important;
+  color: #FF0000 !important;
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #FF0000 !important;
+}
+
+.swal2-timer-progress-bar {
+  background: linear-gradient(to right, #FF0000, #cc0000) !important;
+}
+
+.countdown-text strong {
+  color: #FF0000;
+}
       `}</style>
     </Fragment>
   );

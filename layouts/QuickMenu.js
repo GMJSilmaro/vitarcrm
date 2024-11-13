@@ -16,7 +16,7 @@ import NotificationList from "data/Notification";
 import useMounted from "hooks/useMounted";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
-import { db } from "../firebase";
+import { db } from "@/firebase";
 import {
   collection,
   getDocs,
@@ -37,7 +37,6 @@ import { FaBriefcase, FaCheckCircle, FaExclamationCircle } from "react-icons/fa"
 import Swal from 'sweetalert2';
 import { getNotifications, updateNotificationCache, invalidateNotificationCache, getUnreadCount } from '../utils/notificationCache';
 import { getCompanyDetails } from '../utils/companyCache';
-import { useSessionRenewal } from '../hooks/useSessionRenewal';
 import { initializeSessionRenewalCheck, handleSessionError } from '../utils/middlewareClient';
 import { useLogo } from '../contexts/LogoContext';
 import debounce from 'lodash/debounce';
@@ -541,29 +540,57 @@ const QuickMenu = ({ children }) => {
 
               // Update progress - 30%
               modal.querySelector('.progress-bar').style.width = '30%';
-              modal.querySelector('.text-muted').textContent = 'Disconnecting from SAP services...';
+              modal.querySelector('.text-muted').textContent = 'Disconnecting from VITAR services...';
               await new Promise(resolve => setTimeout(resolve, 1000));
 
-              // Perform logout API call
-              const response = await fetch("/api/logout", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: 'include',
-              });
+              // Perform logout API call with error handling
+              try {
+                const response = await fetch("/api/auth/logout", {
+                  method: "POST",
+                  headers: { 
+                    "Content-Type": "application/json" 
+                  },
+                  body: JSON.stringify({ 
+                    email: Cookies.get('email'),
+                    workerId: Cookies.get('workerId')
+                  }),
+                  credentials: 'include',
+                });
 
-              if (!response.ok) throw new Error("Logout failed");
+                const data = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(data.message || "Logout failed");
+                }
+              } catch (apiError) {
+                console.error("API Error:", apiError);
+                // Continue with client-side logout even if API fails
+              }
 
               // Update progress - 60%
               modal.querySelector('.progress-bar').style.width = '60%';
               modal.querySelector('.text-muted').textContent = 'Revoking access tokens...';
               await new Promise(resolve => setTimeout(resolve, 800));
 
-              // Clear cookies
+              // Clear cookies with proper options
               const cookiesToClear = [
                 'customToken', 'uid', 'isAdmin', 'email', 
                 'workerId', 'LAST_ACTIVITY'
               ];
-              cookiesToClear.forEach(cookie => Cookies.remove(cookie, { path: '/' }));
+              
+              cookiesToClear.forEach(cookie => {
+                Cookies.remove(cookie, { 
+                  path: '/',
+                  domain: window.location.hostname,
+                  secure: window.location.protocol === 'https:',
+                  sameSite: 'Lax'
+                });
+              });
+
+              // Clear local storage items
+              localStorage.removeItem('welcomeShown');
+              localStorage.removeItem('companyLogo');
+              localStorage.removeItem('lastLoginTime');
 
               // Update progress - 90%
               modal.querySelector('.progress-bar').style.width = '90%';
@@ -598,26 +625,42 @@ const QuickMenu = ({ children }) => {
                 }
                 if (countdown <= 0) {
                   clearInterval(countdownInterval);
-                  localStorage.removeItem('welcomeShown');
                   window.location.href = '/sign-in';
                 }
               }, 1000);
 
             } catch (error) {
-              throw error;
+              console.error("Error during sign out process:", error);
+              
+              // Show error state but continue with redirect
+              modal.querySelector('.swal2-title').innerHTML = 
+                '<span class="fw-bold text-warning">Sign Out Completed with Warnings</span>';
+              modal.querySelector('.swal2-html-container').innerHTML = `
+                <div class="text-center">
+                  <div class="text-muted mb-2">Sign out completed with some warnings</div>
+                  <div class="text-muted small mb-2">You will be redirected to the login page...</div>
+                  <div class="progress mb-2" style="height: 6px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 100%"></div>
+                  </div>
+                </div>
+              `;
+
+              // Redirect after a short delay
+              setTimeout(() => {
+                window.location.href = '/sign-in';
+              }, 2000);
             }
           }
         });
-
       }
     } catch (error) {
-      console.error("Error logging out:", error.message);
+      console.error("Error in sign out process:", error);
       
       Swal.fire({
         icon: 'error',
         iconColor: '#dc3545',
-        title: '<span class="fw-bold text-danger">Sign Out Failed</span>',
-        text: 'Unable to complete the sign out process. Please try again.',
+        title: '<span class="fw-bold text-danger">Sign Out Error</span>',
+        text: 'An unexpected error occurred. Please try again or refresh the page.',
         showConfirmButton: true,
         confirmButtonText: 'Try Again',
         customClass: {

@@ -37,7 +37,7 @@ import { useRouter } from "next/router";
 import { FaBell, FaPlus } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { memo } from 'react';
-import DashboardHeader from '../../components/dashboard/DashboardHeader';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 
 // Register ChartJS components
 ChartJS.register(

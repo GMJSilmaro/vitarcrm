@@ -7,7 +7,7 @@ import { ContactTab } from "sub-components/dashboard/worker/ContactTab";
 import { PersonalTab } from "sub-components/dashboard/worker/PersonalTab";
 import { SkillsTab } from "sub-components/dashboard/worker/SkillsTab";
 import { useRouter } from "next/router";
-import ContentHeader from '../../../../components/dashboard/ContentHeader';
+import ContentHeader from '@/components/dashboard/ContentHeader';
 import { FaArrowLeft } from 'react-icons/fa';
 
 const EditWorker = () => {
