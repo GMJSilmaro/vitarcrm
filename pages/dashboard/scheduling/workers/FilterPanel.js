@@ -7,10 +7,11 @@ import {
   Button,
   Badge,
   OverlayTrigger,
-  Tooltip
+  Tooltip,
+  FilterCircle, 
 } from 'react-bootstrap';
 import { 
-  FilterCircle, 
+
   Search, 
   ChevronUp, 
   ChevronDown,

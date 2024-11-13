@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, Row, Col, OverlayTrigger, Tooltip, Badge } from 'react-bootstrap';
+import { Card, Form, Button, Row, Col, OverlayTrigger, Tooltip, Badge, FilterCircle } from 'react-bootstrap';
 import { 
-  Filter as FilterCircle, 
   Search, 
   ChevronUp, 
   ChevronDown, 
