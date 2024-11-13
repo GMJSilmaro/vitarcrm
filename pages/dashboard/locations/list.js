@@ -11,6 +11,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Search, X, ChevronDown, ChevronUp, Filter, ChevronRight } from 'react-feather';
 import { debounce } from 'lodash';
 import { GB as GBFlag, SG as SGFlag, US as USFlag } from 'country-flag-icons/react/3x2'
+import ContentHeader from '@/components/dashboard/ContentHeader';
 
 const COUNTRY_CODE_MAP = {
   'Singapore': 'SG',
@@ -863,18 +864,29 @@ const loadData = useCallback(async (page, currentFilters = {}) => {
 
   return (
     <Fragment>
-      <GeeksSEO title="Service Locations | SAS&ME - SAP B1 | Portal" />
+      <GeeksSEO title="Sites | Vitar - CRM & Calibration Management" />
       <Row>
         <Col lg={12}>
-          <div className="border-bottom pb-2 mb-4 d-flex align-items-center justify-content-between">
-            <div className="mb-2">
-              <h1 className="mb-1 h2 fw-bold">Service Locations</h1>
-              <Breadcrumb>
-                <Breadcrumb.Item href="/dashboard">Dashboard</Breadcrumb.Item>
-                <Breadcrumb.Item active>List</Breadcrumb.Item>
-              </Breadcrumb>
-            </div>
-          </div>
+          <ContentHeader
+            title="Service Locations"
+            description="View and manage all service locations across different regions"
+            badgeText="Active Locations"
+            badgeText2={`${totalRows} Total`}
+            breadcrumbItems={[
+              {
+                text: 'Dashboard',
+                link: '/dashboard',
+                icon: <HouseFill className="me-2" size={14} />
+              },
+              {
+                text: 'Service Locations',
+                icon: <GeoAltFill className="me-2" size={14} />
+              }
+            ]}
+            customStyles={{
+              marginBottom: '2rem'
+            }}
+          />
         </Col>
       </Row>
       <Row>

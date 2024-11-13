@@ -200,7 +200,7 @@ const ViewCustomer = () => {
                 <Tab eventKey="accountInfo" title="Account Info">
                   <AccountInfoTab customerData={customerData} />
                 </Tab>
-                <Tab eventKey="serviceLocation" title="Address">
+                <Tab eventKey="serviceLocation" title="Site">
                   <ServiceLocationTab customerData={customerData} />
                 </Tab>
                 <Tab eventKey="notes" title="Notes">

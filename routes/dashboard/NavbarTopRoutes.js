@@ -41,6 +41,33 @@ const NavbarDefault = [
 	},
 	{
 		id: uuid(),
+		menuitem: 'Manage Sites',
+		link: '#',
+		icon: 'BuildingFill',
+		children: [
+			{
+				id: uuid(),
+				header: true,
+				header_text: 'Sites Menu'
+			},
+			{
+				id: uuid(),
+				menuitem: 'Sites',
+				link: '/sites',
+				icon: 'BuildingFill'
+			},
+			// {
+			// 	id: uuid(),
+			// 	menuitem: 'Service Locations',
+				
+			// 	link: '/dashboard/locations/list',
+			// 	icon: 'GeoAltFill'
+			// },
+		],
+		isAuthenticated: true,
+	},
+	{
+		id: uuid(),
 		menuitem: 'Manage Workers',
 		link: '#',
 		icon: 'PeopleFill',

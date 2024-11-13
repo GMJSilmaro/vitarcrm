@@ -90,6 +90,12 @@ const nextConfig = {
         source: "/customers/view/:id",
         destination: "/dashboard/customers/:id",
       },
+        // SITES
+        {
+          source: "/sites",
+          destination: "/dashboard/locations/list",
+        },
+  
  
       // WORKERS
       {
