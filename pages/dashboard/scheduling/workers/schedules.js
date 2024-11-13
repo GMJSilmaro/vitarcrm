@@ -9,42 +9,24 @@ import {
   ResourceDirective,
   Inject,
 } from "@syncfusion/ej2-react-schedule";
-import { db, auth } from "../../../../firebase";
+import { db } from "../../../../firebase";
 import {
   collection,
-  getDocs,
   query,
   where,
-  setDoc,
   doc,
-  arrayUnion,
   updateDoc,
-  getDoc,
-  addDoc,
-  Timestamp,
   onSnapshot,
 } from "firebase/firestore";
-import { ClipLoader } from "react-spinners";
 import { toast, ToastContainer } from "react-toastify";
-import { onAuthStateChanged } from "firebase/auth";
-import { extend } from "@syncfusion/ej2-base";
-import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import { DateTimePickerComponent } from "@syncfusion/ej2-react-calendars";
 import styles from "./SchedulerStyles.module.css";
-import { GeeksSEO, GridListViewButton } from "widgets";
+import { GeeksSEO } from "widgets";
 import {
   Row,
   Col,
-  Card,
-  Image,
-  OverlayTrigger,
-  Tooltip,
-  Breadcrumb,
-  ListGroup,
   Form,
   Button,
-  InputGroup,
-  Badge,
 } from "react-bootstrap";
 import { useRouter } from 'next/router';
 import Swal from 'sweetalert2';
@@ -52,101 +34,24 @@ import {
   BsClock, 
   BsFillPersonFill, 
   BsGeoAlt, 
-  BsCalendarCheck, 
   BsBuilding, 
   BsTools, 
   BsX, 
   BsArrowRight,
-  BsCalendar, 
   BsFillPersonBadgeFill, 
   BsCode, 
-  BsBriefcase, 
   BsGear, 
   BsPlus, 
   BsCircleFill, 
   BsFlag, 
   BsEye, 
-  BsHome, 
-  BsPeople 
 } from "react-icons/bs";
-import Link from 'next/link';
-import { initializeSessionRenewalCheck, validateSession } from 'utils/middlewareClient';
+import { validateSession } from 'utils/middlewareClient';
 import SchedulerFilterPanel from './SchedulerFilterPanel';
 import ContentHeader from '../../../../components/dashboard/ContentHeader';
 import { format, parseISO, isValid } from 'date-fns';
 import { FaHome, FaPlus } from 'react-icons/fa';
 
-// Add this custom tooltip component
-// const CustomStatsTooltip = ({ title, lastUpdated, description }) => (
-//   <div 
-//     className="stats-tooltip"
-//     style={{
-//       background: 'rgba(0, 0, 0, 0.85)',
-//       backdropFilter: 'blur(8px)',
-//       border: '1px solid rgba(255, 255, 255, 0.1)',
-//       borderRadius: '8px',
-//       padding: '12px',
-//       maxWidth: '250px',
-//       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-//       color: '#fff'
-//     }}
-//   >
-//     <div style={{ 
-//       fontWeight: '600',
-//       fontSize: '14px',
-//       marginBottom: '4px'
-//     }}>
-//       {title}
-//     </div>
-//     <div style={{ 
-//       fontSize: '12px',
-//       color: 'rgba(255, 255, 255, 0.7)',
-//       marginBottom: '4px'
-//     }}>
-//       Last updated: {lastUpdated}
-//     </div>
-//     <div style={{ 
-//       fontSize: '12px',
-//       color: 'rgba(255, 255, 255, 0.5)'
-//     }}>
-//       {description}
-//     </div>
-//   </div>
-// );
-
-// // Add these custom stat badge components
-// const StatBadge = ({ icon, label, value, tooltipContent, variant = "primary" }) => (
-//   <OverlayTrigger
-//     placement="bottom"
-//     overlay={(props) => (
-//       <Tooltip id={`tooltip-${label}`} {...props}>
-//         <CustomStatsTooltip {...tooltipContent} />
-//       </Tooltip>
-//     )}
-//   >
-//     <div 
-//       className="stat-badge"
-//       style={{
-//         background: variant === "primary" ? "#FFFFFF" : "rgba(255, 255, 255, 0.2)",
-//         color: variant === "primary" ? "#4171F5" : "#FFFFFF",
-//         padding: "8px 16px",
-//         borderRadius: "8px",
-//         fontSize: "14px",
-//         fontWeight: "500",
-//         display: "flex",
-//         alignItems: "center",
-//         gap: "8px",
-//         cursor: "help",
-//         transition: "all 0.2s ease",
-//         border: variant === "primary" ? "1px solid rgba(65, 113, 245, 0.1)" : "1px solid rgba(255, 255, 255, 0.1)",
-//       }}
-//     >
-//       {icon}
-//       <span>{label}:</span>
-//       <span style={{ fontWeight: "600" }}>{value}</span>
-//     </div>
-//   </OverlayTrigger>
-// );
 
 const LoadingOverlay = () => (
   <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">

@@ -62,15 +62,6 @@ const nextConfig = {
           },
         ],
       },
-      {
-        source: '/site.webmanifest',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/manifest+json',
-          },
-        ],
-      },
     ];
   },
 

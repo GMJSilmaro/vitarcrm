@@ -23,28 +23,49 @@ function isStaticPath(pathname) {
   );
 }
 
+// Helper function to check if path is public
+function isPublicPath(pathname) {
+  return (
+    pathname === '/sign-in' ||
+    pathname === '/' ||
+    pathname === '/authentication/sign-in' ||
+    pathname.startsWith('/api/auth/') // Allow authentication API routes
+  );
+}
+
 export async function middleware(request) {
   const pathname = request.nextUrl.pathname;
 
-  // Skip middleware for static paths
-  if (isStaticPath(pathname) || 
-      pathname === '/sign-in' ||
-      pathname.startsWith('/api/') ||
-      pathname === '/') {
+  // Skip middleware for static and public paths
+  if (isStaticPath(pathname) || isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // If trying to access /authentication/sign-in, redirect to /sign-in
-  if (pathname === '/authentication/sign-in') {
-    return NextResponse.redirect(new URL('/sign-in', request.url));
+  // For API routes that aren't auth routes, check for authentication
+  if (pathname.startsWith('/api/')) {
+    const hasAuthCookie = request.cookies.get('customToken')?.value;
+    if (!hasAuthCookie) {
+      return new NextResponse(
+        JSON.stringify({ message: 'Authentication required' }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+    return NextResponse.next();
   }
 
-  // Check essential cookies
+  // Check essential cookies for non-API routes
   const essentialCookies = [
+    'customToken',
+    'uid',
+    'workerId',
     'B1SESSION',
     'B1SESSION_EXPIRY',
-    'uid',
-    'workerId'
+    'ROUTEID'
   ];
 
   const missingCookies = essentialCookies.filter(
@@ -53,23 +74,20 @@ export async function middleware(request) {
 
   if (missingCookies.length > 0) {
     console.log('Missing essential cookies:', missingCookies);
-    // Clear all cookies before redirecting
     const response = NextResponse.redirect(new URL('/sign-in', request.url));
-    essentialCookies.forEach(cookieName => {
-      response.cookies.delete(cookieName);
+    request.cookies.getAll().forEach(cookie => {
+      response.cookies.delete(cookie.name);
     });
     return response;
   }
 
   // Check session expiry
-  const expiryTime = new Date(request.cookies.get('B1SESSION_EXPIRY').value).getTime();
-  
-  if (Date.now() >= expiryTime) {
+  const expiryTime = request.cookies.get('B1SESSION_EXPIRY')?.value;
+  if (expiryTime && Date.now() >= new Date(expiryTime).getTime()) {
     console.log('Session expired, redirecting to login');
-    // Clear all cookies before redirecting
     const response = NextResponse.redirect(new URL('/sign-in', request.url));
-    essentialCookies.forEach(cookieName => {
-      response.cookies.delete(cookieName);
+    request.cookies.getAll().forEach(cookie => {
+      response.cookies.delete(cookie.name);
     });
     return response;
   }
