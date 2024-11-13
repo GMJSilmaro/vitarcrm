@@ -21,8 +21,8 @@ const loadingMessages = [
     progress: 30
   },
   {
-    title: '<span class="fw-bold text-primary">Connecting to SAP! 🔄</span>',
-    message: 'Initializing SAP B1 Service Layer connection...',
+    title: '<span class="fw-bold text-primary">Connecting to VITAR Database! 🔄</span>',
+    message: 'Initializing VITAR Database connection...',
     progress: 45
   },
   {
@@ -37,7 +37,7 @@ const loadingMessages = [
   },
   {
     title: '<span class="fw-bold text-primary">Final Steps! 🚀</span>',
-    message: 'Synchronizing with SAP services...',
+    message: 'Synchronizing with VITAR services...',
     progress: 90
   }
 ];
