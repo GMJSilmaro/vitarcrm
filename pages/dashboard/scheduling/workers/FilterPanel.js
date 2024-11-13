@@ -8,10 +8,9 @@ import {
   Badge,
   OverlayTrigger,
   Tooltip,
-  FilterCircle, 
 } from 'react-bootstrap';
 import { 
-
+  Filter as FilterCircle,
   Search, 
   ChevronUp, 
   ChevronDown,
