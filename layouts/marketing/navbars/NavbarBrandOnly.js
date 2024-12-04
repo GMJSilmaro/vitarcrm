@@ -21,13 +21,13 @@ const NavbarBrandOnly = () => {
 				
 				if (!querySnapshot.empty) {
 					const companyData = querySnapshot.docs[0].data();
-					setLogo(companyData.logo || '/images/SAS-LOGO.png'); // Set default here
+					setLogo(companyData.logo || '/images/VITARLOGO.png'); // Set default here
 				} else {
-					setLogo('/images/SAS-LOGO.png');
+					setLogo('/images/VITARLOGO.png');
 				}
 			} catch (error) {
 				console.error('Error fetching company info:', error);
-				setLogo('/images/SAS-LOGO.png');
+				setLogo('/images/VITARLOGO.png');
 			} finally {
 				setIsLoading(false);
 			}

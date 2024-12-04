@@ -797,7 +797,7 @@ const handleTimeFilterChange = useCallback((period) => {
   }
 }, [allJobs, filterJobsByDateRange, updateDashboardStats, updateChartData]);
 // Navigation handlers
-const handleNewTask = () => router.push("/jobs/create");
+const handleNewTask = () => router.push("/404");
 
 const addWelcomeAlertStyles = (popup) => {
   const style = document.createElement("style");

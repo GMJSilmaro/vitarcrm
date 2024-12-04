@@ -27,13 +27,13 @@ const Error404 = () => {
 				
 				if (!querySnapshot.empty) {
 					const companyData = querySnapshot.docs[0].data();
-					setLogo(companyData.logo || '/images/SAS-LOGO.png');
+					setLogo(companyData.logo || '/images/VITARLOGO.png');
 				} else {
-					setLogo('/images/SAS-LOGO.png');
+					setLogo('/images/VITARLOGO.png');
 				}
 			} catch (error) {
 				console.error('Error fetching company info:', error);
-				setLogo('/images/SAS-LOGO.png');
+				setLogo('/images/VITARLOGO.png');
 			} finally {
 				setIsLoading(false);
 			}
@@ -48,7 +48,7 @@ const Error404 = () => {
 
 	return (
 		<>
-			<GeeksSEO title="404 Error | SAS&ME - SAP B1 | Portal" />
+			<GeeksSEO title="404 Error | VITAR- GROUPO | CRM & Calibration | Portal" />
 			<Row>
 				<Col lg={12} md={12} sm={12}>
 					<Row className="align-items-center justify-content-center g-0 py-lg-22 py-10">
