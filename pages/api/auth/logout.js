@@ -1,5 +1,6 @@
 import { getAuth } from 'firebase/auth';
 import { app } from '@/firebase';
+import { SessionManager } from '@/utils/sessionManager';
 
 const COOKIE_OPTIONS = {
   path: '/',
@@ -17,6 +18,14 @@ export default async function handler(req, res) {
   const auth = getAuth(app);
 
   try {
+    // Get user email from request cookies or body
+    const userEmail = req.cookies.email || req.body.email;
+    
+    // End user session in Firestore
+    if (userEmail) {
+      await SessionManager.endSession(userEmail);
+    }
+
     // Sign out from Firebase
     await auth.signOut();
 
@@ -43,7 +52,8 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ 
       message: 'Logout successful',
-      cleared: cookiesToClear
+      cleared: cookiesToClear,
+      sessionEnded: !!userEmail
     });
   } catch (error) {
     console.error('Logout error:', error);
@@ -54,9 +64,20 @@ export default async function handler(req, res) {
     ];
     res.setHeader('Set-Cookie', emergencyCookieClear);
 
+    // Try to end session even if other parts fail
+    try {
+      const userEmail = req.cookies.email || req.body.email;
+      if (userEmail) {
+        await SessionManager.endSession(userEmail);
+      }
+    } catch (sessionError) {
+      console.error('Session cleanup error:', sessionError);
+    }
+
     return res.status(500).json({ 
       message: 'Partial logout completed with errors', 
-      error: error.message 
+      error: error.message,
+      sessionCleanupAttempted: true
     });
   }
 }

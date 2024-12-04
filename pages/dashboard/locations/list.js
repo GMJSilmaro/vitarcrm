@@ -21,7 +21,7 @@ import {
   House,
   People,
   Building,
-  Edit,
+  PencilSquare,
   Trash,
   Download,
   XCircle
@@ -930,7 +930,7 @@ const ViewLocations = () => {
         View Details
       </Dropdown.Item>
       <Dropdown.Item onClick={() => handleEditCustomer(customer)}>
-        <Edit size={14} className="me-2" />
+        <PencilSquare size={14} className="me-2" />
         Edit
       </Dropdown.Item>
       <Dropdown.Divider />
