@@ -10,7 +10,7 @@ import { dimensionalData } from '@/mocks/calibration/dimensionalData';
 import { getCalibrationColumns } from '@/constants/calibrationColumns';
 import { handleSearch as handleSearchUtil, handleClearFilters as handleClearFiltersUtil } from '@/utils/calibrationUtils';
 import { useRouter } from 'next/router';
-import CertificatePreview from './components/CertificatePreview';
+import CertificatePreview from '@/components/dashboard/calibration/CertificatePreview';
 
 const Dimensional = () => {
   const router = useRouter();

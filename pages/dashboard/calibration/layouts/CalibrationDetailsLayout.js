@@ -2,7 +2,7 @@ import React from 'react';
 import { Container } from 'react-bootstrap';
 import { useRouter } from 'next/router';
 import ContentHeader from '@/components/dashboard/ContentHeader';
-import CertificatePreview from '../components/CertificatePreview';
+import CertificatePreview from '@/components/dashboard/calibration/CertificatePreview';
 import { House, Tools } from 'react-bootstrap-icons';
 
 const CalibrationDetailsLayout = ({ 

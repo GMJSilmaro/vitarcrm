@@ -20,12 +20,12 @@ import {
   dimensionalData,
   volumetricData 
 } from '@/mocks/calibration/mechanicalData';
-import CalibrationHistory from '../components/CalibrationHistory';
-import CalibrationGraph from '../components/CalibrationGraph';
-import CalibrationSchedule from '../components/CalibrationSchedule';
-import { CategoryDetails } from '../components/sections';
+import CalibrationHistory from '@/components/dashboard/calibration/CalibrationHistory';
+import CalibrationGraph from '@/components/dashboard/calibration/CalibrationGraph';
+import CalibrationSchedule from '@/components/dashboard/calibration/CalibrationSchedule';
+import { CategoryDetails } from '@/components/dashboard/calibration/sections';
 import CalibrationDetailsLayout from '../layouts/CalibrationDetailsLayout';
-import CertificatePreview from '../components/CertificatePreview';
+import CertificatePreview from '@/components/dashboard/calibration/CertificatePreview';
 
 const CATEGORY_DATA_MAP = {
   mechanical: mechanicalData,
