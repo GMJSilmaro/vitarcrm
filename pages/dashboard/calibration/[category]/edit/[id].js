@@ -3,15 +3,28 @@ import { useRouter } from 'next/router';
 import { Card, Form, Button, Row, Col, Spinner } from 'react-bootstrap';
 import { GeeksSEO } from 'widgets';
 import CalibrationLayout from '../../layouts/CalibrationLayout';
-import { 
-  mechanicalData, 
-  temperatureData, 
-  pressureData, 
-  electricalData,
-  dimensionalData,
-  volumetricData 
-} from '@/mocks/calibration/mechanicalData';
 import toast from 'react-hot-toast';
+
+const mockData = {
+  mechanical: [
+    { inventoryId: '1', description: 'Test Mechanical', tagId: 'MECH-001', make: 'Test Make', model: 'Test Model' }
+  ],
+  temperature: [
+    { inventoryId: '1', description: 'Test Temperature', tagId: 'TEMP-001', make: 'Test Make', model: 'Test Model' }
+  ],
+  pressure: [
+    { inventoryId: '1', description: 'Test Pressure', tagId: 'PRES-001', make: 'Test Make', model: 'Test Model' }
+  ],
+  electrical: [
+    { inventoryId: '1', description: 'Test Electrical', tagId: 'ELEC-001', make: 'Test Make', model: 'Test Model' }
+  ],
+  dimensional: [
+    { inventoryId: '1', description: 'Test Dimensional', tagId: 'DIM-001', make: 'Test Make', model: 'Test Model' }
+  ],
+  volumetric: [
+    { inventoryId: '1', description: 'Test Volumetric', tagId: 'VOL-001', make: 'Test Make', model: 'Test Model' }
+  ]
+};
 
 const EditCalibration = () => {
   const router = useRouter();
@@ -67,17 +80,7 @@ const EditCalibration = () => {
   const fetchEquipment = async () => {
     setLoading(true);
     try {
-      let data;
-      switch (category.toLowerCase()) {
-        case 'mechanical': data = mechanicalData; break;
-        case 'temperature': data = temperatureData; break;
-        case 'pressure': data = pressureData; break;
-        case 'electrical': data = electricalData; break;
-        case 'dimensional': data = dimensionalData; break;
-        case 'volumetric': data = volumetricData; break;
-        default: throw new Error('Invalid category');
-      }
-
+      const data = mockData[category.toLowerCase()] || [];
       const found = data.find(item => item.inventoryId === id);
       if (!found) throw new Error('Equipment not found');
       
