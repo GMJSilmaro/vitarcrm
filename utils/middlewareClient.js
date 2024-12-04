@@ -72,29 +72,6 @@ export async function validateSession() {
   }
 }
 
-export async function logActivity(activity, details = {}) {
-  try {
-    const baseUrl = window.location.origin;
-    const response = await fetch(`${baseUrl}/api/logActivity`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        activity,
-        timestamp: new Date().toISOString(),
-        ...details
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to log activity: ${response.statusText}`);
-    }
-  } catch (error) {
-    console.error('Failed to log activity:', error);
-  }
-}
-
 // Initialize session check with configurable interval
 export const initializeSessionRenewalCheck = (router, interval = 30000) => {
   console.log('🚀 Initializing session check');

@@ -35,19 +35,6 @@ const CreateWorker = () => {
     setActiveTab(key);
   };
 
-  const logActivity = async (activity, activitybrief) => {
-    try {
-      await addDoc(collection(db, "recentActivities"), {
-        activity,
-        activitybrief,
-        time: Timestamp.now(),
-        icon: "check",
-      });
-    } catch (error) {
-      console.error("Error logging activity:", error);
-    }
-  };
-
   const handlePersonalFormSubmit = async (personalFormData, workerId) => {
     // Validation: Check for required fields
     if (
@@ -145,11 +132,8 @@ const CreateWorker = () => {
         }
       });
 
-      // Log this activity
-      await logActivity(
-        "Worker Created",
-        `${personalData.firstName} ${personalData.lastName} has been added as a worker.`
-      );
+     
+    
     } catch (error) {
       console.error("Error saving data:", error);
       toast.error("An error occurred while saving data: " + error.message);
