@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Card, Form, Button, Row, Col, Spinner } from 'react-bootstrap';
 import { GeeksSEO } from 'widgets';
-import CalibrationLayout from '../../CalibrationLayout';
+import CalibrationLayout from '../layouts/CalibrationLayout';
 import { 
   mechanicalData, 
   temperatureData, 
