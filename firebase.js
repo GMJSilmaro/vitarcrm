@@ -1,4 +1,4 @@
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -15,59 +15,12 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app;
-let analytics = null;
-let db;
-let storage;
-let auth;
+const app = initializeApp(firebaseConfig);
 
-// Separate initialization for server-side
-function initializeFirebaseServer() {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-  } else {
-    app = getApps()[0];
-    db = getFirestore(app);
-    auth = getAuth(app);
-  }
-  return { app, db, auth };
-}
+// Initialize services
+const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+const db = getFirestore(app);
+const storage = getStorage(app);
+const auth = getAuth(app);
 
-// Client-side initialization
-function initializeFirebaseClient() {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-    analytics = getAnalytics(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-    auth = getAuth(app);
-  } else {
-    app = getApps()[0];
-    db = getFirestore(app);
-    storage = getStorage(app);
-    auth = getAuth(app);
-    analytics = getAnalytics(app);
-  }
-  return { app, db, storage, analytics, auth };
-}
-
-// Initialize based on environment
-if (typeof window !== "undefined") {
-  // Client-side
-  const firebaseClient = initializeFirebaseClient();
-  app = firebaseClient.app;
-  db = firebaseClient.db;
-  storage = firebaseClient.storage;
-  analytics = firebaseClient.analytics;
-  auth = firebaseClient.auth;
-} else {
-  // Server-side
-  const firebaseServer = initializeFirebaseServer();
-  app = firebaseServer.app;
-  db = firebaseServer.db;
-  auth = firebaseServer.auth;
-}
-
-export { app, db, storage, analytics, auth, initializeFirebaseServer };
+export { app, db, storage, analytics, auth };
