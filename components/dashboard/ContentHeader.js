@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
 import Link from 'next/link';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 const ContentHeader = ({
   title,
@@ -10,7 +9,7 @@ const ContentHeader = ({
   badgeText,
   badgeText2,
   breadcrumbItems = [],
-  actionButton, 
+  actionButtons = [],
   customStyles = {},
 }) => {
   return (
@@ -132,71 +131,82 @@ const ContentHeader = ({
             )}
           </div>
 
-          {/* Action Button - Enhanced styling */}
-          {actionButton && (
-            <div>
-              {actionButton.tooltip ? (
-                <OverlayTrigger
-                  placement="left"
-                  overlay={
-                    <Tooltip 
-                      id="button-tooltip" 
-                      className="custom-tooltip"
-                    >
-                      {actionButton.tooltip}
-                    </Tooltip>
-                  }
-                >
-                  <div 
-                    className={`d-inline-block button-wrapper ${actionButton.disabled ? 'disabled' : ''}`}
-                  >
-                    <Button 
-                      variant={actionButton.variant || "light"}
-                      className="custom-button"
-                      style={{
-                        border: 'none', 
-                        borderRadius: '8px',
-                        padding: '10px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        backgroundColor: '#fff',
-                        transition: 'all 0.3s ease',
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
-                      onClick={actionButton.onClick}
-                      disabled={actionButton.disabled}
-                    >
-                      {actionButton.icon}
-                      <span>{actionButton.text}</span>
-                    </Button>
-                  </div>
-                </OverlayTrigger>
-              ) : (
-                <Button 
-                  variant={actionButton.variant || "light"}
-                  onClick={actionButton.onClick}
+          {/* Action Buttons - Simplified */}
+          {actionButtons && actionButtons.length > 0 && (
+            <div className="d-flex gap-2">
+              {actionButtons.map((button, index) => (
+                <Button
+                  key={index}
+                  variant={button.variant}
+                  onClick={button.onClick}
+                  className="custom-action-button"
                   style={{
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '10px 20px',
+                    padding: '0.5rem 1rem',
+                    fontSize: '14px',
+                    fontWeight: '500',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    backgroundColor: '#fff'
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease',
+                    border: button.variant.includes('outline') ? '1px solid' : 'none',
+                    backgroundColor: button.variant === 'danger' ? '#dc3545' : 
+                                   button.variant === 'outline-primary' ? 'transparent' : 
+                                   button.variant === 'outline-secondary' ? 'transparent' : '#fff',
+                    color: button.variant.includes('outline') ? '#fff' : 
+                          button.variant === 'danger' ? '#fff' : '#212529'
                   }}
                 >
-                  {actionButton.icon}
-                  <span>{actionButton.text}</span>
+                  {button.icon && button.icon}
+                  {button.text}
                 </Button>
-              )}
+              ))}
             </div>
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .custom-action-button {
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .custom-action-button:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .custom-action-button:active {
+          transform: translateY(0);
+        }
+
+        /* Specific button styles */
+        .custom-action-button.btn-outline-secondary {
+          border-color: rgba(255, 255, 255, 0.6);
+          color: #fff;
+        }
+
+        .custom-action-button.btn-outline-secondary:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-action-button.btn-outline-primary {
+          border-color: rgba(255, 255, 255, 0.8);
+          color: #fff;
+        }
+
+        .custom-action-button.btn-outline-primary:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-action-button.btn-danger {
+          background-color: #dc3545;
+          border: none;
+        }
+
+        .custom-action-button.btn-danger:hover {
+          background-color: #c82333;
+        }
+      `}</style>
     </div>
   );
 };
