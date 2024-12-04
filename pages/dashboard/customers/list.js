@@ -21,7 +21,6 @@ import {
   House,
   People,
   Building,
-  Edit,
   Trash,
   Download
 } from 'react-bootstrap-icons';
@@ -49,9 +48,7 @@ import Link from 'next/link';
 import { FaPlus } from 'react-icons/fa';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { customerDataFetchers } from '@/utils/customers/dataFetchers';
-import { customerCacheHelpers, CUSTOMER_CACHE_KEYS } from '@/utils/customers/cacheHelpers';
+import { collection, getDocs, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
 
 // Add this utility function at the top of your file, before the ViewCustomers component
 const getPageNumbers = (currentPage, totalPages) => {
@@ -91,9 +88,10 @@ const getPageNumbers = (currentPage, totalPages) => {
   return rangeWithDots;
 };
 
-const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
+const FilterPanel = ({ filters, setFilters, onClear, loading, handleSearch, setData, setTotalRows, initialData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [tempFilters, setTempFilters] = useState(filters);
+  const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
     // Sync tempFilters with filters whenever filters change
@@ -110,54 +108,22 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !loading) {
       e.preventDefault();
-      handleSearch();
+      handleSearchSubmit();
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearchSubmit = async () => {
     try {
       if (tempFilters.email && !validateEmailSearch(tempFilters.email)) {
         toast.error('Please enter a valid email address');
         return;
       }
       
-      // Apply filters temporarily
-      setFilters(tempFilters);
-      
-      // Load data and check results
-      const customersList = await customerDataFetchers.fetchCustomers();
-      const filteredCustomers = customersList.filter(customer => {
-        const matchesCode = !tempFilters.customerCode || 
-          customer.customerId?.toLowerCase().includes(tempFilters.customerCode.toLowerCase());
-        
-        const matchesName = !tempFilters.customerName || 
-          customer.customerName?.toLowerCase().includes(tempFilters.customerName.toLowerCase());
-        
-        const matchesEmail = !tempFilters.email || 
-          customer.customerContact?.email?.toLowerCase().includes(tempFilters.email.toLowerCase());
-        
-        const matchesPhone = !tempFilters.phone || 
-          customer.customerContact?.phone?.includes(tempFilters.phone);
-        
-        return matchesCode && matchesName && matchesEmail && matchesPhone;
-      });
+      await handleSearch(tempFilters);
 
-      // If no results found, revert to previous filters
-      if (filteredCustomers.length === 0) {
-        toast.error('No results found. Reverting to previous search.');
-        setFilters(filters); // Revert to previous filters
-        setTempFilters(filters); // Also reset temp filters
-        await loadData(); // Reload with previous filters
-        return;
-      }
-
-      // If results found, keep the new filters and update data
-      await loadData();
     } catch (error) {
       console.error('Search error:', error);
       toast.error('Failed to search customers');
-      // Revert filters on error
-      setTempFilters(filters);
     }
   };
 
@@ -243,7 +209,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
             <Button
               variant="primary"
               size="sm"
-              onClick={handleSearch}
+              onClick={handleSearchSubmit}
               disabled={loading}
               className="search-btn d-flex align-items-center"
             >
@@ -461,8 +427,10 @@ const ViewCustomers = () => {
     status: '',
     address: '' 
   });
-
-
+  const [lastDoc, setLastDoc] = useState(null);
+  const [firstDoc, setFirstDoc] = useState(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [initialData, setInitialData] = useState([]);
 
   const columnHelper = createColumnHelper()
 
@@ -472,7 +440,7 @@ const ViewCustomers = () => {
       header: '#',
       size: 50,
     }),
-    columnHelper.accessor('CardCode', {
+    columnHelper.accessor('customerId', {
       header: 'Code',
       size: 100,
       cell: info => (
@@ -483,86 +451,78 @@ const ViewCustomers = () => {
           <div 
             style={{fontWeight: 'bold', cursor: 'pointer'}} 
             onClick={() => {
-              navigator.clipboard.writeText(info.row.original.CardCode);
+              navigator.clipboard.writeText(info.getValue());
               toast.success('Customer code copied!');
             }}
           >
-            {info.row.original.CardCode}
+            {info.getValue() || '-'}
           </div>
         </OverlayTrigger>
       )
     }),
-    columnHelper.accessor('CardName', {
+    columnHelper.accessor('customerName', {
       header: 'Customer',
       size: 200,
-      cell: info => {
-        const customer = info.row.original;
-       // console.log('Rendering customer:', customer); // Debug log
-        return (
-          <div className="d-flex align-items-center">
-            <Building className="me-2 text-primary" size={14} />
-            <span className="fw-bold">
-              {customer.customerName || customer.CardName || 'No Name Available'}
-            </span>
-          </div>
-        );
-      }
+      cell: info => (
+        <div className="d-flex align-items-center">
+          <Building className="me-2 text-primary" size={14} />
+          <span className="fw-bold">
+            {info.getValue() || 'No Name Available'}
+          </span>
+        </div>
+      )
     }),
-
-    columnHelper.accessor('addresses', {
+    columnHelper.accessor('locations', {
       header: 'Address Information',
       size: 300,
       cell: info => {
-        const customer = info.row.original;
-        const locations = customer.addresses || [];
+        const locations = info.getValue() || [];
         const defaultLocation = locations.find(loc => loc.isDefault) || locations[0];
+
+        if (!defaultLocation) {
+          return (
+            <div className="d-flex flex-column align-items-center py-2">
+              <GeoAltFill className="text-warning mb-2" size={16} />
+              <Badge 
+                bg="warning" 
+                text="dark"
+                className="d-flex align-items-center gap-1"
+              >
+                <XLg size={10} />
+                Address Required | No Location Found
+              </Badge>
+            </div>
+          );
+        }
 
         return (
           <div>
-            {defaultLocation ? (
-              <>
-                {/* Site Name with Icon */}
-                <div className="mb-2">
-                  <div className="d-flex align-items-center">
-                    <Building className="me-2 text-primary" size={14} />
-                    <span className="fw-bold text-primary">
-                      {defaultLocation.name || customer.CardName}
-                    </span>
-                  </div>
-                </div>
+            {/* Site Name */}
+            <div className="mb-2">
+              <div className="d-flex align-items-center">
+                <Building className="me-2 text-primary" size={14} />
+                <span className="fw-bold text-primary">
+                  {defaultLocation.siteName}
+                </span>
+              </div>
+            </div>
 
-                {/* Location Address */}
-                <div className="text-muted small">
-                  <div className="d-flex align-items-start">
-                    <GeoAltFill className="me-2 mt-1 text-muted" size={12} />
-                    <div>
-                      {defaultLocation.street}
-                    </div>
-                  </div>
+            {/* Address */}
+            <div className="text-muted small">
+              <div className="d-flex align-items-start">
+                <GeoAltFill className="me-2 mt-1" size={12} />
+                <div>
+                  {defaultLocation.mainAddress || 'No Address Available'}
                 </div>
+              </div>
+            </div>
 
-                {/* Location Count */}
-                <div className="d-flex align-items-center mt-1">
-                  <Badge bg="light" text="dark" className="d-flex align-items-center">
-                    <GeoAltFill className="me-1" size={10} />
-                    {locations.length} Location{locations.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </>
-            ) : (
-              // No Address Indicator
-              <div className="d-flex flex-column align-items-center py-2">
-                <GeoAltFill className="text-muted mb-2" size={16} />
-                <div className="text-muted small">
-                  No Address Available
-                </div>
-                <Badge 
-                  bg="warning" 
-                  text="dark" 
-                  className="mt-1"
-                  style={{ fontSize: '0.7rem' }}
-                >
-                  Address Required | No Location Found
+            {/* Location Count */}
+            {locations.length > 1 && (
+              <div className="mt-1">
+                <Badge bg="info" className="d-flex align-items-center" style={{ width: 'fit-content' }}>
+                  <GeoAltFill className="me-1" size={10} />
+                  {locations.length} Location{locations.length !== 1 ? 's' : ''}
                 </Badge>
               </div>
             )}
@@ -570,95 +530,106 @@ const ViewCustomers = () => {
         );
       }
     }),
-    
-    columnHelper.accessor('Phone1', {
+    columnHelper.accessor('customerContact', {
       header: 'Phone',
-      size: 100,
-      cell: info => (
-        <OverlayTrigger
-          placement="top"
-          overlay={<Tooltip id={`tooltip-phone-${info.getValue()}`}>Click to call</Tooltip>}
-        >
-          <a href={`tel:${info.getValue()}`} className="text-decoration-none">
-            <TelephoneFill className="me-2" />
-            {info.getValue()}
-          </a>
-        </OverlayTrigger>
-      )
+      size: 150,
+      cell: info => {
+        const contact = info.getValue();
+        const phone = contact?.phoneNumber || contact?.mobileNumber;
+        return phone ? (
+          <OverlayTrigger
+            placement="top"
+            overlay={<Tooltip>Click to call</Tooltip>}
+          >
+            <a href={`tel:${phone}`} className="text-decoration-none d-flex align-items-center">
+              <TelephoneFill className="me-2 text-primary" size={14} />
+              {phone}
+            </a>
+          </OverlayTrigger>
+        ) : (
+          <span className="text-muted">-</span>
+        );
+      }
     }),
-    columnHelper.accessor('EmailAddress', {
+    columnHelper.accessor('customerContact.email', {
       header: 'Email',
       size: 200,
-      cell: info => (
-        <OverlayTrigger
-          placement="top"
-          overlay={<Tooltip id={`tooltip-email-${info.getValue()}`}>Click to send email</Tooltip>}
-        >
-          <a href={`mailto:${info.getValue()}`} className="text-decoration-none">
-            <EnvelopeFill className="me-2" />
-            {info.getValue()}
-          </a>
-        </OverlayTrigger>
-      )
+      cell: info => {
+        const email = info.getValue();
+        return email ? (
+          <OverlayTrigger
+            placement="top"
+            overlay={<Tooltip>Click to send email</Tooltip>}
+          >
+            <a href={`mailto:${email}`} className="text-decoration-none d-flex align-items-center">
+              <EnvelopeFill className="me-2 text-primary" size={14} />
+              {email}
+            </a>
+          </OverlayTrigger>
+        ) : (
+          <span className="text-muted">-</span>
+        );
+      }
     }),
-    columnHelper.accessor('U_ContractEndDate', {
+    columnHelper.accessor('contract', {
       header: 'Contract Duration',
       size: 180,
       cell: info => {
-        if (info.row.original.U_Contract !== 'Y' || !info.row.original.U_ContractStartDate || !info.row.original.U_ContractEndDate) {
+        const contract = info.getValue();
+        if (!contract || contract.status !== 'active' || !contract.startDate || !contract.endDate) {
           return '-';
         }
-        const startDate = moment(info.row.original.U_ContractStartDate);
-        const endDate = moment(info.row.original.U_ContractEndDate);
+
+        const startDate = moment(contract.startDate.toDate());
+        const endDate = moment(contract.endDate.toDate());
         const now = moment();
         const duration = moment.duration(endDate.diff(now));
-        const months = Math.floor(duration.asMonths());
-        const days = Math.floor(duration.asDays() % 30);
-        const hours = Math.floor(duration.asHours() % 24);
-        const minutes = Math.floor(duration.asMinutes() % 60);
         
         let durationText = '';
-        if (months > 0) {
-          durationText = `${months} month${months > 1 ? 's' : ''} left`;
-        } else if (days > 0) {
-          durationText = `${days} day${days > 1 ? 's' : ''} left`;
-        } else if (hours > 0) {
-          durationText = `${hours} hour${hours > 1 ? 's' : ''} left`;
+        if (duration.asMonths() >= 1) {
+          durationText = `${Math.floor(duration.asMonths())} month${Math.floor(duration.asMonths()) !== 1 ? 's' : ''} left`;
+        } else if (duration.asDays() >= 1) {
+          durationText = `${Math.floor(duration.asDays())} day${Math.floor(duration.asDays()) !== 1 ? 's' : ''} left`;
         } else {
-          durationText = `${minutes} minute${minutes > 1 ? 's' : ''} left`;
+          durationText = `${Math.floor(duration.asHours())} hour${Math.floor(duration.asHours()) !== 1 ? 's' : ''} left`;
         }
-        
+
         return (
           <OverlayTrigger
             placement="top"
-            overlay={<Tooltip id={`tooltip-duration-${info.getValue()}`}>
-              Start: {startDate.format('DD/MM/YYYY')}
-              <br />
-              End: {endDate.format('DD/MM/YYYY')}
-            </Tooltip>}
+            overlay={
+              <Tooltip>
+                Start: {startDate.format('DD/MM/YYYY')}<br/>
+                End: {endDate.format('DD/MM/YYYY')}
+              </Tooltip>
+            }
           >
-            <span>
-              <CalendarRange className="me-2" />
+            <div className="d-flex align-items-center">
+              <CalendarRange className="me-2 text-primary" size={14} />
               {durationText}
-            </span>
+            </div>
           </OverlayTrigger>
         );
       }
     }),
-    columnHelper.accessor('U_Contract', {
+    columnHelper.accessor('contract.status', {
       header: 'Contract',
       size: 130,
       cell: info => (
         <OverlayTrigger
           placement="top"
-          overlay={<Tooltip id={`tooltip-contract-${info.getValue()}`}>
-            {info.getValue() === 'Y' ? 'This customer has a contract with us' : 'This customer does not have a contract with us'}
-          </Tooltip>}
+          overlay={
+            <Tooltip>
+              {info.getValue() === 'active' ? 
+                'This customer has an active contract' : 
+                'This customer does not have an active contract'}
+            </Tooltip>
+          }
         >
-          <div>
+          <div className="d-flex align-items-center">
             <CurrencyExchange className="me-2 text-primary" size={14} />
             <Badge 
-              bg={info.getValue() === 'Y' ? 'primary' : 'secondary'}
+              bg={info.getValue() === 'active' ? 'primary' : 'secondary'}
               style={{ 
                 padding: '6px 12px',
                 borderRadius: '6px',
@@ -666,62 +637,14 @@ const ViewCustomers = () => {
                 fontSize: '14px'
               }}
             >
-              {info.getValue() === 'Y' ? 'Yes' : 'No'}
+              {info.getValue() === 'active' ? 'Yes' : 'No'}
             </Badge>
           </div>
         </OverlayTrigger>
       )
-    }),
+    })
+  ];
 
-    columnHelper.accessor(() => null, {
-      id: 'actions',
-      header: 'Actions',
-      size: 130,
-      cell: info => (
-        <div className="d-flex gap-2">
-          <OverlayTrigger
-            placement="left"
-            overlay={
-              <Tooltip>
-                <div className="d-flex flex-column align-items-center">
-                  <span className="mb-1">🚧 Feature Coming Soon</span>
-                  <small className="text-muted">
-                    View details functionality is currently unavailable
-                  </small>
-                </div>
-              </Tooltip>
-            }
-          >
-            <div className="d-inline-block"> {/* Wrapper div to handle disabled state */}
-              <button
-                disabled
-                className="btn btn-primary btn-icon-text btn-sm"
-                style={{ 
-                  textDecoration: "none", 
-                  cursor: "not-allowed",
-                  opacity: 0.7 
-                }}
-              >
-                <Eye size={14} className="icon-left" />
-                View
-              </button>
-            </div>
-          </OverlayTrigger>
-        </div>
-      )
-    }),
-  ]
-
-    // Add at the top of your component
-    useEffect(() => {
-      // Setup real-time listeners when component mounts
-      customerDataFetchers.setupRealtimeListeners();
-      
-      // Cleanup listeners when component unmounts
-      return () => {
-        customerDataFetchers.cleanupListeners();
-      };
-    }, []);
   
     // Add new state for search loading
     const [searchLoading, setSearchLoading] = useState(false);
@@ -770,63 +693,6 @@ const ViewCustomers = () => {
     });
   }, [data, filters]);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const customersList = await customerDataFetchers.fetchCustomers();
-      
-      // Apply filters only if they exist
-      const filteredCustomers = customersList.filter(customer => {
-        if (!filters.customerCode && 
-            !filters.customerName && 
-            !filters.email && 
-            !filters.phone) {
-          return true; // Show all data if no filters
-        }
-
-        const matchesCode = !filters.customerCode || 
-          customer.customerId?.toLowerCase().includes(filters.customerCode.toLowerCase());
-        
-        const matchesName = !filters.customerName || 
-          customer.customerName?.toLowerCase().includes(filters.customerName.toLowerCase());
-        
-        const matchesEmail = !filters.email || 
-          customer.customerContact?.email?.toLowerCase().includes(filters.email.toLowerCase());
-        
-        const matchesPhone = !filters.phone || 
-          customer.customerContact?.phone?.includes(filters.phone);
-        
-        return matchesCode && matchesName && matchesEmail && matchesPhone;
-      });
-
-      const mappedCustomers = filteredCustomers.map(customer => ({
-        CardCode: customer.customerId || '',
-        CardName: customer.customerName || '',
-        customerName: customer.customerName || '',
-        Phone1: customer.customerContact?.phoneNumber || customer.customerContact?.mobileNumber || '-',
-        EmailAddress: customer.customerContact?.email || '-',
-        U_Contract: customer.contract?.status === 'active' ? 'Y' : 'N',
-        U_ContractStartDate: customer.contract?.startDate,
-        U_ContractEndDate: customer.contract?.endDate,
-        addresses: customer.locations?.map(location => ({
-          type: 'billing',
-          name: location.siteName,
-          street: location.mainAddress,
-          isDefault: location.isDefault,
-          siteId: location.siteId
-        })) || []
-      }));
-
-      setData(mappedCustomers);
-      setTotalRows(mappedCustomers.length);
-    } catch (error) {
-      console.error('Error loading customers:', error);
-      setError('Failed to load customers');
-      toast.error('Failed to load customers');
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
 
   // Update the table configuration
   const table = useReactTable({
@@ -856,68 +722,88 @@ const ViewCustomers = () => {
     router.push(`/customers/view/${customer.CardCode}`);
   };
 
-  const handleClearFilters = useCallback(() => {
+  const handleClearFilters = async () => {
     if (loading) return;
     
     setLoading(true);
-    
-    // Clear all filters in one go
-    const clearedFilters = {
-      customerCode: '',
-      customerName: '',
-      email: '',
-      phone: '',
-      contractStatus: '',
-      country: '',
-      status: '',
-      address: ''
-    };
+    try {
+      // Reset all filters
+      const clearedFilters = {
+        customerCode: '',
+        customerName: '',
+        email: '',
+        phone: '',
+        contractStatus: '',
+        country: '',
+        status: '',
+        address: ''
+      };
+      setFilters(clearedFilters);
+      setCurrentPage(1);
 
-    // Reset everything first
-    setFilters(clearedFilters);
-    setCurrentPage(1);
-    
-    // Then load fresh data
-    customerDataFetchers.fetchCustomers()
-      .then(customersList => {
-        const mappedCustomers = customersList.map(customer => ({
-          CardCode: customer.customerId || '',
-          CardName: customer.customerName || '',
-          customerName: customer.customerName || '',
-          Phone1: customer.customerContact?.phoneNumber || customer.customerContact?.mobileNumber || '-',
-          EmailAddress: customer.customerContact?.email || '-',
-          U_Contract: customer.contract?.status === 'active' ? 'Y' : 'N',
-          U_ContractStartDate: customer.contract?.startDate,
-          U_ContractEndDate: customer.contract?.endDate,
-          addresses: customer.locations?.map(location => ({
-            type: 'billing',
-            name: location.siteName,
-            street: location.mainAddress,
-            isDefault: location.isDefault,
-            siteId: location.siteId
-          })) || []
-        }));
+      // Fetch fresh data with limit
+      const customersRef = collection(db, 'customers');
+      const clearQuery = query(
+        customersRef,
+        orderBy('customerId', 'asc'),
+        limit(10)
+      );
 
-        setData(mappedCustomers);
-        setTotalRows(mappedCustomers.length);
-        toast.success('Filters cleared successfully');
-      })
-      .catch(error => {
-        console.error('Error clearing filters:', error);
-        toast.error('Failed to clear filters');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [setCurrentPage, setData, setFilters, setLoading, setTotalRows, loading]);
+      const snapshot = await getDocs(clearQuery);
+      const customers = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
-  // Add useEffect to load data on component mount
+      setData(customers);
+      setTotalRows(customers.length);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setFirstDoc(snapshot.docs[0]);
+      
+      toast.success('Filters cleared successfully');
+    } catch (error) {
+      console.error('Error clearing filters:', error);
+      toast.error('Failed to clear filters');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add useEffect for initial data load instead
   useEffect(() => {
-    // Clear the cache when component mounts
-    customerCacheHelpers.clear(CUSTOMER_CACHE_KEYS.LIST);
-    customerCacheHelpers.clear(CUSTOMER_CACHE_KEYS.PROCESSED_CUSTOMERS);
-    loadData();
-  }, []);
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        const customersRef = collection(db, 'customers');
+        const initialQuery = query(
+          customersRef,
+          orderBy('customerId', 'asc'),
+          limit(10)
+        );
+ 
+        const snapshot = await getDocs(initialQuery);
+        const customers = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+ 
+        setData(customers);
+        setTotalRows(customers.length);
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setFirstDoc(snapshot.docs[0]);
+        setInitialLoad(false);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        toast.error('Failed to load customers');
+      } finally {
+        setLoading(false);
+      }
+    };
+ 
+    if (initialLoad) {
+      loadInitialData();
+    }
+  }, [initialLoad]);
 
   // Add quick actions menu
   const QuickActions = ({ customer }) => (
@@ -947,28 +833,138 @@ const ViewCustomers = () => {
 
   
   // Add search handler
-  const handleSearch = async (e) => {
-    if (e.key === 'Enter') {
-      setSearchLoading(true);
-      try {
-        const customersList = await customerDataFetchers.fetchCustomers();
-        const filteredCustomers = customersList.filter(customer => {
-          const searchLower = searchTerm.toLowerCase();
-          return (
-            (customer.customerId || '').toLowerCase().includes(searchLower) ||
-            (customer.customerName || '').toLowerCase().includes(searchLower)
+  const handleSearch = async (searchFilters) => {
+    console.log('🔍 Starting search with filters:', searchFilters);
+    setLoading(true);
+    
+    try {
+      const customersRef = collection(db, 'customers');
+      let searchQuery;
+      let snapshot;
+
+      // Get the search term from any of the filter fields
+      const searchTerm = searchFilters.customerCode || 
+                        searchFilters.customerName || 
+                        searchFilters.email || 
+                        searchFilters.phone || 
+                        '';
+
+      if (searchTerm) {
+        // Create queries for each field we want to search
+        const queries = [
+          // Search by customer ID
+          query(
+            customersRef,
+            where('customerId', '==', searchTerm.toUpperCase()),
+            limit(10)
+          ),
+          // Search by customer name
+          query(
+            customersRef,
+            where('customerName', '==', searchTerm),
+            limit(10)
+          ),
+          // Search by email
+          query(
+            customersRef,
+            where('customerContact.email', '==', searchTerm.toLowerCase()),
+            limit(10)
+          ),
+          // Search by phone
+          query(
+            customersRef,
+            where('customerContact.phoneNumber', '==', searchTerm),
+            limit(10)
+          ),
+          // Search by mobile
+          query(
+            customersRef,
+            where('customerContact.mobileNumber', '==', searchTerm),
+            limit(10)
+          )
+        ];
+
+        // Execute all queries in parallel
+        const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+        
+        // Combine results and remove duplicates
+        const searchResults = snapshots
+          .flatMap(snapshot => 
+            snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+          )
+          .filter((customer, index, self) => 
+            index === self.findIndex((c) => c.id === customer.id)
           );
-        });
 
-        setData(filteredCustomers);
-        setTotalRows(filteredCustomers.length);
-      } catch (error) {
-        console.error('Search error:', error);
-        toast.error('Failed to search customers');
-      } finally {
+        console.log('Query complete. Found documents:', searchResults.length);
 
-        setSearchLoading(false);
+        // Update state based on results
+        if (searchResults.length === 0) {
+          console.log('❌ No results found');
+          toast.error('No customers found matching your search criteria');
+          setData([]);
+          setTotalRows(0);
+        } else {
+          console.log(`✅ Found ${searchResults.length} matching customers:`, searchResults);
+          setData(searchResults);
+          setTotalRows(searchResults.length);
+          toast.success(`Found ${searchResults.length} matching customers`);
+        }
+
+        // Update pagination docs using the first non-empty snapshot
+        const firstNonEmptySnapshot = snapshots.find(s => !s.empty);
+        if (firstNonEmptySnapshot) {
+          setLastDoc(firstNonEmptySnapshot.docs[firstNonEmptySnapshot.docs.length - 1]);
+          setFirstDoc(firstNonEmptySnapshot.docs[0]);
+        } else {
+          setLastDoc(null);
+          setFirstDoc(null);
+        }
+
+      } else {
+        // Default query if no search term
+        console.log('No search term, fetching first 10 customers');
+        searchQuery = query(
+          customersRef,
+          limit(10)
+        );
+
+        snapshot = await getDocs(searchQuery);
+        const searchResults = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        if (searchResults.length === 0) {
+          toast.error('No customers found');
+          setData([]);
+          setTotalRows(0);
+        } else {
+          setData(searchResults);
+          setTotalRows(searchResults.length);
+        }
+
+        if (snapshot.docs.length > 0) {
+          setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+          setFirstDoc(snapshot.docs[0]);
+        } else {
+          setLastDoc(null);
+          setFirstDoc(null);
+        }
       }
+
+    } catch (error) {
+      console.error('🚨 Search error:', error);
+      toast.error('Failed to search customers');
+      setData([]);
+      setTotalRows(0);
+      setLastDoc(null);
+      setFirstDoc(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1043,6 +1039,43 @@ const ViewCustomers = () => {
     table.setPageSize(newPerPage);
   }, [table]);
 
+  // Add loadNextPage function for pagination
+  const loadNextPage = async () => {
+    if (!lastDoc || isLoadingMore) return;
+    console.log(' Loading next page...');
+    setIsLoadingMore(true);
+    
+    try {
+      const customersRef = collection(db, 'customers');
+      const nextQuery = query(
+        customersRef,
+        orderBy('customerId', 'asc'),
+        startAfter(lastDoc),
+        limit(10)
+      );
+ 
+      const snapshot = await getDocs(nextQuery);
+      console.log(`📊 Firebase Reads for next page: ${snapshot.docs.length}`);
+      
+      if (!snapshot.empty) {
+        const newCustomers = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+ 
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setFirstDoc(snapshot.docs[0]);
+        setData(prevData => [...prevData, ...newCustomers]);
+        setTotalRows(prevTotal => prevTotal + newCustomers.length);
+      }
+    } catch (error) {
+      console.error('🚨 Error loading next page:', error);
+      toast.error('Failed to load more customers');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   return (
     <Fragment>
       <GeeksSEO title="Customers | VITAR Group" />
@@ -1083,7 +1116,10 @@ const ViewCustomers = () => {
                 setFilters={setFilters}
                 onClear={handleClearFilters}
                 loading={loading}
-                loadData={loadData}
+                handleSearch={handleSearch}
+                setData={setData}
+                setTotalRows={setTotalRows}
+                initialData={initialData}
               />
           <Card className="border-0 shadow-sm">
             <Card.Body className="p-4">

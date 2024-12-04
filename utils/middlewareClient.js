@@ -30,13 +30,11 @@ export async function validateSession() {
   try {
     // Check essential cookies
     const essentialCookies = {
+      session: Cookies.get('session'),
       customToken: Cookies.get('customToken'),
-      uid: Cookies.get('uid'),
-      workerId: Cookies.get('workerId'),
-      userRole: Cookies.get('userRole')
+      uid: Cookies.get('uid')
     };
 
-    // Log current cookie state
     console.log('🍪 Current cookies:', essentialCookies);
 
     // Check if any essential cookies are missing
@@ -49,20 +47,20 @@ export async function validateSession() {
       return false;
     }
 
-    // Additional validation for worker routes
-    const pathname = window.location.pathname;
-    if (pathname.startsWith('/user/')) {
-      const urlWorkerId = pathname.split('/')[2];
-      const currentWorkerId = essentialCookies.workerId;
-      const userRole = essentialCookies.userRole;
+    // Verify token is still valid
+    const response = await fetch('/api/auth/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token: essentialCookies.customToken
+      })
+    });
 
-      // Validate access to worker profile
-      if (urlWorkerId && 
-          urlWorkerId !== currentWorkerId && 
-          !['admin', 'supervisor'].includes(userRole)) {
-        console.error('⚠️ Unauthorized worker profile access');
-        return false;
-      }
+    if (!response.ok) {
+      console.error('⚠️ Token validation failed');
+      return false;
     }
 
     return true;

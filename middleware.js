@@ -27,9 +27,8 @@ function isStaticPath(pathname) {
 // Helper function to check if path is public
 function isPublicPath(pathname) {
   return (
-    pathname === '/sign-in' ||
-    pathname === '/' ||
     pathname === '/authentication/sign-in' ||
+    pathname === '/' ||
     pathname === '/unauthorized' ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/logs/')
@@ -44,24 +43,30 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
+  // Get all required cookies
+  const session = request.cookies.get('session')?.value;
   const customToken = request.cookies.get('customToken')?.value;
-  const userRole = request.cookies.get('userRole')?.value;
-  const workerId = request.cookies.get('workerId')?.value;
+  const uid = request.cookies.get('uid')?.value;
 
-  // Check authentication
-  if (!customToken) {
-    return NextResponse.redirect(new URL('/sign-in', request.url));
-  }
-
-  // Handle worker profile access
-  if (pathname.startsWith('/user/')) {
-    const targetWorkerId = pathname.split('/')[2];
-    const hasAccess = 
-      targetWorkerId === workerId || 
-      ['admin', 'supervisor', 'worker'].includes(userRole);
-
-    if (!hasAccess) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+  // Check if trying to access protected routes
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/api/protected')) {
+    // If any required cookie is missing
+    if (!session || !customToken || !uid) {
+      console.log('Missing auth cookies:', { session, customToken, uid });
+      
+      // For API routes, return 401
+      if (pathname.startsWith('/api/protected')) {
+        return new NextResponse(
+          JSON.stringify({ message: 'Authentication required' }),
+          { 
+            status: 401, 
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      // For dashboard routes, redirect to login
+      return NextResponse.redirect(new URL('/authentication/sign-in', request.url));
     }
   }
 
@@ -70,6 +75,8 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+    '/dashboard/:path*',
+    '/api/protected/:path*',
+    '/((?!_next/static|_next/image|favicon.ico|api/auth/login|authentication/sign-in).*)'
+  ]
 };

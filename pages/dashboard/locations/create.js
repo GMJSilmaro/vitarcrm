@@ -28,6 +28,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { fetchCustomers } from '@/utils/fetchCustomers';
 import debounce from 'lodash/debounce';
 import { auth } from '@/firebase';
+import { getCookie } from 'cookies-next';
 
 
 const API_ENDPOINT = 'https://www.apicountries.com/countries';
@@ -553,6 +554,10 @@ const CreateLocations = () => {
   const handleSaveContact = async () => {
     try {
       setContactLoading(true); // Use separate loading state for contact save
+      const uid = getCookie('uid');
+      const email = getCookie('email');
+      const displayName = getCookie('displayName') || getCookie('workerID') || 'Admin';
+
       
       if (!formData.customerId) {
         toast.error('Please select a customer first');
@@ -583,16 +588,17 @@ const CreateLocations = () => {
         status: 'active',
         additionalInformation: {},
         createdAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
         createdBy: {
-          uid: auth.currentUser.uid,
-          email: auth.currentUser.email,
-          displayName: auth.currentUser.displayName || 'Admin'
+          uid,
+          email,
+          displayName
         },
         updatedAt: serverTimestamp(),
         updatedBy: {
-          uid: auth.currentUser.uid,
-          email: auth.currentUser.email,
-          displayName: auth.currentUser.displayName || 'Admin'
+          uid,
+          email,
+          displayName
         }
       };
 
@@ -1068,14 +1074,24 @@ const CreateLocations = () => {
   const handleSaveLocation = async () => {
     try {
       setLoading(true);
-      
+
+      // Get user data from cookies
+      const uid = getCookie('uid');
+      const email = getCookie('email');
+      const displayName = getCookie('displayName') || getCookie('workerID') || 'Admin';
+
+      if (!uid || !email) {
+        toast.error('Authentication data not found. Please login again.');
+        router.push('/auth/signin');
+        return;
+      }
+
       // Validate required fields
       if (!isFormComplete()) {
         toast.error('Please fill in all required fields');
         return;
       }
 
-      // Create location data structure
       const locationData = {
         siteId: formData.locationID,
         siteName: formData.locationName,
@@ -1119,15 +1135,15 @@ const CreateLocations = () => {
         },
         createdAt: serverTimestamp(),
         createdBy: {
-          uid: auth.currentUser.uid,
-          email: auth.currentUser.email,
-          displayName: auth.currentUser.displayName || 'Admin'
+          uid,
+          email,
+          displayName
         },
         updatedAt: serverTimestamp(),
         updatedBy: {
-          uid: auth.currentUser.uid,
-          email: auth.currentUser.email,
-          displayName: auth.currentUser.displayName || 'Admin'
+          uid,
+          email,
+          displayName
         }
       };
 

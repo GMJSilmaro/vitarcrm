@@ -66,6 +66,11 @@ const nextConfig = {
         source: "/customers/view/:id",
         destination: "/dashboard/customers/:id",
       },
+      //404
+      {
+        source: "/404",
+        destination: "/404",
+      },
         // SITES
         {
           source: "/sites",

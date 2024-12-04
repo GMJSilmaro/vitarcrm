@@ -55,6 +55,7 @@ export default async function handler(req, res) {
 
     // Set cookies using the workerId from userData
     res.setHeader('Set-Cookie', [
+      `session=true; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
       `customToken=${customToken}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} HttpOnly; SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
       `uid=${user.uid}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
       `email=${email}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
