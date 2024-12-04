@@ -758,7 +758,7 @@ const WorkersListItems = () => {
       }
     }),
 
-    columnHelper.accessor('isActive', {
+    columnHelper.accessor('activeUser', {
       header: 'STATUS',
       size: 120,
       cell: info => (

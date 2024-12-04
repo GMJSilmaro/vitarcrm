@@ -189,9 +189,7 @@ const EditWorker = () => {
           tooltip: 'Return to workers list',
           onClick: () => router.push('/workers')
         }}
-        customStyles={{
-          background: "linear-gradient(90deg, #4171F5 0%, #3DAAF5 100%)"
-        }}
+       
       />
       <Row>
         <Col xl={12} lg={12} md={12} sm={12}>

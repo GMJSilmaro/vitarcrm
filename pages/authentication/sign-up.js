@@ -2,6 +2,9 @@
 import { Fragment } from 'react';
 import { Col, Row, Card, Form, Button, Image } from 'react-bootstrap';
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import { toast } from 'react-hot-toast';
 
 // import widget/custom components
 import { GeeksSEO } from 'widgets';
@@ -10,6 +13,64 @@ import { GeeksSEO } from 'widgets';
 import AuthLayout from 'layouts/dashboard/AuthLayout';
 
 const SignUp = () => {
+	const router = useRouter();
+	const [formData, setFormData] = useState({
+		username: '',
+		email: '',
+		password: '',
+		agreeToTerms: false
+	});
+	const [isLoading, setIsLoading] = useState(false);
+
+	const handleChange = (e) => {
+		const { id, value, checked } = e.target;
+		setFormData(prev => ({
+			...prev,
+			[id]: id === 'agreeToTerms' ? checked : value
+		}));
+	};
+
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		
+		if (!formData.agreeToTerms) {
+			toast.error('Please agree to the Terms of Service and Privacy Policy');
+			return;
+		}
+
+		setIsLoading(true);
+
+		try {
+			const response = await fetch('/api/auth/signup', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					email: formData.email,
+					password: formData.password,
+					username: formData.username
+				})
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data.message || 'Failed to create account');
+			}
+
+			toast.success('Account created successfully! Redirecting to login...');
+			
+			// Redirect to sign-in page after successful registration
+			setTimeout(() => {
+				router.push('/authentication/sign-in');
+			}, 2000);
+
+		} catch (error) {
+			toast.error(error.message);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	return (
 		<Fragment>
 			{/* Geeks SEO settings  */}
@@ -32,7 +93,7 @@ const SignUp = () => {
 								</span>
 							</div>
 							{/* Form */}
-							<Form>
+							<Form onSubmit={handleSubmit}>
 								<Row>
 									<Col lg={12} md={12} className="mb-3">
 										{/* User Name */}
@@ -42,6 +103,8 @@ const SignUp = () => {
 											id="username"
 											placeholder="User Name"
 											required
+											value={formData.username}
+											onChange={handleChange}
 										/>
 									</Col>
 									<Col lg={12} md={12} className="mb-3">
@@ -52,6 +115,8 @@ const SignUp = () => {
 											id="email"
 											placeholder="Email address here"
 											required
+											value={formData.email}
+											onChange={handleChange}
 										/>
 									</Col>
 									<Col lg={12} md={12} className="mb-3">
@@ -62,12 +127,19 @@ const SignUp = () => {
 											id="password"
 											placeholder="**************"
 											required
+											value={formData.password}
+											onChange={handleChange}
 										/>
 									</Col>
 									<Col lg={12} md={12} className="mb-3">
 										{/* Checkbox */}
-										<Form.Check type="checkbox" id="check-api-checkbox">
-											<Form.Check.Input type="checkbox" />
+										<Form.Check type="checkbox" id="agreeToTerms">
+											<Form.Check.Input
+												type="checkbox"
+												id="agreeToTerms"
+												checked={formData.agreeToTerms}
+												onChange={handleChange}
+											/>
 											<Form.Check.Label>
 												I agree to the{' '}
 												<Link href="/marketing/specialty/terms-and-conditions/">
@@ -82,8 +154,8 @@ const SignUp = () => {
 									</Col>
 									<Col lg={12} md={12} className="mb-0 d-grid gap-2">
 										{/* Button */}
-										<Button variant="primary" type="submit">
-											Sign in
+										<Button variant="primary" type="submit" disabled={isLoading}>
+											{isLoading ? 'Creating Account...' : 'Sign Up'}
 										</Button>
 									</Col>
 								</Row>

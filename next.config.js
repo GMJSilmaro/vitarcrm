@@ -4,10 +4,6 @@ const path = require("path");
 const nextConfig = {
   reactStrictMode: false,
   env: {
-    SAP_SERVICE_LAYER_BASE_URL: process.env.SAP_SERVICE_LAYER_BASE_URL,
-    SAP_B1_COMPANY_DB: process.env.SAP_B1_COMPANY_DB,
-    SAP_B1_USERNAME: process.env.SAP_B1_USERNAME,
-    SAP_B1_PASSWORD: process.env.SAP_B1_PASSWORD,
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     SYNCFUSION_LICENSE_KEY: process.env.SYNCFUSION_LICENSE_KEY,
@@ -23,17 +19,6 @@ const nextConfig = {
     NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID:
       process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-    FIREBASE_TYPE: process.env.FIREBASE_TYPE,
-    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
-    FIREBASE_PRIVATE_KEY_ID: process.env.FIREBASE_PRIVATE_KEY_ID,
-    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
-    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
-    FIREBASE_CLIENT_ID: process.env.FIREBASE_CLIENT_ID,
-    FIREBASE_AUTH_URI: process.env.FIREBASE_AUTH_URI,
-    FIREBASE_TOKEN_URI: process.env.FIREBASE_TOKEN_URI,
-    FIREBASE_AUTH_PROVIDER_X509_CERT_URL: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-    FIREBASE_CLIENT_X509_CERT_URL: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-    FIREBASE_UNIVERSE_DOMAIN: process.env.FIREBASE_UNIVERSE_DOMAIN,
   },
 
   sassOptions: {
@@ -41,7 +26,7 @@ const nextConfig = {
   },
 
   images: {
-    domains: ["firebasestorage.googleapis.com"],
+    domains: ["firebasestorage.googleapis.com", "localhost"], // Add the hostname you're using
   },
 
   async headers() {
@@ -142,6 +127,24 @@ const nextConfig = {
       {
         source: "/sign-in",
         destination: "/authentication/sign-in",
+      },
+      {
+        source: "/sign-up",
+        destination: "/authentication/sign-up",
+      },
+
+      // WORKER PROFILE ROUTES
+      {
+        source: "/user/:workerId",
+        destination: "/user/:workerId",
+      },
+      {
+        source: "/user/list",
+        destination: "/user/list",
+      },
+      {
+        source: "/user/create",
+        destination: "/user/create",
       },
     ];
   },

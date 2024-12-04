@@ -1,8 +1,8 @@
 // Create a new constants file for table configurations
 export const TABLE_CONFIG = {
   PAGE_SIZES: {
-    DEFAULT: 100,
-    OPTIONS: [100, 150, 200, 250, 300]
+    DEFAULT: 10,
+    OPTIONS: [5, 10, 25, 50, 100]
   },
   
   TOAST_MESSAGES: {

@@ -1,54 +1,91 @@
 // utils/fetchCustomers.js
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
+import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/firebase';
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-export const fetchCustomers = async (page = 1, limit = 10, search = '', initialLoad = 'true') => {
-  let retries = 0;
-  let lastError = null;
-
-  while (retries < MAX_RETRIES) {
+export const fetchCustomers = {
+  search: async (searchTerm = '', pageSize = 10) => {
     try {
-      const timestamp = new Date().getTime();
-      const url = `/api/getCustomersList?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&_=${timestamp}&initialLoad=${initialLoad}`;
-      
-      console.log(`Fetching customers (attempt ${retries + 1}):`, url);
-      
-      const response = await fetch(url, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      console.log(`Response status (attempt ${retries + 1}):`, response.status);
+      console.log(' Starting customer search:', searchTerm);
+      const customersRef = collection(db, 'customers');
+      let baseQuery;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Error response content:`, errorText);
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      if (searchTerm) {
+        // Create a query that searches both name and ID
+        baseQuery = query(
+          customersRef,
+          where('customerName', '>=', searchTerm),
+          where('customerName', '<', searchTerm + '\uf8ff'),
+          limit(pageSize)
+        );
+      } else {
+        baseQuery = query(
+          customersRef,
+          orderBy('customerName'),
+          limit(pageSize)
+        );
       }
-      
-      const data = await response.json();
-      console.log(`Fetched data:`, data);
-      
+
+      const snapshot = await getDocs(baseQuery);
+      console.log('Query results:', snapshot.size);
+
+      // Process results
+      const customers = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          customerId: data.customerId || '',
+          customerName: data.customerName || '',
+          status: data.status || 'inactive',
+          contract: data.contract || 'Standard',
+          locations: data.locations || [],
+          matchType: 'name'
+        };
+      });
+
+      // If no exact matches found, try case-insensitive search
+      if (searchTerm && customers.length === 0) {
+        const allCustomersQuery = query(
+          customersRef,
+          orderBy('customerName'),
+          limit(pageSize * 2)
+        );
+
+        const allSnapshot = await getDocs(allCustomersQuery);
+        const searchTermLower = searchTerm.toLowerCase();
+
+        const filteredCustomers = allSnapshot.docs
+          .map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              customerId: data.customerId || '',
+              customerName: data.customerName || '',
+              status: data.status || 'inactive',
+              contract: data.contract || 'Standard',
+              locations: data.locations || []
+            };
+          })
+          .filter(customer => 
+            customer.customerName.toLowerCase().includes(searchTermLower) ||
+            customer.customerId.toLowerCase().includes(searchTermLower)
+          )
+          .slice(0, pageSize);
+
+        return {
+          customers: filteredCustomers,
+          total: filteredCustomers.length
+        };
+      }
+
       return {
-        customers: data.customers || [],
-        totalCount: data.totalCount || 0
+        customers,
+        total: customers.length
       };
+
     } catch (error) {
-      console.error(`Attempt ${retries + 1} failed:`, error);
-      lastError = error;
-      retries++;
-      
-      if (retries < MAX_RETRIES) {
-        console.log(`Retrying in ${RETRY_DELAY}ms...`);
-        await sleep(RETRY_DELAY);
-      }
+      console.error('Error searching customers:', error);
+      throw error;
     }
   }
-
-  throw new Error(`Failed after ${MAX_RETRIES} attempts: ${lastError.message}`);
 };

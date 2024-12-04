@@ -83,42 +83,42 @@ const NavbarDefault = [
 				link: '/workers',
 				icon: 'PersonLinesFill'
 			},
-			{
-				id: uuid(),
-				menuitem: 'Workers Dispatch',
-				link: '/schedule',
-				icon: 'CalendarWeekFill'
-			},
+			// {
+			// 	id: uuid(),
+			// 	menuitem: 'Workers Dispatch',
+			// 	link: '/schedule',
+			// 	icon: 'CalendarWeekFill'
+			// },
 
 		],
 		isAuthenticated: true,
 	},
-	{
-		id: uuid(),
-		menuitem: 'Manage Jobs',
-		link: '#',
-		icon: 'BriefcaseFill',
-		children: [
-			{
-				id: uuid(),
-				header: true,
-				header_text: 'Jobs Menu'
-			},
-			{
-				id: uuid(),
-				menuitem: 'Jobs',
-				link: '/jobs',
-				icon: 'ListTask'
-			},
-			{
-				id: uuid(),
-				menuitem: 'Jobs Calendar',
-				link: '/jobs/calendar',
-				icon: 'CalendarWeekFill'
-			},
-		],
-		isAuthenticated: true,
-	},
+	// {
+	// 	id: uuid(),
+	// 	menuitem: 'Manage Jobs',
+	// 	link: '#',
+	// 	icon: 'BriefcaseFill',
+	// 	children: [
+	// 		{
+	// 			id: uuid(),
+	// 			header: true,
+	// 			header_text: 'Jobs Menu'
+	// 		},
+	// 		{
+	// 			id: uuid(),
+	// 			menuitem: 'Jobs',
+	// 			link: '/jobs',
+	// 			icon: 'ListTask'
+	// 		},
+	// 		{
+	// 			id: uuid(),
+	// 			menuitem: 'Jobs Calendar',
+	// 			link: '/jobs/calendar',
+	// 			icon: 'CalendarWeekFill'
+	// 		},
+	// 	],
+	// 	isAuthenticated: true,
+	// },
 ];
 
 //console.log('NavbarDefault:', JSON.stringify(NavbarDefault, null, 2));

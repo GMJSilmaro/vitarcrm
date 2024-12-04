@@ -1,141 +1,167 @@
 'use client'
 
-import React, { Fragment, useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { Col, Row, Card, Button, OverlayTrigger, Tooltip, Badge, Breadcrumb, Spinner, Form } from 'react-bootstrap';
-import DataTable from 'react-data-table-component';
+import React, { Fragment, useMemo, useState, useEffect, useCallback, useRef, memo } from 'react';
+import { Col, Row, Card, Button, OverlayTrigger, Tooltip, Badge, Breadcrumb, Placeholder, Spinner, Form, Collapse, Modal, DropdownButton, Dropdown } from 'react-bootstrap';
 import { useRouter } from 'next/router';
-import { Eye, EnvelopeFill, TelephoneFill, GeoAltFill, HouseFill } from 'react-bootstrap-icons';
-import { GeeksSEO } from 'widgets';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { Search, X, ChevronDown, ChevronUp, Filter, ChevronRight } from 'react-feather';
-import { debounce } from 'lodash';
-import { GB as GBFlag, SG as SGFlag, US as USFlag } from 'country-flag-icons/react/3x2'
+import { 
+  Eye, 
+  EnvelopeFill, 
+  TelephoneFill, 
+  GeoAltFill, 
+  CurrencyExchange, 
+  HouseFill, 
+  CalendarRange, 
+  CheckCircleFill,
+  XLg,
+  ChevronLeft, 
+  ChevronRight,
+  FilterCircle,
+  Calendar,
+  ListUl,
+  House,
+  People,
+  Building,
+  Edit,
+  Trash,
+  Download,
+  XCircle
+} from 'react-bootstrap-icons';
+import { GeeksSEO, PageHeading } from 'widgets'
+import moment from 'moment';
+import { 
+  Search, 
+  Filter as FeatherFilter,
+  ChevronDown, 
+  ChevronUp,
+  ChevronRight as FeatherChevronRight,
+  X as FeatherX
+} from 'react-feather';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  flexRender,
+  createColumnHelper
+} from '@tanstack/react-table'
+import toast from 'react-hot-toast';
+import { TABLE_CONFIG } from 'constants/tableConfig';
+import Link from 'next/link';
+import { FaPlus } from 'react-icons/fa';
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import { collection, getDocs, query, where, onSnapshot, orderBy, limit, startAfter } from 'firebase/firestore';
+import { db } from '@/firebase';
 
-const COUNTRY_CODE_MAP = {
-  'Singapore': 'SG',
-  'United Kingdom': 'GB',
-  'United States': 'US',
+// Add this utility function at the top of your file, before the ViewCustomers component
+const getPageNumbers = (currentPage, totalPages) => {
+  const delta = 2;
+  const range = [];
+  const rangeWithDots = [];
+  let l;
 
-};
+  // Always show first page
+  range.push(1);
 
-const fetchLocations = async (page = 1, limit = 10, filters = {}) => {
-  try {
-    console.log('Fetching with filters:', filters);
-    
-    const cleanFilters = Object.fromEntries(
-      Object.entries(filters).filter(([_, value]) => value !== '')
-    );
-    
-    const queryParams = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      ...cleanFilters
-    });
-    
-    const url = `/api/getServiceLocations?${queryParams.toString()}`;
-    console.log('Fetching URL:', url);
-    
-    const response = await fetch(url);
-    console.log('Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error Response:', errorData);
-      throw new Error(errorData.details || 'Failed to fetch locations');
+  // Calculate range based on current page
+  for (let i = currentPage - delta; i <= currentPage + delta; i++) {
+    if (i > 1 && i < totalPages) {
+      range.push(i);
     }
-    
-    const data = await response.json();
-    console.log('API Response:', data);
-    
-    let filteredLocations = data.locations || [];
-    
-    if (cleanFilters.address) {
-      const searchTerm = cleanFilters.address.toLowerCase();
-      filteredLocations = filteredLocations.filter(location => 
-        location.Address1?.toLowerCase().includes(searchTerm) ||
-        location.Address2?.toLowerCase().includes(searchTerm) ||
-        location.Address3?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (cleanFilters.customerName) {
-      const searchTerm = cleanFilters.customerName.toLowerCase();
-      filteredLocations = filteredLocations.filter(location => 
-        location.CustomerName?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (cleanFilters.email) {
-      const searchTerm = cleanFilters.email.toLowerCase();
-      filteredLocations = filteredLocations.filter(location => 
-        location.EmailAddress?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (cleanFilters.phone) {
-      const searchTerm = cleanFilters.phone.toLowerCase();
-      filteredLocations = filteredLocations.filter(location => 
-        location.Phone1?.toLowerCase().includes(searchTerm) ||
-        location.Phone2?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (cleanFilters.postalCode) {
-      const searchTerm = cleanFilters.postalCode.toLowerCase();
-      filteredLocations = filteredLocations.filter(location => 
-        location.PostalCode?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    if (cleanFilters.country) {
-      const searchTerm = cleanFilters.country.toLowerCase();
-      filteredLocations = filteredLocations.filter(location => 
-        location.Country?.toLowerCase().includes(searchTerm)
-      );
-    }
-    
-    return {
-      locations: filteredLocations,
-      totalCount: filteredLocations.length
-    };
-  } catch (error) {
-    console.error('Error fetching locations:', {
-      message: error.message,
-      stack: error.stack,
-      filters: filters
-    });
-    throw error;
   }
+
+  // Always show last page
+  if (totalPages > 1) {
+    range.push(totalPages);
+  }
+
+  // Add dots where needed
+  for (let i of range) {
+    if (l) {
+      if (i - l === 2) {
+        rangeWithDots.push(l + 1);
+      } else if (i - l !== 1) {
+        rangeWithDots.push('...');
+      }
+    }
+    rangeWithDots.push(i);
+    l = i;
+  }
+
+  return rangeWithDots;
 };
 
-const FilterPanel = ({ filters, setFilters, onClear, loading, loadData, onInputChange }) => {
+
+const FilterPanel = ({ 
+  filters, 
+  setFilters, 
+  onClear, 
+  loading, 
+  handleSearch, 
+  setData, 
+  setTotalRows,
+  initialData 
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [tempFilters, setTempFilters] = useState(filters);
+  const searchTimeoutRef = useRef(null); // Add this for debouncing
 
-  const handleInputChange = (field, value) => {
-    onInputChange(field, value);
-  };
-
-  const handleSearch = () => {
-    loadData();
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !loading) {
-      handleSearch();
+  const handleFilterChange = (field, value) => {
+    const newTempFilters = {
+      ...tempFilters,
+      [field]: value
+    };
+    setTempFilters(newTempFilters);
+    
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // If it's a quick search and not expanded, trigger search after a delay
+    if (field === 'quickSearch' && !isExpanded && value.length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        handleSearch(newTempFilters);
+      }, 500); // 500ms debounce
     }
   };
+
+  const handleKeyPress = async (e) => {
+    if (e.key === 'Enter' && !loading) {
+      e.preventDefault();
+      // Clear any existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      await handleSearch(tempFilters);
+    }
+  };
+
+  const handleSearchClick = async () => {
+    if (!loading) {
+      // Clear any existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      await handleSearch(tempFilters);
+    }
+  };
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleClear = () => {
-    onClear();
-  };
-
-  // Common input styles
-  const inputStyles = {
-    fontSize: '0.9rem',
-    padding: '0.5rem 0.75rem',
-    height: 'auto'
+    if (loading) return; // Prevent double clicks
+    
+    // Call the parent's onClear
+    if (onClear) {
+      onClear();
+    }
   };
 
   return (
@@ -145,32 +171,28 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData, onInputC
           <div className="d-flex align-items-center flex-grow-1">
             <OverlayTrigger
               placement="right"
-              overlay={(props) => (
-                <Tooltip id="filter-tooltip" {...props}>
-                  Click to {isExpanded ? 'collapse' : 'expand'} search for locations
-                </Tooltip>
-              )}
+              overlay={<Tooltip>Click to {isExpanded ? 'collapse' : 'expand'} search for locations</Tooltip>}
             >
               <div 
                 className="d-flex align-items-center" 
                 style={{ cursor: 'pointer' }}
                 onClick={() => setIsExpanded(!isExpanded)}
               >
-                <Filter size={16} className="me-2 text-primary" />
+                <FilterCircle size={16} className="me-2 text-primary" />
                 <h6 className="mb-0 me-2" style={{ fontSize: '1rem' }}>
                   Filter
-                  {Object.values(filters).filter(value => value !== '').length > 0 && (
+                  {Object.values(tempFilters).filter(value => value !== '').length > 0 && (
                     <Badge 
                       bg="primary" 
-                      className="ms-2"
+                      className="ms-2" 
                       style={{ 
-                        fontSize: '0.75rem',
+                        fontSize: '0.75rem', 
                         verticalAlign: 'middle',
                         borderRadius: '12px',
                         padding: '0.25em 0.6em'
                       }}
                     >
-                      {Object.values(filters).filter(value => value !== '').length}
+                      {Object.values(tempFilters).filter(value => value !== '').length}
                     </Badge>
                   )}
                 </h6>
@@ -182,49 +204,50 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData, onInputC
               </div>
             </OverlayTrigger>
 
-            {/* Show address search when not expanded */}
+            {/* Quick search when collapsed */}
             {!isExpanded && (
               <div className="ms-4 flex-grow-1" style={{ maxWidth: '300px' }}>
-                <Form.Group className="mb-2">
+                <Form.Group className="mb-0">
                   <Form.Control
                     size="sm"
                     type="text"
-                    value={filters.address || ''}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Search by address..."
-                    style={inputStyles}
+                    value={tempFilters.quickSearch || ''}
+                    onChange={(e) => handleFilterChange('quickSearch', e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Quick search by Site ID or Site Name..."
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                   />
                 </Form.Group>
               </div>
             )}
           </div>
 
-          <div>
-            <Button 
-              variant="outline-danger" 
+          <div className="d-flex justify-content-end align-items-center gap-2">
+            <Button
+              variant="danger"
               size="sm"
               onClick={handleClear}
-              className="me-2"
               disabled={loading}
-              style={{ fontSize: '0.9rem' }}
+              className="clear-btn d-flex align-items-center"
             >
-              <X size={14} className="me-1" />
+              <FeatherX size={14} className="me-1" />
               Clear
             </Button>
-            
-            <Button 
-              variant="primary" 
+
+            <Button
+              variant="primary"
               size="sm"
-              onClick={handleSearch}
+              onClick={handleSearchClick}
               disabled={loading}
+              className="search-btn d-flex align-items-center"
             >
               <Search size={14} className="me-1" />
-              Search
+              {loading ? 'Searching...' : 'Search'}
             </Button>
           </div>
         </div>
 
+        {/* Expanded filter panel */}
         <div style={{ 
           maxHeight: isExpanded ? '1000px' : '0',
           overflow: 'hidden',
@@ -234,77 +257,61 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData, onInputC
           <Row>
             <Col md={6}>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Customer Name:</Form.Label>
+                <Form.Label className="small mb-1">Site ID:</Form.Label>
                 <Form.Control
                   size="sm"
                   type="text"
-                  value={filters.customerName || ''}
-                  onChange={(e) => handleInputChange('customerName', e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Search by customer name..."
-                  style={inputStyles}
+                  value={tempFilters.siteId}
+                  onChange={(e) => handleFilterChange('siteId', e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Enter site ID..."
                 />
               </Form.Group>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Email:</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="email"
-                  value={filters.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Search by email..."
-                  style={inputStyles}
-                />
-              </Form.Group>
-              <Form.Group className="mb-2">
-                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Phone:</Form.Label>
+                <Form.Label className="small mb-1">Site Name:</Form.Label>
                 <Form.Control
                   size="sm"
                   type="text"
-                  value={filters.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Search by phone number..."
-                  style={inputStyles}
+                  value={tempFilters.siteName}
+                  onChange={(e) => handleFilterChange('siteName', e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Search by site name..."
                 />
               </Form.Group>
             </Col>
             <Col md={6}>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Address:</Form.Label>
+                <Form.Label className="small mb-1">Address:</Form.Label>
                 <Form.Control
                   size="sm"
                   type="text"
-                  value={filters.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Search by address..."
-                  style={inputStyles}
+                  value={tempFilters.address}
+                  onChange={(e) => handleFilterChange('address', e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Search in address..."
                 />
               </Form.Group>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Postal Code:</Form.Label>
+                <Form.Label className="small mb-1">City:</Form.Label>
                 <Form.Control
                   size="sm"
                   type="text"
-                  value={filters.postalCode}
-                  onChange={(e) => handleInputChange('postalCode', e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Search by postal code..."
-                  style={inputStyles}
+                  value={tempFilters.city}
+                  onChange={(e) => handleFilterChange('city', e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Enter city..."
                 />
               </Form.Group>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Country:</Form.Label>
+                <Form.Label className="small mb-1">Country:</Form.Label>
                 <Form.Select
                   size="sm"
-                  value={filters.country}
-                  onChange={(e) => handleInputChange('country', e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  style={inputStyles}
+                  value={tempFilters.country}
+                  onChange={(e) => handleFilterChange('country', e.target.value)}
+                  onKeyDown={handleKeyPress}
                 >
                   <option value="">All Countries</option>
+                  <option value="MY">Malaysia</option>
                   <option value="SG">Singapore</option>
                 </Form.Select>
               </Form.Group>
@@ -316,654 +323,1333 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData, onInputC
   );
 };
 
-const ExpandedComponent = ({ data }) => {
-  // No locations message remains the same
-  if (!data.otherLocations?.length) {
+// Add this new component for the addresses modal
+const AddressesModal = ({ show, onHide, addresses, defaultAddress, billtoDefault, shiptoDefault }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(3); // Default to 3 items
+  
+
+  // Simplified page size options
+  const pageSizeOptions = [3, 5, 10];
+
+  // Filter and split addresses
+  const filteredAddresses = useMemo(() => {
+    const filtered = addresses.filter(address => {
+      const matchesSearch = searchTerm === '' || 
+        Object.values(address).some(value => 
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      
+      const matchesType = filterType === 'all' || 
+        (filterType === 'billing' && address.AddressType === 'bo_BillTo') ||
+        (filterType === 'shipping' && address.AddressType === 'bo_ShipTo');
+
+      return matchesSearch && matchesType;
+    });
+
+    return {
+      billing: filtered.filter(addr => addr.AddressType === 'bo_BillTo'),
+      shipping: filtered.filter(addr => addr.AddressType === 'bo_ShipTo')
+    };
+  }, [addresses, searchTerm, filterType]);
+
+  // Calculate if we should show both columns or just one
+  const showBillingOnly = filterType === 'billing' || (filterType === 'all' && filteredAddresses.shipping.length === 0);
+  const showShippingOnly = filterType === 'shipping' || (filterType === 'all' && filteredAddresses.billing.length === 0);
+  const showBothColumns = !showBillingOnly && !showShippingOnly;
+
+  // Calculate pagination based on visible content
+  const totalPages = Math.ceil(
+    Math.max(
+      showBillingOnly ? filteredAddresses.billing.length : 0,
+      showShippingOnly ? filteredAddresses.shipping.length : 0,
+      showBothColumns ? Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length) : 0
+    ) / itemsPerPage
+  );
+
+  // Get current page items
+  const getCurrentPageItems = (items) => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return items.slice(start, start + itemsPerPage);
+  };
+
+  const AddressTable = ({ addresses, type, billtoDefault, shiptoDefault }) => {
+    console.log('AddressTable Props:', {
+      type,
+      billtoDefault,
+      shiptoDefault,
+      addresses: addresses.map(a => ({
+        AddressName: a.AddressName,
+        AddressType: a.AddressType,
+        isDefault: type === 'shipping' ? 
+          a.AddressName === shiptoDefault : 
+          a.AddressName === billtoDefault
+      }))
+    });
+
     return (
-      <div className="p-4 text-center text-muted">
-        <i>No additional locations found</i>
+      <div className="table-responsive" onClick={(e) => e.stopPropagation()}>
+        <table className="table table-hover">
+          <thead>
+            <tr>
+              <th>
+                {type === 'billing' ? (
+                  <div className="d-flex align-items-center">
+                    <CurrencyExchange className="me-2" size={14} />
+                    Building
+                  </div>
+                ) : (
+                  <div className="d-flex align-items-center">
+                    <GeoAltFill className="me-2" size={14} />
+                    Building
+                  </div>
+                )}
+              </th>
+              <th>Address</th>
+              <th>Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            {addresses.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="text-center py-4">
+                  <div className="text-muted">
+                    {type === 'billing' ? (
+                      <div className="d-flex align-items-center justify-content-center">
+                        <CurrencyExchange className="me-2" size={14} />
+                        No billing addresses found
+                      </div>
+                    ) : (
+                      <div className="d-flex align-items-center justify-content-center">
+                        <GeoAltFill className="me-2" size={14} />
+                        No shipping addresses found
+                      </div>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              getCurrentPageItems(addresses).map((address, index) => (
+                <tr key={index}>
+                  <td>
+                    <div className="d-flex align-items-center">
+                      {type === 'billing' ? (
+                        <CurrencyExchange className="me-2 text-primary" size={14} />
+                      ) : (
+                        <GeoAltFill className="me-2 text-primary" size={14} />
+                      )}
+                      <span className="fw-bold text-primary">
+                        {address.AddressName || '-'}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-wrap" style={{ maxWidth: '200px' }}>
+                      <HouseFill className="me-2 text-muted" size={14} />
+                      {[
+                        address.BuildingFloorRoom && address.BuildingFloorRoom !== address.AddressName ? address.BuildingFloorRoom : null,
+                        address.Street,
+                        address.ZipCode,
+                        address.Country === 'SG' ? 'Singapore' : address.Country
+                      ].filter(Boolean).join(', ')}
+                    </div>
+                  </td>
+                  <td>
+                    {type === 'billing' && address.AddressName === billtoDefault && (
+                      <Badge bg="primary" className="d-flex align-items-center" style={{ width: 'fit-content' }}>
+                        <CheckCircleFill className="me-1" size={12} />
+                        Default
+                      </Badge>
+                    )}
+                    {type === 'shipping' && address.AddressName === shiptoDefault && (
+                      <Badge bg="primary" className="d-flex align-items-center" style={{ width: 'fit-content' }}>
+                        <CheckCircleFill className="me-1" size={12} />
+                        Default
+                      </Badge>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     );
-  }
+  };
 
   return (
-    <div className="px-4 py-3">
-      {data.otherLocations?.map((location, index) => (
-        <div 
-          key={index} 
-          className={`py-2 ${index !== data.otherLocations.length - 1 ? 'border-bottom' : ''}`}
-        >
-          <div className="d-flex" style={{ paddingLeft: '80px' }}>
-            <div style={{ minWidth: '290px' }}></div>
-            
-            {/* Address Column with informative tooltip */}
-            <div className="flex-grow-2" style={{ minWidth: '300px' }}>
-              <OverlayTrigger
-                placement="top"
-                overlay={(props) => (
-                  <Tooltip id={`address-tooltip-${index}`} {...props}>
-                    Additional service location for {data.CustomerName}
-                  </Tooltip>
-                )}
+    <Modal 
+      show={show} 
+      onHide={onHide} 
+      size="xl" 
+      onClick={(e) => e.stopPropagation()}
+    >
+      <Modal.Header closeButton onClick={(e) => e.stopPropagation()}>
+        <Modal.Title>
+          <Search size={18} className="me-2" />
+          All Addresses
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body onClick={(e) => e.stopPropagation()}>
+        {/* Search and Filter Controls */}
+        <div className="mb-3">
+          <Row className="g-2">
+            <Col md={8}>
+              <Form.Group>
+                <div className="position-relative">
+                  <Form.Control
+                    type="text"
+                    placeholder="Search addresses..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    size="sm"
+                  />
+                  <Search 
+                    size={14} 
+                    className="position-absolute" 
+                    style={{ 
+                      top: '50%', 
+                      right: '10px', 
+                      transform: 'translateY(-50%)',
+                      color: '#6c757d'
+                    }}
+                  />
+                </div>
+              </Form.Group>
+            </Col>
+            <Col md={2}>
+              <Form.Select 
+                size="sm"
+                value={filterType}
+                onChange={(e) => {
+                  setFilterType(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
-                <div className="d-flex align-items-center">
-                  <HouseFill className="me-2 flex-shrink-0 text-primary" />
-                  <span className="text-wrap">
-                    {[
-                      location.Address1,
-                      location.Address2,
-                      location.Address3,
-                      location.PostalCode,
-                    ].filter(Boolean).join(', ')}
-                  </span>
-                  {location.Country && (
-                    <div className="ms-2 flex-shrink-0">
-                      {COUNTRY_CODE_MAP[location.Country] === 'SG' && 
-                        <SGFlag style={{ width: '16px' }} />}
-                    </div>
-                  )}
-                </div>
-              </OverlayTrigger>
-            </div>
-            <div style={{ minWidth: '225px' }}></div>
+                <option value="all">All Types</option>
+                <option value="billing">Billing Only</option>
+                <option value="shipping">Shipping Only</option>
+              </Form.Select>
+            </Col>
+            <Col md={2}>
+              <div className="d-flex align-items-center">
+                <small className="text-muted me-2">Show:</small>
+                <Form.Select
+                  size="sm"
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  style={{ width: '70px' }}
+                >
+                  {pageSizeOptions.map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </Form.Select>
+              </div>
+            </Col>
+          </Row>
+        </div>
 
-            {/* Contact Information with helpful tooltips */}
-            <div className="d-flex align-items-center gap-3" style={{ minWidth: '400px' }}>
-              {(location.Phone1 || location.Phone2) && (
-                <div className="d-flex align-items-center gap-2">
-                  <OverlayTrigger
-                    placement="top"
-                    overlay={(props) => (
-                      <Tooltip id={`phone-tooltip-${index}`} {...props}>
-                        Alternative contact number for this location
-                      </Tooltip>
-                    )}
-                  >
-                    <div className="d-flex align-items-center">
-                      <TelephoneFill className="text-muted me-2" size={14} />
-                      <div>
-                        {location.Phone1 && (
-                          <a href={`tel:${location.Phone1}`} className="text-decoration-none me-2">
-                            {location.Phone1}
-                          </a>
-                        )}
-                        {location.Phone2 && (
-                          <a href={`tel:${location.Phone2}`} className="text-decoration-none">
-                            {location.Phone2}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </OverlayTrigger>
-                </div>
-              )}
-              {location.EmailAddress && (
-                <div className="d-flex align-items-center gap-2">
-                  <OverlayTrigger
-                    placement="top"
-                    overlay={(props) => (
-                      <Tooltip id={`email-tooltip-${index}`} {...props}>
-                        Contact email for this service location
-                      </Tooltip>
-                    )}
-                  >
-                    <div className="d-flex align-items-center">
-                      <EnvelopeFill className="text-muted me-2" size={14} />
-                      <a href={`mailto:${location.EmailAddress}`} className="text-decoration-none text-truncate">
-                        {location.EmailAddress}
-                      </a>
-                    </div>
-                  </OverlayTrigger>
-                </div>
-              )}
+        {/* Results Summary */}
+        <div className="mb-3 text-muted small d-flex align-items-center">
+          <FilterCircle size={14} className="me-2" />
+          Found {filteredAddresses.billing.length} billing and {filteredAddresses.shipping.length} shipping addresses
+        </div>
+
+        {/* Dynamic Content */}
+        <Row>
+          {getCurrentPageItems(filteredAddresses.billing).length > 0 && (filterType === 'all' || filterType === 'billing') && (
+            <Col md={6} className="border-end">
+              <h6 className="mb-3 d-flex align-items-center">
+                <CurrencyExchange className="me-2" />
+                Billing Addresses
+                <Badge bg="secondary" className="ms-2">
+                  {filteredAddresses.billing.length}
+                </Badge>
+              </h6>
+              <AddressTable 
+                addresses={filteredAddresses.billing} 
+                type="billing"
+                billtoDefault={billtoDefault}
+                shiptoDefault={shiptoDefault}
+              />
+            </Col>
+          )}
+
+          {(filterType === 'all' || filterType === 'shipping') && (
+            <Col md={getCurrentPageItems(filteredAddresses.billing).length > 0 ? 6 : 12}>
+              <h6 className="mb-3 d-flex align-items-center">
+                <GeoAltFill className="me-2" />
+                Shipping Addresses
+                <Badge bg="secondary" className="ms-2">
+                  {filteredAddresses.shipping.length}
+                </Badge>
+              </h6>
+              <AddressTable 
+                addresses={filteredAddresses.shipping}
+                type="shipping"
+                billtoDefault={billtoDefault}
+                shiptoDefault={shiptoDefault}
+              />
+            </Col>
+          )}
+
+          {filteredAddresses.billing.length === 0 && filteredAddresses.shipping.length === 0 && (
+            <Col md={12}>
+              <div className="text-center py-4 text-muted">
+                <Search size={20} className="mb-2" />
+                <p>No addresses found matching your search criteria</p>
+              </div>
+            </Col>
+          )}
+        </Row>
+
+        {/* Updated Pagination Info */}
+        {totalPages > 1 && (
+          <div className="d-flex justify-content-between align-items-center mt-4">
+            <div className="text-muted small">
+              <ListUl size={14} className="me-2" />
+              {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length))} of {Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length)}
+            </div>
+            <div className="d-flex align-items-center">
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="me-2"
+              >
+                <ChevronLeft size={14} className="me-1" />
+                Previous
+              </Button>
+              <div className="mx-3 d-flex align-items-center">
+                <Calendar size={14} className="me-2" />
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <FeatherChevronRight size={14} className="ms-1" />
+              </Button>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        )}
+      </Modal.Body>
+      <Modal.Footer onClick={(e) => e.stopPropagation()}>
+        <Button variant="secondary" onClick={(e) => {
+          e.stopPropagation();
+          onHide();
+        }}>
+          <XLg size={14} className="me-1" />
+          Close
+        </Button>
+      </Modal.Footer>
+    </Modal>
   );
 };
-// const ExpandedComponent = ({ data }) => {
-//   if (!data.otherLocations?.length) {
-//     return (
-//       <div className="p-4 text-center text-muted">
-//         <i>No additional locations found</i>
-//       </div>
-//     );
-//   }
 
-//   return (
-//     <div className="px-4 py-3">
-//       {data.otherLocations?.map((location, index) => (
-//         <div 
-//           key={index} 
-//           className={`py-2 ${index !== data.otherLocations.length - 1 ? 'border-bottom' : ''}`}
-//         >
-//           <div className="d-flex" style={{ paddingLeft: '80px' }}>
-//             {/* Customer Name Column - Empty space for alignment */}
-//             <div style={{ minWidth: '290px' }}></div>
-            
-//             {/* Address Column */}
-//             <div className="flex-grow-2" style={{ minWidth: '300px' }}>
-//               <div className="d-flex align-items-center">
-//                 <HouseFill className="me-2 flex-shrink-0 text-primary" />
-//                 <span className="text-wrap">
-//                   {[
-//                     location.Address1,
-//                     location.Address2,
-//                     location.Address3,
-//                     location.PostalCode,
-//                   ].filter(Boolean).join(', ')}
-//                 </span>
-//                 {location.Country && (
-//                   <div className="ms-2 flex-shrink-0">
-//                     {COUNTRY_CODE_MAP[location.Country] === 'SG' && 
-//                       <SGFlag style={{ width: '16px' }} />}
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-//             <div style={{ minWidth: '225px' }}></div>
-//             {/* Contact Column */}
-//             <div className="d-flex align-items-center gap-3" style={{ minWidth: '400px' }}>
-//               {(location.Phone1 || location.Phone2) && (
-//                 <div className="d-flex align-items-center gap-2">
-//                   <TelephoneFill className="text-muted" size={14} />
-//                   <div>
-//                     {location.Phone1 && (
-//                       <a href={`tel:${location.Phone1}`} className="text-decoration-none me-2">
-//                         {location.Phone1}
-//                       </a>
-//                     )}
-//                     {location.Phone2 && (
-//                       <a href={`tel:${location.Phone2}`} className="text-decoration-none">
-//                         {location.Phone2}
-//                       </a>
-//                     )}
-//                   </div>
-//                 </div>
-//               )}
-//               {location.EmailAddress && (
-//                 <div className="d-flex align-items-center gap-2">
-//                   <EnvelopeFill className="text-muted" size={14} />
-//                   <a href={`mailto:${location.EmailAddress}`} className="text-decoration-none text-truncate">
-//                     {location.EmailAddress}
-//                   </a>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//         </div>
-//       ))}
-//     </div>
-//   );
-// };
+// Update the TableRow component to remove click functionality
+const TableRow = memo(({ row }) => {
+  return (
+    <tr>
+      {row.getVisibleCells().map(cell => (
+        <td key={`${row.original.siteId}_${cell.column.id}`}>
+          {flexRender(
+            cell.column.columnDef.cell,
+            cell.getContext()
+          )}
+        </td>
+      ))}
+    </tr>
+  );
+});
 
-const LocationsList = () => {
-  const [locations, setLocations] = useState([]);
+TableRow.displayName = 'TableRow';
+
+const ViewLocations = () => {
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [totalRows, setTotalRows] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
   const [error, setError] = useState(null);
-  const isInitialMount = useRef(true);
-  const loadingRef = useRef(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const router = useRouter();
+  const [perPage, setPerPage] = useState(TABLE_CONFIG.PAGE_SIZES.DEFAULT);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [initialData, setInitialData] = useState([]);
   const [filters, setFilters] = useState({
-    customerCode: '',
-    customerName: '',
-    email: '',
-    phone: '',
+    quickSearch: '',
+    siteId: '',
+    siteName: '',
     address: '',
+    city: '',
     country: '',
     status: ''
   });
-  const [activeFilters, setActiveFilters] = useState({});
-  const [isFilterLoading, setIsFilterLoading] = useState(false);
 
-  // const loadData = useCallback(async (page, currentFilters = {}) => {
-  //   if (loadingRef.current) return;
-  //   loadingRef.current = true;
-  //   setLoading(true);
-  //   setError(null);
-    
-  //   try {
-  //     const { locations, totalCount } = await fetchLocations(page, perPage, currentFilters);
-  //     setLocations(locations);
-  //     setTotalRows(totalCount);
-  //     setCurrentPage(page);
-      
-  //     if (!isInitialMount.current) {
-  //       toast.success(`Showing ${locations.length} of ${totalCount} locations`);
-  //     }
-  //   } catch (err) {
-  //     console.error('Error loading locations:', err);
-  //     const errorMessage = 'Unable to load location data. Please try again later.';
-  //     setError(errorMessage);
-  //     if (!isInitialMount.current) {
-  //       toast.error(errorMessage);
-  //     }
-  //     setLocations([]);
-  //     setTotalRows(0);
-  //   } finally {
-  //     setLoading(false);
-  //     loadingRef.current = false;
-  //     if (isInitialMount.current) {
-  //       isInitialMount.current = false;
-  //     }
-  //   }
-  // }, [perPage]);
+  // Add state for last document (for pagination)
+  const [lastDoc, setLastDoc] = useState(null);
+  const [firstDoc, setFirstDoc] = useState(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-// Modify your loadData function to process multiple locations
-const loadData = useCallback(async (page, currentFilters = {}) => {
-  if (loadingRef.current) return;
-  loadingRef.current = true;
-  setLoading(true);
-  setError(null);
-  
-  try {
-    const { locations, totalCount } = await fetchLocations(page, perPage, currentFilters);
-    
-    // Process locations to group by CustomerName
-    const processedLocations = locations.reduce((acc, location) => {
-      const key = location.CustomerName;
-      if (!acc[key]) {
-        // First location becomes the main record
-        acc[key] = {
-          ...location,
-          otherLocations: []
-        };
-      } else {
-        // Additional locations go into otherLocations array
-        acc[key].otherLocations.push(location);
-      }
-      return acc;
-    }, {});
-
-    const finalLocations = Object.values(processedLocations);
-    setLocations(finalLocations);
-    setTotalRows(totalCount);
-    setCurrentPage(page);
-    
-    if (!isInitialMount.current) {
-      toast.success(`Showing ${finalLocations.length} customers with ${totalCount} total locations`);
-    }
-  } catch (err) {
-    console.error('Error loading locations:', err);
-    const errorMessage = 'Unable to load location data. Please try again later.';
-    setError(errorMessage);
-    if (!isInitialMount.current) {
-      toast.error(errorMessage);
-    }
-    setLocations([]);
-    setTotalRows(0);
-  } finally {
-    setLoading(false);
-    loadingRef.current = false;
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-    }
-  }
-}, [perPage]);
-
-
-  const handleInputChange = useCallback((field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-  }, []);
-
-  const handleFilterSearch = useCallback(async () => {
-    setIsFilterLoading(true);
-    try {
-      const cleanFilters = Object.fromEntries(
-        Object.entries(filters).filter(([_, value]) => value !== '')
-      );
-      
-      console.log('Searching with filters:', cleanFilters);
-      
-      await loadData(1, cleanFilters);
-    } catch (error) {
-      console.error('Search error:', error);
-      toast.error('Failed to perform search');
-    } finally {
-      setIsFilterLoading(false);
-    }
-  }, [loadData, filters]);
-
-  const handleClearFilters = useCallback(() => {
-    const clearedFilters = {
-      customerCode: '',
-      customerName: '',
-      email: '',
-      phone: '',
-      address: '',
-      country: '',
-      status: ''
-    };
-    setFilters(clearedFilters);
-    setCurrentPage(1);
-    loadData(1, clearedFilters);
-  }, [loadData]);
-
-  const handlePageChange = useCallback((page) => {
-    setCurrentPage(page);
-    loadData(page, filters);
-  }, [loadData, filters]);
-
-  const handlePerRowsChange = useCallback(async (newPerPage, page) => {
-    setPerPage(newPerPage);
-    await loadData(page, filters);
-  }, [loadData, filters]);
-
-  useEffect(() => {
-    loadData(1, {});
-  }, [loadData]);
+  const columnHelper = createColumnHelper()
 
   const columns = useMemo(() => [
     {
-      name: '#',
-      selector: (row, index) => ((currentPage - 1) * perPage) + index + 1,
-      width: '50px',
-      compact: true
-    },
-    {
-      name: 'Customer Name',
-      selector: row => row.CustomerName,
-      sortable: true,
-      minWidth: '180px',
-      grow: 1,
-      wrap: true
-    },
-    {
-      name: 'Billing Address',
-      selector: row => row.Address1,
-      sortable: true,
-      minWidth: '300px',
-      grow: 2,
-      wrap: true,
-      cell: row => {
-        const fullAddress = [
-          row.Address1,
-          row.Address2,
-          row.Address3,
-          row.PostalCode,
-          row.Country
-        ].filter(Boolean).join(', ');
-  
-        return (
-          <div className="d-flex align-items-center">
-            <HouseFill className="me-2 flex-shrink-0" />
-            <OverlayTrigger
-              placement="top"
-              overlay={<Tooltip>{fullAddress || 'No address available'}</Tooltip>}
-            >
-              <div className="text-truncate" style={{ maxWidth: '250px' }}>
-                {fullAddress || '-'}
-              </div>
-            </OverlayTrigger>
-            {row.Country && (
-              <div className="ms-2 flex-shrink-0">
-                {COUNTRY_CODE_MAP[row.Country] === 'SG' && <SGFlag style={{ width: '16px' }} />}
-                {COUNTRY_CODE_MAP[row.Country] === 'GB' && <GBFlag style={{ width: '16px' }} />}
-                {COUNTRY_CODE_MAP[row.Country] === 'US' && <USFlag style={{ width: '16px' }} />}
-              </div>
-            )}
-          </div>
-        );
-      }
-    },
-    {
-      name: 'Phone & Email',
-      selector: row => row.Phone1,
-      sortable: true,
-      minWidth: '400px',
-      grow: 2,
-      cell: row => (
-        <div className="d-flex align-items-center gap-3">
-          {(row.Phone1 || row.Phone2) && (
-            <div className="d-flex align-items-center gap-2">
-              <TelephoneFill className="text-muted" />
-              <div>
-                {row.Phone1 && (
-                  <a href={`tel:${row.Phone1}`} className="text-decoration-none me-2">
-                    {row.Phone1}
-                  </a>
-                )}
-                {row.Phone2 && (
-                  <a href={`tel:${row.Phone2}`} className="text-decoration-none">
-                    {row.Phone2}
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-          {row.EmailAddress && (
-            <div className="d-flex align-items-center gap-2">
-              <EnvelopeFill className="text-muted" />
-              <a href={`mailto:${row.EmailAddress}`} className="text-decoration-none text-truncate">
-                {row.EmailAddress}
-              </a>
-            </div>
-          )}
+      accessorKey: 'siteId',
+      header: 'Site ID',
+      size: 100,
+      cell: info => (
+        <div className="d-flex align-items-center">
+          <Building className="me-2" size={14} />
+          <span className="text-primary">{info.getValue()}</span>
         </div>
       )
+    },
+    {
+      accessorKey: 'siteName',
+      header: 'Site Name',
+      size: 200,
+    },
+    {
+      accessorKey: 'streetAddress1',
+      header: 'Address 1',
+      size: 250,
+    },
+    {
+      accessorKey: 'streetAddress2',
+      header: 'Address 2',
+      size: 250,
+    },
+    {
+      accessorKey: 'streetAddress3',
+      header: 'Address 3',
+      size: 200,
+    },
+    {
+      accessorKey: 'city',
+      header: 'City',
+      size: 150,
+    },
+    {
+      accessorKey: 'postalCode',
+      header: 'Postal Code',
+      size: 100,
+    },
+    {
+      accessorKey: 'province',
+      header: 'Province',
+      size: 150,
     }
-  ], [currentPage, perPage]);
+  ], []);
+
+  // Add new state for search loading
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
+
+  const filteredData = useMemo(() => {
+    return data.filter(location => {
+      // Site ID filter
+      const matchesSiteId = !filters.siteId || 
+        location.siteId?.toLowerCase().includes(filters.siteId.toLowerCase());
+
+      // Site Name filter
+      const matchesSiteName = !filters.siteName || 
+        location.siteName?.toLowerCase().includes(filters.siteName.toLowerCase());
+
+      // Address filter (check all address fields)
+      const matchesAddress = !filters.address || (
+        (location.streetAddress1?.toLowerCase().includes(filters.address.toLowerCase()) ||
+        location.streetAddress2?.toLowerCase().includes(filters.address.toLowerCase()) ||
+        location.streetAddress3?.toLowerCase().includes(filters.address.toLowerCase()))
+      );
+
+      // City filter
+      const matchesCity = !filters.city || 
+        location.city?.toLowerCase().includes(filters.city.toLowerCase());
+
+      // Country filter
+      const matchesCountry = !filters.country || 
+        location.country === filters.country;
+
+      // Status filter
+      const matchesStatus = !filters.status || 
+        location.status === filters.status;
+
+      return matchesSiteId && matchesSiteName && matchesAddress && 
+             matchesCity && matchesCountry && matchesStatus;
+    });
+  }, [data, filters]);
+
+  
+
+  // Optimize the table configuration
+  const table = useReactTable({
+    data: filteredData.slice((currentPage - 1) * perPage, currentPage * perPage), // Use perPage here
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    state: {
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize: perPage // Use perPage here
+      }
+    },
+    manualPagination: true,
+    pageCount: Math.ceil(filteredData.length / perPage), // Use perPage here
+  });
+
+  const handleViewDetails = (location) => {
+    console.log('Viewing location:', location);
+    router.push(`/dashboard/locations/view/${location.siteId}`);
+  };
+
+  const handleClearFilters = async () => {
+    setLoading(true);
+    try {
+      // Reset all filters
+      const clearedFilters = {
+        quickSearch: '',
+        siteId: '',
+        siteName: '',
+        address: '',
+        city: '',
+        country: '',
+        status: ''
+      };
+      setFilters(clearedFilters);
+      setCurrentPage(1);
+
+      // Fetch fresh data with limit
+      const locationsRef = collection(db, 'locations');
+      const clearQuery = query(
+        locationsRef,
+        orderBy('siteId', 'asc'),
+        limit(10)
+      );
+
+      const snapshot = await getDocs(clearQuery);
+      const locations = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setData(locations);
+      setTotalRows(locations.length);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setFirstDoc(snapshot.docs[0]);
+      
+      toast.success('Filters cleared successfully');
+    } catch (error) {
+      console.error('Error clearing filters:', error);
+      toast.error('Failed to clear filters');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add this customStyles object near the top of your file
   const customStyles = {
     table: {
       style: {
-        backgroundColor: '#ffffff',
-        borderRadius: '8px',
-        width: '100%',
-        tableLayout: 'fixed'
-      }
+        backgroundColor: "#ffffff",
+        borderRadius: "8px",
+        width: "100%",
+        tableLayout: "fixed",
+      },
     },
     headRow: {
       style: {
-        backgroundColor: '#f8fafc',
-        borderTopLeftRadius: '8px',
-        borderTopRightRadius: '8px',
-        borderBottom: '1px solid #e2e8f0',
-        minHeight: '52px'
-      }
+        backgroundColor: "#f8fafc",
+        borderTopLeftRadius: "8px",
+        borderTopRightRadius: "8px",
+        borderBottom: "1px solid #e2e8f0",
+        minHeight: "52px",
+      },
     },
     headCells: {
       style: {
-        fontSize: '13px',
-        fontWeight: '600',
-        color: '#475569',
-        paddingLeft: '16px',
-        paddingRight: '16px'
-      }
+        fontSize: "13px",
+        fontWeight: "600",
+        color: "#475569",
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
     },
     cells: {
       style: {
-        fontSize: '14px',
-        color: '#64748b',
-        paddingLeft: '16px',
-        paddingRight: '16px',
-        paddingTop: '12px',
-        paddingBottom: '12px'
-      }
+        fontSize: "14px",
+        color: "#64748b",
+        paddingLeft: "16px",
+        paddingRight: "16px",
+        paddingTop: "12px",
+        paddingBottom: "12px",
+      },
     },
     rows: {
       style: {
-        minHeight: '60px',
-        '&:hover': {
-          backgroundColor: '#f1f5f9',
-          cursor: 'pointer',
-          transition: 'all 0.2s'
-        }
-      }
-    },
-    expandableRowsStyle: {
-      backgroundColor: '#f8fafc'
+        minHeight: "60px",
+        "&:hover": {
+          backgroundColor: "#f1f5f9",
+          cursor: "pointer",
+          transition: "all 0.2s",
+        },
+      },
     },
     pagination: {
       style: {
-        borderTop: '1px solid #e2e8f0',
-        minHeight: '56px'
+        borderTop: "1px solid #e2e8f0",
+        minHeight: "56px",
       },
       pageButtonsStyle: {
-        borderRadius: '4px',
-        height: '32px',
-        padding: '4px 8px',
-        margin: '0 4px'
+        borderRadius: "4px",
+        height: "32px",
+        padding: "4px 8px",
+        margin: "0 4px",
+      },
+    },
+  };
+
+
+  const QuickActions = ({ customer }) => (
+    <DropdownButton
+      size="sm"
+      variant="light"
+      title="Actions"
+    >
+      <Dropdown.Item onClick={() => handleViewDetails(customer)}>
+        <Eye size={14} className="me-2" />
+        View Details
+      </Dropdown.Item>
+      <Dropdown.Item onClick={() => handleEditCustomer(customer)}>
+        <Edit size={14} className="me-2" />
+        Edit
+      </Dropdown.Item>
+      <Dropdown.Divider />
+      <Dropdown.Item 
+        className="text-danger"
+        onClick={() => handleDeleteCustomer(customer)}
+      >
+        <Trash size={14} className="me-2" />
+        Delete
+      </Dropdown.Item>
+    </DropdownButton>
+  );
+
+  
+  // Add search handler
+  const PaginationInfo = () => (
+    <div className="text-muted small">
+      Showing {((currentPage - 1) * perPage) + 1} to {Math.min(currentPage * perPage, totalRows)} of {totalRows} entries
+    </div>
+  );
+
+
+  // Add this function to handle per page changes
+  const handlePerRowsChange = useCallback((newPerPage) => {
+    setLoading(true);
+    try {
+      setPerPage(newPerPage);
+      setCurrentPage(1); // Reset to first page when changing items per page
+      
+      // Update the table data
+      const start = 0;
+      const end = Math.min(newPerPage, filteredData.length);
+      const pageData = filteredData.slice(start, end);
+      
+      setData(pageData);
+      setTotalRows(filteredData.length);
+    } catch (error) {
+      console.error('Error changing page size:', error);
+      toast.error('Failed to update page size');
+    } finally {
+      setLoading(false);
+    }
+  }, [filteredData]);
+
+
+  // Add function to load next page
+  const loadNextPage = async () => {
+    if (!lastDoc || isLoadingMore) return;
+    console.log('📥 Loading next page...');
+    setIsLoadingMore(true);
+    
+    try {
+      const locationsRef = collection(db, 'locations');
+      const nextQuery = query(
+        locationsRef,
+        orderBy('siteId', 'asc'),
+        startAfter(lastDoc),
+        limit(10)
+      );
+
+      const snapshot = await getDocs(nextQuery);
+      console.log(`📊 Firebase Reads for next page: ${snapshot.docs.length}`);
+      
+      if (!snapshot.empty) {
+        const newLocations = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setFirstDoc(snapshot.docs[0]);
+        setData(prevData => [...prevData, ...newLocations]);
+        setTotalRows(prevTotal => prevTotal + newLocations.length);
       }
+    } catch (error) {
+      console.error('🚨 Error loading next page:', error);
+      toast.error('Failed to load more locations');
+    } finally {
+      setIsLoadingMore(false);
     }
   };
-  
 
+  // Update the FilterPanel's handleSearch function to work with direct data
+  const handleSearch = async (searchFilters) => {
+    console.log('🔍 Starting search with filters:', searchFilters);
+    setLoading(true);
+    
+    let searchResults = [];
+    let lastDocument = null;
+    let firstDocument = null;
+    let totalReadCount = 0;
 
-  // const customStyles = useMemo(() => ({
-  //   table: {
-  //     style: {
-  //       backgroundColor: '#ffffff',
-  //       borderRadius: '8px',
-  //     }
-  //   },
-  //   headRow: {
-  //     style: {
-  //       backgroundColor: '#f8fafc',
-  //       borderTopLeftRadius: '8px',
-  //       borderTopRightRadius: '8px',
-  //       borderBottom: '1px solid #e2e8f0',
-  //     }
-  //   },
-  //   headCells: {
-  //     style: {
-  //       fontSize: '13px',
-  //       fontWeight: '600',
-  //       color: '#475569',
-  //       paddingTop: '16px',
-  //       paddingBottom: '16px',
-  //     }
-  //   },
-  //   cells: {
-  //     style: {
-  //       fontSize: '14px',
-  //       color: '#64748b',
-  //       paddingTop: '12px',
-  //       paddingBottom: '12px',
-  //     }
-  //   },
-  //   rows: {
-  //     style: {
-  //       '&:hover': {
-  //         backgroundColor: '#f1f5f9',
-  //         cursor: 'pointer',
-  //         transition: 'all 0.2s',
-  //       },
-  //     }
-  //   },
-  //   pagination: {
-  //     style: {
-  //       borderTop: '1px solid #e2e8f0',
-  //     }
-  //   }
-  // }), []);
+    try {
+      const locationsRef = collection(db, 'locations');
+      
+      if (searchFilters.quickSearch) {
+        const searchTerm = searchFilters.quickSearch;
+        console.log('🔎 Performing quick search for:', searchTerm);
+        
+        // First try searching by city
+        let searchQuery = query(
+          locationsRef,
+          where('city', '==', searchTerm),
+          limit(10)
+        );
+
+        let snapshot = await getDocs(searchQuery);
+        totalReadCount += snapshot.docs.length;
+        console.log(`📊 Firebase Reads for city search: ${snapshot.docs.length}`);
+
+        searchResults = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        if (searchResults.length === 0) {
+          // Try searching by siteName
+          searchQuery = query(
+            locationsRef,
+            where('siteName', '>=', searchTerm),
+            where('siteName', '<=', searchTerm + '\uf8ff'),
+            limit(10)
+          );
+
+          snapshot = await getDocs(searchQuery);
+          totalReadCount += snapshot.docs.length;
+          console.log(`📊 Firebase Reads for siteName search: ${snapshot.docs.length}`);
+
+          searchResults = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          if (searchResults.length === 0) {
+            // Try searching by siteId
+            searchQuery = query(
+              locationsRef,
+              where('siteId', '>=', searchTerm.toUpperCase()),
+              where('siteId', '<=', searchTerm.toUpperCase() + '\uf8ff'),
+              limit(10)
+            );
+
+            snapshot = await getDocs(searchQuery);
+            totalReadCount += snapshot.docs.length;
+            console.log(`📊 Firebase Reads for siteId search: ${snapshot.docs.length}`);
+
+            searchResults = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+
+            if (searchResults.length === 0) {
+              // If still no results, get all documents and filter in memory
+              console.log('🔍 Performing full collection search');
+              searchQuery = query(
+                locationsRef,
+                limit(10) // Increase limit for full search
+              );
+
+              snapshot = await getDocs(searchQuery);
+              totalReadCount += snapshot.docs.length;
+              console.log(`📊 Firebase Reads for full search: ${snapshot.docs.length}`);
+
+              searchResults = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              })).filter(location => {
+                const searchTermLower = searchTerm.toLowerCase();
+                const addresses = location.addresses || [];
+                
+                return (
+                  location.city?.toLowerCase().includes(searchTermLower) ||
+                  location.siteName?.toLowerCase().includes(searchTermLower) ||
+                  location.siteId?.toLowerCase().includes(searchTermLower) ||
+                  // Search in address fields
+                  addresses.some(addr => 
+                    addr.street1?.toLowerCase().includes(searchTermLower) ||
+                    addr.street2?.toLowerCase().includes(searchTermLower) ||
+                    addr.street3?.toLowerCase().includes(searchTermLower) ||
+                    addr.city?.toLowerCase().includes(searchTermLower) ||
+                    addr.country?.toLowerCase().includes(searchTermLower)
+                  )
+                );
+              });
+            }
+          }
+        }
+
+        if (searchResults.length > 0) {
+          lastDocument = snapshot.docs[snapshot.docs.length - 1];
+          firstDocument = snapshot.docs[0];
+        }
+      } else {
+        // Detailed filters
+        console.log('🔍 Performing detailed filter search');
+        let searchQuery = query(
+          locationsRef,
+          limit(10)
+        );
+
+        const snapshot = await getDocs(searchQuery);
+        totalReadCount += snapshot.docs.length;
+        console.log(`📊 Firebase Reads for detailed search: ${totalReadCount}`);
+
+        searchResults = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // Apply filters in memory
+        if (Object.values(searchFilters).some(filter => filter)) {
+          searchResults = searchResults.filter(location => {
+            if (searchFilters.siteId && !location.siteId?.toLowerCase().includes(searchFilters.siteId.toLowerCase())) return false;
+            if (searchFilters.siteName && !location.siteName?.toLowerCase().includes(searchFilters.siteName.toLowerCase())) return false;
+            if (searchFilters.address && !(
+              location.address1?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
+              location.address2?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
+              location.address3?.toLowerCase().includes(searchFilters.address.toLowerCase())
+            )) return false;
+            if (searchFilters.city && !location.city?.toLowerCase().includes(searchFilters.city.toLowerCase())) return false;
+            if (searchFilters.country && !location.country?.toLowerCase().includes(searchFilters.country.toLowerCase())) return false;
+            return true;
+          });
+        }
+
+        if (searchResults.length > 0) {
+          lastDocument = snapshot.docs[snapshot.docs.length - 1];
+          firstDocument = snapshot.docs[0];
+        }
+      }
+
+      console.log(`✅ Search completed. Total reads: ${totalReadCount}`);
+
+      // Only update state once at the end
+      if (searchResults.length === 0) {
+        console.log('❌ No results found');
+        toast.error('No results found');
+        // Reset the table
+        setData([]);
+        setTotalRows(0);
+        setLastDoc(null);
+        setFirstDoc(null);
+      } else {
+        // Batch update all state changes
+        console.log(`📊 Updating table with ${searchResults.length} results`);
+        setData(searchResults);
+        setTotalRows(searchResults.length);
+        setLastDoc(lastDocument);
+        setFirstDoc(firstDocument);
+      }
+
+    } catch (error) {
+      console.error('🚨 Search error:', error);
+      toast.error('Failed to search locations');
+      // Reset the table on error
+      setData([]);
+      setTotalRows(0);
+      setLastDoc(null);
+      setFirstDoc(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add this useEffect for initial data load
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      try {
+        const locationsRef = collection(db, 'locations');
+        const initialQuery = query(
+          locationsRef,
+          orderBy('siteId', 'asc'),
+          limit(10)
+        );
+
+        const snapshot = await getDocs(initialQuery);
+        const locations = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setData(locations);
+        setTotalRows(locations.length);
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setFirstDoc(snapshot.docs[0]);
+        setInitialLoad(false);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        toast.error('Failed to load locations');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (initialLoad) {
+      loadInitialData();
+    }
+  }, [initialLoad]);
 
   return (
     <Fragment>
-      <GeeksSEO title="Sites | Vitar - CRM & Calibration Management" />
+      <GeeksSEO title="Locations | VITAR Group" />
       <Row>
-        <Col lg={12}>
-          <ContentHeader
-            title="Service Locations"
-            description="View and manage all service locations across different regions"
-            badgeText="Active Locations"
-            badgeText2={`${totalRows} Total`}
+        <Col lg={12} md={12} sm={12}>
+            <ContentHeader
+            title="Locations List"
+            description="Comprehensive view of all your location sites, including addresses and site details"
+            infoText="Easily search, filter, and manage location sites. Access key information like site IDs, addresses, and location details."
+            badgeText="Location Management"
             breadcrumbItems={[
-              {
-                text: 'Dashboard',
-                link: '/dashboard',
-                icon: <HouseFill className="me-2" size={14} />
+              { 
+                icon: <House className="me-2" size={14} />, 
+                text: 'Dashboard', 
+                link: '/dashboard' 
               },
-              {
-                text: 'Service Locations',
-                icon: <GeoAltFill className="me-2" size={14} />
+              { 
+                icon: <Building className="me-2" size={14} />, 
+                text: 'Locations' 
               }
             ]}
-            customStyles={{
-              marginBottom: '2rem'
+            actionButton={{
+              icon: <FaPlus size={14} />,
+              text: "Create New Location",
+              tooltip: "Start creating a new location site",
+              variant: "light",
+              onClick: () => router.push('/dashboard/locations/create')
             }}
+
           />
         </Col>
       </Row>
       <Row>
+        
         <Col md={12} xs={12} className="mb-5">
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="p-4">
-              {error && <div className="alert alert-danger mb-4">{error}</div>}
-              <FilterPanel
+        <FilterPanel 
                 filters={filters}
                 setFilters={setFilters}
                 onClear={handleClearFilters}
-                loading={loading || isFilterLoading}
-                loadData={handleFilterSearch}
-                onInputChange={handleInputChange}
+                loading={loading}
+                handleSearch={handleSearch}
+                setData={setData}
+                setTotalRows={setTotalRows}
+                initialData={initialData}
               />
-              <DataTable
-                columns={columns}
-                data={locations}
-                pagination
-                paginationServer={false}
-                paginationTotalRows={locations.length}
-                onChangePage={handlePageChange}
-                onChangeRowsPerPage={handlePerRowsChange}
-                paginationPerPage={10}
-                paginationRowsPerPageOptions={[10]}
-                highlightOnHover
-                pointerOnHover
-                progressPending={loading}
-                progressComponent={
-                  <div className="text-center py-5">
-                    <Spinner animation="border" variant="primary" className="me-2" />
-                    <span className="text-muted">Loading locations...</span>
+          <Card className="border-0 shadow-sm">
+            <Card.Body className="p-4">
+              {error && <div className="alert alert-danger mb-4">{error}</div>}
+              
+              
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className="d-flex align-items-center">
+                  <span className="text-muted me-2">Show:</span>
+                  <div className="position-relative" style={{ width: '90px' }}>
+                    <Form.Select
+                      size="sm"
+                      value={perPage}
+                      onChange={(e) => handlePerRowsChange(Number(e.target.value))}
+                      className="me-2"
+                      disabled={loading}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </Form.Select>
                   </div>
-                }
-                customStyles={customStyles}
-                persistTableHead
-                noDataComponent={
-                  <div className="text-center py-5">
-                    <div className="text-muted mb-2">No locations found</div>
-                    <small>Try adjusting your search terms</small>
+                  <span className="text-muted">entries per page</span>
+                </div>
+                <div className="text-muted">
+                  <ListUl size={14} className="me-2" />
+                  {loading ? (
+                    <small>Loading...</small>
+                  ) : (
+                    <PaginationInfo />
+                  )}
+                </div>
+              </div>
+
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead>
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map(header => (
+                          <th 
+                            key={header.id}
+                            style={{
+                              width: header.getSize(),
+                              cursor: header.column.getCanSort() ? 'pointer' : 'default',
+                            }}
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={columns.length} className="text-center py-5">
+                          <div className="d-flex flex-column align-items-center">
+                            <Spinner 
+                              animation="border" 
+                              variant="primary" 
+                              className="mb-2"
+                              style={{ width: '2rem', height: '2rem' }}
+                            />
+                            <div className="text-muted">
+                              {filters.quickSearch ? 'Searching locations...' : 'Loading locations...'}
+                            </div>
+                            <small className="text-muted mt-1">Please wait a moment</small>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      <>
+                        {table.getRowModel().rows.map(row => (
+                          <TableRow key={`row_${row.original.siteId}`} row={row} />
+                        ))}
+                        {data.length === 0 && (
+                          <tr>
+                            <td colSpan={columns.length} className="text-center py-4">
+                              <div className="text-muted">
+                                <div className="mb-2">No locations found</div>
+                                <small>Try adjusting your search criteria</small>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="d-flex justify-content-end mt-3">
+                <PaginationInfo />
+                <div className="d-flex gap-2">
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="d-flex align-items-center gap-1">
+                    {getPageNumbers(currentPage, Math.ceil(filteredData.length / perPage)).map((page, index) => (
+                      page === '...' ? (
+                        <span key={`dot-${index}`} className="px-2 text-muted">...</span>
+                      ) : (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "primary" : "outline-primary"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          style={{ minWidth: '32px' }}
+                        >
+                          {page}
+                        </Button>
+                      )
+                    ))}
                   </div>
-                }
-                paginationComponentOptions={{
-                  noRowsPerPage: true // Hide rows per page selector
-                }}
-                responsive
-                fixedHeader
-                dense
-                expandableRows
-                expandableRowsComponent={ExpandedComponent}
-                expandOnRowClicked
-                expandableRowsHideExpander={false}
-                expandableIcon={{
-                  collapsed: <ChevronRight size={20} className="text-muted" />,
-                  expanded: <ChevronDown size={20} className="text-muted" />
-                }}
-                expandableRowExpanded={row => row.otherLocations?.length > 0}
-              />
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredData.length / perPage), prev + 1))}
+                    disabled={currentPage === Math.ceil(filteredData.length / perPage)}
+                  >
+                    Next
+                    <ChevronRight size={14} className="ms-1" />
+                  </Button>
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
       </Row>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={true}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        limit={3}
-      />
+      <div className="Toaster">
+        
+      </div>
+      <style jsx global>{`
+     
+      /* Create Button Style */
+      .create-customer-button {
+        background-color: #ffffff;
+        color: #4171F5;
+        transition: all 0.2s ease;
+      }
+
+      .create-customer-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .create-customer-button:active {
+        transform: translateY(0);
+      }
+
+      /* Card Animations */
+      .card {
+        transition: all 0.2s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Table Row Hover Effects */
+      .table-row-hover:hover {
+        background-color: #f1f5f9;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Tooltip Styles */
+      .tooltip-inner {
+        max-width: 300px;
+        padding: 8px 12px;
+        background-color: #1e293b;
+        border-radius: 6px;
+        font-size: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .tooltip.show {
+        opacity: 1;
+      }
+
+      /* Navigation Button Styles */
+      .prev-btn,
+      .next-btn {
+        transition: all 0.2s ease;
+      }
+
+      .prev-btn:hover,
+      .next-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .prev-btn:active,
+      .next-btn:active {
+        transform: translateY(0);
+      }
+
+      /* Button wrapper styles */
+      .button-wrapper {
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .button-wrapper.disabled {
+        cursor: not-allowed;
+      }
+
+      .button-wrapper.disabled::before {
+        content: "?";
+        position: absolute;
+        right: -20px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        opacity: 0;
+        transition: all 0.3s ease;
+      }
+
+      .button-wrapper.disabled:hover::before {
+        opacity: 1;
+        right: -24px;
+      }
+
+      .button-wrapper.disabled .custom-button {
+        opacity: 0.7;
+        transform: scale(0.99);
+        box-shadow: none;
+      }
+
+      .custom-button {
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      .custom-button:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      .custom-tooltip {
+        opacity: 0;
+        transition: all 0.3s ease !important;
+      }
+
+      .custom-tooltip.show {
+        opacity: 1 !important;
+      }
+    `}</style>
     </Fragment>
-  );
+  )
+}
+
+export default ViewLocations
+
+// Helper function to format SAP address
+const formatSAPAddress = (address) => {
+    if (!address) return '-';
+    
+    // Format according to SAP B1 address display format
+    let formattedAddress = '';
+    
+    // Building/Floor/Room + Address Name 2 (if exists)
+    if (address.BuildingFloorRoom) {
+      formattedAddress = address.BuildingFloorRoom;
+      if (address.AddressName2) {
+        formattedAddress += ` ${address.AddressName2}`;
+      }
+    }
+    
+    // Add Street and other components
+    const additionalParts = [
+      address.Street && `${address.Street}`,
+      address.ZipCode,
+      address.Country === 'SG' ? 'Singapore' : 
+      address.Country === 'GB' ? 'United Kingdom' : 
+      address.Country === 'US' ? 'United States' : 
+      address.Country
+    ].filter(Boolean);
+    
+    if (additionalParts.length > 0) {
+      formattedAddress += formattedAddress ? `, ${additionalParts.join(', ')}` : additionalParts.join(', ');
+    }
+    
+    return formattedAddress;
+  };
+  
+
+// Country flag component
+const CountryFlag = ({ country }) => {
+  switch (country) {
+    case 'SG':
+      return <SGFlag />;
+    case 'GB':
+      return <GBFlag />;
+    case 'US':
+      return <USFlag />;
+    default:
+      return null;
+  }
 };
 
-export default LocationsList;
+// Add this utility function at the top with your other utility functions
+const copyAddressToClipboard = (address, e) => {
+  e.stopPropagation(); // Prevent cell collapse
+  
+  // Format address for copying
+  const formattedAddress = [
+    address.AddressName,
+    address.BuildingFloorRoom && address.BuildingFloorRoom !== address.AddressName ? address.BuildingFloorRoom : null,
+    address.Street,
+    address.ZipCode,
+    address.Country === 'SG' ? 'Singapore' : address.Country
+  ].filter(Boolean).join(', ');
+
+  navigator.clipboard.writeText(formattedAddress).then(() => {
+    // You could use a toast notification here instead of alert
+    alert('Address copied to clipboard!');
+  }).catch(err => {
+    console.error('Failed to copy address: ', err);
+    alert('Failed to copy address');
+  });
+};
+
+// Add a new validation function
+const validateEmailSearch = (email) => {
+  if (!email) return true; // Empty is valid
+  
+  // Basic email format check
+  const emailRegex = /^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+// Add these toast style constants at the top of your file
+const TOAST_STYLES = {
+  BASE: {
+    background: '#fff',
+    padding: '16px',
+    borderRadius: '4px',
+    maxWidth: '400px'
+  },
+  SUCCESS: {
+    color: '#28a745',
+    borderLeft: '6px solid #28a745'
+  },
+  WARNING: {
+    color: '#856404',
+    borderLeft: '6px solid #ffc107'
+  },
+  ERROR: {
+    color: '#dc3545',
+    borderLeft: '6px solid #dc3545'
+  },
+  LOADING: {
+    color: '#0d6efd',
+    borderLeft: '6px solid #0d6efd'
+  }
+};

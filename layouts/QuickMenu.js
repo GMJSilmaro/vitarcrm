@@ -8,11 +8,9 @@ import SimpleBar from "simplebar-react";
 import { FaBell, FaSearch, FaTimes, FaTasks, FaCalendarAlt, FaFilter, FaStickyNote } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from 'react-toastify';
 import { globalQuickSearch } from '../utils/searchUtils';
 import { GKTippy } from "widgets";
 import DarkLightMode from "layouts/DarkLightMode";
-import NotificationList from "data/Notification";
 import useMounted from "hooks/useMounted";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
@@ -31,63 +29,11 @@ import {
   orderBy,
   getDoc,
 } from "firebase/firestore";
-import DotBadge from "components/bootstrap/DotBadge";
-import { format } from "date-fns";
-import { FaBriefcase, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
-import { getNotifications, updateNotificationCache, invalidateNotificationCache, getUnreadCount } from '../utils/notificationCache';
 import { getCompanyDetails } from '../utils/companyCache';
-import { initializeSessionRenewalCheck, handleSessionError } from '../utils/middlewareClient';
+
 import { useLogo } from '../contexts/LogoContext';
 import debounce from 'lodash/debounce';
-
-const formatNotificationTime = (timestamp) => {
-  try {
-    
-    // Safety check for null/undefined
-    if (!timestamp) {
-      //console.log('Timestamp is null or undefined');
-      return 'Date unavailable';
-    }
-
-    let dateToFormat;
-
-    // Handle different timestamp formats
-    if (timestamp?.toDate && typeof timestamp.toDate === 'function') {
-      try {
-        dateToFormat = timestamp.toDate();
-        //console.log('Firestore timestamp converted to:', dateToFormat);
-      } catch (e) {
-        console.error('Error converting Firestore timestamp:', e);
-        dateToFormat = new Date();
-      }
-    } else if (typeof timestamp === 'number') {
-      dateToFormat = new Date(timestamp);
-      //console.log('Number timestamp converted to:', dateToFormat);
-    } else if (timestamp instanceof Date) {
-      dateToFormat = timestamp;
-     // console.log('Date object:', dateToFormat);
-    } else if (timestamp.seconds) {
-      dateToFormat = new Date(timestamp.seconds * 1000);
-      //console.log('Seconds timestamp converted to:', dateToFormat);
-    } else {
-      //console.log('Using fallback current date');
-      dateToFormat = new Date();
-    }
-
-    // Validate the date before formatting
-    if (isNaN(dateToFormat.getTime())) {
-      console.error('Invalid date object:', dateToFormat);
-      return 'Invalid date';
-    }
-
-    return format(dateToFormat, "MMM d, yyyy h:mm a");
-  } catch (error) {
-    console.error('Error in formatNotificationTime:', error);
-    console.error('Problematic timestamp:', timestamp);
-    return 'Date error';
-  }
-};
 
 const getStatusTag = (type, status) => {
   const statusColors = {
@@ -420,7 +366,6 @@ const DEFAULT_FILTERS = {
 const DEFAULT_STATE = {
   userDetails: null,
   unreadCount: 0,
-  notifications: [],
   searchQuery: '',
   searchResults: [],
   isSearching: false,
@@ -447,34 +392,45 @@ const QuickMenu = ({ children }) => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const { logo, setLogo } = useLogo();
   const isOverviewPage = router.pathname === '/dashboard' || router.pathname === '/';
+  const [workerId, setWorkerId] = useState(null); // Add this state
 
-  // Remove duplicate session renewal hooks
-  useEffect(() => {
-    // Single source of session management
-    const cleanup = initializeSessionRenewalCheck(router);
-    return () => cleanup();
-  }, [router]);
-
-  // Memoize userDetails fetch
   const fetchUserDetails = useCallback(async () => {
     const email = Cookies.get("email");
-    if (email) {
-      try {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", email));
-        const querySnapshot = await getDocs(q);
+    const workerId = Cookies.get("workerId");
+    const uid = Cookies.get("uid");
 
-        if (!querySnapshot.empty) {
-          const userDoc = querySnapshot.docs[0];
-          setUserDetails(userDoc.data());
+    console.log("Cookies:", { email, workerId, uid });
+
+    if (email && workerId && uid) {
+      try {
+        setWorkerId(workerId); // Add this line to set workerId state
+        
+        // Rest of the existing fetchUserDetails code...
+        const userDocRef = doc(db, "users", workerId);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          if (userData.uid === uid) {
+            console.log("Fetched user details:", userData);
+            setUserDetails(userData);
+          } else {
+            console.error("UID mismatch in user document");
+            router.push("/sign-in");
+          }
+        } else {
+          console.log("No user document found with workerId:", workerId);
+          router.push("/sign-in");
         }
       } catch (error) {
         console.error("Error fetching user details:", error.message);
+        router.push("/sign-in");
       }
     } else {
       router.push("/sign-in");
     }
   }, [router]);
+
 
   // Optimize useEffect for userDetails
   useEffect(() => {
@@ -672,86 +628,6 @@ const QuickMenu = ({ children }) => {
     }
   };
 
-  // Add these states for notifications
-  const [notifications, setNotifications] = useState([]);
-  // Get workerId from cookies instead
-  const workerId = Cookies.get('workerId');
-
-  // Add notification loading function
-  const loadNotifications = async () => {
-    try {
-      if (!workerId) return; // Don't load if no worker ID
-      
-      const notificationsRef = collection(db, "notifications");
-      const q = query(
-        notificationsRef,
-        where("workerId", "in", [workerId, "all"]),
-        where("hidden", "==", false),
-        orderBy("timestamp", "desc"),
-        limit(10)
-      );
-
-      const querySnapshot = await getDocs(q);
-      const notificationsList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      setNotifications(notificationsList);
-      const unreadCount = notificationsList.filter(n => !n.read).length;
-      setUnreadCount(unreadCount);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  };
-
-  // Add notification listener effect
-  useEffect(() => {
-    if (!workerId) return; // Don't set up listener if no worker ID
-
-    const notificationsRef = collection(db, "notifications");
-    const q = query(
-      notificationsRef,
-      where("workerId", "in", [workerId, "all"]),
-      where("hidden", "==", false),
-      orderBy("timestamp", "desc"),
-      limit(10)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const changes = snapshot.docChanges();
-      if (changes.length > 0) {
-        loadNotifications();
-      }
-    });
-
-    // Initial load
-    loadNotifications();
-
-    return () => unsubscribe();
-  }, [workerId]); // Add workerId as dependency
-
-  // Add mark all as read function
-  const markAllAsRead = async () => {
-    try {
-      const batch = writeBatch(db);
-      notifications.forEach(notification => {
-        if (!notification.read) {
-          const notificationRef = doc(db, "notifications", notification.id);
-          batch.update(notificationRef, { read: true });
-        }
-      });
-      await batch.commit();
-      
-      // Update local state
-      setNotifications(notifications.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking notifications as read:', error);
-    }
-  };
 
   // Add debounced search function
   const debouncedSearch = useCallback(
@@ -974,84 +850,84 @@ const QuickMenu = ({ children }) => {
     }
   });
 
-  useEffect(() => {
-    if (!workerId) return;
+  // useEffect(() => {
+  //   if (!workerId) return;
 
-    const fetchFollowUps = async () => {
-      try {
-        // Query jobs with follow-ups
-        const jobsRef = collection(db, "jobs");
-        const q = query(
-          jobsRef,
-          where("followUpCount", ">", 0),
-          orderBy("lastFollowUp", "desc")
-        );
+  //   const fetchFollowUps = async () => {
+  //     try {
+  //       // Query jobs with follow-ups
+  //       const jobsRef = collection(db, "jobs");
+  //       const q = query(
+  //         jobsRef,
+  //         where("followUpCount", ">", 0),
+  //         orderBy("lastFollowUp", "desc")
+  //       );
 
-        // console.log('Starting follow-ups fetch...'); // Debug log 1
+  //       // console.log('Starting follow-ups fetch...'); // Debug log 1
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          // console.log('Jobs snapshot received:', snapshot.size, 'documents'); // Debug log 2
+  //       const unsubscribe = onSnapshot(q, (snapshot) => {
+  //         // console.log('Jobs snapshot received:', snapshot.size, 'documents'); // Debug log 2
           
-          let allFollowUps = [];
+  //         let allFollowUps = [];
 
-          snapshot.docs.forEach(doc => {
-            const jobData = doc.data();
-            // console.log('Processing job:', jobData.jobID); // Debug log 3
-            // console.log('Job followUps:', jobData.followUps); // Debug log 4
+  //         snapshot.docs.forEach(doc => {
+  //           const jobData = doc.data();
+  //           // console.log('Processing job:', jobData.jobID); // Debug log 3
+  //           // console.log('Job followUps:', jobData.followUps); // Debug log 4
             
-            if (jobData.followUps) {
-              Object.entries(jobData.followUps).forEach(([followUpId, followUp]) => {
-                // console.log('Processing followUp:', followUpId, followUp); // Debug log 5
+  //           if (jobData.followUps) {
+  //             Object.entries(jobData.followUps).forEach(([followUpId, followUp]) => {
+  //               // console.log('Processing followUp:', followUpId, followUp); // Debug log 5
 
-                const statusMatch = filters.status === 'all' || followUp.status === filters.status;
-                const typeMatch = filters.type === 'all' || followUp.type === filters.type;
+  //               const statusMatch = filters.status === 'all' || followUp.status === filters.status;
+  //               const typeMatch = filters.type === 'all' || followUp.type === filters.type;
                 
-                let dateMatch = true;
-                if (filters.dateRange.start && filters.dateRange.end) {
-                  const followUpDate = new Date(followUp.createdAt);
-                  const startDate = new Date(filters.dateRange.start);
-                  const endDate = new Date(filters.dateRange.end);
-                  dateMatch = followUpDate >= startDate && followUpDate <= endDate;
-                }
+  //               let dateMatch = true;
+  //               if (filters.dateRange.start && filters.dateRange.end) {
+  //                 const followUpDate = new Date(followUp.createdAt);
+  //                 const startDate = new Date(filters.dateRange.start);
+  //                 const endDate = new Date(filters.dateRange.end);
+  //                 dateMatch = followUpDate >= startDate && followUpDate <= endDate;
+  //               }
 
-                // console.log('Filter matches:', { // Debug log 6
-                //   statusMatch,
-                //   typeMatch,
-                //   dateMatch,
-                //   currentFilters: filters,
-                //   followUpStatus: followUp.status,
-                //   followUpType: followUp.type,
-                //   followUpDate: followUp.createdAt
-                // });
+  //               // console.log('Filter matches:', { // Debug log 6
+  //               //   statusMatch,
+  //               //   typeMatch,
+  //               //   dateMatch,
+  //               //   currentFilters: filters,
+  //               //   followUpStatus: followUp.status,
+  //               //   followUpType: followUp.type,
+  //               //   followUpDate: followUp.createdAt
+  //               // });
 
-                if (statusMatch && typeMatch && dateMatch) {
-                  allFollowUps.push({
-                    id: followUpId,
-                    ...followUp,
-                    jobID: jobData.jobID,
-                    jobName: jobData.jobName,
-                    customerName: jobData.customerName,
-                    customerID: jobData.customerID
-                  });
-                }
-              });
-            }
-          });
+  //               if (statusMatch && typeMatch && dateMatch) {
+  //                 allFollowUps.push({
+  //                   id: followUpId,
+  //                   ...followUp,
+  //                   jobID: jobData.jobID,
+  //                   jobName: jobData.jobName,
+  //                   customerName: jobData.customerName,
+  //                   customerID: jobData.customerID
+  //                 });
+  //               }
+  //             });
+  //           }
+  //         });
 
-          // console.log('Final filtered follow-ups:', allFollowUps); // Debug log 7
-          setFollowUps(allFollowUps);
-          setFollowUpCount(allFollowUps.length);
-        });
+  //         // console.log('Final filtered follow-ups:', allFollowUps); // Debug log 7
+  //         setFollowUps(allFollowUps);
+  //         setFollowUpCount(allFollowUps.length);
+  //       });
 
-        return () => unsubscribe();
-      } catch (error) {
-        console.error("Error fetching follow-ups:", error);
-        toast.error("Error loading follow-ups");
-      }
-    };
+  //       return () => unsubscribe();
+  //     } catch (error) {
+  //       console.error("Error fetching follow-ups:", error);
+  //       toast.error("Error loading follow-ups");
+  //     }
+  //   };
 
-    fetchFollowUps();
-  }, [workerId, filters]); // Add filters as dependency
+  //   fetchFollowUps();
+  // }, [workerId, filters]); // Add filters as dependency
 
   // Update the filter change handler with logging
   const handleFilterChange = (type, value) => {

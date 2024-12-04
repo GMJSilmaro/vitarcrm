@@ -15,20 +15,13 @@ export default async function handler(req, res) {
   }
 
   const auth = getAuth(app);
-  const workerId = req.cookies.workerId;
 
   try {
-   
-
     // Sign out from Firebase
     await auth.signOut();
 
     // List of all cookies to clear
     const cookiesToClear = [
-      'B1SESSION',
-      'B1SESSION_EXPIRY',
-      'ROUTEID',
-      'LAST_ACTIVITY',
       'customToken',
       'email',
       'isAdmin',
@@ -40,35 +33,13 @@ export default async function handler(req, res) {
     const cookieStrings = cookiesToClear.map(cookieName => {
       const options = {
         ...COOKIE_OPTIONS,
-        httpOnly: ['B1SESSION', 'B1SESSION_EXPIRY', 'customToken'].includes(cookieName)
+        httpOnly: ['customToken'].includes(cookieName)
       };
 
       return `${cookieName}=; Path=/; ${options.httpOnly ? 'HttpOnly;' : ''} Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     });
 
     res.setHeader('Set-Cookie', cookieStrings);
-
-    // Try to invalidate SAP B1 session if needed
-    const b1Session = req.cookies.B1SESSION;
-    if (b1Session) {
-      try {
-        await fetch(`${process.env.SAP_SERVICE_LAYER_BASE_URL}Logout`, {
-          method: 'POST',
-          headers: {
-            'Cookie': `B1SESSION=${b1Session}`
-          }
-        });
-
-   
-      } catch (error) {
-        console.warn('Failed to invalidate SAP B1 session:', error);
-        // Log SAP B1 logout failure
-        await serverLogActivity(workerId, 'SAP_B1_LOGOUT_FAILED', {
-          timestamp: new Date().toISOString(),
-          error: error.message
-        });
-      }
-    }
 
     return res.status(200).json({ 
       message: 'Logout successful',
@@ -79,8 +50,7 @@ export default async function handler(req, res) {
   
     // Attempt to clear cookies even if logout fails
     const emergencyCookieClear = [
-      'customToken=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
-      'B1SESSION=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      'customToken=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
     ];
     res.setHeader('Set-Cookie', emergencyCookieClear);
 

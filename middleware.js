@@ -9,6 +9,7 @@ function isStaticPath(pathname) {
     pathname.includes('/fonts/') ||
     pathname.includes('/assets/') ||
     pathname.includes('/media/') ||
+    pathname.includes('/api/') ||
     pathname.endsWith('.js') ||
     pathname.endsWith('.css') ||
     pathname.endsWith('.png') ||
@@ -29,67 +30,39 @@ function isPublicPath(pathname) {
     pathname === '/sign-in' ||
     pathname === '/' ||
     pathname === '/authentication/sign-in' ||
-    pathname.startsWith('/api/auth/') // Allow authentication API routes
+    pathname === '/unauthorized' ||
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/logs/')
   );
 }
 
 export async function middleware(request) {
   const pathname = request.nextUrl.pathname;
 
-  // Skip middleware for static and public paths
+  // Skip static and public paths
   if (isStaticPath(pathname) || isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // For API routes that aren't auth routes, check for authentication
-  if (pathname.startsWith('/api/')) {
-    const hasAuthCookie = request.cookies.get('customToken')?.value;
-    if (!hasAuthCookie) {
-      return new NextResponse(
-        JSON.stringify({ message: 'Authentication required' }),
-        {
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+  const customToken = request.cookies.get('customToken')?.value;
+  const userRole = request.cookies.get('userRole')?.value;
+  const workerId = request.cookies.get('workerId')?.value;
+
+  // Check authentication
+  if (!customToken) {
+    return NextResponse.redirect(new URL('/sign-in', request.url));
+  }
+
+  // Handle worker profile access
+  if (pathname.startsWith('/user/')) {
+    const targetWorkerId = pathname.split('/')[2];
+    const hasAccess = 
+      targetWorkerId === workerId || 
+      ['admin', 'supervisor', 'worker'].includes(userRole);
+
+    if (!hasAccess) {
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
-    return NextResponse.next();
-  }
-
-  // Check essential cookies for non-API routes
-  const essentialCookies = [
-    'customToken',
-    'uid',
-    'workerId',
-    'B1SESSION',
-    'B1SESSION_EXPIRY',
-    'ROUTEID'
-  ];
-
-  const missingCookies = essentialCookies.filter(
-    cookieName => !request.cookies.get(cookieName)?.value
-  );
-
-  if (missingCookies.length > 0) {
-    console.log('Missing essential cookies:', missingCookies);
-    const response = NextResponse.redirect(new URL('/sign-in', request.url));
-    request.cookies.getAll().forEach(cookie => {
-      response.cookies.delete(cookie.name);
-    });
-    return response;
-  }
-
-  // Check session expiry
-  const expiryTime = request.cookies.get('B1SESSION_EXPIRY')?.value;
-  if (expiryTime && Date.now() >= new Date(expiryTime).getTime()) {
-    console.log('Session expired, redirecting to login');
-    const response = NextResponse.redirect(new URL('/sign-in', request.url));
-    request.cookies.getAll().forEach(cookie => {
-      response.cookies.delete(cookie.name);
-    });
-    return response;
   }
 
   return NextResponse.next();

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { Fragment, useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { Col, Row, Card, Button, OverlayTrigger, Tooltip, Badge, Breadcrumb, Placeholder, Spinner, Form, Collapse, Modal } from 'react-bootstrap';
+import { Col, Row, Card, Button, OverlayTrigger, Tooltip, Badge, Breadcrumb, Placeholder, Spinner, Form, Collapse, Modal, DropdownButton, Dropdown } from 'react-bootstrap';
 import { useRouter } from 'next/router';
 import { 
   Eye, 
@@ -19,7 +19,11 @@ import {
   Calendar,
   ListUl,
   House,
-  People
+  People,
+  Building,
+  Edit,
+  Trash,
+  Download
 } from 'react-bootstrap-icons';
 import { GeeksSEO, PageHeading } from 'widgets'
 import moment from 'moment';
@@ -44,261 +48,60 @@ import { TABLE_CONFIG } from 'constants/tableConfig';
 import Link from 'next/link';
 import { FaPlus } from 'react-icons/fa';
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import { db } from '@/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { customerDataFetchers } from '@/utils/customers/dataFetchers';
+import { customerCacheHelpers, CUSTOMER_CACHE_KEYS } from '@/utils/customers/cacheHelpers';
 
+// Add this utility function at the top of your file, before the ViewCustomers component
+const getPageNumbers = (currentPage, totalPages) => {
+  const delta = 2;
+  const range = [];
+  const rangeWithDots = [];
+  let l;
 
-// Define flag components for each country
-const SGFlag = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28.35 18.9" style={{ width: '16px', height: '11px' }}>
-    <rect width="28.35" height="9.45" fill="#EF3340"/>
-    <rect y="9.45" width="28.35" height="9.45" fill="#fff"/>
-    <circle cx="7.087" cy="9.45" r="5.67" fill="#fff"/>
-    <path d="M7.087,5.67l1.147,3.531h3.712L8.959,11.142l1.147,3.531L7.087,13.23L4.069,14.673l1.147-3.531L2.228,9.201h3.712Z" fill="#EF3340"/>
-  </svg>
-);
+  // Always show first page
+  range.push(1);
 
-const GBFlag = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30" style={{ width: '16px', height: '11px' }}>
-    <clipPath id="t">
-      <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z"/>
-    </clipPath>
-    <path d="M0,0 v30 h60 v-30 z" fill="#00247d"/>
-    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6"/>
-    <path d="M0,0 L60,30 M60,0 L0,30" clipPath="url(#t)" stroke="#cf142b" strokeWidth="4"/>
-    <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10"/>
-    <path d="M30,0 v30 M0,15 h60" stroke="#cf142b" strokeWidth="6"/>
-  </svg>
-);
-
-const USFlag = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 100" style={{ width: '16px', height: '11px' }}>
-    <rect width="190" height="100" fill="#bf0a30"/>
-    <rect y="7.69" width="190" height="7.69" fill="#fff"/>
-    <rect y="23.08" width="190" height="7.69" fill="#fff"/>
-    <rect y="38.46" width="190" height="7.69" fill="#fff"/>
-    <rect y="53.85" width="190" height="7.69" fill="#fff"/>
-    <rect y="69.23" width="190" height="7.69" fill="#fff"/>
-    <rect y="84.62" width="190" height="7.69" fill="#fff"/>
-    <rect width="76" height="53.85" fill="#002868"/>
-    <g fill="#fff">
-      {[...Array(9)].map((_, i) => 
-        [...Array(11)].map((_, j) => (
-          <circle key={`star-${i}-${j}`} cx={3.8 + j * 7.6} cy={3.8 + i * 5.38} r="2"/>
-        ))
-      )}
-    </g>
-  </svg>
-);
-
-const COUNTRY_CODE_MAP = {
-  'Singapore': 'SG',
-  'United Kingdom': 'GB',
-  'United States': 'US',
-};
-
-const MAX_VISIBLE_ADDRESSES = 2; // Show first 2 addresses of each type
-
-const copyToClipboard = (text, successMessage = 'Copied!') => {
-  navigator.clipboard.writeText(text).then(() => {
-    alert(successMessage);
-  }).catch(err => {
-    console.error('Failed to copy text: ', err);
-    alert('Failed to copy text');
-  });
-};
-
-const fetchCustomers = async (page = 1, limit = 10, search = '', filters = {}, initialLoad = 'true') => {
-  try {
-    const timestamp = new Date().getTime();
-    
-    // Create a clean params object
-    const params = {
-      page: page.toString(),
-      limit: limit.toString(),
-      search,
-      initialLoad,
-      _: timestamp,
-      ...filters
-    };
-
-    // Debug log
-    console.log('Fetch Parameters:', {
-      page,
-      limit,
-      search,
-      filters,
-      initialLoad
-    });
-
-    const queryParams = new URLSearchParams();
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        queryParams.append(key, value);
-      }
-    });
-    
-    let url = `/api/getCustomersList?${queryParams.toString()}`;
-    
-    console.log('Fetching customers with URL:', url);
-    
-    const response = await fetch(url, {
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Debug log
-    console.log('Received data:', {
-      customerCount: data.customers?.length,
-      totalCount: data.totalCount,
-      requestedLimit: limit
-    });
-
-    return {
-      customers: data.customers || [],
-      totalCount: data.totalCount || 0
-    };
-  } catch (error) {
-    console.error('Fetch error:', error);
-    throw error;
-  }
-};
-
-const formatAddress = (address) => {
-  if (!address) return '-';
-  
-  // Combine address parts in a specific order
-  const addressParts = [];
-  
-  // Add Street and Building (if they exist)
-  if (address.Street) addressParts.push(address.Street);
-  if (address.Building) addressParts.push(address.Building);
-  
-  // Add ZipCode and CountryName at the end
-  const locationParts = [];
-  if (address.ZipCode) locationParts.push(address.ZipCode);
-  if (address.CountryName) locationParts.push(address.CountryName);
-  
-  // Combine all parts
-  return [
-    addressParts.join(' '),
-    locationParts.join(', ')
-  ].filter(Boolean).join(', ');
-};
-
-const formatMainAddress = (address) => {
-  if (!address) return '-';
-  
-  const parts = [
-    address.SiteID,
-    address.Building,
-    address.Block,
-    address.Street,
-    address.City,
-    address.ZipCode,
-    address.CountryName
-  ];
-  
-  return parts.filter(part => part && String(part).trim()).join(', ');
-};
-
-const AddressCell = ({ address, type = "main" }) => {
-  let FlagComponent = null;
-  const countryCode = COUNTRY_CODE_MAP[address.Country];
-  if (countryCode) {
-    switch (countryCode) {
-      case 'SG':
-        FlagComponent = SGFlag;
-        break;
-      case 'GB':
-        FlagComponent = GBFlag;
-        break;
-      case 'US':
-        FlagComponent = USFlag;
-        break;
+  // Calculate range based on current page
+  for (let i = currentPage - delta; i <= currentPage + delta; i++) {
+    if (i > 1 && i < totalPages) {
+      range.push(i);
     }
   }
 
-  // Get icon based on address type
-  const getIcon = () => {
-    switch (type) {
-      case 'billing':
-        return <CurrencyExchange className="me-2 flex-shrink-0" />;
-      case 'shipping':
-        return <GeoAltFill className="me-2 flex-shrink-0" />;
-      default:
-        return <HouseFill className="me-2 flex-shrink-0" />;
+  // Always show last page
+  if (totalPages > 1) {
+    range.push(totalPages);
+  }
+
+  // Add dots where needed
+  for (let i of range) {
+    if (l) {
+      if (i - l === 2) {
+        rangeWithDots.push(l + 1);
+      } else if (i - l !== 1) {
+        rangeWithDots.push('...');
+      }
     }
-  };
+    rangeWithDots.push(i);
+    l = i;
+  }
 
-  // Format address according to SAP arrangement
-  const formattedAddress = [
-    address.SiteID,
-    address.Building,
-    address.Block,
-    address.Street,
-    address.City,
-    address.ZipCode,
-    address.CountryName
-  ].filter(part => part && String(part).trim()).join(', ');
-
-  return (
-    <div className="d-flex align-items-center">
-      {getIcon()}
-      <OverlayTrigger
-        placement="top"
-        overlay={<Tooltip>{formattedAddress || 'No address available'}</Tooltip>}
-      >
-        <div className="text-truncate" style={{ maxWidth: '250px' }}>
-          {formattedAddress || '-'}
-        </div>
-      </OverlayTrigger>
-      {FlagComponent && (
-        <div className="ms-2 flex-shrink-0">
-          <FlagComponent />
-        </div>
-      )}
-    </div>
-  );
+  return rangeWithDots;
 };
 
 const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [tempFilters, setTempFilters] = useState(filters);
+
+  useEffect(() => {
+    // Sync tempFilters with filters whenever filters change
+    setTempFilters(filters);
+  }, [filters]);
 
   const handleFilterChange = (field, value) => {
-    // Input validation based on field type
-    switch (field) {
-      case 'phone':
-        // Only allow numbers and basic phone symbols
-        if (!/^[0-9+\-\s]*$/.test(value)) {
-          return; // Ignore invalid input
-        }
-        break;
-      
-      case 'email':
-        // Allow all email characters
-        if (!/^[a-zA-Z0-9.@]*$/.test(value)) {
-          return; // Ignore invalid input
-        }
-        break;
-      
-      case 'customerCode':
-        // Only allow numbers
-        if (!/^\d*$/.test(value)) {
-          return; // Ignore invalid input
-        }
-        break;
-    }
-
-    console.log(`Filter changed: ${field} = ${value}`); // Debug log
-    setFilters(prev => ({
+    setTempFilters(prev => ({
       ...prev,
       [field]: value
     }));
@@ -306,22 +109,64 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !loading) {
-      loadData(1);
+      e.preventDefault();
+      handleSearch();
     }
   };
 
   const handleSearch = async () => {
     try {
-      // Validate email if present
-      if (filters.email && !validateEmailSearch(filters.email)) {
-        alert('Please enter a valid email address (e.g., example@domain.com)');
+      if (tempFilters.email && !validateEmailSearch(tempFilters.email)) {
+        toast.error('Please enter a valid email address');
         return;
       }
       
-      console.log('Search filters:', filters);
-      await loadData(1);
+      // Apply filters temporarily
+      setFilters(tempFilters);
+      
+      // Load data and check results
+      const customersList = await customerDataFetchers.fetchCustomers();
+      const filteredCustomers = customersList.filter(customer => {
+        const matchesCode = !tempFilters.customerCode || 
+          customer.customerId?.toLowerCase().includes(tempFilters.customerCode.toLowerCase());
+        
+        const matchesName = !tempFilters.customerName || 
+          customer.customerName?.toLowerCase().includes(tempFilters.customerName.toLowerCase());
+        
+        const matchesEmail = !tempFilters.email || 
+          customer.customerContact?.email?.toLowerCase().includes(tempFilters.email.toLowerCase());
+        
+        const matchesPhone = !tempFilters.phone || 
+          customer.customerContact?.phone?.includes(tempFilters.phone);
+        
+        return matchesCode && matchesName && matchesEmail && matchesPhone;
+      });
+
+      // If no results found, revert to previous filters
+      if (filteredCustomers.length === 0) {
+        toast.error('No results found. Reverting to previous search.');
+        setFilters(filters); // Revert to previous filters
+        setTempFilters(filters); // Also reset temp filters
+        await loadData(); // Reload with previous filters
+        return;
+      }
+
+      // If results found, keep the new filters and update data
+      await loadData();
     } catch (error) {
       console.error('Search error:', error);
+      toast.error('Failed to search customers');
+      // Revert filters on error
+      setTempFilters(filters);
+    }
+  };
+
+  const handleClear = () => {
+    if (loading) return; // Prevent double clicks
+    
+    // Call the parent's onClear
+    if (onClear) {
+      onClear();
     }
   };
 
@@ -342,7 +187,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                 <FilterCircle size={16} className="me-2 text-primary" />
                 <h6 className="mb-0 me-2" style={{ fontSize: '1rem' }}>
                   Filter
-                  {Object.values(filters).filter(value => value !== '').length > 0 && (
+                  {Object.values(tempFilters).filter(value => value !== '').length > 0 && (
                     <Badge 
                       bg="primary" 
                       className="ms-2" 
@@ -353,7 +198,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                         padding: '0.25em 0.6em'
                       }}
                     >
-                      {Object.values(filters).filter(value => value !== '').length}
+                      {Object.values(tempFilters).filter(value => value !== '').length}
                     </Badge>
                   )}
                 </h6>
@@ -369,20 +214,15 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
             {!isExpanded && (
               <div className="ms-4 flex-grow-1" style={{ maxWidth: '300px' }}>
                 <Form.Group className="mb-0">
-                  <OverlayTrigger
-                    placement="top"
-                    overlay={<Tooltip>Quick search by customer name!</Tooltip>}
-                  >
-                    <Form.Control
-                      size="sm"
-                      type="text"
-                      value={filters.customerName}
-                      onChange={(e) => handleFilterChange('customerName', e.target.value)}
-                      placeholder="Quick search by customer name Only!..."
-                      style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
-                      onKeyPress={handleKeyPress}
-                    />
-                  </OverlayTrigger>
+                  <Form.Control
+                    size="sm"
+                    type="text"
+                    value={tempFilters.customerName}
+                    onChange={(e) => handleFilterChange('customerName', e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Quick search by customer name..."
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                  />
                 </Form.Group>
               </div>
             )}
@@ -392,7 +232,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
             <Button
               variant="danger"
               size="sm"
-              onClick={onClear}
+              onClick={handleClear}
               disabled={loading}
               className="clear-btn d-flex align-items-center"
             >
@@ -429,7 +269,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                   <Form.Control
                     size="sm"
                     type="text"
-                    value={filters.customerCode}
+                    value={tempFilters.customerCode}
                     onChange={(e) => handleFilterChange('customerCode', e.target.value)}
                     placeholder="Enter customer code..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
@@ -446,7 +286,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                   <Form.Control
                     size="sm"
                     type="text"
-                    value={filters.customerName}
+                    value={tempFilters.customerName}
                     onChange={(e) => handleFilterChange('customerName', e.target.value)}
                     placeholder="Search by customer name..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
@@ -463,13 +303,13 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                   <Form.Control
                     size="sm"
                     type="email"
-                    value={filters.email}
+                    value={tempFilters.email}
                     onChange={(e) => handleFilterChange('email', e.target.value)}
                     placeholder="Enter email address..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
-                        if (!validateEmailSearch(filters.email)) {
+                        if (!validateEmailSearch(tempFilters.email)) {
                           alert('Please enter a valid email address (e.g., example@domain.com)');
                           return;
                         }
@@ -478,7 +318,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                     }}
                   />
                 </OverlayTrigger>
-                {filters.email && !validateEmailSearch(filters.email) && (
+                {tempFilters.email && !validateEmailSearch(tempFilters.email) && (
                   <small className="text-danger d-block mt-1">
                     Please enter a valid email address
                   </small>
@@ -493,7 +333,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                   <Form.Control
                     size="sm"
                     type="text"
-                    value={filters.phone}
+                    value={tempFilters.phone}
                     onChange={(e) => handleFilterChange('phone', e.target.value)}
                     placeholder="Enter phone number..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
@@ -517,14 +357,14 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                   <Form.Control
                     size="sm"
                     type="text"
-                    value={filters.address}
+                    value={tempFilters.address}
                     onChange={(e) => handleFilterChange('address', e.target.value)}
                     placeholder="Search in addresses..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                     onKeyPress={handleKeyPress}
                   />
                 </OverlayTrigger>
-                {filters.address && (
+                {tempFilters.address && (
                   <small className="text-muted d-block mt-1">
                     Searching in both primary and mailing addresses
                   </small>
@@ -538,7 +378,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                 >
                   <Form.Select
                     size="sm"
-                    value={filters.contractStatus}
+                    value={tempFilters.contractStatus}
                     onChange={(e) => handleFilterChange('contractStatus', e.target.value)}
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                     onKeyPress={handleKeyPress}
@@ -559,7 +399,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                     >
                       <Form.Select
                         size="sm"
-                        value={filters.country}
+                        value={tempFilters.country}
                         onChange={(e) => handleFilterChange('country', e.target.value)}
                         style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                         onKeyPress={handleKeyPress}
@@ -579,7 +419,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
                     >
                       <Form.Select
                         size="sm"
-                        value={filters.status}
+                        value={tempFilters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}
                         style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                         onKeyPress={handleKeyPress}
@@ -601,339 +441,7 @@ const FilterPanel = ({ filters, setFilters, onClear, loading, loadData }) => {
   );
 };
 
-// Add this new component for the addresses modal
-const AddressesModal = ({ show, onHide, addresses, defaultAddress, billtoDefault, shiptoDefault }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(3); // Default to 3 items
-
-  // Simplified page size options
-  const pageSizeOptions = [3, 5, 10];
-
-  // Filter and split addresses
-  const filteredAddresses = useMemo(() => {
-    const filtered = addresses.filter(address => {
-      const matchesSearch = searchTerm === '' || 
-        Object.values(address).some(value => 
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      
-      const matchesType = filterType === 'all' || 
-        (filterType === 'billing' && address.AddressType === 'bo_BillTo') ||
-        (filterType === 'shipping' && address.AddressType === 'bo_ShipTo');
-
-      return matchesSearch && matchesType;
-    });
-
-    return {
-      billing: filtered.filter(addr => addr.AddressType === 'bo_BillTo'),
-      shipping: filtered.filter(addr => addr.AddressType === 'bo_ShipTo')
-    };
-  }, [addresses, searchTerm, filterType]);
-
-  // Calculate if we should show both columns or just one
-  const showBillingOnly = filterType === 'billing' || (filterType === 'all' && filteredAddresses.shipping.length === 0);
-  const showShippingOnly = filterType === 'shipping' || (filterType === 'all' && filteredAddresses.billing.length === 0);
-  const showBothColumns = !showBillingOnly && !showShippingOnly;
-
-  // Calculate pagination based on visible content
-  const totalPages = Math.ceil(
-    Math.max(
-      showBillingOnly ? filteredAddresses.billing.length : 0,
-      showShippingOnly ? filteredAddresses.shipping.length : 0,
-      showBothColumns ? Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length) : 0
-    ) / itemsPerPage
-  );
-
-  // Get current page items
-  const getCurrentPageItems = (items) => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return items.slice(start, start + itemsPerPage);
-  };
-
-  const AddressTable = ({ addresses, type, billtoDefault, shiptoDefault }) => {
-    console.log('AddressTable Props:', {
-      type,
-      billtoDefault,
-      shiptoDefault,
-      addresses: addresses.map(a => ({
-        AddressName: a.AddressName,
-        AddressType: a.AddressType,
-        isDefault: type === 'shipping' ? 
-          a.AddressName === shiptoDefault : 
-          a.AddressName === billtoDefault
-      }))
-    });
-
-    return (
-      <div className="table-responsive" onClick={(e) => e.stopPropagation()}>
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th>
-                {type === 'billing' ? (
-                  <div className="d-flex align-items-center">
-                    <CurrencyExchange className="me-2" size={14} />
-                    Building
-                  </div>
-                ) : (
-                  <div className="d-flex align-items-center">
-                    <GeoAltFill className="me-2" size={14} />
-                    Building
-                  </div>
-                )}
-              </th>
-              <th>Address</th>
-              <th>Default</th>
-            </tr>
-          </thead>
-          <tbody>
-            {addresses.length === 0 ? (
-              <tr>
-                <td colSpan="3" className="text-center py-4">
-                  <div className="text-muted">
-                    {type === 'billing' ? (
-                      <div className="d-flex align-items-center justify-content-center">
-                        <CurrencyExchange className="me-2" size={14} />
-                        No billing addresses found
-                      </div>
-                    ) : (
-                      <div className="d-flex align-items-center justify-content-center">
-                        <GeoAltFill className="me-2" size={14} />
-                        No shipping addresses found
-                      </div>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              getCurrentPageItems(addresses).map((address, index) => (
-                <tr key={index}>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      {type === 'billing' ? (
-                        <CurrencyExchange className="me-2 text-primary" size={14} />
-                      ) : (
-                        <GeoAltFill className="me-2 text-primary" size={14} />
-                      )}
-                      <span className="fw-bold text-primary">
-                        {address.AddressName || '-'}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="text-wrap" style={{ maxWidth: '200px' }}>
-                      <HouseFill className="me-2 text-muted" size={14} />
-                      {[
-                        address.BuildingFloorRoom && address.BuildingFloorRoom !== address.AddressName ? address.BuildingFloorRoom : null,
-                        address.Street,
-                        address.ZipCode,
-                        address.Country === 'SG' ? 'Singapore' : address.Country
-                      ].filter(Boolean).join(', ')}
-                    </div>
-                  </td>
-                  <td>
-                    {type === 'billing' && address.AddressName === billtoDefault && (
-                      <Badge bg="primary" className="d-flex align-items-center" style={{ width: 'fit-content' }}>
-                        <CheckCircleFill className="me-1" size={12} />
-                        Default
-                      </Badge>
-                    )}
-                    {type === 'shipping' && address.AddressName === shiptoDefault && (
-                      <Badge bg="primary" className="d-flex align-items-center" style={{ width: 'fit-content' }}>
-                        <CheckCircleFill className="me-1" size={12} />
-                        Default
-                      </Badge>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  return (
-    <Modal 
-      show={show} 
-      onHide={onHide} 
-      size="xl" 
-      onClick={(e) => e.stopPropagation()}
-    >
-      <Modal.Header closeButton onClick={(e) => e.stopPropagation()}>
-        <Modal.Title>
-          <Search size={18} className="me-2" />
-          All Addresses
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body onClick={(e) => e.stopPropagation()}>
-        {/* Search and Filter Controls */}
-        <div className="mb-3">
-          <Row className="g-2">
-            <Col md={8}>
-              <Form.Group>
-                <div className="position-relative">
-                  <Form.Control
-                    type="text"
-                    placeholder="Search addresses..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    size="sm"
-                  />
-                  <Search 
-                    size={14} 
-                    className="position-absolute" 
-                    style={{ 
-                      top: '50%', 
-                      right: '10px', 
-                      transform: 'translateY(-50%)',
-                      color: '#6c757d'
-                    }}
-                  />
-                </div>
-              </Form.Group>
-            </Col>
-            <Col md={2}>
-              <Form.Select 
-                size="sm"
-                value={filterType}
-                onChange={(e) => {
-                  setFilterType(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="all">All Types</option>
-                <option value="billing">Billing Only</option>
-                <option value="shipping">Shipping Only</option>
-              </Form.Select>
-            </Col>
-            <Col md={2}>
-              <div className="d-flex align-items-center">
-                <small className="text-muted me-2">Show:</small>
-                <Form.Select
-                  size="sm"
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  style={{ width: '70px' }}
-                >
-                  {pageSizeOptions.map(size => (
-                    <option key={size} value={size}>{size}</option>
-                  ))}
-                </Form.Select>
-              </div>
-            </Col>
-          </Row>
-        </div>
-
-        {/* Results Summary */}
-        <div className="mb-3 text-muted small d-flex align-items-center">
-          <FilterCircle size={14} className="me-2" />
-          Found {filteredAddresses.billing.length} billing and {filteredAddresses.shipping.length} shipping addresses
-        </div>
-
-        {/* Dynamic Content */}
-        <Row>
-          {getCurrentPageItems(filteredAddresses.billing).length > 0 && (filterType === 'all' || filterType === 'billing') && (
-            <Col md={6} className="border-end">
-              <h6 className="mb-3 d-flex align-items-center">
-                <CurrencyExchange className="me-2" />
-                Billing Addresses
-                <Badge bg="secondary" className="ms-2">
-                  {filteredAddresses.billing.length}
-                </Badge>
-              </h6>
-              <AddressTable 
-                addresses={filteredAddresses.billing} 
-                type="billing"
-                billtoDefault={billtoDefault}
-                shiptoDefault={shiptoDefault}
-              />
-            </Col>
-          )}
-
-          {(filterType === 'all' || filterType === 'shipping') && (
-            <Col md={getCurrentPageItems(filteredAddresses.billing).length > 0 ? 6 : 12}>
-              <h6 className="mb-3 d-flex align-items-center">
-                <GeoAltFill className="me-2" />
-                Shipping Addresses
-                <Badge bg="secondary" className="ms-2">
-                  {filteredAddresses.shipping.length}
-                </Badge>
-              </h6>
-              <AddressTable 
-                addresses={filteredAddresses.shipping}
-                type="shipping"
-                billtoDefault={billtoDefault}
-                shiptoDefault={shiptoDefault}
-              />
-            </Col>
-          )}
-
-          {filteredAddresses.billing.length === 0 && filteredAddresses.shipping.length === 0 && (
-            <Col md={12}>
-              <div className="text-center py-4 text-muted">
-                <Search size={20} className="mb-2" />
-                <p>No addresses found matching your search criteria</p>
-              </div>
-            </Col>
-          )}
-        </Row>
-
-        {/* Updated Pagination Info */}
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-4">
-            <div className="text-muted small">
-              <ListUl size={14} className="me-2" />
-              {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length))} of {Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length)}
-            </div>
-            <div className="d-flex align-items-center">
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="me-2"
-              >
-                <ChevronLeft size={14} className="me-1" />
-                Previous
-              </Button>
-              <div className="mx-3 d-flex align-items-center">
-                <Calendar size={14} className="me-2" />
-                Page {currentPage} of {totalPages}
-              </div>
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-                <FeatherChevronRight size={14} className="ms-1" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal.Body>
-      <Modal.Footer onClick={(e) => e.stopPropagation()}>
-        <Button variant="secondary" onClick={(e) => {
-          e.stopPropagation();
-          onHide();
-        }}>
-          <XLg size={14} className="me-1" />
-          Close
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-};
-
-// Update ViewCustomers component to include filters state
+// Modify the ViewCustomers component to use mock data
 const ViewCustomers = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -954,6 +462,8 @@ const ViewCustomers = () => {
     address: '' 
   });
 
+
+
   const columnHelper = createColumnHelper()
 
   const columns = [
@@ -968,13 +478,16 @@ const ViewCustomers = () => {
       cell: info => (
         <OverlayTrigger
           placement="top"
-          overlay={<Tooltip id={`tooltip-${info.getValue()}`}>Click to copy customer code</Tooltip>}
+          overlay={<Tooltip>Click to copy customer code</Tooltip>}
         >
           <div 
             style={{fontWeight: 'bold', cursor: 'pointer'}} 
-            onClick={() => copyToClipboard(info.getValue(), 'Customer code copied!')}
+            onClick={() => {
+              navigator.clipboard.writeText(info.row.original.CardCode);
+              toast.success('Customer code copied!');
+            }}
           >
-            {info.getValue()}
+            {info.row.original.CardCode}
           </div>
         </OverlayTrigger>
       )
@@ -982,256 +495,77 @@ const ViewCustomers = () => {
     columnHelper.accessor('CardName', {
       header: 'Customer',
       size: 200,
-      cell: info => (
-        <div className="d-flex align-items-center">
-          {info.getValue()}
-        </div>
-      )
+      cell: info => {
+        const customer = info.row.original;
+       // console.log('Rendering customer:', customer); // Debug log
+        return (
+          <div className="d-flex align-items-center">
+            <Building className="me-2 text-primary" size={14} />
+            <span className="fw-bold">
+              {customer.customerName || customer.CardName || 'No Name Available'}
+            </span>
+          </div>
+        );
+      }
     }),
 
     columnHelper.accessor('addresses', {
       header: 'Address Information',
-      size: 400,
+      size: 300,
       cell: info => {
-        const row = info.row.original;
-        const [isExpanded, setIsExpanded] = useState(false);
-        const [showModal, setShowModal] = useState(false);
-        
-        const bpAddresses = row.BPAddresses || [];
-        const billingAddresses = bpAddresses.filter(addr => addr.AddressType === 'bo_BillTo');
-        const shippingAddresses = bpAddresses.filter(addr => addr.AddressType === 'bo_ShipTo');
-        
-        const hasMoreAddresses = billingAddresses.length > MAX_VISIBLE_ADDRESSES || 
-                                shippingAddresses.length > MAX_VISIBLE_ADDRESSES;
-
-        // Find the mail address (default billing address)
-        const mailAddress = billingAddresses.find(addr => addr.Default === 'Y') || billingAddresses[0];
+        const customer = info.row.original;
+        const locations = customer.addresses || [];
+        const defaultLocation = locations.find(loc => loc.isDefault) || locations[0];
 
         return (
-          <div style={{ cursor: 'default' }}>
-            {/* Mail Address Display */}
-            {mailAddress && (
-              <div className="d-flex align-items-center mb-2">
-                <HouseFill className="me-2 flex-shrink-0" />
-                <OverlayTrigger
-                  placement="top"
-                  overlay={<Tooltip>Click to copy address</Tooltip>}
-                >
-                  <div 
-                    className="fw-bold text-primary"
-                    onClick={(e) => copyAddressToClipboard(mailAddress, e)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {mailAddress.AddressName || mailAddress.BuildingFloorRoom || '-'}
+          <div>
+            {defaultLocation ? (
+              <>
+                {/* Site Name with Icon */}
+                <div className="mb-2">
+                  <div className="d-flex align-items-center">
+                    <Building className="me-2 text-primary" size={14} />
+                    <span className="fw-bold text-primary">
+                      {defaultLocation.name || customer.CardName}
+                    </span>
                   </div>
-                </OverlayTrigger>
-                {mailAddress.Country && (
-                  <div className="ms-2">
-                    <CountryFlag country={mailAddress.Country} />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Dropdown Link with Guide Text */}
-            <div 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(!isExpanded);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <OverlayTrigger
-                placement="top"
-                overlay={
-                  <Tooltip>
-                    {isExpanded ? 'Click to collapse address list' : 'Click to expand and view all addresses'}
-                  </Tooltip>
-                }
-              >
-                <div className="d-flex align-items-center">
-                  <FeatherChevronRight 
-                    size={16} 
-                    className="me-2" 
-                    style={{ 
-                      transform: isExpanded ? 'rotate(90deg)' : 'none',
-                      transition: 'transform 0.2s ease'
-                    }} 
-                  />
-                  <span className="text-primary">
-                    {billingAddresses.length} Billing {billingAddresses.length === 1 ? 'Address' : 'Addresses'} & {' '}
-                    {shippingAddresses.length} Shipping {shippingAddresses.length === 1 ? 'Address' : 'Addresses'}
-                  </span>
                 </div>
-              </OverlayTrigger>
-            </div>
 
-            {/* Guide Text */}
-            {!isExpanded && (
-              <small className="text-muted d-block mt-1">
-                <i>Click arrow to view address details</i>
-              </small>
-            )}
-
-            {/* Expandable Content */}
-            <Collapse in={isExpanded}>
-              <div className="mt-2">
-                {/* Billing Addresses Section */}
-                {billingAddresses.length > 0 && (
-                  <div className="mb-3">
-                    <div className="d-flex align-items-center mb-2 border-bottom pb-2">
-                      <CurrencyExchange className="me-2 text-primary" size={16} />
-                      <h6 className="mb-0 fw-bold">Billing Addresses</h6>
-                      <Badge bg="secondary" className="ms-2">{billingAddresses.length}</Badge>
+                {/* Location Address */}
+                <div className="text-muted small">
+                  <div className="d-flex align-items-start">
+                    <GeoAltFill className="me-2 mt-1 text-muted" size={12} />
+                    <div>
+                      {defaultLocation.street}
                     </div>
-                    <small className="text-muted d-block mb-2">
-                      <i>Showing {Math.min(billingAddresses.length, MAX_VISIBLE_ADDRESSES)} of {billingAddresses.length} billing addresses</i>
-                    </small>
-                    {billingAddresses.slice(0, MAX_VISIBLE_ADDRESSES).map((address, index) => (
-                      <div key={index} className="mb-2 ps-3 border-start border-primary border-3">
-                        <div className="d-flex align-items-start">
-                          <div className="flex-grow-1">
-                            <div className="d-flex align-items-center">
-                              <CurrencyExchange className="me-2 text-primary" size={14} />
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Click to copy address</Tooltip>}
-                              >
-                                <span 
-                                  className="fw-bold text-primary"
-                                  onClick={(e) => copyAddressToClipboard(address, e)}
-                                  style={{ cursor: 'pointer' }}
-                                >
-                                  {address.AddressName || '-'}
-                                </span>
-                              </OverlayTrigger>
-                              {address.AddressName === row.BilltoDefault && (
-                                <Badge bg="primary" className="ms-2">Default</Badge>
-                              )}
-                              {address.Country && (
-                                <div className="ms-2">
-                                  <CountryFlag country={address.Country} />
-                                </div>
-                              )}
-                            </div>
-                            <OverlayTrigger
-                              placement="top"
-                              overlay={<Tooltip>Click to copy full address</Tooltip>}
-                            >
-                              <div 
-                                className="ms-4 text-muted"
-                                onClick={(e) => copyAddressToClipboard(address, e)}
-                                style={{ cursor: 'pointer' }}
-                              >
-                                {[
-                                  address.BuildingFloorRoom && address.BuildingFloorRoom !== address.AddressName ? address.BuildingFloorRoom : null,
-                                  address.Street,
-                                  address.ZipCode,
-                                  address.Country === 'SG' ? 'Singapore' : address.Country
-                                ].filter(Boolean).join(', ')}
-                              </div>
-                            </OverlayTrigger>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                )}
+                </div>
 
-                {/* Shipping Addresses Section */}
-                {shippingAddresses.length > 0 && (
-                  <div className="mb-3">
-                    <div className="d-flex align-items-center mb-2 border-bottom pb-2">
-                      <GeoAltFill className="me-2 text-primary" size={16} />
-                      <h6 className="mb-0 fw-bold">Shipping Addresses</h6>
-                      <Badge bg="secondary" className="ms-2">{shippingAddresses.length}</Badge>
-                    </div>
-                    <small className="text-muted d-block mb-2">
-                      <i>Showing {Math.min(shippingAddresses.length, MAX_VISIBLE_ADDRESSES)} of {shippingAddresses.length} shipping addresses</i>
-                    </small>
-                    {shippingAddresses.slice(0, MAX_VISIBLE_ADDRESSES).map((address, index) => (
-                      <div key={index} className="mb-2 ps-3 border-start border-primary border-3">
-                        <div className="d-flex align-items-start">
-                          <div className="flex-grow-1">
-                            <div className="d-flex align-items-center">
-                              <GeoAltFill className="me-2 text-primary" size={14} />
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Click to copy address</Tooltip>}
-                              >
-                                <span 
-                                  className="fw-bold text-primary"
-                                  onClick={(e) => copyAddressToClipboard(address, e)}
-                                  style={{ cursor: 'pointer' }}
-                                >
-                                  {address.AddressName || '-'}
-                                </span>
-                              </OverlayTrigger>
-                              {address.AddressName === row.ShipToDefault && (
-                                <Badge bg="primary" className="ms-2">Default</Badge>
-                              )}
-                              {address.Country && (
-                                <div className="ms-2">
-                                  <CountryFlag country={address.Country} />
-                                </div>
-                              )}
-                            </div>
-                            <OverlayTrigger
-                              placement="top"
-                              overlay={<Tooltip>Click to copy full address</Tooltip>}
-                            >
-                              <div 
-                                className="ms-4 text-muted"
-                                onClick={(e) => copyAddressToClipboard(address, e)}
-                                style={{ cursor: 'pointer' }}
-                              >
-                                {[
-                                  address.BuildingFloorRoom && address.BuildingFloorRoom !== address.AddressName ? address.BuildingFloorRoom : null,
-                                  address.Street,
-                                  address.ZipCode,
-                                  address.Country === 'SG' ? 'Singapore' : address.Country
-                                ].filter(Boolean).join(', ')}
-                              </div>
-                            </OverlayTrigger>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Show More Button with Tooltip */}
-                {hasMoreAddresses && (
-                  <div className="mt-3 border-top pt-2">
-                    <OverlayTrigger
-                      placement="bottom"
-                      overlay={<Tooltip>Click to view all addresses in detail</Tooltip>}
-                    >
-                      <Button
-                        variant="link"
-                        size="md"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowModal(true);
-                        }}
-                        className="p-0"
-                      >
-                        Show All Addresses
-                      </Button>
-                    </OverlayTrigger>
-                  </div>
-                )}
+                {/* Location Count */}
+                <div className="d-flex align-items-center mt-1">
+                  <Badge bg="light" text="dark" className="d-flex align-items-center">
+                    <GeoAltFill className="me-1" size={10} />
+                    {locations.length} Location{locations.length !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+              </>
+            ) : (
+              // No Address Indicator
+              <div className="d-flex flex-column align-items-center py-2">
+                <GeoAltFill className="text-muted mb-2" size={16} />
+                <div className="text-muted small">
+                  No Address Available
+                </div>
+                <Badge 
+                  bg="warning" 
+                  text="dark" 
+                  className="mt-1"
+                  style={{ fontSize: '0.7rem' }}
+                >
+                  Address Required | No Location Found
+                </Badge>
               </div>
-            </Collapse>
-
-            {/* Modal remains unchanged */}
-            <AddressesModal
-              show={showModal}
-              onHide={() => setShowModal(false)}
-              addresses={bpAddresses}
-              billtoDefault={row.BilltoDefault}
-              shiptoDefault={row.ShipToDefault}
-            />
+            )}
           </div>
         );
       }
@@ -1349,99 +683,172 @@ const ViewCustomers = () => {
             placement="left"
             overlay={
               <Tooltip>
-                View complete details for customer #{info.row.original.CardCode}
+                <div className="d-flex flex-column align-items-center">
+                  <span className="mb-1">🚧 Feature Coming Soon</span>
+                  <small className="text-muted">
+                    View details functionality is currently unavailable
+                  </small>
+                </div>
               </Tooltip>
             }
           >
-            <Link
-              href={`/customers/view/${info.row.original.CardCode}`}
-              className="btn btn-primary btn-icon-text btn-sm"
-              style={{ textDecoration: "none" }}
-            >
-              <Eye size={14} className="icon-left" />
-              View
-            </Link>
+            <div className="d-inline-block"> {/* Wrapper div to handle disabled state */}
+              <button
+                disabled
+                className="btn btn-primary btn-icon-text btn-sm"
+                style={{ 
+                  textDecoration: "none", 
+                  cursor: "not-allowed",
+                  opacity: 0.7 
+                }}
+              >
+                <Eye size={14} className="icon-left" />
+                View
+              </button>
+            </div>
           </OverlayTrigger>
         </div>
       )
     }),
   ]
 
+    // Add at the top of your component
+    useEffect(() => {
+      // Setup real-time listeners when component mounts
+      customerDataFetchers.setupRealtimeListeners();
+      
+      // Cleanup listeners when component unmounts
+      return () => {
+        customerDataFetchers.cleanupListeners();
+      };
+    }, []);
+  
+    // Add new state for search loading
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    
+
+  const filteredData = useMemo(() => {
+    return data.filter(customer => {
+      // Customer Code filter
+      const matchesCode = !filters.customerCode || 
+        customer.CardCode?.toLowerCase().includes(filters.customerCode.toLowerCase());
+
+      // Customer Name filter
+      const matchesName = !filters.customerName || 
+        customer.CardName?.toLowerCase().includes(filters.customerName.toLowerCase());
+
+      // Email filter
+      const matchesEmail = !filters.email || 
+        customer.EmailAddress?.toLowerCase().includes(filters.email.toLowerCase());
+
+      // Phone filter
+      const matchesPhone = !filters.phone || 
+        customer.Phone1?.includes(filters.phone);
+
+      // Contract Status filter
+      const matchesContract = !filters.contractStatus || 
+        customer.U_Contract === filters.contractStatus;
+
+      // Country filter (assuming it's in the addresses)
+      const matchesCountry = !filters.country || 
+        customer.addresses?.some(addr => addr.country === filters.country);
+
+      // Status filter
+      const matchesStatus = !filters.status || 
+        customer.status === filters.status;
+
+      // Address search
+      const matchesAddress = !filters.address || 
+        customer.addresses?.some(addr => 
+          addr.street?.toLowerCase().includes(filters.address.toLowerCase()) ||
+          addr.name?.toLowerCase().includes(filters.address.toLowerCase())
+        );
+
+      return matchesCode && matchesName && matchesEmail && matchesPhone && 
+             matchesContract && matchesCountry && matchesStatus && matchesAddress;
+    });
+  }, [data, filters]);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const customersList = await customerDataFetchers.fetchCustomers();
+      
+      // Apply filters only if they exist
+      const filteredCustomers = customersList.filter(customer => {
+        if (!filters.customerCode && 
+            !filters.customerName && 
+            !filters.email && 
+            !filters.phone) {
+          return true; // Show all data if no filters
+        }
+
+        const matchesCode = !filters.customerCode || 
+          customer.customerId?.toLowerCase().includes(filters.customerCode.toLowerCase());
+        
+        const matchesName = !filters.customerName || 
+          customer.customerName?.toLowerCase().includes(filters.customerName.toLowerCase());
+        
+        const matchesEmail = !filters.email || 
+          customer.customerContact?.email?.toLowerCase().includes(filters.email.toLowerCase());
+        
+        const matchesPhone = !filters.phone || 
+          customer.customerContact?.phone?.includes(filters.phone);
+        
+        return matchesCode && matchesName && matchesEmail && matchesPhone;
+      });
+
+      const mappedCustomers = filteredCustomers.map(customer => ({
+        CardCode: customer.customerId || '',
+        CardName: customer.customerName || '',
+        customerName: customer.customerName || '',
+        Phone1: customer.customerContact?.phoneNumber || customer.customerContact?.mobileNumber || '-',
+        EmailAddress: customer.customerContact?.email || '-',
+        U_Contract: customer.contract?.status === 'active' ? 'Y' : 'N',
+        U_ContractStartDate: customer.contract?.startDate,
+        U_ContractEndDate: customer.contract?.endDate,
+        addresses: customer.locations?.map(location => ({
+          type: 'billing',
+          name: location.siteName,
+          street: location.mainAddress,
+          isDefault: location.isDefault,
+          siteId: location.siteId
+        })) || []
+      }));
+
+      setData(mappedCustomers);
+      setTotalRows(mappedCustomers.length);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      setError('Failed to load customers');
+      toast.error('Failed to load customers');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  // Update the table configuration
   const table = useReactTable({
-    data,
+    data: filteredData,  // Use all filtered data
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(), // Add this
     state: {
       pagination: {
         pageIndex: currentPage - 1,
-        pageSize: perPage,
-      },
-    },
-    manualPagination: true,
-    pageCount: Math.ceil(totalRows / perPage),
-    onPaginationChange: updater => {
-      if (typeof updater === 'function') {
-        const newPageIndex = updater({ pageIndex: currentPage - 1, pageSize: perPage }).pageIndex
-        handlePageChange(newPageIndex + 1)
+        pageSize: perPage  // Use perPage instead of hardcoded 10
       }
     },
-  })
-
-  const loadData = useCallback(async (page, forceInitial = false) => {
-    if (loading) return;
-    
-    console.log('LoadData called with:', { page, perPage, forceInitial }); // Debug log
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const apiParams = {
-        ...filters,
-        contractStatus: undefined,
-        U_Contract: filters.contractStatus
-      };
-
-      const activeFilters = Object.fromEntries(
-        Object.entries(apiParams)
-          .filter(([_, value]) => value !== '' && value !== undefined)
-      );
-      
-      const { customers, totalCount } = await fetchCustomers(
-        page,
-        perPage,
-        activeFilters.customerName || '',
-        activeFilters,
-        forceInitial ? 'true' : initialLoad.toString()
-      );
-      
-      setData(customers);
-      setTotalRows(totalCount);
-      
-    } catch (err) {
-      console.error('Error loading customers:', err);
-      setError('Failed to load customers. Please try again.');
-      setData([]);
-      setTotalRows(0);
-    } finally {
-      setLoading(false);
-      setInitialLoad(false);
-    }
-  }, [perPage, initialLoad, filters, loading]);
-
-  // Keep only the initial load effect
-  useEffect(() => {
-    if (initialLoad) {
-      loadData(1);
-    }
-  }, [loadData, initialLoad]);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    loadData(page);
-  };
+    onPaginationChange: setPagination => {
+      const newPagination = setPagination(table.getState().pagination);
+      setCurrentPage(newPagination.pageIndex + 1);
+      setPerPage(newPagination.pageSize);
+    },
+    manualPagination: false,  // Set to false to let the table handle pagination
+    pageCount: Math.ceil(filteredData.length / perPage),
+  });
 
   const handleViewDetails = (customer) => {
     console.log('Viewing customer:', customer); // Debug log
@@ -1449,100 +856,13 @@ const ViewCustomers = () => {
     router.push(`/customers/view/${customer.CardCode}`);
   };
 
-  const handlePerRowsChange = async (newPerPage) => {
-    // Show loading toast with single spinner
-    const loadingToast = toast.loading(
-      <div className="d-flex align-items-center">
-        <div className="me-3">
-          <div className="fw-bold">Updating View</div>
-          <small>Loading {newPerPage} entries...</small>
-        </div>
-       
-      </div>,
-      {
-        style: {
-          ...TOAST_STYLES.BASE,
-          ...TOAST_STYLES.LOADING
-        }
-      }
-    );
-
-    // Remove the loading state from the dropdown since we have the toast
-    try {
-      setPerPage(newPerPage);
-      setCurrentPage(1);
-
-      const apiParams = {
-        ...filters,
-        contractStatus: undefined,
-        U_Contract: filters.contractStatus
-      };
-
-      const activeFilters = Object.fromEntries(
-        Object.entries(apiParams)
-          .filter(([_, value]) => value !== '' && value !== undefined)
-      );
-
-      const { customers, totalCount } = await fetchCustomers(
-        1,
-        newPerPage,
-        activeFilters.customerName || '',
-        activeFilters,
-        'false'
-      );
-
-      setData(customers);
-      setTotalRows(totalCount);
-
-      // Success toast
-      toast.success(
-        <div>
-          <div className="fw-bold">View Updated Successfully</div>
-          <small>Now showing {newPerPage} entries per page</small>
-          {Object.keys(activeFilters).length > 0 && (
-            <small className="d-block mt-1">
-              <i className="fas fa-filter me-1"></i>
-              Maintained {Object.keys(activeFilters).length} active filter{Object.keys(activeFilters).length !== 1 ? 's' : ''}
-            </small>
-          )}
-        </div>,
-        {
-          duration: 5000,
-          style: {
-            ...TOAST_STYLES.BASE,
-            ...TOAST_STYLES.SUCCESS
-          }
-        }
-      );
-
-    } catch (err) {
-      console.error('Error updating page size:', err);
-      
-      toast.error(
-        <div>
-          <div className="fw-bold">Update Failed</div>
-          <small>Could not change the number of entries</small>
-          <small className="d-block mt-1 text-danger">
-            <i className="fas fa-exclamation-circle me-1"></i>
-            {err.message}
-          </small>
-        </div>,
-        {
-          duration: 5000,
-          style: {
-            ...TOAST_STYLES.BASE,
-            ...TOAST_STYLES.ERROR
-          }
-        }
-      );
-    } finally {
-      toast.dismiss(loadingToast);
-      setLoading(false);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
+  const handleClearFilters = useCallback(() => {
+    if (loading) return;
+    
+    setLoading(true);
+    
+    // Clear all filters in one go
+    const clearedFilters = {
       customerCode: '',
       customerName: '',
       email: '',
@@ -1551,77 +871,181 @@ const ViewCustomers = () => {
       country: '',
       status: '',
       address: ''
-    });
+    };
+
+    // Reset everything first
+    setFilters(clearedFilters);
     setCurrentPage(1);
-    setInitialLoad(true);
-    loadData(1, true);
+    
+    // Then load fresh data
+    customerDataFetchers.fetchCustomers()
+      .then(customersList => {
+        const mappedCustomers = customersList.map(customer => ({
+          CardCode: customer.customerId || '',
+          CardName: customer.customerName || '',
+          customerName: customer.customerName || '',
+          Phone1: customer.customerContact?.phoneNumber || customer.customerContact?.mobileNumber || '-',
+          EmailAddress: customer.customerContact?.email || '-',
+          U_Contract: customer.contract?.status === 'active' ? 'Y' : 'N',
+          U_ContractStartDate: customer.contract?.startDate,
+          U_ContractEndDate: customer.contract?.endDate,
+          addresses: customer.locations?.map(location => ({
+            type: 'billing',
+            name: location.siteName,
+            street: location.mainAddress,
+            isDefault: location.isDefault,
+            siteId: location.siteId
+          })) || []
+        }));
+
+        setData(mappedCustomers);
+        setTotalRows(mappedCustomers.length);
+        toast.success('Filters cleared successfully');
+      })
+      .catch(error => {
+        console.error('Error clearing filters:', error);
+        toast.error('Failed to clear filters');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [setCurrentPage, setData, setFilters, setLoading, setTotalRows, loading]);
+
+  // Add useEffect to load data on component mount
+  useEffect(() => {
+    // Clear the cache when component mounts
+    customerCacheHelpers.clear(CUSTOMER_CACHE_KEYS.LIST);
+    customerCacheHelpers.clear(CUSTOMER_CACHE_KEYS.PROCESSED_CUSTOMERS);
+    loadData();
+  }, []);
+
+  // Add quick actions menu
+  const QuickActions = ({ customer }) => (
+    <DropdownButton
+      size="sm"
+      variant="light"
+      title="Actions"
+    >
+      <Dropdown.Item onClick={() => handleViewDetails(customer)}>
+        <Eye size={14} className="me-2" />
+        View Details
+      </Dropdown.Item>
+      <Dropdown.Item onClick={() => handleEditCustomer(customer)}>
+        <Edit size={14} className="me-2" />
+        Edit
+      </Dropdown.Item>
+      <Dropdown.Divider />
+      <Dropdown.Item 
+        className="text-danger"
+        onClick={() => handleDeleteCustomer(customer)}
+      >
+        <Trash size={14} className="me-2" />
+        Delete
+      </Dropdown.Item>
+    </DropdownButton>
+  );
+
+  
+  // Add search handler
+  const handleSearch = async (e) => {
+    if (e.key === 'Enter') {
+      setSearchLoading(true);
+      try {
+        const customersList = await customerDataFetchers.fetchCustomers();
+        const filteredCustomers = customersList.filter(customer => {
+          const searchLower = searchTerm.toLowerCase();
+          return (
+            (customer.customerId || '').toLowerCase().includes(searchLower) ||
+            (customer.customerName || '').toLowerCase().includes(searchLower)
+          );
+        });
+
+        setData(filteredCustomers);
+        setTotalRows(filteredCustomers.length);
+      } catch (error) {
+        console.error('Search error:', error);
+        toast.error('Failed to search customers');
+      } finally {
+
+        setSearchLoading(false);
+      }
+    }
   };
 
-  // Add this customStyles object near the top of your file
-  const customStyles = {
-    table: {
-      style: {
-        backgroundColor: "#ffffff",
-        borderRadius: "8px",
-        width: "100%",
-        tableLayout: "fixed",
-      },
-    },
-    headRow: {
-      style: {
-        backgroundColor: "#f8fafc",
-        borderTopLeftRadius: "8px",
-        borderTopRightRadius: "8px",
-        borderBottom: "1px solid #e2e8f0",
-        minHeight: "52px",
-      },
-    },
-    headCells: {
-      style: {
-        fontSize: "13px",
-        fontWeight: "600",
-        color: "#475569",
-        paddingLeft: "16px",
-        paddingRight: "16px",
-      },
-    },
-    cells: {
-      style: {
-        fontSize: "14px",
-        color: "#64748b",
-        paddingLeft: "16px",
-        paddingRight: "16px",
-        paddingTop: "12px",
-        paddingBottom: "12px",
-      },
-    },
-    rows: {
-      style: {
-        minHeight: "60px",
-        "&:hover": {
-          backgroundColor: "#f1f5f9",
-          cursor: "pointer",
-          transition: "all 0.2s",
-        },
-      },
-    },
-    pagination: {
-      style: {
-        borderTop: "1px solid #e2e8f0",
-        minHeight: "56px",
-      },
-      pageButtonsStyle: {
-        borderRadius: "4px",
-        height: "32px",
-        padding: "4px 8px",
-        margin: "0 4px",
-      },
-    },
+  // Update the search input in your JSX
+  <div className="d-flex align-items-center">
+    <div className="position-relative">
+      <input
+        type="text"
+        className="form-control"
+        placeholder="Search customers..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        onKeyPress={handleSearch}
+      />
+      {searchLoading && (
+        <div className="position-absolute top-50 end-0 translate-middle-y me-2">
+          <Spinner
+            animation="border"
+            size="sm"
+            role="status"
+            aria-hidden="true"
+          />
+        </div>
+      )}
+    </div>
+    <Button 
+      variant="primary" 
+      className="ms-2"
+      onClick={() => handleSearch({ key: 'Enter' })}
+      disabled={searchLoading}
+    >
+      {searchLoading ? (
+        <Spinner
+          as="span"
+          animation="border"
+          size="sm"
+          role="status"
+          aria-hidden="true"
+        />
+      ) : (
+        <Search size={18} />
+      )}
+    </Button>
+  </div>
+
+  // Update the table body rendering to use pagination
+  {table.getRowModel().rows.map(row => (
+    <tr key={row.id}>
+      {row.getVisibleCells().map(cell => (
+        <td key={cell.id}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </td>
+      ))}
+    </tr>
+  ))}
+
+  // Update the pagination info display
+  const PaginationInfo = () => {
+    const { pageSize, pageIndex } = table.getState().pagination;
+    const start = pageIndex * pageSize + 1;
+    const end = Math.min((pageIndex + 1) * pageSize, filteredData.length);
+    
+    return (
+      <div className="text-muted small">
+        Showing {start} to {end} of {filteredData.length} entries
+      </div>
+    );
   };
+
+  // Update handlePerRowsChange
+  const handlePerRowsChange = useCallback((newPerPage) => {
+    table.setPageSize(newPerPage);
+  }, [table]);
 
   return (
     <Fragment>
-      <GeeksSEO title="View Customers | SAS&ME - SAP B1 | Portal" />
+      <GeeksSEO title="Customers | VITAR Group" />
       <Row>
         <Col lg={12} md={12} sm={12}>
             <ContentHeader
@@ -1629,7 +1053,6 @@ const ViewCustomers = () => {
             description="Comprehensive view of all your customer accounts, including contact details, service history, and account status"
             infoText="Easily search, filter, and manage customer profiles. Access key information like contact details, billing addresses, and account representatives. Track customer status and maintain accurate records for all your business relationships."
             badgeText="Customer Management"
-            badgeText2="View Only"
             breadcrumbItems={[
               { 
                 icon: <House className="me-2" size={14} />, 
@@ -1641,20 +1064,14 @@ const ViewCustomers = () => {
                 text: 'Customers' 
               }
             ]}
-            // actionButton={{
-            //   icon: <FaPlus size={14} />,
-            //   text: "Create New Customer",
-            //   tooltip: "Customer creation is managed in SAP Business One",
-            //   disabled: true,
-            //   variant: "light"
-            // }}
-            // Remove or comment out customStyles to use the default red gradient
-            // customStyles={{
-            //   background: 'linear-gradient(90deg, #4171F5 0%, #3DAAF5 100%)',
-            //   marginTop: '-20px',
-            //   marginLeft: '0px',
-            //   marginRight: '0px'
-            // }}
+            actionButton={{
+              icon: <FaPlus size={14} />,
+              text: "Create New Customer",
+              tooltip: "Start creating a new customer masterlist",
+              variant: "light",
+              onClick: () => router.push('/dashboard/customers/create')
+            }}
+
           />
         </Col>
       </Row>
@@ -1696,7 +1113,7 @@ const ViewCustomers = () => {
                   {loading ? (
                     <small>Loading...</small>
                   ) : (
-                    `Showing ${((currentPage - 1) * perPage) + 1}-${Math.min(currentPage * perPage, totalRows)} of ${totalRows}`
+                    <PaginationInfo />
                   )}
                 </div>
               </div>
@@ -1728,64 +1145,91 @@ const ViewCustomers = () => {
                     {loading ? (
                       <tr>
                         <td colSpan={columns.length} className="text-center py-5">
-                          <Spinner animation="border" variant="primary" className="me-2" />
-                          <span className="text-muted">Please wait while fetching all customers...</span>
-                        </td>
-                      </tr>
-                    ) : table.getRowModel().rows.length === 0 ? (
-                      <tr>
-                        <td colSpan={columns.length} className="text-center py-5">
-                          <div className="text-muted mb-2">No customers found</div>
-                          <small>Try adjusting your search terms</small>
+                          <div className="d-flex flex-column align-items-center">
+                            <Spinner 
+                              animation="border" 
+                              variant="primary" 
+                              className="mb-2"
+                              style={{ width: '2rem', height: '2rem' }}
+                            />
+                            <div className="text-muted">
+                              {filters.customerName || filters.customerCode || filters.email || filters.phone ? (
+                                'Searching customers...'
+                              ) : (
+                                'Loading all customers...'
+                              )}
+                            </div>
+                            <small className="text-muted mt-1">
+                              Please wait a moment
+                            </small>
+                          </div>
                         </td>
                       </tr>
                     ) : (
-                      table.getRowModel().rows.map(row => (
-                        <tr key={row.id}>
-                          {row.getVisibleCells().map(cell => (
-                            <td key={cell.id}>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
+                      <>
+                        {table.getRowModel().rows.map(row => (
+                          <tr key={row.id}>
+                            {row.getVisibleCells().map(cell => (
+                              <td key={cell.id}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                        {filteredData.length === 0 && (
+                          <tr>
+                            <td colSpan={columns.length} className="text-center py-4">
+                              <div className="text-muted">
+                                <div className="mb-2">No customers found</div>
+                                <small>Try adjusting your search criteria</small>
+                              </div>
                             </td>
-                          ))}
-                        </tr>
-                      ))
+                          </tr>
+                        )}
+                      </>
                     )}
                   </tbody>
                 </table>
               </div>
 
-              <div className="d-flex justify-content-end mt-4">
-                <Button
-                  variant="light"
-                  size="sm"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="me-2 prev-btn d-flex align-items-center"
-                >
-                  <ChevronLeft size={14} />
-                  <span>Previous</span>
-                </Button>
-
-                <div className="mx-3 d-flex align-items-center">
-                  <Calendar size={14} className="me-2 text-primary" />
-                  <span style={{ fontSize: '14px', color: '#6B7280' }}>
-                    Page {currentPage} of {Math.ceil(totalRows / perPage)}
-                  </span>
+              <div className="d-flex justify-content-end mt-3">
+                <PaginationInfo />
+                <div className="d-flex gap-2">
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <div className="d-flex align-items-center gap-1">
+                    {getPageNumbers(currentPage, Math.ceil(filteredData.length / 10)).map((page, index) => (
+                      page === '...' ? (
+                        <span key={`dot-${index}`} className="px-2 text-muted">...</span>
+                      ) : (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "primary" : "outline-primary"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page)}
+                          style={{ minWidth: '32px' }}
+                        >
+                          {page}
+                        </Button>
+                      )
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredData.length / 10), prev + 1))}
+                    disabled={currentPage === Math.ceil(filteredData.length / 10)}
+                  >
+                    Next
+                    <FeatherChevronRight size={14} className="ms-1" />
+                  </Button>
                 </div>
-
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="btn-primary d-flex align-items-center"
-                >
-                  <span>Next</span>
-                  <ChevronRight size={14} />
-                </Button>
               </div>
             </Card.Body>
           </Card>

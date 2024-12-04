@@ -11,9 +11,7 @@ export async function logMiddlewareActivity(activity, path) {
       body: JSON.stringify({
         activity,
         timestamp: new Date().toISOString(),
-        workerId: document.cookie.split(';')
-          .find(c => c.trim().startsWith('workerId='))
-          ?.split('=')[1] || 'UNKNOWN',
+        workerId: Cookies.get('workerId') || 'UNKNOWN',
         path
       })
     });
@@ -26,135 +24,57 @@ export async function logMiddlewareActivity(activity, path) {
   }
 }
 
-export async function checkAndRenewSession() {
-  try {
-    const expiryTime = getSessionExpiryTime();
-    if (!expiryTime) return;
-
-    const timeRemaining = expiryTime - Date.now();
-    
-    // If less than 5 minutes remaining, renew session silently
-    if (timeRemaining < 5 * 60 * 1000) {
-      console.log('🔄 Silent session renewal initiated');
-      const response = await fetch('/api/renewSAPB1Session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        console.error('❌ Silent session renewal failed');
-        return;
-      }
-
-      const data = await response.json();
-      console.log('✅ Session renewed silently', data);
-    }
-
-    return formatTimeRemaining(timeRemaining);
-  } catch (error) {
-    console.error('❌ Error in session check:', error);
-  }
-}
-
 export async function validateSession() {
   console.log('🔍 Validating session...');
   
-  // Add a small delay to allow cookies to be set
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
   try {
-    const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-      const [key, value] = cookie.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {});
+    // Check essential cookies
+    const essentialCookies = {
+      customToken: Cookies.get('customToken'),
+      uid: Cookies.get('uid'),
+      workerId: Cookies.get('workerId'),
+      userRole: Cookies.get('userRole')
+    };
 
-    console.log('📊 Current cookies:', cookies);
+    // Log current cookie state
+    console.log('🍪 Current cookies:', essentialCookies);
 
-    // Check for essential cookies only
-    const essentialCookies = [
-      'uid',
-      'workerId',
-      'email'
-    ];
-
-    const missingCookies = essentialCookies.filter(
-      cookieName => !cookies[cookieName]
-    );
+    // Check if any essential cookies are missing
+    const missingCookies = Object.entries(essentialCookies)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key);
 
     if (missingCookies.length > 0) {
-      console.log('⚠️ Missing essential cookies:', missingCookies);
+      console.error('⚠️ Missing cookies:', missingCookies);
       return false;
     }
 
-    // If we have essential cookies but missing B1SESSION, wait a bit longer
-    if (!cookies.B1SESSION || !cookies.B1SESSION_EXPIRY) {
-      console.log('⏳ Waiting for B1SESSION cookies...');
-      return true; // Return true to prevent immediate logout
+    // Additional validation for worker routes
+    const pathname = window.location.pathname;
+    if (pathname.startsWith('/user/')) {
+      const urlWorkerId = pathname.split('/')[2];
+      const currentWorkerId = essentialCookies.workerId;
+      const userRole = essentialCookies.userRole;
+
+      // Validate access to worker profile
+      if (urlWorkerId && 
+          urlWorkerId !== currentWorkerId && 
+          !['admin', 'supervisor'].includes(userRole)) {
+        console.error('⚠️ Unauthorized worker profile access');
+        return false;
+      }
     }
 
-    console.log('✅ All cookies present');
     return true;
   } catch (error) {
     console.error('❌ Session validation error:', error);
-    return true; // Return true to prevent immediate logout on error
+    return false;
   }
-}
-
-export const formatTimeRemaining = (timeRemaining) => {
-  if (timeRemaining <= 0) {
-    console.log('⚠️ Timer reached zero or negative:', timeRemaining);
-    return '00:00:00';
-  }
-
-  const totalSeconds = Math.floor(timeRemaining / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-};
-
-export function initializeSessionTimer(setTimeRemaining) {
-  console.log('🎬 Initializing session timer...');
-  
-  const updateTimer = () => {
-    // Get expiry from cookie instead of localStorage
-    const expiryTime = Cookies.get('B1SESSION_EXPIRY');
-    
-    if (!expiryTime) {
-      console.warn('⚠️ No session expiry cookie found');
-      return;
-    }
-
-    const remaining = new Date(expiryTime).getTime() - Date.now();
-    const formattedTime = formatTimeRemaining(remaining);
-    
-    console.log(`⏱️ Timer update: ${formattedTime} (${remaining}ms remaining)`);
-    setTimeRemaining(formattedTime);
-    
-    // Update DOM attribute for global access
-    document.body.setAttribute('data-session-time', formattedTime);
-  };
-
-  // Run initial update
-  updateTimer();
-
-  // Set up interval for updates
-  const timerInterval = setInterval(updateTimer, 1000);
-
-  // Cleanup
-  return () => {
-    console.log('🧹 Timer cleanup completed');
-    clearInterval(timerInterval);
-  };
 }
 
 export async function logActivity(activity, details = {}) {
   try {
-    const baseUrl = window.location.origin; // Get the base URL of your application
+    const baseUrl = window.location.origin;
     const response = await fetch(`${baseUrl}/api/logActivity`, {
       method: 'POST',
       headers: {
@@ -175,101 +95,30 @@ export async function logActivity(activity, details = {}) {
   }
 }
 
-// Initialize session renewal check
-export const initializeSessionRenewalCheck = (router) => {
-  console.log('🚀 Initializing session renewal check');
-  let isRenewing = false;
+// Initialize session check with configurable interval
+export const initializeSessionRenewalCheck = (router, interval = 30000) => {
+  console.log('🚀 Initializing session check');
   
-  const updateTimerDisplay = () => {
-    const expiryTime = Cookies.get('B1SESSION_EXPIRY');
-    
-    if (!expiryTime) {
-      console.warn('⚠️ No session expiry found');
-      return;
-    }
-
-    const timeUntilExpiry = new Date(expiryTime).getTime() - Date.now();
-    const formattedTime = formatTimeRemaining(timeUntilExpiry);
-    document.body.setAttribute('data-session-time', formattedTime);
-  };
+  let checkInterval;
 
   const checkSession = async () => {
-    const expiryTime = Cookies.get('B1SESSION_EXPIRY');
-    
-    if (!expiryTime) {
-      console.warn('⚠️ No session expiry found');
-      return;
-    }
-
-    const timeUntilExpiry = new Date(expiryTime).getTime() - Date.now();
-
-    // Check if renewal is needed and not already renewing
-    if (timeUntilExpiry < 5 * 60 * 1000 && !isRenewing) {
-      try {
-        isRenewing = true;
-        const toastId = toast.loading('Renewing session...', {
-          position: 'bottom-right'
-        });
-        
-        const response = await fetch('/api/renewSAPB1Session', {
-          method: 'POST',
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          throw new Error('Session renewal failed');
-        }
-
-        const data = await response.json();
-        if (data.success) {
-          toast.success('Session renewed successfully', {
-            id: toastId,
-            position: 'bottom-right',
-            duration: 3000,
-            icon: '✅',
-            style: {
-              borderRadius: '10px',
-              background: '#333',
-              color: '#fff',
-            },
-          });
-          
-          setTimeout(() => {
-            isRenewing = false;
-          }, 60 * 1000);
-        }
-      } catch (error) {
-        console.error('❌ Session renewal error:', error);
-        toast.error('Failed to renew session', {
-          position: 'bottom-right',
-          duration: 3000,
-          icon: '❌',
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        isRenewing = false;
-        handleSessionError(router);
-      }
+    const isValid = await validateSession();
+    if (!isValid) {
+      console.log('❌ Invalid session detected');
+      clearInterval(checkInterval);
+      handleSessionError(router);
     }
   };
-
-  // Update display every second
-  const displayInterval = setInterval(updateTimerDisplay, 1000);
   
-  // Check session every 30 seconds
-  const checkInterval = setInterval(checkSession, 30 * 1000);
-  
-  // Initial calls
-  updateTimerDisplay();
+  // Initial check
   checkSession();
-
+  
+  // Set up interval
+  checkInterval = setInterval(checkSession, interval);
+  
   // Return cleanup function
   return () => {
-    console.log('🧹 Cleaning up intervals');
-    clearInterval(displayInterval);
+    console.log('🧹 Cleaning up session check interval');
     clearInterval(checkInterval);
   };
 };
@@ -279,18 +128,40 @@ export const handleSessionError = (router) => {
   console.log('🚨 Handling session error');
   
   // Clear all cookies
-  const cookies = document.cookie.split(';');
-  cookies.forEach(cookie => {
-    const [name] = cookie.split('=');
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  const cookies = Cookies.get();
+  Object.keys(cookies).forEach(cookieName => {
+    Cookies.remove(cookieName, { path: '/' });
   });
 
-  // Force reload to trigger middleware
-  window.location.href = '/sign-in';
+  // Show error message
+  toast.error('Session expired. Please sign in again.', {
+    duration: 5000,
+    position: 'top-center'
+  });
+
+  // Redirect to sign-in
+  router.push('/sign-in');
 };
 
-// Update session time display
-export const updateSessionTimeDisplay = (timeRemaining) => {
-  const formattedTime = formatTimeRemaining(timeRemaining);
-  document.body.setAttribute('data-session-time', formattedTime);
-};
+export async function validateWorkerAccess(targetWorkerId) {
+  const currentWorkerId = Cookies.get('workerId');
+  const userRole = Cookies.get('userRole');
+
+  if (!currentWorkerId || !userRole) {
+    console.error('⚠️ Missing worker credentials');
+    return false;
+  }
+
+  const hasAccess = 
+    targetWorkerId === currentWorkerId || 
+    ['admin', 'supervisor'].includes(userRole);
+
+  console.log('🔒 Worker access check:', {
+    targetWorkerId,
+    currentWorkerId,
+    userRole,
+    hasAccess
+  });
+
+  return hasAccess;
+}
