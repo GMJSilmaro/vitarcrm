@@ -16,7 +16,7 @@ import {
 const FooterWithSocialIcons = () => {
   const currentYear = new Date().getFullYear();
 
-  const title = "VITAR Group";
+  const title = "Pixel Pinnacle Technology SDN BHD";
   const description = "VITAR Group's comprehensive CRM and Calibration Management System. Streamline your customer relationships and calibration processes with our integrated digital solution.";
   const keywords = "CRM System, Calibration Management, Equipment Calibration, Customer Relationship Management, Business Solutions, Digital Transformation, VITAR Group, Calibration Software, Asset Management";
 
@@ -60,7 +60,7 @@ const FooterWithSocialIcons = () => {
             <Row className="align-items-center">
               <Col lg={7} md={12} className="mb-3 mb-lg-0">
                 <p className="mb-0 text-secondary">
-                  CRM & Calibration Management System © {title} {currentYear}{' '}
+                  CRM & Calibration System © {title} {currentYear}{' '}
                   All rights reserved | Powered by{' '}
                   <a 
                     href="https://pixelcareconsulting.com"
