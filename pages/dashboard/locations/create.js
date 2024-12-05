@@ -25,9 +25,9 @@ import {
 } from 'firebase/firestore';
 import { dataFetchers } from '@/utils/dataFetchers';
 import toast, { Toaster } from 'react-hot-toast';
-import { fetchCustomers } from '@/utils/fetchCustomers';
+
 import debounce from 'lodash/debounce';
-import { auth } from '@/firebase';
+
 import { getCookie } from 'cookies-next';
 
 
@@ -1247,7 +1247,11 @@ const CreateLocations = () => {
             <Card.Body>
               <Form.Group className="mb-3">
                 <RequiredFieldWithTooltip label="Contact Details" />
-                <Form.Select
+                <Form.Control.Feedback type="info">
+                  If there's an existing contact from the customer, it will appear here in the select.
+                </Form.Control.Feedback>
+                <Form.Control
+                  as="select"
                   value={contact.id || ''}
                   onChange={(e) => handleContactChange(index, e.target.value)}
                   required={index === 0}
@@ -1255,7 +1259,11 @@ const CreateLocations = () => {
                 >
                   <option value="">Select a contact</option>
                   {renderContactOptions(index)}
-                </Form.Select>
+                </Form.Control>
+                <Form.Control.Feedback type="invalid">
+                  Please select a contact.
+                </Form.Control.Feedback>
+           
               </Form.Group>
 
               {index === formData.contacts.length - 1 && (
@@ -2457,12 +2465,7 @@ const CreateLocations = () => {
           -ms-overflow-style: none;
         }
 
-        .dropdown-item {
-          padding: 0.5rem 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
+     
 
         .customer-info {
           flex: 1;

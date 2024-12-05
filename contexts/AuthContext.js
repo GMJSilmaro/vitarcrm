@@ -13,6 +13,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(null);
   const [workerId, setWorkerId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,37 +21,96 @@ export function AuthProvider({ children }) {
   let activityTimer;
   const router = useRouter();
 
+  // Add this useEffect to check cookies on mount
+  useEffect(() => {
+    const initializeAuth = () => {
+      try {
+        // Check for existing session
+        const session = Cookies.get('session');
+        const email = Cookies.get('email');
+        const userRole = Cookies.get('userRole');
+        const workerId = Cookies.get('workerId');
+        const isAdmin = Cookies.get('isAdmin') === 'true';
+
+        if (session && email) {
+          setCurrentUser({ email });
+          setUserRole(userRole);
+          setWorkerId(workerId);
+          setIsAdmin(isAdmin);
+          
+          // Verify session with backend
+          fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          }).catch(error => {
+            console.error('Session verification error:', error);
+          });
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
   // Sign in with session management
   const signIn = async (email, password) => {
     try {
-      // Check for existing session
-      const hasExistingSession = await SessionManager.checkExistingSession(email);
-      if (hasExistingSession) {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
         await Swal.fire({
           icon: 'error',
-          title: 'Active Session Detected',
-          text: 'Another session is already active. Please sign out from other devices first.',
-          confirmButtonColor: '#dc3545',
-          confirmButtonText: 'Understood'
+          title: 'Authentication Failed',
+          text: data.message || 'Failed to sign in. Please try again.',
+          confirmButtonColor: '#dc3545'
         });
         return false;
       }
 
-      // Create new session
-      const sessionCreated = await SessionManager.createSession(email);
-      if (!sessionCreated) {
-        throw new Error('Failed to create session');
-      }
-
-      // Set current user after successful session creation
+      // Set user state based on the response
       setCurrentUser({ email });
-      setUserRole(Cookies.get('userRole'));
-      setWorkerId(Cookies.get('workerId'));
+      setIsAdmin(data.user.isAdmin);
+      setUserRole(data.user.userRole);
+      setWorkerId(data.user.workerId);
+
+      // Store auth state in cookies
+      Cookies.set('session', 'true', { secure: true });
+      Cookies.set('email', email, { secure: true });
+      Cookies.set('userRole', data.user.userRole, { secure: true });
+      Cookies.set('workerId', data.user.workerId, { secure: true });
+      Cookies.set('isAdmin', data.user.isAdmin, { secure: true });
+
+      // Redirect based on user type
+      if (data.user.isAdmin) {
+        router.push('/');
+      } else {
+        router.push(`/dashboard/user/${data.user.workerId}`);
+      }
 
       return true;
     } catch (error) {
       console.error('Sign in error:', error);
-      throw error;
+      await Swal.fire({
+        icon: 'error',
+        title: 'Sign In Error',
+        text: error.message || 'An unexpected error occurred. Please try again.',
+        confirmButtonColor: '#dc3545'
+      });
+      return false;
     }
   };
 
@@ -74,12 +134,17 @@ export function AuthProvider({ children }) {
         await SessionManager.endSession(currentUser.email);
       }
       
-      // Clear cookies and state
+      // Clear all cookies
+      Cookies.remove('session');
+      Cookies.remove('email');
       Cookies.remove('userRole');
       Cookies.remove('workerId');
+      Cookies.remove('isAdmin');
+
       setCurrentUser(null);
       setUserRole(null);
       setWorkerId(null);
+      setIsAdmin(null);
 
       // Show success message
       await Swal.fire({
@@ -159,6 +224,7 @@ export function AuthProvider({ children }) {
     currentUser,
     userRole,
     workerId,
+    isAdmin,
     loading,
     error,
     signIn,

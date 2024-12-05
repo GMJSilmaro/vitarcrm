@@ -9,92 +9,221 @@ import {
 	Container,
 	Nav,
 	Navbar,
-	Form,
-	Image
+	Image,
+	NavDropdown,
+	Badge
 } from 'react-bootstrap';
-import { collection, query, getDocs, limit, onSnapshot, doc , getDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
 
 // import sub components
-import NavDropdownMain from './navbars/NavDropdownMain';
-import DocumentMenu from './navbars/DocumentMenu';
-
-// import sub components
-import QuickMenu from 'layouts/QuickMenu';
+import QuickMenu from '../QuickMenu';
 
 // import routes file
 import NavbarTopRoutes from 'routes/dashboard/NavbarTopRoutes';
 
 // import utility function
-import { getCompanyDetails } from '../../utils/companyCache';
 import { useLogo } from '../../contexts/LogoContext';
 
 const DashboardIndexTop = (props) => {
 	const { logo } = useLogo();
 	const [expandedMenu, setExpandedMenu] = useState(false);
+	const [activeDropdown, setActiveDropdown] = useState(null);
+	const [activeSubmenu, setActiveSubmenu] = useState(null);
+
+	const handleMouseEnter = (itemId) => {
+		setActiveDropdown(itemId);
+	};
+
+	const handleMouseLeave = () => {
+		setActiveDropdown(null);
+		setActiveSubmenu(null);
+	};
+
+	const handleSubmenuEnter = (itemId) => {
+		setActiveSubmenu(itemId);
+	};
+
+	const handleSubmenuLeave = () => {
+		setActiveSubmenu(null);
+	};
+
+	// Add this helper function to render icons
+	const renderIcon = (iconName) => {
+		const Icons = require('react-bootstrap-icons');
+		const IconComponent = Icons[iconName];
+		return IconComponent ? <IconComponent size={16} className="me-2" /> : null;
+	};
+
+	const renderSubmenuItems = (submenu) => {
+		if (submenu.header) {
+			return (
+				<h4 className="dropdown-header" key={submenu.id}>
+					{submenu.header_text}
+				</h4>
+			);
+		}
+
+		if (submenu.children) {
+			return (
+				<div
+					key={submenu.id}
+					className="dropdown-item dropdown-submenu position-relative"
+					onMouseEnter={() => handleSubmenuEnter(submenu.id)}
+					onMouseLeave={handleSubmenuLeave}
+					style={{ cursor: 'pointer', paddingBottom: '8px' }}
+				>
+					<span className="d-flex align-items-center justify-content-between w-100">
+						<span>
+							{submenu.icon && renderIcon(submenu.icon)}
+							{submenu.menuitem}
+						</span>
+						<i className="bi bi-chevron-right ms-2"></i>
+					</span>
+					<div 
+						className={`dropdown-menu ${activeSubmenu === submenu.id ? 'show' : ''}`}
+						style={{
+							position: 'absolute',
+							top: 0,
+							left: '100%',
+							marginTop: 0,
+							marginLeft: '1px',
+							padding: '8px 0'
+						}}
+					>
+						{submenu.children.map((child) => (
+							<Link
+								key={child.id}
+								
+								href={child.link || '#'}
+								className="dropdown-item"
+								onClick={() => setExpandedMenu(false)}
+								style={{ paddingBottom: '8px' }}
+							>
+								{child.icon && renderIcon(child.icon)}
+								{child.menuitem}
+							</Link>
+							))}
+					</div>
+				</div>
+			);
+		}
+
+		return (
+			<Link
+				key={submenu.id}
+				href={submenu.link || '#'}
+				className="dropdown-item"
+				onClick={() => setExpandedMenu(false)}
+				style={{ paddingBottom: '8px' }}
+			>
+				{submenu.icon && renderIcon(submenu.icon)}
+				{submenu.menuitem}
+			</Link>
+		);
+	};
+
+	const renderDropdownItems = (items) => {
+		return items.map((item) => {
+			if (item.children) {
+				return (
+					<NavDropdown
+						key={item.id}
+						title={
+							<span>
+								{item.icon && renderIcon(item.icon)}
+								{item.menuitem}
+								{item.badge && (
+									<Badge bg="primary" className="ms-2" style={{ fontSize: '0.8em' }}>
+										{item.badge}
+									</Badge>
+								)}
+							</span>
+						}
+						id={`nav-dropdown-${item.id}`}
+						show={activeDropdown === item.id}
+						onMouseEnter={() => handleMouseEnter(item.id)}
+						onMouseLeave={handleMouseLeave}
+						className="nav-item"
+					>
+						{item.children.map(renderSubmenuItems)}
+					</NavDropdown>
+				);
+			}
+
+			return item.link ? (
+				<Nav.Link
+					key={item.id}
+					as={Link}
+					href={item.link}
+					className="nav-item"
+				>
+					{item.icon && renderIcon(item.icon)}
+					{item.menuitem}
+				</Nav.Link>
+			) : null;
+		});
+	};
 
 	return (
 		<div>
+			{/* Main Navbar */}
 			<Navbar
 				bg="white"
 				expand="lg"
-				onToggle={(collapsed) => setExpandedMenu(collapsed)}
+				className="border-bottom"
 			>
-				<Container className="px-0">
-					{/* brand logo */}
-					<Navbar.Brand
-						as={Link}
-						href="/">
+				<Container fluid>
+					{/* Logo */}
+					<Navbar.Brand as={Link} href="/">
 						<Image 
 							src={logo} 
 							alt="Company Logo"
-							style={{ height: '100px' }} 
+							style={{ height: '60px', width: 'auto' }}
 						/>
 					</Navbar.Brand>
-					{/* search box */}
-					<div className="ms-lg-3 d-none d-md-none d-lg-block">
-					
-					</div>
-					{/* Right side quick / shortcut menu  */}
 
-					<Nav className="navbar-nav navbar-right-wrap ms-auto d-flex nav-top-wrap">
-						<span className={`d-flex`}>
-							<QuickMenu />
-						</span>
+					{/* Search Box - Hidden for now */}
+					<div className="ms-lg-3 d-none d-md-none d-lg-block">
+					</div>
+
+					{/* Quick Menu */}
+					<Nav className="ms-auto d-flex align-items-center">
+						<QuickMenu />
 					</Nav>
 
-					<Navbar.Toggle aria-controls="navbarScroll">
-						<span className="icon-bar top-bar mt-0"></span>
-						<span className="icon-bar middle-bar"></span>
-						<span className="icon-bar bottom-bar"></span>
+					{/* Mobile Toggle */}
+					<Navbar.Toggle 
+						aria-controls="navbarScroll"
+						className="ms-3"
+						onClick={() => setExpandedMenu(!expandedMenu)}
+					>
+						<span className="navbar-toggler-icon"></span>
 					</Navbar.Toggle>
 				</Container>
 			</Navbar>
+
+			{/* Secondary Navigation */}
 			<Navbar
 				expand="lg"
-				className="navbar-default py-0 py-lg-2"
-				expanded={expandedMenu}
+				className="navbar-light bg-white border-bottom"
 			>
-				<Container className="px-0">
-					<Navbar.Collapse id="navbarScroll">
+				<Container fluid>
+					<Navbar.Collapse 
+						id="navbarScroll"
+						in={expandedMenu}
+					>
 						<Nav>
-							{NavbarTopRoutes.map((item, index) => {
-								return (
-									<NavDropdownMain
-										item={item}
-										key={index}
-										onClick={(value) => setExpandedMenu(value)}
-									/>
-								);
-							})}
-							{/* <DocumentMenu /> */}
+							{renderDropdownItems(NavbarTopRoutes)}
 						</Nav>
 					</Navbar.Collapse>
 				</Container>
 			</Navbar>
-			{/* body container */}
-			<Container className="my-6">{props.children}</Container>
+
+			{/* Main Content - Using responsive class instead of inline style */}
+			<div className="main-content responsive-container">
+				{props.children}
+			</div>
 		</div>
 	);
 };
+
 export default DashboardIndexTop;

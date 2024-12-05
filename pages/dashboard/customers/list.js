@@ -1086,6 +1086,7 @@ const ViewCustomers = () => {
             description="Comprehensive view of all your customer accounts, including contact details, service history, and account status"
             infoText="Easily search, filter, and manage customer profiles. Access key information like contact details, billing addresses, and account representatives. Track customer status and maintain accurate records for all your business relationships."
             badgeText="Customer Management"
+            badgeText2="Workforce"
             breadcrumbItems={[
               { 
                 icon: <House className="me-2" size={14} />, 
@@ -1097,14 +1098,15 @@ const ViewCustomers = () => {
                 text: 'Customers' 
               }
             ]}
-            actionButton={{
-              icon: <FaPlus size={14} />,
-              text: "Create New Customer",
-              tooltip: "Start creating a new customer masterlist",
-              variant: "light",
-              onClick: () => router.push('/dashboard/customers/create')
-            }}
-
+            actionButtons={[  // Changed from actionButton to actionButtons array
+              {
+                text: "Create New Customer",
+                icon: <FaPlus size={14} />,
+                variant: "light",
+                tooltip: "Start creating a new customer masterlist",
+                onClick: () => router.push('/dashboard/customers/create')
+              }
+            ]}
           />
         </Col>
       </Row>

@@ -5,7 +5,7 @@ const NavbarDefault = [
 	{
 		id: uuid(),
 		menuitem: 'Dashboard',
-		link: '#',
+		link: '/dashboard',
 		icon: 'HouseDoorFill',
 		children: [
 			{ id: uuid(), menuitem: 'Overview', link: '/dashboard'},
@@ -83,82 +83,75 @@ const NavbarDefault = [
 	{
 		id: uuid(),
 		menuitem: 'Master Data Management',
-		link: '#',
+		link: '/dashboard/master',
 		badge: 'Work In Progress',
 		icon: 'GearFill',
+		hasSubmenu: true,
 		children: [
 			{
 				id: uuid(),
+				header: true,
+				header_text: 'Master Data Menu'
+			},
+			{
+				id: uuid(),
 				menuitem: 'Customers',
-				link: '#',
 				icon: 'PersonFill',
-				children: [
-					{
-						id: uuid(),
-						menuitem: 'All Customers',
-						link: '/dashboard/customers/list'
-					},
-					{
-						id: uuid(),
-						menuitem: 'Create Customers',
-						link: '/dashboard/customers/create'
-					}
-				]
+				link: '/dashboard/customers/list'
 			},
 			{
 				id: uuid(),
 				menuitem: 'Sites',
-				link: '#',
 				icon: 'BuildingFill',
-				children: [
-					{
-						id: uuid(),
-						menuitem: 'All Sites',
-						link: '/dashboard/locations/list'
-					},
-					{
-						id: uuid(),
-						menuitem: 'Create Sites',
-						link: '/dashboard/locations/create'
-					}
-				]
+				link: '/dashboard/locations/list'
 			},
 			{
 				id: uuid(),
 				menuitem: 'Calibration',
-				link: '#',
-				icon: 'ThermometerHigh',	
+				icon: 'ThermometerHigh',
+				hasSubmenu: true,
 				children: [
 					{
 						id: uuid(),
+						header: true,
+						header_text: 'Calibration Menu'
+					},
+					{
+						id: uuid(),
 						menuitem: 'Temperature & Humidity',
-						link: '/dashboard/calibration/temperature'
+						link: '/dashboard/calibration/temperature',
+						icon: 'Thermometer'
 					},
 					{
 						id: uuid(),
 						menuitem: 'Pressure',
-						link: '/dashboard/calibration/pressure'
+						link: '/dashboard/calibration/pressure',
+						icon: 'Speedometer'
 					},
 					{
 						id: uuid(),
 						menuitem: 'Electrical',
-						link: '/dashboard/calibration/electrical'
+						link: '/dashboard/calibration/electrical',
+						icon: 'Lightning'
 					},
 					{
 						id: uuid(),
 						menuitem: 'Dimensional',
-						link: '/dashboard/calibration/dimensional'
+						link: '/dashboard/calibration/dimensional',
+						icon: 'Rulers'
 					},
 					{
 						id: uuid(),
 						menuitem: 'Volumetric',
-						link: '/dashboard/calibration/volumetric'
+						link: '/dashboard/calibration/volumetric',
+						icon: 'Droplet'
 					},
 					{
 						id: uuid(),
 						menuitem: 'Mechanical',
-						link: '/dashboard/calibration/mechanical'
-					},
+						link: '/dashboard/calibration/mechanical',
+						icon: 'Gear'
+					}
 				]
 			}
 		]
@@ -166,9 +159,7 @@ const NavbarDefault = [
 	{
 		id: uuid(),
 		menuitem: 'Manage Workers',
-		link: '#',
 		icon: 'PeopleFill',
-		
 		children: [
 			{
 				id: uuid(),
@@ -180,16 +171,8 @@ const NavbarDefault = [
 				menuitem: 'Workers',
 				link: '/workers',
 				icon: 'PersonLinesFill'
-			},
-			// {
-			// 	id: uuid(),
-			// 	menuitem: 'Workers Dispatch',
-			// 	link: '/schedule',
-			// 	icon: 'CalendarWeekFill'
-			// },
-
-		],
-		isAuthenticated: true,
+			}
+		]
 	},
 	// {
 	// 	id: uuid(),

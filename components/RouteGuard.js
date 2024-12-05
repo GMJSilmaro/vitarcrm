@@ -1,56 +1,81 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { validateWorkerAccess } from '../utils/middlewareClient';
 
-export function RouteGuard({ children, requiredRole }) {
-  const { currentUser, userRole, workerId } = useAuth();
+export function RouteGuard({ children }) {
+  const { currentUser, isAdmin, workerId } = useAuth();
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
+    // Don't run authorization check until router is ready
+    if (!router.isReady) return;
+
     async function checkAuthorization() {
+      console.log('Auth state:', { 
+        currentUser, 
+        isAdmin, 
+        workerId,
+        path: router.pathname 
+      });
+
+      // If no user, redirect to sign-in
       if (!currentUser) {
-        router.push('/sign-in');
+        router.push('/authentication/sign-in');
         return;
       }
 
-      // Normalize roles for comparison
-      const normalizedRole = userRole?.toLowerCase();
-      const requiredNormalizedRole = requiredRole?.toLowerCase();
+      const path = router.pathname;
+      console.log('Checking authorization for path:', path, { isAdmin, workerId });
 
-      if (requiredRole && normalizedRole !== requiredNormalizedRole) {
-        console.log('Role mismatch:', { 
-          required: requiredNormalizedRole, 
-          current: normalizedRole 
-        });
-        router.push('/unauthorized');
-        return;
-      }
+      // Define admin-only paths
+      const adminPaths = ['/', '/dashboard', '/dashboard/overview'];
 
-      // For worker profile routes
-      if (router.pathname.startsWith('/user/')) {
-        const targetWorkerId = router.query.workerId;
-        const isAdmin = normalizedRole === 'admin';
-        const isSupervisor = normalizedRole === 'supervisor';
-        const isOwnProfile = targetWorkerId === workerId;
-
-        if (!isAdmin && !isSupervisor && !isOwnProfile) {
-          console.log('Unauthorized profile access:', {
-            targetWorkerId,
-            currentWorkerId: workerId,
-            role: normalizedRole
-          });
-          router.push('/unauthorized');
+      if (isAdmin) {
+        // If admin is trying to access user dashboard, redirect to admin dashboard
+        if (path.startsWith('/dashboard/user/')) {
+          router.push('/');
           return;
         }
+        setAuthorized(true);
+        return;
+      }
+
+      // Non-admin user access rules
+      if (!isAdmin) {
+        // If trying to access admin paths, redirect to user dashboard
+        if (adminPaths.includes(path)) {
+          router.push(`/dashboard/user/${workerId}`);
+          return;
+        }
+
+        // Handle user dashboard access
+        if (path.startsWith('/dashboard/user/')) {
+          const targetWorkerId = router.query.workerId;
+          // Allow access only to their own dashboard
+          if (targetWorkerId && targetWorkerId !== workerId) {
+            router.push(`/dashboard/user/${workerId}`);
+            return;
+          }
+          setAuthorized(true);
+          return;
+        }
+
+        // For any other path, redirect to user's dashboard
+        router.push(`/dashboard/user/${workerId}`);
+        return;
       }
 
       setAuthorized(true);
     }
 
     checkAuthorization();
-  }, [currentUser, userRole, router, requiredRole, workerId]);
+  }, [currentUser, isAdmin, router.isReady, router.pathname, router.query.workerId, workerId]);
+
+  // Show nothing while checking authorization
+  if (!router.isReady) {
+    return null;
+  }
 
   return authorized ? children : null;
 } 

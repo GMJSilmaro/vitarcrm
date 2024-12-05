@@ -36,11 +36,12 @@ export default async function handler(req, res) {
     
     // Use the workerId from userData instead of document ID
     const workerId = userData.workerId;
-    const userRole = userData.role || (userData.isAdmin ? 'admin' : 'worker');
+    const userRole = userData.role;
 
     console.log("Found user with matching UID:", user.uid);
     console.log("Using userRole from userData:", userRole);
     console.log("User Data:", userData);
+    console.log("isAdmin:", userData.isAdmin);
 
     const customToken = await user.getIdToken();
 
@@ -60,7 +61,8 @@ export default async function handler(req, res) {
       `uid=${user.uid}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
       `email=${email}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
       `workerId=${workerId}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
-      `userRole=${userRole}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`
+      `userRole=${userRole}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+      `isAdmin=${userData.isAdmin === true}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`
     ]);
 
     return res.status(200).json({
@@ -84,7 +86,8 @@ export default async function handler(req, res) {
       'uid=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'workerId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
-      'userRole=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      'userRole=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+      'isAdmin=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
     ]);
 
     return res.status(401).json({

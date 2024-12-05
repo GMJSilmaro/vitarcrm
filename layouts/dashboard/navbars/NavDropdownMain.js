@@ -30,8 +30,8 @@ const NavDropdownMain = (props) => {
 	const renderMenuItem = (menuItem) => (
 		<NavDropdown.Item
 			key={menuItem.id}
-			as={Link}
-			href={menuItem.link}
+			as={menuItem.link ? Link : 'button'}
+			{...(menuItem.link ? { href: menuItem.link } : {})}
 			className="dropdown-item"
 			onClick={(expandedMenu) => onClick(!expandedMenu)}
 		>
@@ -45,9 +45,12 @@ const NavDropdownMain = (props) => {
 		return (
 			<NavDropdown
 				title={
-					<span>
-						{renderIcon(item.icon)}
-						{item.menuitem} {item.badge && renderBadge(item.badge)}
+					<span className="d-flex align-items-center justify-content-between">
+						<span>
+							{renderIcon(item.icon)}
+							{item.menuitem} {item.badge && renderBadge(item.badge)}
+						</span>
+						<i className="bi bi-chevron-down ms-2"></i>
 					</span>
 				}
 				show
@@ -63,12 +66,16 @@ const NavDropdownMain = (props) => {
 						return (
 							<NavDropdown
 								title={
-									<span>
-										{renderIcon(submenu.icon)}
-										{submenu.menuitem}
+									<span className="d-flex align-items-center justify-content-between w-100">
+										<span>
+											{renderIcon(submenu.icon)}
+											{submenu.menuitem}
+										</span>
+										<i className="bi bi-chevron-right ms-2"></i>
 									</span>
 								}
 								key={submenu.id}
+								
 								bsPrefix="dropdown-item d-block"
 								className="dropdown-submenu dropend py-0"
 								show
@@ -95,10 +102,14 @@ const NavDropdownMain = (props) => {
 	const NavbarMobile = () => {
 		return (
 			<NavDropdown title={
-				<span>
-					{renderIcon(item.icon)}
-					{item.menuitem} {item.badge && renderBadge(item.badge)}
-				</span>} >
+				<span className="d-flex align-items-center justify-content-between">
+					<span>
+						{renderIcon(item.icon)}
+						{item.menuitem} {item.badge && renderBadge(item.badge)}
+					</span>
+					<i className="bi bi-chevron-down ms-2"></i>
+				</span>
+			}>
 				{item.children.map((submenu, submenuindex) => {
 					if (submenu.divider || submenu.header) {
 						return submenu.divider ? (
@@ -115,7 +126,8 @@ const NavDropdownMain = (props) => {
 									key={submenuindex}
 									as={Link}
 									href={submenu.link}
-									className="dropdown-item" onClick={(expandedMenu) => onClick(!expandedMenu)}
+									className="dropdown-item"
+									onClick={(expandedMenu) => onClick(!expandedMenu)}
 								>
 									{renderIcon(submenu.icon)}
 									{submenu.menuitem}
@@ -125,10 +137,18 @@ const NavDropdownMain = (props) => {
 						} else {
 							return (
 								<NavDropdown
-									title={submenu.menuitem}
+									title={
+										<span className="d-flex align-items-center justify-content-between w-100">
+											<span>
+												{renderIcon(submenu.icon)}
+												{submenu.menuitem}
+											</span>
+											<i className="bi bi-chevron-right ms-2"></i>
+										</span>
+									}
 									key={submenuindex}
 									bsPrefix="dropdown-item d-block"
-									className={`dropdown-submenu dropend py-0 `}
+									className="dropdown-submenu dropend py-0"
 								>
 									{submenu.children.map((submenuitem, submenuitemindex) => {
 										if (submenuitem.divider || submenuitem.header) {

@@ -991,14 +991,14 @@ const WorkersListItems = () => {
                 icon: <i className="fe fe-users" style={{ marginRight: '8px' }} />
               }
             ]}
-            actionButton={{
-              text: 'Add New Worker',
-              icon: <FaPlus size={16} />,
-              variant: 'light',
-              tooltip: 'Add a new worker',
-              onClick: () => router.push('/workers/create')
-            }}
-      
+            actionButtons={[
+              {
+                text: 'Add New Worker',
+                icon: <FaPlus size={16} />,
+                variant: 'light',
+                onClick: () => router.push('/workers/create')
+              }
+            ]}
           />
         </Col>
       </Row>

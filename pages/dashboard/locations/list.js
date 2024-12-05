@@ -1238,28 +1238,30 @@ const ViewLocations = () => {
         <Col lg={12} md={12} sm={12}>
             <ContentHeader
             title="Locations List"
-            description="Comprehensive view of all your location sites, including addresses and site details"
-            infoText="Easily search, filter, and manage location sites. Access key information like site IDs, addresses, and location details."
+            description="Manage and track all your site locations in one centralized dashboard"
+            infoText="Track site details, addresses, and location-specific information"
             badgeText="Location Management"
+            badgeText2="Sites"
             breadcrumbItems={[
-              { 
-                icon: <House className="me-2" size={14} />, 
-                text: 'Dashboard', 
-                link: '/dashboard' 
+              {
+                icon: <House className="me-2" size={14} />,
+                text: 'Dashboard',
+                link: '/dashboard'
               },
-              { 
-                icon: <Building className="me-2" size={14} />, 
-                text: 'Locations' 
+              {
+                icon: <Building className="me-2" size={14} />,
+                text: 'Locations'
               }
             ]}
-            actionButton={{
-              icon: <FaPlus size={14} />,
-              text: "Create New Location",
-              tooltip: "Start creating a new location site",
-              variant: "light",
-              onClick: () => router.push('/dashboard/locations/create')
-            }}
-
+            actionButtons={[
+              {
+                text: "Create New Location",
+                icon: <FaPlus size={14} />,
+                variant: "light",
+                tooltip: "Add a new site location",
+                onClick: () => router.push('/dashboard/locations/create')
+              }
+            ]}
           />
         </Col>
       </Row>

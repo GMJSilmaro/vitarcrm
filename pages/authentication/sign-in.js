@@ -163,21 +163,14 @@ const SignIn = () => {
         showConfirmButton: false,
         didOpen: async (modal) => {
           try {
-            // Check for existing session first
-            const hasExistingSession = await SessionManager.checkExistingSession(email);
-            if (hasExistingSession) {
-              throw new Error('Another session is already active. Please sign out from other devices first.');
+            // Just call signIn directly - it will handle the API call
+            const signInSuccess = await signIn(email, password);
+            
+            if (!signInSuccess) {
+              throw new Error('Authentication failed');
             }
 
-            // Attempt authentication
-            const authData = await handleAuthentication(email, password);
-
-            // Create session after successful authentication
-            const sessionSuccess = await signIn(email, password);
-            if (!sessionSuccess) {
-              throw new Error('Failed to create session');
-            }
-
+            // Continue with your loading messages and success state
             // Simulate connection steps with proper error handling
             for (let i = 1; i < loadingMessages.length; i++) {
               await new Promise(resolve => setTimeout(resolve, 1000));

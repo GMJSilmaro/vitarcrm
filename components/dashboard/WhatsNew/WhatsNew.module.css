@@ -1,0 +1,164 @@
+.modalBody {
+    padding: 0;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  
+  .header {
+    background: #E31837;
+    color: white;
+    padding: 20px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .titleRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .title {
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-top: 4px;
+  }
+  
+  .closeButton {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+  
+  .closeButton:hover {
+    opacity: 1;
+  }
+  
+  .content {
+    padding: 24px;
+  }
+  
+  .version {
+    margin-bottom: 32px;
+  }
+  
+  .versionHeader {
+    margin-bottom: 16px;
+  }
+  
+  .versionInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .versionNumber {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  
+  .versionDate {
+    color: #64748b;
+    font-size: 14px;
+  }
+  
+  .badge {
+    background: #ddd6fe;
+    color: #5b21b6;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .features {
+    display: grid;
+    gap: 16px;
+  }
+  
+  .featureCard {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    transition: all 0.2s ease;
+  }
+  
+  .featureCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #E31837;
+  }
+  
+  .featureIcon {
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  
+  .featureContent {
+    flex: 1;
+  }
+  
+  .featureContent h4 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  
+  .featureContent p {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  
+  .tag {
+    display: inline-flex;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .tag:not(.highlight .tag) {
+    background: #e0f2fe;
+    color: #075985;
+  }
+  
+  .highlight {
+    background: linear-gradient(135deg, #E31837 0%, #C41230 100%);
+    color: white;
+  }
+  
+  .highlight p {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .highlight .tag {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  
+  @media (min-width: 640px) {
+    .features {
+      grid-template-columns: repeat(1, 1fr);
+    }
+  } 

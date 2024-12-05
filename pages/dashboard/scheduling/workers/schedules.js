@@ -46,7 +46,6 @@ import {
   BsFlag, 
   BsEye, 
 } from "react-icons/bs";
-import { validateSession } from 'utils/middlewareClient';
 import SchedulerFilterPanel from './SchedulerFilterPanel';
 import ContentHeader from '../../../../components/dashboard/ContentHeader';
 import { format, parseISO, isValid } from 'date-fns';
@@ -1496,19 +1495,6 @@ const FieldServiceSchedules = () => {
       </div>
     </div>
   );
-};
-
-// Session monitor initialization
-const initializeSessionMonitor = ({ onSessionExpired, onSessionWarning }) => {
-  const checkInterval = setInterval(async () => {
-    const isValid = await validateSession();
-    if (!isValid) {
-      onSessionExpired();
-      clearInterval(checkInterval);
-    }
-  }, 30000); // Check every 30 seconds
-
-  return () => clearInterval(checkInterval);
 };
 
 export default FieldServiceSchedules;
