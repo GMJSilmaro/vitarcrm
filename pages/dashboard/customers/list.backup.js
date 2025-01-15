@@ -1,6 +1,6 @@
 'use client'
 
-import React, { Fragment, useMemo, useState, useEffect, useCallback, useRef, memo } from 'react';
+import React, { Fragment, useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Col, Row, Card, Button, OverlayTrigger, Tooltip, Badge, Breadcrumb, Placeholder, Spinner, Form, Collapse, Modal, DropdownButton, Dropdown } from 'react-bootstrap';
 import { useRouter } from 'next/router';
 import { 
@@ -21,10 +21,8 @@ import {
   House,
   People,
   Building,
-  PencilSquare,
   Trash,
-  Download,
-  XCircle
+  Download
 } from 'react-bootstrap-icons';
 import { GeeksSEO, PageHeading } from 'widgets'
 import moment from 'moment';
@@ -49,8 +47,8 @@ import { TABLE_CONFIG } from 'constants/tableConfig';
 import Link from 'next/link';
 import { FaPlus } from 'react-icons/fa';
 import ContentHeader from '@/components/dashboard/ContentHeader';
-import { collection, getDocs, query, where, onSnapshot, orderBy, limit, startAfter } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { collection, getDocs, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
 
 // Add this utility function at the top of your file, before the ViewCustomers component
 const getPageNumbers = (currentPage, totalPages) => {
@@ -90,70 +88,45 @@ const getPageNumbers = (currentPage, totalPages) => {
   return rangeWithDots;
 };
 
-
-const FilterPanel = ({ 
-  filters, 
-  setFilters, 
-  onClear, 
-  loading, 
-  handleSearch, 
-  setData, 
-  setTotalRows,
-  initialData 
-}) => {
+const FilterPanel = ({ filters, setFilters, onClear, loading, handleSearch, setData, setTotalRows, initialData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [tempFilters, setTempFilters] = useState(filters);
-  const searchTimeoutRef = useRef(null); // Add this for debouncing
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    // Sync tempFilters with filters whenever filters change
+    setTempFilters(filters);
+  }, [filters]);
 
   const handleFilterChange = (field, value) => {
-    const newTempFilters = {
-      ...tempFilters,
+    setTempFilters(prev => ({
+      ...prev,
       [field]: value
-    };
-    setTempFilters(newTempFilters);
-    
-    // Clear any existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // If it's a quick search and not expanded, trigger search after a delay
-    if (field === 'quickSearch' && !isExpanded && value.length >= 2) {
-      searchTimeoutRef.current = setTimeout(() => {
-        handleSearch(newTempFilters);
-      }, 500); // 500ms debounce
-    }
+    }));
   };
 
-  const handleKeyPress = async (e) => {
+  const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !loading) {
       e.preventDefault();
-      // Clear any existing timeout
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-      await handleSearch(tempFilters);
+      handleSearchSubmit();
     }
   };
 
-  const handleSearchClick = async () => {
-    if (!loading) {
-      // Clear any existing timeout
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+  const handleSearchSubmit = async () => {
+    try {
+      if (tempFilters.email && !validateEmailSearch(tempFilters.email)) {
+        toast.error('Please enter a valid email address');
+        return;
       }
+      
       await handleSearch(tempFilters);
+
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error('Failed to search customers');
     }
   };
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleClear = () => {
     if (loading) return; // Prevent double clicks
@@ -211,10 +184,10 @@ const FilterPanel = ({
                   <Form.Control
                     size="sm"
                     type="text"
-                    value={tempFilters.quickSearch || ''}
-                    onChange={(e) => handleFilterChange('quickSearch', e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    placeholder="Quick search by Site Name..."
+                    value={tempFilters.customerName}
+                    onChange={(e) => handleFilterChange('customerName', e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Quick search by customer name..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                   />
                 </Form.Group>
@@ -237,7 +210,7 @@ const FilterPanel = ({
             <Button
               variant="primary"
               size="sm"
-              onClick={handleSearchClick}
+              onClick={handleSearchSubmit}
               disabled={loading}
               className="search-btn d-flex align-items-center"
             >
@@ -246,8 +219,6 @@ const FilterPanel = ({
             </Button>
           </div>
         </div>
-
-        {/* Expanded filter panel */}
         <div style={{ 
           maxHeight: isExpanded ? '1000px' : '0',
           overflow: 'hidden',
@@ -257,423 +228,187 @@ const FilterPanel = ({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1">Customer ID:</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  value={tempFilters.customerId}
-                  onChange={(e) => handleFilterChange('customerId', e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Enter customer ID..."
-                />
+                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Customer Code:</Form.Label>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Enter numbers only (e.g. 0001)</Tooltip>}
+                >
+                  <Form.Control
+                    size="sm"
+                    type="text"
+                    value={tempFilters.customerCode}
+                    onChange={(e) => handleFilterChange('customerCode', e.target.value)}
+                    placeholder="Enter customer code..."
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                    onKeyPress={handleKeyPress}
+                  />
+                </OverlayTrigger>
               </Form.Group>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1">Customer Name:</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  value={tempFilters.customerName}
-                  onChange={(e) => handleFilterChange('customerName', e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Search by customer name..."
-                />
+                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Customer Name:</Form.Label>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Enter full or partial customer name</Tooltip>}
+                >
+                  <Form.Control
+                    size="sm"
+                    type="text"
+                    value={tempFilters.customerName}
+                    onChange={(e) => handleFilterChange('customerName', e.target.value)}
+                    placeholder="Search by customer name..."
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                    onKeyPress={handleKeyPress}
+                  />
+                </OverlayTrigger>
               </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Email:</Form.Label>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Enter full email address (e.g., example@domain.com)</Tooltip>}
+                >
+                  <Form.Control
+                    size="sm"
+                    type="email"
+                    value={tempFilters.email}
+                    onChange={(e) => handleFilterChange('email', e.target.value)}
+                    placeholder="Enter email address..."
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        if (!validateEmailSearch(tempFilters.email)) {
+                          alert('Please enter a valid email address (e.g., example@domain.com)');
+                          return;
+                        }
+                        handleKeyPress(e);
+                      }
+                    }}
+                  />
+                </OverlayTrigger>
+                {tempFilters.email && !validateEmailSearch(tempFilters.email) && (
+                  <small className="text-danger d-block mt-1">
+                    Please enter a valid email address
+                  </small>
+                )}
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Phone:</Form.Label>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Enter numbers only (e.g. +65 1234 5678)</Tooltip>}
+                >
+                  <Form.Control
+                    size="sm"
+                    type="text"
+                    value={tempFilters.phone}
+                    onChange={(e) => handleFilterChange('phone', e.target.value)}
+                    placeholder="Enter phone number..."
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                    onKeyPress={handleKeyPress}
+                  />
+                </OverlayTrigger>
+              </Form.Group>
+             
             </Col>
             <Col md={6}>
               <Form.Group className="mb-2">
-                <Form.Label className="small mb-1">Customer Type:</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  value={tempFilters.customerType}
-                  onChange={(e) => handleFilterChange('customerType', e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Search in customer type..."
-                />
-              </Form.Group>
-              <Form.Group className="mb-2">
-                <Form.Label className="small mb-1">City:</Form.Label>
-                <Form.Control
-                  size="sm"
-                  type="text"
-                  value={tempFilters.city}
-                  onChange={(e) => handleFilterChange('city', e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Enter city..."
-                />
-              </Form.Group>
-              <Form.Group className="mb-2">
-                <Form.Label className="small mb-1">Country:</Form.Label>
-                <Form.Select
-                  size="sm"
-                  value={tempFilters.country}
-                  onChange={(e) => handleFilterChange('country', e.target.value)}
-                  onKeyDown={handleKeyPress}
+                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Address Search:</Form.Label>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={
+                    <Tooltip>
+                      Search in primary and mailing addresses, including postal codes
+                    </Tooltip>
+                  }
                 >
-                  <option value="">All Countries</option>
-                  <option value="MY">Malaysia</option>
-                  <option value="SG">Singapore</option>
-                </Form.Select>
+                  <Form.Control
+                    size="sm"
+                    type="text"
+                    value={tempFilters.address}
+                    onChange={(e) => handleFilterChange('address', e.target.value)}
+                    placeholder="Search in addresses..."
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                    onKeyPress={handleKeyPress}
+                  />
+                </OverlayTrigger>
+                {tempFilters.address && (
+                  <small className="text-muted d-block mt-1">
+                    Searching in both primary and mailing addresses
+                  </small>
+                )}
               </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Contract Status:</Form.Label>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Filter customers by their contract status</Tooltip>}
+                >
+                  <Form.Select
+                    size="sm"
+                    value={tempFilters.contractStatus}
+                    onChange={(e) => handleFilterChange('contractStatus', e.target.value)}
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                    onKeyPress={handleKeyPress}
+                  >
+                    <option value="">All Contract Status</option>
+                    <option value="Y">With Contract</option>
+                    <option value="N">No Contract</option>
+                  </Form.Select>
+                </OverlayTrigger>
+              </Form.Group>
+              <Row className="align-items-end">
+                <Col md={6}>
+                  <Form.Group className="mb-2">
+                    <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Country:</Form.Label>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip>Select customer's country</Tooltip>}
+                    >
+                      <Form.Select
+                        size="sm"
+                        value={tempFilters.country}
+                        onChange={(e) => handleFilterChange('country', e.target.value)}
+                        style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                        onKeyPress={handleKeyPress}
+                      >
+                        <option value="">All Countries</option>
+                        <option value="SG">Singapore</option>
+                      </Form.Select>
+                    </OverlayTrigger>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-2">
+                    <Form.Label className="small mb-1" style={{ fontSize: '0.9rem' }}>Status:</Form.Label>
+                    <OverlayTrigger
+                      placement="top"
+                      overlay={<Tooltip>Filter by customer account status</Tooltip>}
+                    >
+                      <Form.Select
+                        size="sm"
+                        value={tempFilters.status}
+                        onChange={(e) => handleFilterChange('status', e.target.value)}
+                        style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
+                        onKeyPress={handleKeyPress}
+                      >
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </Form.Select>
+                    </OverlayTrigger>
+                  </Form.Group>
+                </Col>
+              </Row>
             </Col>
           </Row>
         </div>
       </Card.Body>
+
     </Card>
   );
 };
 
-// Add this new component for the addresses modal
-const AddressesModal = ({ show, onHide, addresses, defaultAddress, billtoDefault, shiptoDefault }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(3); // Default to 3 items
-  
-
-  // Simplified page size options
-  const pageSizeOptions = [3, 5, 10];
-
-  // Filter and split addresses
-  const filteredAddresses = useMemo(() => {
-    const filtered = addresses.filter(address => {
-      const matchesSearch = searchTerm === '' || 
-        Object.values(address).some(value => 
-          String(value).toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      
-      const matchesType = filterType === 'all' || 
-        (filterType === 'billing' && address.AddressType === 'bo_BillTo') ||
-        (filterType === 'shipping' && address.AddressType === 'bo_ShipTo');
-
-      return matchesSearch && matchesType;
-    });
-
-    return {
-      billing: filtered.filter(addr => addr.AddressType === 'bo_BillTo'),
-      shipping: filtered.filter(addr => addr.AddressType === 'bo_ShipTo')
-    };
-  }, [addresses, searchTerm, filterType]);
-
-  // Calculate if we should show both columns or just one
-  const showBillingOnly = filterType === 'billing' || (filterType === 'all' && filteredAddresses.shipping.length === 0);
-  const showShippingOnly = filterType === 'shipping' || (filterType === 'all' && filteredAddresses.billing.length === 0);
-  const showBothColumns = !showBillingOnly && !showShippingOnly;
-
-  // Calculate pagination based on visible content
-  const totalPages = Math.ceil(
-    Math.max(
-      showBillingOnly ? filteredAddresses.billing.length : 0,
-      showShippingOnly ? filteredAddresses.shipping.length : 0,
-      showBothColumns ? Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length) : 0
-    ) / itemsPerPage
-  );
-
-  // Get current page items
-  const getCurrentPageItems = (items) => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return items.slice(start, start + itemsPerPage);
-  };
-
-  const AddressTable = ({ addresses, type, billtoDefault, shiptoDefault }) => {
-    console.log('AddressTable Props:', {
-      type,
-      billtoDefault,
-      shiptoDefault,
-      addresses: addresses.map(a => ({
-        AddressName: a.AddressName,
-        AddressType: a.AddressType,
-        isDefault: type === 'shipping' ? 
-          a.AddressName === shiptoDefault : 
-          a.AddressName === billtoDefault
-      }))
-    });
-
-    return (
-      <div className="table-responsive" onClick={(e) => e.stopPropagation()}>
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              <th>
-                {type === 'billing' ? (
-                  <div className="d-flex align-items-center">
-                    <CurrencyExchange className="me-2" size={14} />
-                    Building
-                  </div>
-                ) : (
-                  <div className="d-flex align-items-center">
-                    <GeoAltFill className="me-2" size={14} />
-                    Building
-                  </div>
-                )}
-              </th>
-              <th>Address</th>
-              <th>Default</th>
-            </tr>
-          </thead>
-          <tbody>
-            {addresses.length === 0 ? (
-              <tr>
-                <td colSpan="3" className="text-center py-4">
-                  <div className="text-muted">
-                    {type === 'billing' ? (
-                      <div className="d-flex align-items-center justify-content-center">
-                        <CurrencyExchange className="me-2" size={14} />
-                        No billing addresses found
-                      </div>
-                    ) : (
-                      <div className="d-flex align-items-center justify-content-center">
-                        <GeoAltFill className="me-2" size={14} />
-                        No shipping addresses found
-                      </div>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              getCurrentPageItems(addresses).map((address, index) => (
-                <tr key={index}>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      {type === 'billing' ? (
-                        <CurrencyExchange className="me-2 text-primary" size={14} />
-                      ) : (
-                        <GeoAltFill className="me-2 text-primary" size={14} />
-                      )}
-                      <span className="fw-bold text-primary">
-                        {address.AddressName || '-'}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="text-wrap" style={{ maxWidth: '200px' }}>
-                      <HouseFill className="me-2 text-muted" size={14} />
-                      {[
-                        address.BuildingFloorRoom && address.BuildingFloorRoom !== address.AddressName ? address.BuildingFloorRoom : null,
-                        address.Street,
-                        address.ZipCode,
-                        address.Country === 'SG' ? 'Singapore' : address.Country
-                      ].filter(Boolean).join(', ')}
-                    </div>
-                  </td>
-                  <td>
-                    {type === 'billing' && address.AddressName === billtoDefault && (
-                      <Badge bg="primary" className="d-flex align-items-center" style={{ width: 'fit-content' }}>
-                        <CheckCircleFill className="me-1" size={12} />
-                        Default
-                      </Badge>
-                    )}
-                    {type === 'shipping' && address.AddressName === shiptoDefault && (
-                      <Badge bg="primary" className="d-flex align-items-center" style={{ width: 'fit-content' }}>
-                        <CheckCircleFill className="me-1" size={12} />
-                        Default
-                      </Badge>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  return (
-    <Modal 
-      show={show} 
-      onHide={onHide} 
-      size="xl" 
-      onClick={(e) => e.stopPropagation()}
-    >
-      <Modal.Header closeButton onClick={(e) => e.stopPropagation()}>
-        <Modal.Title>
-          <Search size={18} className="me-2" />
-          All Addresses
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body onClick={(e) => e.stopPropagation()}>
-        {/* Search and Filter Controls */}
-        <div className="mb-3">
-          <Row className="g-2">
-            <Col md={8}>
-              <Form.Group>
-                <div className="position-relative">
-                  <Form.Control
-                    type="text"
-                    placeholder="Search addresses..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    size="sm"
-                  />
-                  <Search 
-                    size={14} 
-                    className="position-absolute" 
-                    style={{ 
-                      top: '50%', 
-                      right: '10px', 
-                      transform: 'translateY(-50%)',
-                      color: '#6c757d'
-                    }}
-                  />
-                </div>
-              </Form.Group>
-            </Col>
-            <Col md={2}>
-              <Form.Select 
-                size="sm"
-                value={filterType}
-                onChange={(e) => {
-                  setFilterType(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="all">All Types</option>
-                <option value="billing">Billing Only</option>
-                <option value="shipping">Shipping Only</option>
-              </Form.Select>
-            </Col>
-            <Col md={2}>
-              <div className="d-flex align-items-center">
-                <small className="text-muted me-2">Show:</small>
-                <Form.Select
-                  size="sm"
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  style={{ width: '70px' }}
-                >
-                  {pageSizeOptions.map(size => (
-                    <option key={size} value={size}>{size}</option>
-                  ))}
-                </Form.Select>
-              </div>
-            </Col>
-          </Row>
-        </div>
-
-        {/* Results Summary */}
-        <div className="mb-3 text-muted small d-flex align-items-center">
-          <FilterCircle size={14} className="me-2" />
-          Found {filteredAddresses.billing.length} billing and {filteredAddresses.shipping.length} shipping addresses
-        </div>
-
-        {/* Dynamic Content */}
-        <Row>
-          {getCurrentPageItems(filteredAddresses.billing).length > 0 && (filterType === 'all' || filterType === 'billing') && (
-            <Col md={6} className="border-end">
-              <h6 className="mb-3 d-flex align-items-center">
-                <CurrencyExchange className="me-2" />
-                Billing Addresses
-                <Badge bg="secondary" className="ms-2">
-                  {filteredAddresses.billing.length}
-                </Badge>
-              </h6>
-              <AddressTable 
-                addresses={filteredAddresses.billing} 
-                type="billing"
-                billtoDefault={billtoDefault}
-                shiptoDefault={shiptoDefault}
-              />
-            </Col>
-          )}
-
-          {(filterType === 'all' || filterType === 'shipping') && (
-            <Col md={getCurrentPageItems(filteredAddresses.billing).length > 0 ? 6 : 12}>
-              <h6 className="mb-3 d-flex align-items-center">
-                <GeoAltFill className="me-2" />
-                Shipping Addresses
-                <Badge bg="secondary" className="ms-2">
-                  {filteredAddresses.shipping.length}
-                </Badge>
-              </h6>
-              <AddressTable 
-                addresses={filteredAddresses.shipping}
-                type="shipping"
-                billtoDefault={billtoDefault}
-                shiptoDefault={shiptoDefault}
-              />
-            </Col>
-          )}
-
-          {filteredAddresses.billing.length === 0 && filteredAddresses.shipping.length === 0 && (
-            <Col md={12}>
-              <div className="text-center py-4 text-muted">
-                <Search size={20} className="mb-2" />
-                <p>No addresses found matching your search criteria</p>
-              </div>
-            </Col>
-          )}
-        </Row>
-
-        {/* Updated Pagination Info */}
-        {totalPages > 1 && (
-          <div className="d-flex justify-content-between align-items-center mt-4">
-            <div className="text-muted small">
-              <ListUl size={14} className="me-2" />
-              {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length))} of {Math.max(filteredAddresses.billing.length, filteredAddresses.shipping.length)}
-            </div>
-            <div className="d-flex align-items-center">
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="me-2"
-              >
-                <ChevronLeft size={14} className="me-1" />
-                Previous
-              </Button>
-              <div className="mx-3 d-flex align-items-center">
-                <Calendar size={14} className="me-2" />
-                Page {currentPage} of {totalPages}
-              </div>
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-                <FeatherChevronRight size={14} className="ms-1" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal.Body>
-      <Modal.Footer onClick={(e) => e.stopPropagation()}>
-        <Button variant="secondary" onClick={(e) => {
-          e.stopPropagation();
-          onHide();
-        }}>
-          <XLg size={14} className="me-1" />
-          Close
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-};
-
-// Update the TableRow component to remove click functionality
-const TableRow = memo(({ row }) => {
-  return (
-    <tr>
-      {row.getVisibleCells().map(cell => (
-        <td key={`${row.original.customerId}_${cell.column.id}`}>
-          {flexRender(
-            cell.column.columnDef.cell,
-            cell.getContext()
-          )}
-        </td>
-      ))}
-    </tr>
-  );
-});
-
-TableRow.displayName = 'TableRow';
-
+// Modify the ViewCustomers component to use mock data
 const ViewCustomers = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -683,60 +418,62 @@ const ViewCustomers = () => {
   const router = useRouter();
   const [perPage, setPerPage] = useState(TABLE_CONFIG.PAGE_SIZES.DEFAULT);
   const [initialLoad, setInitialLoad] = useState(true);
-  const [initialData, setInitialData] = useState([]);
   const [filters, setFilters] = useState({
-    quickSearch: '',
-    customerId: '',
+    customerCode: '',
     customerName: '',
-    address: '',
-    city: '',
+    email: '',
+    phone: '',
+    contractStatus: '',
     country: '',
     status: '',
-    customerType: '',
-    customerStatus: '',
-    locations: '',
+    address: '' 
   });
-
-  // Add state for last document (for pagination)
   const [lastDoc, setLastDoc] = useState(null);
   const [firstDoc, setFirstDoc] = useState(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [initialData, setInitialData] = useState([]);
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'index',
+  const columnHelper = createColumnHelper()
+
+  const columns = [
+    columnHelper.accessor((row, index) => ((currentPage - 1) * perPage) + index + 1, {
+      id: 'index',
       header: '#',
       size: 50,
-      cell: info => {
-        const rowIndex = info.row.index;
-        const pageIndex = table.getState().pagination.pageIndex;
-        const pageSize = table.getState().pagination.pageSize;
-        const displayIndex = rowIndex + (pageIndex * pageSize) + 1;
-        return (
-          <div className="d-flex align-items-center">
-            <span className="text-primary">{displayIndex}</span>
-          </div>
-        );
-      }
-    },
-    {
-      accessorKey: 'customerId',
-      header: 'Customer ID',
+    }),
+    columnHelper.accessor('customerId', {
+      header: 'Code',
       size: 100,
       cell: info => (
+        <OverlayTrigger
+          placement="top"
+          overlay={<Tooltip>Click to copy customer code</Tooltip>}
+        >
+          <div 
+            style={{fontWeight: 'bold', cursor: 'pointer'}} 
+            onClick={() => {
+              navigator.clipboard.writeText(info.getValue());
+              toast.success('Customer code copied!');
+            }}
+          >
+            {info.getValue() || '-'}
+          </div>
+        </OverlayTrigger>
+      )
+    }),
+    columnHelper.accessor('customerName', {
+      header: 'Customer',
+      size: 200,
+      cell: info => (
         <div className="d-flex align-items-center">
-          <Building className="me-2" size={14} />
-          <span className="text-primary">{info.getValue()}</span>
+          <Building className="me-2 text-primary" size={14} />
+          <span className="fw-bold">
+            {info.getValue() || 'No Name Available'}
+          </span>
         </div>
       )
-    },
-    {
-      accessorKey: 'customerName',
-      header: 'Customer Name',
-      size: 200,
-    },
-    {
-      accessorKey: 'locations',
+    }),
+    columnHelper.accessor('locations', {
       header: 'Address Information',
       size: 300,
       cell: info => {
@@ -793,50 +530,142 @@ const ViewCustomers = () => {
           </div>
         );
       }
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      size: 100,
-    }
-  ], []);
+    }),
+    columnHelper.accessor('customerContact', {
+      header: 'Phone',
+      size: 150,
+      cell: info => {
+        const contact = info.getValue();
+        const phone = contact?.phoneNumber || contact?.mobileNumber;
+        return phone ? (
+          <OverlayTrigger
+            placement="top"
+            overlay={<Tooltip>Click to call</Tooltip>}
+          >
+            <a href={`tel:${phone}`} className="text-decoration-none d-flex align-items-center">
+              <TelephoneFill className="me-2 text-primary" size={14} />
+              {phone}
+            </a>
+          </OverlayTrigger>
+        ) : (
+          <span className="text-muted">-</span>
+        );
+      }
+    }),
+    columnHelper.accessor('customerContact.email', {
+      header: 'Email',
+      size: 200,
+      cell: info => {
+        const email = info.getValue();
+        return email ? (
+          <OverlayTrigger
+            placement="top"
+            overlay={<Tooltip>Click to send email</Tooltip>}
+          >
+            <a href={`mailto:${email}`} className="text-decoration-none d-flex align-items-center">
+              <EnvelopeFill className="me-2 text-primary" size={14} />
+              {email}
+            </a>
+          </OverlayTrigger>
+        ) : (
+          <span className="text-muted">-</span>
+        );
+      }
+    }),
+    columnHelper.accessor('contract', {
+      header: 'Contract Duration',
+      size: 180,
+      cell: info => {
+        const contract = info.getValue();
+        if (!contract || contract.status !== 'active' || !contract.startDate || !contract.endDate) {
+          return '-';
+        }
 
+        const startDate = moment(contract.startDate.toDate());
+        const endDate = moment(contract.endDate.toDate());
+        const now = moment();
+        const duration = moment.duration(endDate.diff(now));
+        
+        let durationText = '';
+        if (duration.asMonths() >= 1) {
+          durationText = `${Math.floor(duration.asMonths())} month${Math.floor(duration.asMonths()) !== 1 ? 's' : ''} left`;
+        } else if (duration.asDays() >= 1) {
+          durationText = `${Math.floor(duration.asDays())} day${Math.floor(duration.asDays()) !== 1 ? 's' : ''} left`;
+        } else {
+          durationText = `${Math.floor(duration.asHours())} hour${Math.floor(duration.asHours()) !== 1 ? 's' : ''} left`;
+        }
+
+        return (
+          <OverlayTrigger
+            placement="top"
+            overlay={
+              <Tooltip>
+                Start: {startDate.format('DD/MM/YYYY')}<br/>
+                End: {endDate.format('DD/MM/YYYY')}
+              </Tooltip>
+            }
+          >
+            <div className="d-flex align-items-center">
+              <CalendarRange className="me-2 text-primary" size={14} />
+              {durationText}
+            </div>
+          </OverlayTrigger>
+        );
+      }
+    }),
+    
+  ];
+
+    // Add new state for search loading
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    
 
   const filteredData = useMemo(() => {
     return data.filter(customer => {
-      // Customer ID filter
-      const matchesCustomerId = !filters.customerId || 
-        customer.customerId?.toLowerCase().includes(filters.customerId.toLowerCase());
+      // Customer Code filter
+      const matchesCode = !filters.customerCode || 
+        customer.customerId?.toLowerCase().includes(filters.customerCode.toLowerCase());
 
-      // Site Name filter
-      const matchesCustomerName = !filters.customerName || 
+      // Customer Name filter
+      const matchesName = !filters.customerName || 
         customer.customerName?.toLowerCase().includes('%' + filters.customerName.toLowerCase() + '%');
 
-      // Address filter (check all address fields)
-      const matchesAddress = !filters.address || (
-        (customer.streetAddress1?.toLowerCase().includes(filters.address.toLowerCase()) ||
-        customer.streetAddress2?.toLowerCase().includes(filters.address.toLowerCase()) ||
-        customer.streetAddress3?.toLowerCase().includes(filters.address.toLowerCase()))
-      );
+      // Email filter
+      const matchesEmail = !filters.email || 
+        (customer.customerContact?.email || '').toLowerCase().includes(filters.email.toLowerCase());
 
-      // City filter
-      const matchesCity = !filters.city || 
-        customer.city?.toLowerCase().includes(filters.city.toLowerCase());
+      // Phone filter
+      const matchesPhone = !filters.phone || 
+        (customer.customerContact?.phoneNumber || '').includes(filters.phone) ||
+        (customer.customerContact?.mobileNumber || '').includes(filters.phone);
 
-      // Country filter
+      // Contract Status filter
+      const matchesContract = !filters.contractStatus || 
+        customer.contract?.status === filters.contractStatus;
+
+      // Country filter (assuming it's in the addresses)
       const matchesCountry = !filters.country || 
-        customer.country === filters.country;
+        customer.locations?.some(loc => loc.country === filters.country);
 
       // Status filter
       const matchesStatus = !filters.status || 
         customer.status === filters.status;
 
-      return matchesCustomerId && matchesCustomerName && matchesAddress && 
-             matchesCity && matchesCountry && matchesStatus;
+      // Address search
+      const matchesAddress = !filters.address || 
+        customer.locations?.some(loc => 
+          (loc.streetAddress1 || '').toLowerCase().includes(filters.address.toLowerCase()) ||
+          (loc.streetAddress2 || '').toLowerCase().includes(filters.address.toLowerCase()) ||
+          (loc.streetAddress3 || '').toLowerCase().includes(filters.address.toLowerCase()) ||
+          (loc.city || '').toLowerCase().includes(filters.address.toLowerCase())
+        );
+
+      return matchesCode && matchesName && matchesEmail && matchesPhone && 
+             matchesContract && matchesCountry && matchesStatus && matchesAddress;
     });
   }, [data, filters]);
 
-  
 
   // Optimize the table configuration
   const table = useReactTable({
@@ -862,150 +691,40 @@ const ViewCustomers = () => {
   // Update the getPageNumbers function to use filteredData length
   const pageNumbers = getPageNumbers(currentPage, Math.ceil(filteredData.length / perPage));
 
-  const handleViewDetails = (customer) => {
-    console.log('Viewing customer:', customer);
-    router.push(`/dashboard/customers/view/${customer.customerId}`);
-  };
-
-  const handleClearFilters = async () => {
-    setLoading(true);
-    try {
-      // Reset all filters
-      const clearedFilters = {
-        quickSearch: '',
-        customerId: '',
-        customerName: '',
-        address: '',
-        city: '',
-        country: '',
-        status: ''
-      };
-      setFilters(clearedFilters);
-      setCurrentPage(1);
-
-      // Fetch fresh data with limit
-      const customersRef = collection(db, 'customers');
-      const clearQuery = query(
-        customersRef,
-        orderBy('customerId', 'asc'),
-      );
-
-      const snapshot = await getDocs(clearQuery);
-      const customers = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-
-      setData(customers);
-      setTotalRows(customers.length);
-      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-      setFirstDoc(snapshot.docs[0]);
-      
-      toast.success('Filters cleared successfully');
-    } catch (error) {
-      console.error('Error clearing filters:', error);
-      toast.error('Failed to clear filters');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Add this customStyles object near the top of your file
-  const customStyles = {
-    table: {
-      style: {
-        backgroundColor: "#ffffff",
-        borderRadius: "8px",
-        width: "100%",
-        tableLayout: "fixed",
-      },
-    },
-    headRow: {
-      style: {
-        backgroundColor: "#f8fafc",
-        borderTopLeftRadius: "8px",
-        borderTopRightRadius: "8px",
-        borderBottom: "1px solid #e2e8f0",
-        minHeight: "52px",
-      },
-    },
-    headCells: {
-      style: {
-        fontSize: "13px",
-        fontWeight: "600",
-        color: "#475569",
-        paddingLeft: "16px",
-        paddingRight: "16px",
-      },
-    },
-    cells: {
-      style: {
-        fontSize: "14px",
-        color: "#64748b",
-        paddingLeft: "16px",
-        paddingRight: "16px",
-        paddingTop: "12px",
-        paddingBottom: "12px",
-      },
-    },
-    rows: {
-      style: {
-        minHeight: "60px",
-        "&:hover": {
-          backgroundColor: "#f1f5f9",
-          cursor: "pointer",
-          transition: "all 0.2s",
-        },
-      },
-    },
-    pagination: {
-      style: {
-        borderTop: "1px solid #e2e8f0",
-        minHeight: "56px",
-      },
-      pageButtonsStyle: {
-        borderRadius: "4px",
-        height: "32px",
-        padding: "4px 8px",
-        margin: "0 4px",
-      },
-    },
-  };
-
-
-  const QuickActions = ({ customer }) => (
-    <DropdownButton
-      size="sm"
-      variant="light"
-      title="Actions"
-    >
-      <Dropdown.Item onClick={() => handleViewDetails(customer)}>
-        <Eye size={14} className="me-2" />
-        View Details
-      </Dropdown.Item>
-      <Dropdown.Item onClick={() => handleEditCustomer(customer)}>
-        <PencilSquare size={14} className="me-2" />
-        Edit
-      </Dropdown.Item>
-      <Dropdown.Divider />
-      <Dropdown.Item 
-        className="text-danger"
-        onClick={() => handleDeleteCustomer(customer)}
+  // Update the entries per page dropdown
+  const EntriesPerPage = () => (
+    <div className="d-flex align-items-center">
+      <span className="text-muted me-2">Show:</span>
+      <Form.Select
+        size="sm"
+        value={perPage}
+        onChange={(e) => handlePerRowsChange(Number(e.target.value))}
+        style={{ width: '80px' }}
+        disabled={loading}
       >
-        <Trash size={14} className="me-2" />
-        Delete
-      </Dropdown.Item>
-    </DropdownButton>
-  );
-
-  
-  // Add search handler
-  const PaginationInfo = () => (
-    <div className="text-muted small">
-      Showing {((currentPage - 1) * perPage) + 1} to {Math.min(currentPage * perPage, totalRows)} of {totalRows} entries
+        <option value={5}>5</option>
+        <option value={10}>10</option>
+        <option value={25}>25</option>
+        <option value={50}>50</option>
+        <option value={100}>100</option>
+      </Form.Select>
+      <span className="text-muted ms-2">entries</span>
     </div>
   );
 
+  // Update the pagination info component
+  const PaginationInfo = () => {
+    const start = ((currentPage - 1) * perPage) + 1;
+    const end = Math.min(currentPage * perPage, filteredData.length);
+    const total = filteredData.length;
+    
+    return (
+      <div className="text-muted small me-3">
+        <ListUl size={14} className="me-2" />
+        Showing {start} to {end} of {total} entries
+      </div>
+    );
+  };
 
   // Add this function to handle per page changes
   const handlePerRowsChange = async (newPerPage) => {
@@ -1041,28 +760,148 @@ const ViewCustomers = () => {
     }
   };
 
-  // Update the entries per page dropdown
-  const EntriesPerPage = () => (
-    <div className="d-flex align-items-center">
-      <span className="text-muted me-2">Show:</span>
-      <Form.Select
-        size="sm"
-        value={perPage}
-        onChange={(e) => handlePerRowsChange(Number(e.target.value))}
-        style={{ width: '80px' }}
-        disabled={loading}
-      >
-        <option value={5}>5</option>
-        <option value={10}>10</option>
-        <option value={25}>25</option>
-        <option value={50}>50</option>
-        <option value={100}>100</option>
-      </Form.Select>
-      <span className="text-muted ms-2">entries</span>
-    </div>
-  );
+  const handleViewDetails = (customer) => {
+    console.log('Viewing customer:', customer); // Debug log
+    localStorage.setItem('viewCustomerToast', customer.customerName);
+    router.push(`/customers/view/${customer.customerId}`);
+  };
 
+  const handleClearFilters = async () => {
+    if (loading) return;
+    
+    setLoading(true);
+    try {
+      // Reset all filters
+      const clearedFilters = {
+        customerCode: '',
+        customerName: '',
+        email: '',
+        phone: '',
+        contractStatus: '',
+        country: '',
+        status: '',
+        address: ''
+      };
+      setFilters(clearedFilters);
+      setCurrentPage(1);
 
+      // Fetch fresh data with limit
+      const customersRef = collection(db, 'customers');
+      const clearQuery = query(
+        customersRef,
+        orderBy('customerId', 'asc'),
+        limit(10)
+      );
+
+      const snapshot = await getDocs(clearQuery);
+      const customers = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setData(customers);
+      setTotalRows(customers.length);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setFirstDoc(snapshot.docs[0]);
+      
+      toast.success('Filters cleared successfully');
+    } catch (error) {
+      console.error('Error clearing filters:', error);
+      toast.error('Failed to clear filters');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add useEffect for initial data load instead
+  // useEffect(() => {
+  //   const loadInitialData = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const customersRef = collection(db, 'customers');
+  //       const initialQuery = query(
+  //         customersRef,
+  //         orderBy('customerId', 'asc'),
+  //         limit(10)
+  //       );
+ 
+  //       const snapshot = await getDocs(initialQuery);
+  //       const customers = snapshot.docs.map(doc => ({
+  //         id: doc.id,
+  //         ...doc.data()
+  //       }));
+ 
+  //       setData(customers);
+  //       setTotalRows(customers.length);
+  //       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+  //       setFirstDoc(snapshot.docs[0]);
+  //       setInitialLoad(false);
+  //     } catch (error) {
+  //       console.error('Error loading initial data:', error);
+  //       toast.error('Failed to load customers');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+ 
+  //   if (initialLoad) {
+  //     loadInitialData();
+  //   }
+  // }, [initialLoad]);
+
+  // Update the search input in your JSX
+  // <div className="d-flex align-items-center">
+  //   <div className="position-relative">
+  //     <input
+  //       type="text"
+  //       className="form-control"
+  //       placeholder="Search customers..."
+  //       value={searchTerm}
+  //       onChange={(e) => setSearchTerm(e.target.value)}
+  //       onKeyPress={handleSearch}
+  //     />
+  //     {searchLoading && (
+  //       <div className="position-absolute top-50 end-0 translate-middle-y me-2">
+  //         <Spinner
+  //           animation="border"
+  //           size="sm"
+  //           role="status"
+  //           aria-hidden="true"
+  //         />
+  //       </div>
+  //     )}
+  //   </div>
+  //   <Button 
+  //     variant="primary" 
+  //     className="ms-2"
+  //     onClick={() => handleSearch({ key: 'Enter' })}
+  //     disabled={searchLoading}
+  //   >
+  //     {searchLoading ? (
+  //       <Spinner
+  //         as="span"
+  //         animation="border"
+  //         size="sm"
+  //         role="status"
+  //         aria-hidden="true"
+  //       />
+  //     ) : (
+  //       <Search size={18} />
+  //     )}
+  //   </Button>
+  // </div>
+
+  // Update the table body rendering to use pagination
+  {table.getRowModel().rows.map(row => (
+    <tr key={row.id}>
+      {row.getVisibleCells().map(cell => (
+        <td key={cell.id}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </td>
+      ))}
+    </tr>
+  ))}
+  
 
   // Update the FilterPanel's handleSearch function to work with direct data
   const handleSearch = async (searchFilters) => {
@@ -1085,7 +924,7 @@ const ViewCustomers = () => {
         let searchQuery = query(
           customersRef,
           where('customerName', '==', searchTerm),
-          limit(999)
+          limit(10)
         );
 
         let snapshot = await getDocs(searchQuery);
@@ -1116,7 +955,7 @@ const ViewCustomers = () => {
           }));
 
           if (searchResults.length === 0) {
-            // Try searching by customerId
+            // Try searching by siteId
             searchQuery = query(
               customersRef,
               where('customerId', '>=', searchTerm.toUpperCase()),
@@ -1126,7 +965,7 @@ const ViewCustomers = () => {
 
             snapshot = await getDocs(searchQuery);
             totalReadCount += snapshot.docs.length;
-            console.log(`📊 Firebase Reads for customerId search: ${snapshot.docs.length}`);
+            console.log(`📊 Firebase Reads for siteId search: ${snapshot.docs.length}`);
 
             searchResults = snapshot.docs.map(doc => ({
               id: doc.id,
@@ -1155,13 +994,13 @@ const ViewCustomers = () => {
                 return (
                   customer.customerName?.toLowerCase().includes(searchTermLower) ||
                   customer.customerId?.toLowerCase().includes(searchTermLower) ||
+                  customer.customerType?.toLowerCase().includes(searchTermLower) ||
+                  customer.customerStatus?.toLowerCase().includes(searchTermLower) ||
+                  customer.address?.toLowerCase().includes(searchTermLower) ||
                   // Search in address fields
                   addresses.some(addr => 
-                    addr.streetAddress1?.toLowerCase().includes(searchTermLower) ||
-                    addr.streetAddress2?.toLowerCase().includes(searchTermLower) ||
-                    addr.streetAddress3?.toLowerCase().includes(searchTermLower) ||
-                    addr.city?.toLowerCase().includes(searchTermLower) ||
-                    addr.country?.toLowerCase().includes(searchTermLower)
+                    addr.street?.toLowerCase().includes(searchTermLower) ||
+                    addr.name?.toLowerCase().includes(searchTermLower)
                   )
                 );
               });
@@ -1192,16 +1031,16 @@ const ViewCustomers = () => {
 
         // Apply filters in memory
         if (Object.values(searchFilters).some(filter => filter)) {
-          searchResults = searchResults.filter(customer => {
-            if (searchFilters.customerId && !customer.customerId?.toLowerCase().includes(searchFilters.customerId.toLowerCase())) return false;
-            if (searchFilters.customerName && !customer.customerName?.toLowerCase().includes(searchFilters.customerName.toLowerCase())) return false;
+          searchResults = searchResults.filter(location => {
+            if (searchFilters.siteId && !location.siteId?.toLowerCase().includes(searchFilters.siteId.toLowerCase())) return false;
+            if (searchFilters.siteName && !location.siteName?.toLowerCase().includes(searchFilters.siteName.toLowerCase())) return false;
             if (searchFilters.address && !(
-              customer.streetAddress1?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
-              customer.streetAddress2?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
-              customer.streetAddress3?.toLowerCase().includes(searchFilters.address.toLowerCase())
+              location.address1?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
+              location.address2?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
+              location.address3?.toLowerCase().includes(searchFilters.address.toLowerCase())
             )) return false;
-            if (searchFilters.city && !customer.city?.toLowerCase().includes(searchFilters.city.toLowerCase())) return false;
-            if (searchFilters.country && !customer.country?.toLowerCase().includes(searchFilters.country.toLowerCase())) return false;
+            if (searchFilters.city && !location.city?.toLowerCase().includes(searchFilters.city.toLowerCase())) return false;
+            if (searchFilters.country && !location.country?.toLowerCase().includes(searchFilters.country.toLowerCase())) return false;
             return true;
           });
         }
@@ -1234,7 +1073,7 @@ const ViewCustomers = () => {
 
     } catch (error) {
       console.error('🚨 Search error:', error);
-      toast.error('Failed to search customers');
+      toast.error('Failed to search locations');
       // Reset the table on error
       setData([]);
       setTotalRows(0);
@@ -1245,6 +1084,7 @@ const ViewCustomers = () => {
     }
   };
 
+  // Add this useEffect for initial data load
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
@@ -1253,7 +1093,7 @@ const ViewCustomers = () => {
         const initialQuery = query(
           customersRef,
           orderBy('customerId', 'asc'),
-          //limit(10)
+          limit(10)
         );
 
         const snapshot = await getDocs(initialQuery);
@@ -1269,7 +1109,7 @@ const ViewCustomers = () => {
         setInitialLoad(false);
       } catch (error) {
         console.error('Error loading initial data:', error);
-        toast.error('Failed to load customers');
+        toast.error('Failed to load locations');
       } finally {
         setLoading(false);
       }
@@ -1280,6 +1120,7 @@ const ViewCustomers = () => {
     }
   }, [initialLoad]);
 
+  
   return (
     <Fragment>
       <GeeksSEO title="Customers | VITAR Group" />
@@ -1287,27 +1128,27 @@ const ViewCustomers = () => {
         <Col lg={12} md={12} sm={12}>
             <ContentHeader
             title="Customers List"
-            description="Manage and track all your customers in one centralized dashboard"
-            infoText="Track customer details, addresses, and customer-specific information"
+            description="Comprehensive view of all your customer accounts, including contact details, service history, and account status"
+            infoText="Easily search, filter, and manage customer profiles. Access key information like contact details, billing addresses, and account representatives. Track customer status and maintain accurate records for all your business relationships."
             badgeText="Customer Management"
-            badgeText2="Customers"
+            badgeText2="Workforce"
             breadcrumbItems={[
-              {
-                icon: <House className="me-2" size={14} />,
-                text: 'Dashboard',
-                link: '/dashboard'
+              { 
+                icon: <House className="me-2" size={14} />, 
+                text: 'Dashboard', 
+                link: '/dashboard' 
               },
-              {
-                icon: <Building className="me-2" size={14} />,
-                text: 'Customers'
+              { 
+                icon: <People className="me-2" size={14} />, 
+                text: 'Customers' 
               }
             ]}
-            actionButtons={[
+            actionButtons={[  // Changed from actionButton to actionButtons array
               {
                 text: "Create New Customer",
                 icon: <FaPlus size={14} />,
                 variant: "light",
-                tooltip: "Add a new customer",
+                tooltip: "Start creating a new customer masterlist",
                 onClick: () => router.push('/dashboard/customers/create')
               }
             ]}
@@ -1372,7 +1213,11 @@ const ViewCustomers = () => {
                               style={{ width: '2rem', height: '2rem' }}
                             />
                             <div className="text-muted">
-                              {filters.quickSearch ? 'Searching customers...' : 'Loading customers...'}
+                              {filters.customerName || filters.customerCode || filters.email || filters.phone ? (
+                                'Searching customers...'
+                              ) : (
+                                'Loading customers...'
+                              )}
                             </div>
                             <small className="text-muted mt-1">Please wait a moment</small>
                           </div>
@@ -1381,9 +1226,15 @@ const ViewCustomers = () => {
                     ) : (
                       <>
                         {table.getRowModel().rows.map(row => (
-                          <TableRow key={`row_${row.original.customerId}`} row={row} />
+                          <tr key={row.id}>
+                            {row.getVisibleCells().map(cell => (
+                              <td key={cell.id}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                        {data.length === 0 && (
+                        {filteredData.length === 0 && (
                           <tr>
                             <td colSpan={columns.length} className="text-center py-4">
                               <div className="text-muted">
@@ -1673,8 +1524,8 @@ const TOAST_STYLES = {
     borderLeft: '6px solid #ffc107'
   },
   ERROR: {
-    color: '#1e40a6',
-    borderLeft: '6px solid #1e40a6'
+    color: '#dc3545',
+    borderLeft: '6px solid #dc3545'
   },
   LOADING: {
     color: '#0d6efd',

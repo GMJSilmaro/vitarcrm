@@ -1218,7 +1218,7 @@ const ViewLocations = () => {
         const initialQuery = query(
           locationsRef,
           orderBy('siteId', 'asc'),
-          limit(10)
+         // limit(10)
         );
 
         const snapshot = await getDocs(initialQuery);

@@ -111,6 +111,16 @@ const CreateLocations = () => {
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
 
+  const [formCompletion, setFormCompletion] = useState({
+    basic: 0,
+    address: 0,
+    contact: 0
+  });
+
+    // Move the contact loading state to component level
+    const [contactLoading, setContactLoading] = useState(false);
+
+
    // Update formData to handle multiple contacts
    const [formData, setFormData] = useState({
     locationID: '',
@@ -118,7 +128,7 @@ const CreateLocations = () => {
   customerId: '',
   customerName: '',
   customerType: '',
-  status: 'active',
+  status: '',
   addresses: [{
     street1: '',
     street2: '',
@@ -221,30 +231,13 @@ const CreateLocations = () => {
     }));
   };
 
-  // Update your contact change handler
-  const handleContactChange = (index, contactId) => {
-    if (!contactId) return;
-
-    const selectedContact = availableContacts.find(c => c.id === contactId);
-    if (!selectedContact) return;
-
-    setFormData(prev => ({
-      ...prev,
-      contacts: prev.contacts.map((contact, i) => 
-        i === index ? {
-          ...selectedContact,
-          isDefault: contact.isDefault
-        } : contact
-      )
-    }));
-  };
 
     // Function to calculate overall progress
     const calculateOverallProgress = () => {
       const tabWeights = {
-        basic: 0.34,    // 34% weight
-        address: 0.33,  // 33% weight
-        contact: 0.33   // 33% weight
+        basic: 0.25,    // 34% weight
+        address: 0.25,  // 33% weight
+        contact: 0.50   // 33% weight
       };
   
       const weightedProgress = Object.entries(formCompletion).reduce((total, [tab, progress]) => {
@@ -254,25 +247,6 @@ const CreateLocations = () => {
   
       return Math.round(weightedProgress);
     };
-
-  // Function to calculate contact completion
-  const calculateContactProgress = () => {
-    if (formData.contacts.length === 0) return 0;
-
-    const requiredFields = ['firstName', 'lastName', 'phone', 'email'];
-    const totalFields = formData.contacts.length * requiredFields.length;
-    let filledFields = 0;
-
-    formData.contacts.forEach(contact => {
-      requiredFields.forEach(field => {
-        if (contact[field] && contact[field].trim() !== '') {
-          filledFields++;
-        }
-      });
-    });
-
-    return Math.round((filledFields / totalFields) * 100);
-  };
 
   // Add these handler functions for address management
   const handleAddAddress = () => {
@@ -328,6 +302,31 @@ const CreateLocations = () => {
     }));
   };
 
+    // Update your contact change handler
+    const handleContactChange = (index, contactId) => {
+      if (!contactId) return;
+  
+      const selectedContact = availableContacts.find(c => c.id === contactId);
+      if (!selectedContact) return;
+  
+      setFormData(prev => ({
+        ...prev,
+        contacts: prev.contacts.map((contact, i) => 
+          i === index ? {
+            ...selectedContact,
+            isDefault: contact.isDefault
+          } : contact
+        )
+      }));
+
+      const contactProgress = calculateContactProgress();
+      setFormCompletion(prev => ({
+        ...prev,
+        contact: contactProgress
+      }));
+    };
+  
+
   // Update the address progress calculation
   const calculateAddressProgress = () => {
     const requiredFields = ['street1', 'city', 'postcode', 'country'];
@@ -344,6 +343,27 @@ const CreateLocations = () => {
 
     return Math.round((filledFields / totalFields) * 100);
   };
+
+  
+  // Function to calculate contact completion
+  const calculateContactProgress = () => {
+    if (formData.contacts.length === 0) return 0;
+
+    const requiredFields = ['firstName', 'lastName', 'phone', 'email'];
+    const totalFields = formData.contacts.length * requiredFields.length;
+    let filledFields = 0;
+
+    formData.contacts.forEach(contact => {
+      requiredFields.forEach(field => {
+        if (contact[field] && contact[field].trim() !== '') {
+          filledFields++;
+        }
+      });
+    });
+
+    return Math.round((filledFields / totalFields) * 100);
+  };
+
 
   // Add new state for countries
   const [countries, setCountries] = useState([]);
@@ -457,19 +477,11 @@ const CreateLocations = () => {
   const [collapsedAddresses, setCollapsedAddresses] = useState({});
 
   
-  // Add state to track form completion
-  const [formCompletion, setFormCompletion] = useState({
-    basic: 0,
-    address: 0,
-    contact: 0
-  });
-
   // Function to calculate basic tab completion
   const calculateBasicTabProgress = () => {
     const requiredFields = {
       locationName: formData.locationName,
       customerId: formData.customerId,
-      status: formData.status
     };
 
     const filledFields = Object.values(requiredFields).filter(value => 
@@ -484,8 +496,7 @@ const CreateLocations = () => {
     // Check basic information
     const basicComplete = formData.locationID && 
       formData.locationName && 
-      formData.customerId && 
-      formData.status;
+      formData.customerId;
   
     // Check address (at least one complete address required)
     const addressComplete = formData.addresses.some(address => 
@@ -599,8 +610,6 @@ const CreateLocations = () => {
     );
   };
 
-  // Move the contact loading state to component level
-  const [contactLoading, setContactLoading] = useState(false);
 
   // Update the contact save handler
   const handleSaveContact = async () => {
@@ -626,7 +635,7 @@ const CreateLocations = () => {
       if (!contactId) {
         throw new Error('Failed to generate contact ID');
       }
-
+      contactLoading(true);
       // Create contact data structure to match location's contact structure
       const contactData = {
         contactId,
@@ -637,7 +646,6 @@ const CreateLocations = () => {
         customerId: formData.customerId,
         customerName: formData.customerName,
         isDefault: formData.contacts.length === 0,
-        status: 'active',
         additionalInformation: {},
         createdAt: serverTimestamp(),
         createdAt: serverTimestamp(),
@@ -697,6 +705,7 @@ const CreateLocations = () => {
       setShowNewContactForm(false);
 
       toast.success('Contact saved successfully');
+      contactLoading(false);
     } catch (error) {
       console.error('Error saving contact:', error);
       toast.error('Failed to save contact: ' + error.message);
@@ -1125,109 +1134,6 @@ const CreateLocations = () => {
     showActions: false
   });
 
-  const handleSaveLocation = async () => {
-    try {
-      setLoading(true);
-
-      // Get user data from cookies
-      const uid = getCookie('uid');
-      const email = getCookie('email');
-      const displayName = getCookie('displayName') || getCookie('workerID') || 'Admin';
-
-      if (!uid || !email) {
-        toast.error('Authentication data not found. Please login again.');
-        router.push('/auth/signin');
-        return;
-      }
-
-      // Validate required fields
-      if (!isFormComplete()) {
-        toast.error('Please fill in all required fields');
-        return;
-      }
-
-      const locationData = {
-        siteId: formData.locationID,
-        siteName: formData.locationName,
-        customerId: formData.customerId,
-        customerName: formData.customerName,
-        status: formData.status,
-        addresses: formData.addresses.map(addr => ({
-          street1: addr.street1 || '',
-          street2: addr.street2 || '',
-          street3: addr.street3 || '',
-          city: addr.city || '',
-          postcode: addr.postcode || '',
-          country: addr.country || '',
-          isDefault: addr.isDefault || false,
-          isBilling: addr.isBilling || false,
-          isShipping: addr.isShipping || false
-        })),
-        additionalAddresses: formData.additionalAddresses?.map(addr => ({
-          street1: addr.street1 || '',
-          street2: addr.street2 || '',
-          street3: addr.street3 || '',
-          city: addr.city || '',
-          postcode: addr.postcode || '',
-          country: addr.country || '',
-          isDefault: addr.isDefault || false,
-          isBilling: addr.isBilling || false,
-          isShipping: addr.isShipping || false
-        })) || [],
-        contacts: formData.contacts.map(contact => ({
-          contactId: contact.contactId,
-          firstName: contact.firstName,
-          lastName: contact.lastName,
-          email: contact.email,
-          phone: contact.phone || '',
-          isDefault: contact.isDefault || false
-        })),
-        additionalInformation: {
-          operatingHours: formData.operatingHours || '',
-          notes: formData.notes || '',
-          tags: formData.tags || []
-        },
-        createdAt: serverTimestamp(),
-        createdBy: {
-          uid,
-          email,
-          displayName
-        },
-        updatedAt: serverTimestamp(),
-        updatedBy: {
-          uid,
-          email,
-          displayName
-        }
-      };
-
-      // Use siteId as document ID
-      const locationRef = doc(db, 'locations', formData.locationID);
-      await setDoc(locationRef, locationData);
-
-      // Show success modal instead of simple toast
-      setAlertConfig({
-        title: 'Success!',
-        message: `Location ${formData.locationName} (${formData.locationID}) has been successfully created. You can now view the location list or create another location.`,
-        type: 'success',
-        showActions: true
-      });
-      setShowAlert(true);
-
-    } catch (error) {
-      console.error('Error saving location:', error);
-      setAlertConfig({
-        title: 'Error',
-        message: `Failed to save location: ${error.message}`,
-        type: 'error',
-        showActions: false
-      });
-      setShowAlert(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Add these handlers for search and contacts
   const handleSearchClick = () => {
     setShowDropdown(true);
@@ -1238,9 +1144,23 @@ const CreateLocations = () => {
     }
   };
 
+    // Handle tab change
+    const handleTabChange = (newTab) => {
+      // Calculate progress before changing tabs
+      if (activeTab === 'basic') {
+        const basicProgress = calculateBasicTabProgress();
+        setFormCompletion(prev => ({
+          ...prev,
+          basic: basicProgress
+        }));
+      }
+      setActiveTab(newTab);
+    };
+  
+
     // Update the Next button click handler
     const handleNextClick = () => {
-      const tabs = ['basic', 'contact', 'contract'];
+      const tabs = ['basic', 'address', 'contact'];
       const currentIndex = tabs.indexOf(activeTab);
       
       // Update progress for current tab before moving to next
@@ -1444,6 +1364,110 @@ const CreateLocations = () => {
     );
   };
 
+  
+  const handleSaveLocation = async () => {
+    try {
+      // Get user data from cookies
+      const uid = getCookie('uid');
+      const email = getCookie('email');
+      const displayName = getCookie('displayName') || getCookie('workerID') || 'Admin';
+
+      if (!uid || !email) {
+        toast.error('Authentication data not found. Please login again.');
+        router.push('/auth/signin');
+        return;
+      }
+
+      // Validate required fields
+      if (!isFormComplete()) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      setLoading(true);
+
+      const locationData = {
+        siteId: formData.locationID,
+        siteName: formData.locationName,
+        customerId: formData.customerId,
+        customerName: formData.customerName,
+        status: formData.status,
+        addresses: formData.addresses.map(addr => ({
+          street1: addr.street1 || '',
+          street2: addr.street2 || '',
+          street3: addr.street3 || '',
+          city: addr.city || '',
+          postcode: addr.postcode || '',
+          country: addr.country || '',
+          isDefault: addr.isDefault || false,
+          isBilling: addr.isBilling || false,
+          isShipping: addr.isShipping || false
+        })),
+        additionalAddresses: formData.additionalAddresses?.map(addr => ({
+          street1: addr.street1 || '',
+          street2: addr.street2 || '',
+          street3: addr.street3 || '',
+          city: addr.city || '',
+          postcode: addr.postcode || '',
+          country: addr.country || '',
+          isDefault: addr.isDefault || false,
+          isBilling: addr.isBilling || false,
+          isShipping: addr.isShipping || false
+        })) || [],
+        contacts: formData.contacts.map(contact => ({
+          contactId: contact.contactId,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email,
+          phone: contact.phone || '',
+          isDefault: contact.isDefault || false
+        })),
+        additionalInformation: {
+          operatingHours: formData.operatingHours || '',
+          notes: formData.notes || '',
+          tags: formData.tags || []
+        },
+        createdAt: serverTimestamp(),
+        createdBy: {
+          uid,
+          email,
+          displayName
+        },
+        updatedAt: serverTimestamp(),
+        updatedBy: {
+          uid,
+          email,
+          displayName
+        }
+      };
+
+      // Use siteId as document ID
+      const locationRef = doc(db, 'locations', formData.locationID);
+      await setDoc(locationRef, locationData);
+
+      // Show success modal instead of simple toast
+      setAlertConfig({
+        title: 'Success!',
+        message: `Location ${formData.locationName} (${formData.locationID}) has been successfully created. You can now view the location list or create another location.`,
+        type: 'success',
+        showActions: true
+      });
+      setShowAlert(true);
+
+    } catch (error) {
+      console.error('Error saving location:', error);
+      setAlertConfig({
+        title: 'Error',
+        message: `Failed to save location: ${error.message}`,
+        type: 'error',
+        showActions: false
+      });
+      setShowAlert(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <Toaster
@@ -1538,18 +1562,18 @@ const CreateLocations = () => {
                             className="progress-bar bg-primary" 
                             role="progressbar" 
                             style={{ 
-                              width: `${calculateOverallProgress()}%`,
+                              width: `${calculateFormProgress()}%`,
                               transition: 'width 0.3s ease-in-out'
                             }} 
-                            aria-valuenow={calculateOverallProgress()} 
+                            aria-valuenow={calculateFormProgress()} 
                             aria-valuemin="0" 
                             aria-valuemax="100"
                           />
                         </div>
                         <small className="text-muted mt-2 d-block">
-                          {calculateOverallProgress()}% Complete
+                          {calculateFormProgress()}% Complete
                         </small>
-                        {calculateOverallProgress() < 100 && (
+                        {calculateFormProgress() < 100 && (
                           <small className="text-danger mt-1 d-block">
                             Please fill in all required fields to continue
                           </small>
@@ -1652,6 +1676,7 @@ const CreateLocations = () => {
                                     value={formData.status}
                                     onChange={handleChange}
                                   >
+                                    <option value=""default>Select Status</option>
                                     <option value="active">Active</option>
                                     <option value="inactive">Inactive</option>
                                   </Form.Select>
@@ -1912,8 +1937,572 @@ const CreateLocations = () => {
           </Card>
         </Col>
       </Row>
+       <CustomAlertModal
+        show={showAlert}
+        handleClose={() => setShowAlert(false)}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        showActions={alertConfig.showActions}
+      />
+      <style jsx global>{`
+        :root {
+          --primary-color: #dc3545;      // Bootstrap red
+          --primary-hover: #c82333;      // Darker red
+          --primary-light: #f8d7da;      // Light red
+          --primary-dark: #bd2130;       // Very dark red
+        }
+        .nav-pills .nav-link {
+          color: #495057;
+          background: #f8f9fa;
+          border: 1px solid #e9ecef;
+          transition: all 0.2s ease;
+        }
+        .nav-pills .nav-link:hover {
+          background: #f8d7da;
+          transform: translateX(3px);
+        }
+        .nav-pills .nav-link.active {
+          background: var(--primary-color);
+          color: white;
+          border-color: var(--primary-color);
+          transform: translateX(5px);
+        }
+        .form-control:focus, .form-select:focus {
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+        }
+        .progress-bar {
+          background-color: var(--primary-color);
+          border-radius: 4px;
+        }
+        .btn-primary {
+          background-color: var(--primary-color);
+          border-color: var(--primary-color);
+        }
+        .btn-primary:hover {
+          background-color: var(--primary-hover);
+          border-color: var(--primary-hover);
+        }
+        .btn-outline-primary {
+          color: var(--primary-color);
+          border-color: var(--primary-color);
+        }
+        .btn-outline-primary:hover {
+          background-color: var(--primary-color);
+          border-color: var(--primary-color);
+          color: white;
+        }
+        /* Update form validation styles */
+        .form-control:focus {
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        /* Update text colors */
+        .text-primary {
+          color: var(--primary-color) !important;
+        }
+        /* Update the active tab indicator color */
+        .nav-pills .nav-link.active::before {
+          background-color: var(--primary-color);
+        }
+        /* Card and Container Styles */
+        .form-card {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+          transition: all 0.3s ease;
+        }
+        .form-card:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        /* Input Field Styles */
+        .form-control, .form-select {
+          border: 1.5px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          font-size: 0.95rem;
+          transition: all 0.2s ease;
+          background-color: #f8fafc;
+        }
+        .form-control:focus, .form-select:focus {
+          background-color: white;
+          border-color: #dc3545;
+          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+          transform: translateY(-1px);
+        }
+        /* Read-only input styling */
+        .form-control[readonly] {
+          background-color: #f1f5f9;
+          border-style: dashed;
+          color: #64748b;
+        }
+        /* Label Styles */
+        .form-label {
+          font-weight: 500;
+          color: #334155;
+          margin-bottom: 0.5rem;
+          font-size: 0.9rem;
+        }
+        /* Required Field Indicator */
+        .required-field {
+          color: #dc3545;
+          margin-left: 4px;
+        }
+        /* Info Icon Styles */
+        .info-icon {
+          color: #94a3b8;
+          font-size: 16px;
+          margin-left: 6px;
+          cursor: help;
+          transition: color 0.2s ease;
+        }
+        .info-icon:hover {
+          color: #64748b;
+        }
+        /* Progress Bar Container */
+        .progress-container {
+          background: white;
+          border-radius: 10px;
+          padding: 1.25rem;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+          margin-top: 1.5rem;
+        }
+        .progress-title {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #334155;
+          margin-bottom: 1rem;
+        }
+        /* Progress Bar */
+        .progress-bar-container {
+          background-color: #fee2e2;
+          height: 8px;
+          border-radius: 999px;
+          overflow: hidden;
+        }
+        .progress-bar-fill {
+          background-color: #dc3545;
+          height: 100%;
+          border-radius: 999px;
+          transition: width 0.5s ease;
+        }
+        /* Progress Text */
+        .progress-text {
+          font-size: 0.8rem;
+          color: #64748b;
+          margin-top: 0.75rem;
+          display: flex;
+          justify-content: space-between;
+        }
+        /* Navigation Pills */
+        .nav-pills .nav-link {
+          padding: 0.75rem 1rem;
+          color: #64748b;
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          margin-bottom: 0.5rem;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        .nav-pills .nav-link:hover {
+          background: #fef2f2;
+          color: #dc3545;
+          transform: translateX(4px);
+        }
+        .nav-pills .nav-link.active {
+          background: #dc3545;
+          color: white;
+          border-color: #dc3545;
+          transform: translateX(8px);
+          box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+        }
+        /* Section Title */
+        .section-title {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #334155;
+          margin-bottom: 1.5rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 2px solid #f1f5f9;
+        }
+        /* Helper Text */
+        .helper-text {
+          font-size: 0.8rem;
+          color: #94a3b8;
+          margin-top: 0.25rem;
+        }
+        /* Buttons */
+        .btn {
+          padding: 0.6rem 1.2rem;
+          font-weight: 500;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+        .btn-primary {
+          background-color: #dc3545;
+          border-color: #dc3545;
+          box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+        }
+        .btn-primary:hover {
+          background-color: #c82333;
+          border-color: #c82333;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+        }
+        .btn-light {
+          background-color: #f8fafc;
+          border-color: #e2e8f0;
+        }
+        .btn-light:hover {
+          background-color: #f1f5f9;
+          border-color: #cbd5e1;
+        }
+        /* Tooltip Styles */
+        .tooltip {
+          font-size: 0.8rem;
+          padding: 0.5rem 0.75rem;
+        }
+        /* Form Groups */
+        .form-group {
+          margin-bottom: 1.5rem;
+        }
+        /* Input Groups */
+        .input-group {
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        .input-group-text {
+          background-color: #f8fafc;
+          border-color: #e2e8f0;
+          color: #64748b;
+        }
+        /* Validation States */
+        .is-valid {
+          border-color: #198754;
+        }
+        .is-invalid {
+          border-color: #dc3545;
+        }
+        .valid-feedback, .invalid-feedback {
+          font-size: 0.8rem;
+          margin-top: 0.25rem;
+        }
+        /* Animation for tab transitions */
+        .tab-content {
+          position: relative;
+        }
+        .tab-pane {
+          transition: all 0.3s ease;
+        }
+        .tab-pane.active {
+          animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        /* Collapse Animation Styles */
+        .address-cards {
+          transition: all 0.3s ease-in-out;
+          max-height: 2000px; /* Adjust based on your needs */
+          overflow: hidden;
+        }
+        .address-cards.collapsed {
+          max-height: 0;
+        }
+        /* Chevron Animation */
+        .fe-chevron-up, .fe-chevron-down {
+          transition: transform 0.3s ease;
+        }
+        .fe-chevron-down {
+          transform: rotate(180deg);
+        }
+        .section-title-clickable {
+          cursor: pointer;
+          padding: 0.5rem;
+          margin: -0.5rem;
+          border-radius: 4px;
+          transition: background-color 0.2s ease;
+        }
+        .section-title-clickable:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+        .fe-chevron-up, .fe-chevron-down {
+          transition: transform 0.3s ease;
+        }
+        .fe-chevron-down {
+          transform: rotate(180deg);
+        }
+        .address-cards {
+          max-height: 700px;
+          overflow-y: auto;
+          padding-right: 10px;
+          scrollbar-width: thin;
+          scrollbar-color: #dc3545 #f1f5f9;
+        }
+        .address-cards::-webkit-scrollbar {
+          width: 8px;
+        }
+        .address-cards::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        .address-cards::-webkit-scrollbar-thumb {
+          background-color: #dc3545;
+          border-radius: 4px;
+        }
+        .customer-search {
+          position: relative;
+        }
+        .customer-search .spinner-border {
+          position: absolute;
+          right: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+        .customer-select {
+          max-height: 200px;
+          overflow-y: auto;
+        }
+        .customer-select::-webkit-scrollbar {
+          width: 8px;
+        }
+        .customer-select::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        .customer-select::-webkit-scrollbar-thumb {
+          background-color: #dc3545;
+          border-radius: 4px;
+        }
+        .react-select-container {
+          font-size: 0.95rem;
+        }
+        .react-select__control {
+          min-height: 42px;
+          border-radius: 8px !important;
+          border: 1.5px solid #e2e8f0 !important;
+          background-color: #f8fafc !important;
+          transition: all 0.2s ease !important;
+        }
+        .react-select__control:hover {
+          border-color: #dc3545 !important;
+        }
+        .react-select__control--is-focused {
+          background-color: white !important;
+          border-color: #dc3545 !important;
+          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+          transform: translateY(-1px);
+        }
+        .react-select__option {
+          padding: 8px 12px;
+        }
+        .react-select__option:hover {
+          background-color: #f8f9fa;
+        }
+        .react-select__option--is-focused {
+          background-color: #f8f9fa !important;
+        }
+        .react-select__option--is-selected {
+          background-color: #dc3545 !important;
+        }
+        .react-select__indicator-separator {
+          background-color: #e2e8f0 !important;
+        }
+        .react-select__loading-indicator {
+          color: #dc3545 !important;
+        }
+        .customer-option {
+          padding: 4px 0;
+          width: 100%;
+        }
+        .customer-left {
+          flex: 1;
+        }
+        .customer-right {
+          margin-left: 16px;
+          text-align: right;
+          max-width: 40%;
+        }
+        .customer-id {
+          font-weight: 500;
+          color: #dc3545;
+          margin-right: 8px;
+        }
+        .customer-name {
+          color: #212529;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .customer-type {
+          font-size: 0.75em;
+          padding: 2px 6px;
+        }
+        .customer-sub {
+          font-size: 0.85em;
+          margin-top: 2px;
+        }
+        .react-select__menu {
+          will-change: transform;
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          perspective: 1000px;
+        }
+        .react-select__menu-list {
+          scrollbar-width: thin;
+          scrollbar-color: #dc3545 #f1f5f9;
+        }
+        .react-select__menu-list::-webkit-scrollbar {
+          width: 8px;
+        }
+        .react-select__menu-list::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+        .react-select__menu-list::-webkit-scrollbar-thumb {
+          background-color: #dc3545;
+          border-radius: 4px;
+        }
+        /* Add GPU acceleration for smoother rendering */
+        .customer-option {
+          transform: translateZ(0);
+          backface-visibility: hidden;
+        }
+        /* Customer Option Styles */
+        .customer-option {
+          border-bottom: 1px solid #f1f5f9;
+          transition: background-color 0.2s ease;
+        }
+        .customer-option:last-child {
+          border-bottom: none;
+        }
+        .customer-left {
+          flex: 1;
+          min-width: 0; /* Enables text truncation */
+        }
+        .customer-id {
+          font-weight: 600;
+          color: #dc3545;
+          margin-right: 8px;
+          white-space: nowrap;
+        }
+        .customer-name {
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 200px;
+        }
+        .customer-sub {
+          font-size: 0.75rem;
+          color: #6c757d;
+        }
+        .customer-type {
+          font-size: 0.7rem;
+          padding: 0.25rem 0.5rem;
+          font-weight: 500;
+        }
+        .customer-right {
+          text-align: right;
+          margin-left: 16px;
+        }
+        /* Improve dropdown menu appearance */
+        .react-select__menu {
+          margin-top: 4px !important;
+          border: 1px solid #e2e8f0 !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+        .react-select__option {
+          cursor: pointer !important;
+        }
+        .react-select__option--is-focused {
+          background-color: #f8f9fa !important;
+        }
+        /* Loading state styles */
+        .react-select__loading-indicator {
+          color: #dc3545 !important;
+        }
+        .react-select__loading-message {
+          color: #6c757d;
+          font-size: 0.875rem;
+          padding: 8px 12px;
+        }
+        .custom-menu-list {
+          max-height: 250px;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .search-results-footer {
+          padding: 8px 12px;
+          background: #f8f9fa;
+          border-top: 1px solid #e9ecef;
+          color: #6c757d;
+          font-size: 0.875rem;
+          text-align: left;
+        }
+        .customer-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          max-height: 300px;
+          overflow-y: auto;
+          background: white;
+          border: 1px solid rgba(0,0,0,0.1);
+          border-radius: 0.375rem;
+          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+          z-index: 1000;
+          margin-top: 4px;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+     
+        .customer-info {
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
+        }
+        .customer-id {
+          color: #dc3545;
+          font-weight: 500;
+          font-size: 0.8rem;
+          padding: 0.2rem 0.4rem;
+          background-color: rgba(220, 53, 69, 0.1);
+          border-radius: 0.25rem;
+          flex-shrink: 0;
+        }
+        .customer-name {
+          flex: 1;
+          min-width: 0;
+          font-size: 0.9rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .location-badge {
+          font-size: 0.7rem;
+          padding: 0.25em 0.5em;
+          font-weight: 500;
+        }
+        .dropdown-item.text-muted.small {
+          font-size: 0.8rem;
+          padding: 0.5rem 0.75rem;
+          background-color: #f8f9fa;
+        }
+      `}</style>
     </>
   );
-};
-
+  };
 export default CreateLocations;
