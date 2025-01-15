@@ -214,7 +214,7 @@ const FilterPanel = ({
                     value={tempFilters.quickSearch || ''}
                     onChange={(e) => handleFilterChange('quickSearch', e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Quick search by Site Name..."
+                    placeholder="Quick search by Customer Name..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                   />
                 </Form.Group>
