@@ -25,7 +25,7 @@
 .info-item svg {
   width: 16px;
   height: 16px;
-  color: #C41230;
+  color: #305cde;
 }
 
 #sessionCountdown {
@@ -201,7 +201,7 @@
 
 .tag.improved {
   background: #eff6ff;
-  color: #C41230;
+  color: #305cde;
   border: 1px solid #bfdbfe;
 }
 

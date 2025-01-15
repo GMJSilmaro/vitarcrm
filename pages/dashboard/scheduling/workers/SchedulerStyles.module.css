@@ -105,7 +105,7 @@
 
 .normal {
   background-color: #e0f2fe;
-  color: #C41230;
+  color: #305cde;
 }
 
 .low {
@@ -186,7 +186,7 @@
   justify-content: center;
   width: 100%;
   padding: 10px 16px;
-  background: #C41230;
+  background: #305cde;
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -199,7 +199,7 @@
 }
 
 .viewDetailsButton:hover {
-  background: #C41230;
+  background: #305cde;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
               0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -225,12 +225,12 @@
 }
 
 .editButton {
-  background: #C41230;
+  background: #305cde;
   color: white;
 }
 
 .editButton:hover {
-  background: #C41230;
+  background: #305cde;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
               0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -446,11 +446,11 @@
 
 .clear-btn {
   background-color: #FEE2E2 !important;
-  color: #DC2626 !important;
+  color: #305cde !important;
 }
 
 .search-btn {
-  background-color: #C41230 !important;
+  background-color: #305cde !important;
   color: white !important;
 }
 
@@ -465,7 +465,7 @@
 }
 
 .search-btn:hover {
-  background-color: #C41230 !important;
+  background-color: #305cde !important;
 }
 
 /* Active state animations */
@@ -545,7 +545,7 @@
 }
 
 .icon {
-  color: #C41230;
+  color: #305cde;
   font-size: 1.25rem;
 }
 
@@ -587,7 +587,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #C41230;
+  background-color: #305cde;
   color: white;
   border: none;
   border-radius: 0.375rem;
@@ -597,7 +597,7 @@
 }
 
 .createButton:hover {
-  background-color: #C41230;
+  background-color: #305cde;
 }
 
 .quickEditForm {
@@ -620,7 +620,7 @@
 
 .editLink {
   padding: 0;
-  color: #C41230;
+  color: #305cde;
   font-size: 0.875rem;
   display: flex;
   align-items: center;
@@ -628,7 +628,7 @@
 }
 
 .editLink:hover {
-  color: #C41230;
+  color: #305cde;
   text-decoration: underline;
 }
 
@@ -645,6 +645,6 @@
 }
 
 .e-input:focus {
-  border-color: #C41230;
+  border-color: #305cde;
   box-shadow: 0 0 0 0.2rem rgba(65, 113, 245, 0.25);
 }

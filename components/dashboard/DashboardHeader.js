@@ -17,7 +17,7 @@ const DashboardHeader = ({
     <div className="dashboard-header">
       <div
         style={{
-          background: "linear-gradient(135deg, #E31837 0%, #C41230 100%)",
+          background: "linear-gradient(135deg, #305cde 0%, #1e40a6 100%)",
           padding: "1.5rem 2rem",
           borderRadius: "0 0 24px 24px",
           marginTop: "-40px",

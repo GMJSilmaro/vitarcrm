@@ -567,9 +567,9 @@ useEffect(() => {
           duration: 5000,
           style: {
             background: "#fff",
-            color: "#dc3545",
+            color: "#1e40a6",
             padding: "16px",
-            borderLeft: "6px solid #dc3545",
+            borderLeft: "6px solid #1e40a6",
           },
         });
       }
@@ -815,12 +815,12 @@ useEffect(() => {
         duration: 5000,
         style: {
           background: "#fff",
-          color: "#dc3545",
+          color: "#1e40a6",
           padding: "16px",
-          borderLeft: "6px solid #dc3545",
+          borderLeft: "6px solid #1e40a6",
         },
         iconTheme: {
-          primary: "#dc3545",
+          primary: "#1e40a6",
           secondary: "#fff",
         },
       });
@@ -2042,7 +2042,7 @@ useEffect(() => {
                     multiValueRemove: (styles) => ({
                       ...styles,
                       ":hover": {
-                        backgroundColor: "#dc3545",
+                        backgroundColor: "#1e40a6",
                         color: "white",
                       },
                     }),

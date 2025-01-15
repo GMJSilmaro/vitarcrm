@@ -532,9 +532,9 @@ const AddNewJobs = ({ validateJobForm }) => {
           duration: 3000,
           style: {
             background: "#fff",
-            color: "#dc3545",
+            color: "#1e40a6",
             padding: "16px",
-            borderLeft: "6px solid #dc3545",
+            borderLeft: "6px solid #1e40a6",
             borderRadius: "4px",
           },
         });
@@ -543,13 +543,13 @@ const AddNewJobs = ({ validateJobForm }) => {
           duration: 5000,
           style: {
             background: "#fff",
-            color: "#dc3545",
+            color: "#1e40a6",
             padding: "16px",
-            borderLeft: "6px solid #dc3545",
+            borderLeft: "6px solid #1e40a6",
             borderRadius: "4px",
           },
           iconTheme: {
-            primary: "#dc3545",
+            primary: "#1e40a6",
             secondary: "#fff",
           },
         });
@@ -561,9 +561,9 @@ const AddNewJobs = ({ validateJobForm }) => {
           duration: retryDelay,
           style: {
             background: "#fff",
-            color: "#dc3545",
+            color: "#1e40a6",
             padding: "16px",
-            borderLeft: "6px solid #dc3545",
+            borderLeft: "6px solid #1e40a6",
             borderRadius: "4px",
           },
         });
@@ -579,9 +579,9 @@ const AddNewJobs = ({ validateJobForm }) => {
             duration: 5000,
             style: {
               background: "#fff",
-              color: "#dc3545",
+              color: "#1e40a6",
               padding: "16px",
-              borderLeft: "6px solid #dc3545",
+              borderLeft: "6px solid #1e40a6",
               borderRadius: "4px",
             },
           }
@@ -1022,12 +1022,12 @@ const AddNewJobs = ({ validateJobForm }) => {
         duration: 5000,
         style: {
           background: "#fff",
-          color: "#dc3545",
+          color: "#1e40a6",
           padding: "16px",
-          borderLeft: "6px solid #dc3545",
+          borderLeft: "6px solid #1e40a6",
         },
         iconTheme: {
-          primary: "#dc3545",
+          primary: "#1e40a6",
           secondary: "#fff",
         },
       });
@@ -1163,9 +1163,9 @@ const AddNewJobs = ({ validateJobForm }) => {
         duration: 5000,
         style: {
           background: "#fff",
-          color: "#dc3545",
+          color: "#1e40a6",
           padding: "16px",
-          borderLeft: "6px solid #dc3545",
+          borderLeft: "6px solid #1e40a6",
         },
       });
     }
@@ -1185,9 +1185,9 @@ const AddNewJobs = ({ validateJobForm }) => {
         duration: 3000,
         style: {
           background: "#fff",
-          color: "#dc3545",
+          color: "#1e40a6",
           padding: "16px",
-          borderLeft: "6px solid #dc3545",
+          borderLeft: "6px solid #1e40a6",
         },
       });
       return;
@@ -1226,9 +1226,9 @@ const AddNewJobs = ({ validateJobForm }) => {
               duration: 5000,
               style: {
                 background: "#fff",
-                color: "#dc3545",
+                color: "#1e40a6",
                 padding: "16px",
-                borderLeft: "6px solid #dc3545",
+                borderLeft: "6px solid #1e40a6",
               },
             }
           );
@@ -1246,9 +1246,9 @@ const AddNewJobs = ({ validateJobForm }) => {
             duration: 5000,
             style: {
               background: "#fff",
-              color: "#dc3545",
+              color: "#1e40a6",
               padding: "16px",
-              borderLeft: "6px solid #dc3545",
+              borderLeft: "6px solid #1e40a6",
             },
           });
           setSalesOrders([]);
@@ -1306,9 +1306,9 @@ const AddNewJobs = ({ validateJobForm }) => {
           duration: 5000,
           style: {
             background: "#fff",
-            color: "#dc3545",
+            color: "#1e40a6",
             padding: "16px",
-            borderLeft: "6px solid #dc3545",
+            borderLeft: "6px solid #1e40a6",
             borderRadius: "4px",
           },
         });
@@ -1565,9 +1565,9 @@ const AddNewJobs = ({ validateJobForm }) => {
         duration: 5000,
         style: {
           background: "#fff",
-          color: "#dc3545",
+          color: "#1e40a6",
           padding: "16px",
-          borderLeft: "6px solid #dc3545",
+          borderLeft: "6px solid #1e40a6",
         },
       });
     }
@@ -1679,9 +1679,9 @@ const AddNewJobs = ({ validateJobForm }) => {
             duration: 5000,
             style: {
               background: "#fff",
-              color: "#dc3545",
+              color: "#1e40a6",
               padding: "16px",
-              borderLeft: "6px solid #dc3545",
+              borderLeft: "6px solid #1e40a6",
               maxWidth: "500px",
             },
           }
@@ -1724,7 +1724,7 @@ const AddNewJobs = ({ validateJobForm }) => {
           confirmButtonText: "Yes, proceed anyway",
           cancelButtonText: "No, let me adjust the schedule",
           confirmButtonColor: "#28a745",
-          cancelButtonColor: "#dc3545",
+          cancelButtonColor: "#1e40a6",
           customClass: {
             htmlContainer: "text-start",
           },
@@ -1892,9 +1892,9 @@ const AddNewJobs = ({ validateJobForm }) => {
         duration: 5000,
         style: {
           background: "#fff",
-          color: "#dc3545",
+          color: "#1e40a6",
           padding: "16px",
-          borderLeft: "6px solid #dc3545",
+          borderLeft: "6px solid #1e40a6",
         },
       });
     }
@@ -1919,9 +1919,9 @@ const AddNewJobs = ({ validateJobForm }) => {
           duration: 5000,
           style: {
             background: "#fff",
-            color: "#dc3545",
+            color: "#1e40a6",
             padding: "16px",
-            borderLeft: "6px solid #dc3545",
+            borderLeft: "6px solid #1e40a6",
             maxWidth: "500px",
           },
         }

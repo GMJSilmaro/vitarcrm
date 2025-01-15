@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Row, Col, Card, Form, Button, Alert, Nav, Tab, OverlayTrigger, Tooltip, Badge, Collapse, Spinner, Modal } from 'react-bootstrap';
-import { House, People, Plus, Save, X, Building, Phone, Envelope, FileText, Clock, CheckCircle } from 'react-bootstrap-icons';
+import { House, People, Plus, Save, X, Building, Phone, Envelope, FileText, ChevronLeft, ChevronRight, CheckCircle, XCircle, ExclamationCircle } from 'react-bootstrap-icons';
 import { useRouter } from 'next/router';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { GeeksSEO } from 'widgets';
@@ -190,7 +190,7 @@ const CreateLocations = () => {
   };
 
   const progressFillStyles = {
-    backgroundColor: '#dc3545', // Bootstrap red
+    backgroundColor: '#1e40a6', // Bootstrap red
     height: '100%',
     width: '0%',
     borderRadius: '4px',
@@ -242,10 +242,9 @@ const CreateLocations = () => {
     // Function to calculate overall progress
     const calculateOverallProgress = () => {
       const tabWeights = {
-        basic: 0.25,    // 25% weight
-        contact: 0.25,  // 25% weight
-        contract: 0.25, // 25% weight
-        addresses: 0.25 // 25% weight
+        basic: 0.34,    // 34% weight
+        address: 0.33,  // 33% weight
+        contact: 0.33   // 33% weight
       };
   
       const weightedProgress = Object.entries(formCompletion).reduce((total, [tab, progress]) => {
@@ -353,38 +352,91 @@ const CreateLocations = () => {
 
   
   // Add useEffect to fetch countries when component mounts
+  // useEffect(() => {
+  //   const fetchCountries = async () => {
+  //     setLoadingCountries(true);
+  //     try {
+  //       // Use our Next.js API route instead of calling the external API directly
+  //       const response = await axios.get('/api/countries');
+        
+  //       const sortedCountries = response.data
+  //         .map(country => ({
+  //           country: country.alpha2Code,
+  //           name: country.name
+  //         }))
+  //         .sort((a, b) => a.name.localeCompare(b.name));
+          
+  //       setCountries(sortedCountries);
+  //     } catch (error) {
+  //       console.error('Error fetching countries:', error);
+  //       setCountries([
+  //         { code: 'US', name: 'United States' },
+  //         { code: 'GB', name: 'United Kingdom' },
+  //         { code: 'CA', name: 'Canada' },
+  //         { code: 'AU', name: 'Australia' },
+  //         { code: 'NZ', name: 'New Zealand' }
+  //       ]);
+  //     } finally {
+  //       setLoadingCountries(false);
+  //     }
+  //   };
+
+  //   fetchCountries();
+  // }, []);
+
   useEffect(() => {
     const fetchCountries = async () => {
-      setLoadingCountries(true);
+      setLoading(true);
       try {
-        // Use our Next.js API route instead of calling the external API directly
-        const response = await axios.get('/api/countries');
-        
-        const sortedCountries = response.data
-          .map(country => ({
-            code: country.alpha2Code,
-            name: country.name
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-          
-        setCountries(sortedCountries);
+        const response = await axios.get(
+          '/api/countries',
+          {
+            timeout: 5000, // 5 second timeout
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.data && Array.isArray(response.data)) {
+          const sortedCountries = response.data
+            .map(country => ({
+              country: country.country || '',
+              name: country.name
+            }))
+            .filter(country => country.country && country.name) // Remove any entries without codes or names
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+          setCountries(sortedCountries);
+          setError(null);
+        } else {
+          throw new Error('Invalid API response format');
+        }
       } catch (error) {
         console.error('Error fetching countries:', error);
-        setCountries([
-          { code: 'US', name: 'United States' },
-          { code: 'GB', name: 'United Kingdom' },
-          { code: 'CA', name: 'Canada' },
-          { code: 'AU', name: 'Australia' },
-          { code: 'NZ', name: 'New Zealand' }
-        ]);
+        // Set fallback countries
+        const fallbackCountries = [
+          { country: 'US', name: 'United States' },
+          { country: 'GB', name: 'United Kingdom' },
+          { country: 'CA', name: 'Canada' },
+          { country: 'AU', name: 'Australia' },
+          { country: 'NZ', name: 'New Zealand' },
+          { country: 'DE', name: 'Germany' },
+          { country: 'FR', name: 'France' },
+          { country: 'IT', name: 'Italy' },
+          { country: 'ES', name: 'Spain' },
+          { country: 'JP', name: 'Japan' }
+        ];
+        setError('Unable to fetch countries. Using fallback data.');
+        setCountries(fallbackCountries);
       } finally {
-        setLoadingCountries(false);
+        setLoading(false);
       }
     };
 
     fetchCountries();
   }, []);
-
   // Add new handler for billing/shipping toggles
   const handleAddressTypeChange = (index, field) => {
     setFormData(prev => ({
@@ -408,15 +460,15 @@ const CreateLocations = () => {
   // Add state to track form completion
   const [formCompletion, setFormCompletion] = useState({
     basic: 0,
-    contact: 0,
-    contract: 0,
-    addresses: 0
+    address: 0,
+    contact: 0
   });
 
   // Function to calculate basic tab completion
   const calculateBasicTabProgress = () => {
     const requiredFields = {
-      customerName: formData.customerName,
+      locationName: formData.locationName,
+      customerId: formData.customerId,
       status: formData.status
     };
 
@@ -663,11 +715,13 @@ const CreateLocations = () => {
     }));
 
     // Update progress after field change
-    const basicProgress = calculateBasicTabProgress();
-    setFormCompletion(prev => ({
-      ...prev,
-      basic: basicProgress
-    }));
+    if (activeTab === 'basic') {
+      const basicProgress = calculateBasicTabProgress();
+      setFormCompletion(prev => ({
+        ...prev,
+        basic: basicProgress
+      }));
+    }
   };
 
   // Add this effect to update available contacts when customer changes
@@ -990,7 +1044,7 @@ const CreateLocations = () => {
     }
 
     .customer-id {
-      color: #dc3545;
+      color: #1e40a6;
       font-weight: 500;
       font-size: 0.8rem;
       padding: 0.2rem 0.4rem;
@@ -1183,6 +1237,23 @@ const CreateLocations = () => {
       setFilteredCustomers(customers);
     }
   };
+
+    // Update the Next button click handler
+    const handleNextClick = () => {
+      const tabs = ['basic', 'contact', 'contract'];
+      const currentIndex = tabs.indexOf(activeTab);
+      
+      // Update progress for current tab before moving to next
+      if (activeTab === 'basic') {
+        const basicProgress = calculateBasicTabProgress();
+        setFormCompletion(prev => ({
+          ...prev,
+          basic: basicProgress
+        }));
+      }
+      
+      handleTabChange(tabs[currentIndex + 1]);
+    };
 
   // Function to fetch customer contacts
   const fetchCustomerContacts = async (customerId) => {
@@ -1467,18 +1538,18 @@ const CreateLocations = () => {
                             className="progress-bar bg-primary" 
                             role="progressbar" 
                             style={{ 
-                              width: `${calculateFormProgress()}%`,
+                              width: `${calculateOverallProgress()}%`,
                               transition: 'width 0.3s ease-in-out'
                             }} 
-                            aria-valuenow={calculateFormProgress()} 
+                            aria-valuenow={calculateOverallProgress()} 
                             aria-valuemin="0" 
                             aria-valuemax="100"
                           />
                         </div>
                         <small className="text-muted mt-2 d-block">
-                          {calculateFormProgress()}% Complete
+                          {calculateOverallProgress()}% Complete
                         </small>
-                        {calculateFormProgress() < 100 && (
+                        {calculateOverallProgress() < 100 && (
                           <small className="text-danger mt-1 d-block">
                             Please fill in all required fields to continue
                           </small>
@@ -1728,7 +1799,7 @@ const CreateLocations = () => {
                                         >
                                           <option value="">Select a country</option>
                                           {countries.map(country => (
-                                            <option key={country.code} value={country.code}>
+                                            <option key={country.country} value={country.country}>
                                               {country.name}
                                             </option>
                                           ))}
@@ -1768,744 +1839,81 @@ const CreateLocations = () => {
               </Tab.Container>
 
               {/* Form Actions */}
-              <div className="d-flex justify-content-end gap-2 mt-4">
-    <Button
-      variant="light"
-      onClick={() => router.push('/dashboard/locations/list')}
-    >
-      Cancel
-    </Button>
-    
-    {isFormComplete() ? (
-      <Button
-        variant="primary"
-        onClick={handleSaveLocation}
-        disabled={loading}
-      >
-        {loading ? (
-          <>
-            <Spinner
-              as="span"
-              animation="border"
-              size="sm"
-              role="status"
-              aria-hidden="true"
-              className="me-2"
-            />
-            Creating...
-          </>
-        ) : (
-          <>
-            <Save className="me-2" size={14} />
-            Create Location
-          </>
-        )}
-      </Button>
-    ) : (
-      <OverlayTrigger
-        placement="top"
-        overlay={
-          <Tooltip>
-            Please complete all required fields before creating the location
-          </Tooltip>
-        }
-      >
-        <span>
-          <Button
-            variant="primary"
-            disabled
-            style={{ pointerEvents: 'none' }}
-          >
-            <Save className="me-2" size={14} />
-            Create Location
-          </Button>
-        </span>
-      </OverlayTrigger>
-    )}
-  </div>
+              <div className="d-flex justify-content-between mt-4">
+                <Button
+                  variant="outline-danger"
+                  onClick={() => router.push('/dashboard/locations/list')}
+                  disabled={loading}
+                  className="d-flex align-items-center"
+                >
+                  <X size={14} className="me-2" />
+                  Cancel
+                </Button>
+
+                <div className="d-flex gap-2">
+                  {activeTab !== 'basic' && (
+                    <Button
+                      variant="outline-primary"
+                      onClick={() => {
+                        const tabs = ['basic', 'address', 'contact'];
+                        const currentIndex = tabs.indexOf(activeTab);
+                        setActiveTab(tabs[currentIndex - 1]);
+                      }}
+                      className="d-flex align-items-center"
+                    >
+                      <ChevronLeft size={14} className="me-2" />
+                      Previous
+                    </Button>
+                  )}
+
+                  {activeTab !== 'contact' ? (
+                    <Button
+                      variant="primary"
+                      onClick={handleNextClick}
+                      disabled={
+                        (activeTab === 'basic' && formCompletion.basic < 100) ||
+                        (activeTab === 'address' && formCompletion.address < 100)
+                      }
+                      className="d-flex align-items-center"
+                    >
+                      Next
+                      <ChevronRight size={14} className="ms-2" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="success"
+                      onClick={handleSaveLocation}
+                      disabled={loading || !isFormComplete()}
+                      className="d-flex align-items-center"
+                    >
+                      {loading ? (
+                        <>
+                          <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                            className="me-2"
+                          />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Save size={14} className="me-2" />
+                          Create Location
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
       </Row>
-
-      <CustomAlertModal
-        show={showAlert}
-        handleClose={() => setShowAlert(false)}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        type={alertConfig.type}
-        showActions={alertConfig.showActions}
-      />
-
-      <style jsx global>{`
-        :root {
-          --primary-color: #dc3545;      // Bootstrap red
-          --primary-hover: #c82333;      // Darker red
-          --primary-light: #f8d7da;      // Light red
-          --primary-dark: #bd2130;       // Very dark red
-        }
-
-        .nav-pills .nav-link {
-          color: #495057;
-          background: #f8f9fa;
-          border: 1px solid #e9ecef;
-          transition: all 0.2s ease;
-        }
-
-        .nav-pills .nav-link:hover {
-          background: #f8d7da;
-          transform: translateX(3px);
-        }
-
-        .nav-pills .nav-link.active {
-          background: var(--primary-color);
-          color: white;
-          border-color: var(--primary-color);
-          transform: translateX(5px);
-        }
-
-        .form-control:focus, .form-select:focus {
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
-        }
-
-        .progress-bar {
-          background-color: var(--primary-color);
-          border-radius: 4px;
-        }
-
-        .btn-primary {
-          background-color: var(--primary-color);
-          border-color: var(--primary-color);
-        }
-
-        .btn-primary:hover {
-          background-color: var(--primary-hover);
-          border-color: var(--primary-hover);
-        }
-
-        .btn-outline-primary {
-          color: var(--primary-color);
-          border-color: var(--primary-color);
-        }
-
-        .btn-outline-primary:hover {
-          background-color: var(--primary-color);
-          border-color: var(--primary-color);
-          color: white;
-        }
-
-        /* Update form validation styles */
-        .form-control:focus {
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-        }
-
-        /* Update text colors */
-        .text-primary {
-          color: var(--primary-color) !important;
-        }
-
-        /* Update the active tab indicator color */
-        .nav-pills .nav-link.active::before {
-          background-color: var(--primary-color);
-        }
-
-        /* Card and Container Styles */
-        .form-card {
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-          transition: all 0.3s ease;
-        }
-
-        .form-card:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        /* Input Field Styles */
-        .form-control, .form-select {
-          border: 1.5px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 0.75rem 1rem;
-          font-size: 0.95rem;
-          transition: all 0.2s ease;
-          background-color: #f8fafc;
-        }
-
-        .form-control:focus, .form-select:focus {
-          background-color: white;
-          border-color: #dc3545;
-          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
-          transform: translateY(-1px);
-        }
-
-        /* Read-only input styling */
-        .form-control[readonly] {
-          background-color: #f1f5f9;
-          border-style: dashed;
-          color: #64748b;
-        }
-
-        /* Label Styles */
-        .form-label {
-          font-weight: 500;
-          color: #334155;
-          margin-bottom: 0.5rem;
-          font-size: 0.9rem;
-        }
-
-        /* Required Field Indicator */
-        .required-field {
-          color: #dc3545;
-          margin-left: 4px;
-        }
-
-        /* Info Icon Styles */
-        .info-icon {
-          color: #94a3b8;
-          font-size: 16px;
-          margin-left: 6px;
-          cursor: help;
-          transition: color 0.2s ease;
-        }
-
-        .info-icon:hover {
-          color: #64748b;
-        }
-
-        /* Progress Bar Container */
-        .progress-container {
-          background: white;
-          border-radius: 10px;
-          padding: 1.25rem;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-          margin-top: 1.5rem;
-        }
-
-        .progress-title {
-          font-size: 0.9rem;
-          font-weight: 600;
-          color: #334155;
-          margin-bottom: 1rem;
-        }
-
-        /* Progress Bar */
-        .progress-bar-container {
-          background-color: #fee2e2;
-          height: 8px;
-          border-radius: 999px;
-          overflow: hidden;
-        }
-
-        .progress-bar-fill {
-          background-color: #dc3545;
-          height: 100%;
-          border-radius: 999px;
-          transition: width 0.5s ease;
-        }
-
-        /* Progress Text */
-        .progress-text {
-          font-size: 0.8rem;
-          color: #64748b;
-          margin-top: 0.75rem;
-          display: flex;
-          justify-content: space-between;
-        }
-
-        /* Navigation Pills */
-        .nav-pills .nav-link {
-          padding: 0.75rem 1rem;
-          color: #64748b;
-          background: white;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          margin-bottom: 0.5rem;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .nav-pills .nav-link:hover {
-          background: #fef2f2;
-          color: #dc3545;
-          transform: translateX(4px);
-        }
-
-        .nav-pills .nav-link.active {
-          background: #dc3545;
-          color: white;
-          border-color: #dc3545;
-          transform: translateX(8px);
-          box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
-        }
-
-        /* Section Title */
-        .section-title {
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: #334155;
-          margin-bottom: 1.5rem;
-          padding-bottom: 0.75rem;
-          border-bottom: 2px solid #f1f5f9;
-        }
-
-        /* Helper Text */
-        .helper-text {
-          font-size: 0.8rem;
-          color: #94a3b8;
-          margin-top: 0.25rem;
-        }
-
-        /* Buttons */
-        .btn {
-          padding: 0.6rem 1.2rem;
-          font-weight: 500;
-          border-radius: 8px;
-          transition: all 0.2s ease;
-        }
-
-        .btn-primary {
-          background-color: #dc3545;
-          border-color: #dc3545;
-          box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
-        }
-
-        .btn-primary:hover {
-          background-color: #c82333;
-          border-color: #c82333;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
-        }
-
-        .btn-light {
-          background-color: #f8fafc;
-          border-color: #e2e8f0;
-        }
-
-        .btn-light:hover {
-          background-color: #f1f5f9;
-          border-color: #cbd5e1;
-        }
-
-        /* Tooltip Styles */
-        .tooltip {
-          font-size: 0.8rem;
-          padding: 0.5rem 0.75rem;
-        }
-
-        /* Form Groups */
-        .form-group {
-          margin-bottom: 1.5rem;
-        }
-
-        /* Input Groups */
-        .input-group {
-          border-radius: 8px;
-          overflow: hidden;
-        }
-
-        .input-group-text {
-          background-color: #f8fafc;
-          border-color: #e2e8f0;
-          color: #64748b;
-        }
-
-        /* Validation States */
-        .is-valid {
-          border-color: #198754;
-        }
-
-        .is-invalid {
-          border-color: #dc3545;
-        }
-
-        .valid-feedback, .invalid-feedback {
-          font-size: 0.8rem;
-          margin-top: 0.25rem;
-        }
-
-        /* Animation for tab transitions */
-        .tab-content {
-          position: relative;
-        }
-
-        .tab-pane {
-          transition: all 0.3s ease;
-        }
-
-        .tab-pane.active {
-          animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        /* Collapse Animation Styles */
-        .address-cards {
-          transition: all 0.3s ease-in-out;
-          max-height: 2000px; /* Adjust based on your needs */
-          overflow: hidden;
-        }
-
-        .address-cards.collapsed {
-          max-height: 0;
-        }
-
-        /* Chevron Animation */
-        .fe-chevron-up, .fe-chevron-down {
-          transition: transform 0.3s ease;
-        }
-
-        .fe-chevron-down {
-          transform: rotate(180deg);
-        }
-
-        .section-title-clickable {
-          cursor: pointer;
-          padding: 0.5rem;
-          margin: -0.5rem;
-          border-radius: 4px;
-          transition: background-color 0.2s ease;
-        }
-
-        .section-title-clickable:hover {
-          background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        .fe-chevron-up, .fe-chevron-down {
-          transition: transform 0.3s ease;
-        }
-
-        .fe-chevron-down {
-          transform: rotate(180deg);
-        }
-
-        .address-cards {
-          max-height: 700px;
-          overflow-y: auto;
-          padding-right: 10px;
-          scrollbar-width: thin;
-          scrollbar-color: #dc3545 #f1f5f9;
-        }
-
-        .address-cards::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .address-cards::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-
-        .address-cards::-webkit-scrollbar-thumb {
-          background-color: #dc3545;
-          border-radius: 4px;
-        }
-
-        .customer-search {
-          position: relative;
-        }
-
-        .customer-search .spinner-border {
-          position: absolute;
-          right: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-        }
-
-        .customer-select {
-          max-height: 200px;
-          overflow-y: auto;
-        }
-
-        .customer-select::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .customer-select::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-
-        .customer-select::-webkit-scrollbar-thumb {
-          background-color: #dc3545;
-          border-radius: 4px;
-        }
-
-        .react-select-container {
-          font-size: 0.95rem;
-        }
-
-        .react-select__control {
-          min-height: 42px;
-          border-radius: 8px !important;
-          border: 1.5px solid #e2e8f0 !important;
-          background-color: #f8fafc !important;
-          transition: all 0.2s ease !important;
-        }
-
-        .react-select__control:hover {
-          border-color: #dc3545 !important;
-        }
-
-        .react-select__control--is-focused {
-          background-color: white !important;
-          border-color: #dc3545 !important;
-          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
-          transform: translateY(-1px);
-        }
-
-        .react-select__option {
-          padding: 8px 12px;
-        }
-
-        .react-select__option:hover {
-          background-color: #f8f9fa;
-        }
-
-        .react-select__option--is-focused {
-          background-color: #f8f9fa !important;
-        }
-
-        .react-select__option--is-selected {
-          background-color: #dc3545 !important;
-        }
-
-        .react-select__indicator-separator {
-          background-color: #e2e8f0 !important;
-        }
-
-        .react-select__loading-indicator {
-          color: #dc3545 !important;
-        }
-
-        .customer-option {
-          padding: 4px 0;
-          width: 100%;
-        }
-
-        .customer-left {
-          flex: 1;
-        }
-
-        .customer-right {
-          margin-left: 16px;
-          text-align: right;
-          max-width: 40%;
-        }
-
-        .customer-id {
-          font-weight: 500;
-          color: #dc3545;
-          margin-right: 8px;
-        }
-
-        .customer-name {
-          color: #212529;
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .customer-type {
-          font-size: 0.75em;
-          padding: 2px 6px;
-        }
-
-        .customer-sub {
-          font-size: 0.85em;
-          margin-top: 2px;
-        }
-
-        .react-select__menu {
-          will-change: transform;
-          transform: translateZ(0);
-          backface-visibility: hidden;
-          perspective: 1000px;
-        }
-
-        .react-select__menu-list {
-          scrollbar-width: thin;
-          scrollbar-color: #dc3545 #f1f5f9;
-        }
-
-        .react-select__menu-list::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .react-select__menu-list::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-
-        .react-select__menu-list::-webkit-scrollbar-thumb {
-          background-color: #dc3545;
-          border-radius: 4px;
-        }
-
-        /* Add GPU acceleration for smoother rendering */
-        .customer-option {
-          transform: translateZ(0);
-          backface-visibility: hidden;
-        }
-
-        /* Customer Option Styles */
-        .customer-option {
-          border-bottom: 1px solid #f1f5f9;
-          transition: background-color 0.2s ease;
-        }
-
-        .customer-option:last-child {
-          border-bottom: none;
-        }
-
-        .customer-left {
-          flex: 1;
-          min-width: 0; /* Enables text truncation */
-        }
-
-        .customer-id {
-          font-weight: 600;
-          color: #dc3545;
-          margin-right: 8px;
-          white-space: nowrap;
-        }
-
-        .customer-name {
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-        }
-
-        .customer-sub {
-          font-size: 0.75rem;
-          color: #6c757d;
-        }
-
-        .customer-type {
-          font-size: 0.7rem;
-          padding: 0.25rem 0.5rem;
-          font-weight: 500;
-        }
-
-        .customer-right {
-          text-align: right;
-          margin-left: 16px;
-        }
-
-        /* Improve dropdown menu appearance */
-        .react-select__menu {
-          margin-top: 4px !important;
-          border: 1px solid #e2e8f0 !important;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        }
-
-        .react-select__option {
-          cursor: pointer !important;
-        }
-
-        .react-select__option--is-focused {
-          background-color: #f8f9fa !important;
-        }
-
-        /* Loading state styles */
-        .react-select__loading-indicator {
-          color: #dc3545 !important;
-        }
-
-        .react-select__loading-message {
-          color: #6c757d;
-          font-size: 0.875rem;
-          padding: 8px 12px;
-        }
-
-        .custom-menu-list {
-          max-height: 250px;
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .search-results-footer {
-          padding: 8px 12px;
-          background: #f8f9fa;
-          border-top: 1px solid #e9ecef;
-          color: #6c757d;
-          font-size: 0.875rem;
-          text-align: left;
-        }
-
-        .customer-dropdown {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 0;
-          max-height: 300px;
-          overflow-y: auto;
-          background: white;
-          border: 1px solid rgba(0,0,0,0.1);
-          border-radius: 0.375rem;
-          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-          z-index: 1000;
-          margin-top: 4px;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-
-     
-
-        .customer-info {
-          flex: 1;
-          min-width: 0;
-          margin-right: 8px;
-        }
-
-        .customer-id {
-          color: #dc3545;
-          font-weight: 500;
-          font-size: 0.8rem;
-          padding: 0.2rem 0.4rem;
-          background-color: rgba(220, 53, 69, 0.1);
-          border-radius: 0.25rem;
-          flex-shrink: 0;
-        }
-
-        .customer-name {
-          flex: 1;
-          min-width: 0;
-          font-size: 0.9rem;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .location-badge {
-          font-size: 0.7rem;
-          padding: 0.25em 0.5em;
-          font-weight: 500;
-        }
-
-        .dropdown-item.text-muted.small {
-          font-size: 0.8rem;
-          padding: 0.5rem 0.75rem;
-          background-color: #f8f9fa;
-        }
-      `}</style>
     </>
   );
 };
 
-export default CreateLocations; 
+export default CreateLocations;

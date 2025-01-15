@@ -767,12 +767,12 @@ const SignIn = () => {
 
         /* Error Alert Styles */
         .swal2-icon.swal2-error {
-          border-color: #dc3545;
-          color: #dc3545;
+          border-color: #1e40a6;
+          color: #1e40a6;
         }
 
         .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
-          background-color: #dc3545;
+          background-color: #1e40a6;
         }
 
         .animated {

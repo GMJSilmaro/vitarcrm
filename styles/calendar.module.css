@@ -47,7 +47,7 @@
   justify-content: center;
   gap: 8px;
   padding: 12px;
-  background-color: #C41230;
+  background-color: #305cde;
   border: none;
   border-radius: 6px;
   color: white;
@@ -58,7 +58,7 @@
 }
 
 .viewDetailsButton:hover {
-  background-color: #C41230;
+  background-color: #305cde;
 }
 
 .arrowIcon {

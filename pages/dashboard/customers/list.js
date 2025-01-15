@@ -91,6 +91,7 @@ const getPageNumbers = (currentPage, totalPages) => {
 const FilterPanel = ({ filters, setFilters, onClear, loading, handleSearch, setData, setTotalRows, initialData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [tempFilters, setTempFilters] = useState(filters);
+  const [searchLoading, setSearchLoading] = useState(false);
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -612,40 +613,9 @@ const ViewCustomers = () => {
         );
       }
     }),
-    columnHelper.accessor('contract.status', {
-      header: 'Contract',
-      size: 130,
-      cell: info => (
-        <OverlayTrigger
-          placement="top"
-          overlay={
-            <Tooltip>
-              {info.getValue() === 'active' ? 
-                'This customer has an active contract' : 
-                'This customer does not have an active contract'}
-            </Tooltip>
-          }
-        >
-          <div className="d-flex align-items-center">
-            <CurrencyExchange className="me-2 text-primary" size={14} />
-            <Badge 
-              bg={info.getValue() === 'active' ? 'primary' : 'secondary'}
-              style={{ 
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontWeight: '500',
-                fontSize: '14px'
-              }}
-            >
-              {info.getValue() === 'active' ? 'Yes' : 'No'}
-            </Badge>
-          </div>
-        </OverlayTrigger>
-      )
-    })
+    
   ];
 
-  
     // Add new state for search loading
     const [searchLoading, setSearchLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -655,27 +625,28 @@ const ViewCustomers = () => {
     return data.filter(customer => {
       // Customer Code filter
       const matchesCode = !filters.customerCode || 
-        customer.CardCode?.toLowerCase().includes(filters.customerCode.toLowerCase());
+        customer.customerId?.toLowerCase().includes(filters.customerCode.toLowerCase());
 
       // Customer Name filter
       const matchesName = !filters.customerName || 
-        customer.CardName?.toLowerCase().includes(filters.customerName.toLowerCase());
+        customer.customerName?.toLowerCase().includes(filters.customerName.toLowerCase());
 
       // Email filter
       const matchesEmail = !filters.email || 
-        customer.EmailAddress?.toLowerCase().includes(filters.email.toLowerCase());
+        (customer.customerContact?.email || '').toLowerCase().includes(filters.email.toLowerCase());
 
       // Phone filter
       const matchesPhone = !filters.phone || 
-        customer.Phone1?.includes(filters.phone);
+        (customer.customerContact?.phoneNumber || '').includes(filters.phone) ||
+        (customer.customerContact?.mobileNumber || '').includes(filters.phone);
 
       // Contract Status filter
       const matchesContract = !filters.contractStatus || 
-        customer.U_Contract === filters.contractStatus;
+        customer.contract?.status === filters.contractStatus;
 
       // Country filter (assuming it's in the addresses)
       const matchesCountry = !filters.country || 
-        customer.addresses?.some(addr => addr.country === filters.country);
+        customer.locations?.some(loc => loc.country === filters.country);
 
       // Status filter
       const matchesStatus = !filters.status || 
@@ -683,9 +654,11 @@ const ViewCustomers = () => {
 
       // Address search
       const matchesAddress = !filters.address || 
-        customer.addresses?.some(addr => 
-          addr.street?.toLowerCase().includes(filters.address.toLowerCase()) ||
-          addr.name?.toLowerCase().includes(filters.address.toLowerCase())
+        customer.locations?.some(loc => 
+          (loc.streetAddress1 || '').toLowerCase().includes(filters.address.toLowerCase()) ||
+          (loc.streetAddress2 || '').toLowerCase().includes(filters.address.toLowerCase()) ||
+          (loc.streetAddress3 || '').toLowerCase().includes(filters.address.toLowerCase()) ||
+          (loc.city || '').toLowerCase().includes(filters.address.toLowerCase())
         );
 
       return matchesCode && matchesName && matchesEmail && matchesPhone && 
@@ -694,27 +667,98 @@ const ViewCustomers = () => {
   }, [data, filters]);
 
 
-  // Update the table configuration
+  // Optimize the table configuration
   const table = useReactTable({
-    data: filteredData,  // Use all filtered data
+    data: filteredData.slice((currentPage - 1) * perPage, currentPage * perPage), // Paginate the data
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(), // Add this
     state: {
       pagination: {
-        pageIndex: currentPage - 1,
-        pageSize: perPage  // Use perPage instead of hardcoded 10
+        pageIndex: currentPage - 1, // Convert 1-based to 0-based index
+        pageSize: perPage
       }
     },
-    onPaginationChange: setPagination => {
-      const newPagination = setPagination(table.getState().pagination);
-      setCurrentPage(newPagination.pageIndex + 1);
-      setPerPage(newPagination.pageSize);
-    },
-    manualPagination: false,  // Set to false to let the table handle pagination
-    pageCount: Math.ceil(filteredData.length / perPage),
+    manualPagination: true,
+    pageCount: Math.ceil(filteredData.length / perPage) // Calculate total pages
   });
+
+  // Add pagination change handler
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  // Update the getPageNumbers function to use filteredData length
+  const pageNumbers = getPageNumbers(currentPage, Math.ceil(filteredData.length / perPage));
+
+  // Update the entries per page dropdown
+  const EntriesPerPage = () => (
+    <div className="d-flex align-items-center">
+      <span className="text-muted me-2">Show:</span>
+      <Form.Select
+        size="sm"
+        value={perPage}
+        onChange={(e) => handlePerRowsChange(Number(e.target.value))}
+        style={{ width: '80px' }}
+        disabled={loading}
+      >
+        <option value={5}>5</option>
+        <option value={10}>10</option>
+        <option value={25}>25</option>
+        <option value={50}>50</option>
+        <option value={100}>100</option>
+      </Form.Select>
+      <span className="text-muted ms-2">entries</span>
+    </div>
+  );
+
+  // Update the pagination info component
+  const PaginationInfo = () => {
+    const start = ((currentPage - 1) * perPage) + 1;
+    const end = Math.min(currentPage * perPage, filteredData.length);
+    const total = filteredData.length;
+    
+    return (
+      <div className="text-muted small me-3">
+        <ListUl size={14} className="me-2" />
+        Showing {start} to {end} of {total} entries
+      </div>
+    );
+  };
+
+  // Add this function to handle per page changes
+  const handlePerRowsChange = async (newPerPage) => {
+    setLoading(true);
+    try {
+      setPerPage(newPerPage);
+      setCurrentPage(1); // Reset to first page when changing items per page
+      
+      // Fetch fresh data with new limit if using server-side pagination
+      const customersRef = collection(db, 'customers');
+      const newQuery = query(
+        customersRef,
+        orderBy('customerId', 'asc'),
+        limit(newPerPage)
+      );
+
+      const snapshot = await getDocs(newQuery);
+      const customers = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setData(customers);
+      setTotalRows(customers.length);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setFirstDoc(snapshot.docs[0]);
+      
+    } catch (error) {
+      console.error('Error changing page size:', error);
+      toast.error('Failed to update page size');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleViewDetails = (customer) => {
     console.log('Viewing customer:', customer); // Debug log
@@ -770,6 +814,275 @@ const ViewCustomers = () => {
   };
 
   // Add useEffect for initial data load instead
+  // useEffect(() => {
+  //   const loadInitialData = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const customersRef = collection(db, 'customers');
+  //       const initialQuery = query(
+  //         customersRef,
+  //         orderBy('customerId', 'asc'),
+  //         limit(10)
+  //       );
+ 
+  //       const snapshot = await getDocs(initialQuery);
+  //       const customers = snapshot.docs.map(doc => ({
+  //         id: doc.id,
+  //         ...doc.data()
+  //       }));
+ 
+  //       setData(customers);
+  //       setTotalRows(customers.length);
+  //       setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+  //       setFirstDoc(snapshot.docs[0]);
+  //       setInitialLoad(false);
+  //     } catch (error) {
+  //       console.error('Error loading initial data:', error);
+  //       toast.error('Failed to load customers');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+ 
+  //   if (initialLoad) {
+  //     loadInitialData();
+  //   }
+  // }, [initialLoad]);
+
+  // Update the search input in your JSX
+  // <div className="d-flex align-items-center">
+  //   <div className="position-relative">
+  //     <input
+  //       type="text"
+  //       className="form-control"
+  //       placeholder="Search customers..."
+  //       value={searchTerm}
+  //       onChange={(e) => setSearchTerm(e.target.value)}
+  //       onKeyPress={handleSearch}
+  //     />
+  //     {searchLoading && (
+  //       <div className="position-absolute top-50 end-0 translate-middle-y me-2">
+  //         <Spinner
+  //           animation="border"
+  //           size="sm"
+  //           role="status"
+  //           aria-hidden="true"
+  //         />
+  //       </div>
+  //     )}
+  //   </div>
+  //   <Button 
+  //     variant="primary" 
+  //     className="ms-2"
+  //     onClick={() => handleSearch({ key: 'Enter' })}
+  //     disabled={searchLoading}
+  //   >
+  //     {searchLoading ? (
+  //       <Spinner
+  //         as="span"
+  //         animation="border"
+  //         size="sm"
+  //         role="status"
+  //         aria-hidden="true"
+  //       />
+  //     ) : (
+  //       <Search size={18} />
+  //     )}
+  //   </Button>
+  // </div>
+
+  // Update the table body rendering to use pagination
+  {table.getRowModel().rows.map(row => (
+    <tr key={row.id}>
+      {row.getVisibleCells().map(cell => (
+        <td key={cell.id}>
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </td>
+      ))}
+    </tr>
+  ))}
+  
+
+  // Update the FilterPanel's handleSearch function to work with direct data
+  const handleSearch = async (searchFilters) => {
+    console.log('🔍 Starting search with filters:', searchFilters);
+    setLoading(true);
+    
+    let searchResults = [];
+    let lastDocument = null;
+    let firstDocument = null;
+    let totalReadCount = 0;
+
+    try {
+      const customersRef = collection(db, 'customers');
+      
+      if (searchFilters.quickSearch) {
+        const searchTerm = searchFilters.quickSearch;
+        console.log('🔎 Performing quick search for:', searchTerm);
+        
+        // First try searching by customerName
+        let searchQuery = query(
+          customersRef,
+          where('customerName', '>=', searchTerm),
+          where('customerName', '<=', searchTerm + '\uf8ff'),
+          limit(999)
+        );
+
+        let snapshot = await getDocs(searchQuery);
+        totalReadCount += snapshot.docs.length;
+        console.log(`📊 Firebase Reads for customerName search: ${snapshot.docs.length}`);
+
+        searchResults = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        if (searchResults.length === 0) {
+          // Try searching by customerId
+          searchQuery = query(
+            customersRef,
+            where('customerId', '>=', searchTerm),
+            where('customerId', '<=', searchTerm + '\uf8ff'),
+            limit(999)
+          );
+
+          snapshot = await getDocs(searchQuery);
+          totalReadCount += snapshot.docs.length;
+          console.log(`📊 Firebase Reads for customerId search: ${snapshot.docs.length}`);
+
+          searchResults = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          if (searchResults.length === 0) {
+            // Try searching by   
+            searchQuery = query(
+              customersRef,
+              where('customerId', '>=', searchTerm.toUpperCase()),
+              where('customerId', '<=', searchTerm.toUpperCase() + '\uf8ff'),
+              limit(999)
+            );
+
+            snapshot = await getDocs(searchQuery);
+            totalReadCount += snapshot.docs.length;
+            console.log(`📊 Firebase Reads for customerId search: ${snapshot.docs.length}`);
+
+            searchResults = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+
+            if (searchResults.length === 0) {
+              // If still no results, get all documents and filter in memory
+              console.log('🔍 Performing full collection search');
+              searchQuery = query(
+                customersRef,
+                limit(999) // Increase limit for full search
+              );
+
+              snapshot = await getDocs(searchQuery);
+              totalReadCount += snapshot.docs.length;
+              console.log(`📊 Firebase Reads for full search: ${snapshot.docs.length}`);
+
+              searchResults = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              })).filter(customer => {
+                const searchTermLower = searchTerm.toLowerCase();
+                const addresses = customer.locations || [];
+                
+                return (
+                  customer.customerName?.toLowerCase().includes(searchTermLower) ||
+                  customer.customerId?.toLowerCase().includes(searchTermLower) ||
+                  // Search in address fields
+                  addresses.some(addr => 
+                    addr.street?.toLowerCase().includes(searchTermLower) ||
+                    addr.name?.toLowerCase().includes(searchTermLower)
+                  )
+                );
+              });
+            }
+          }
+        }
+
+        if (searchResults.length > 0) {
+          lastDocument = snapshot.docs[snapshot.docs.length - 1];
+          firstDocument = snapshot.docs[0];
+        }
+      } else {
+        // Detailed filters
+        console.log('🔍 Performing detailed filter search');
+        let searchQuery = query(
+          customersRef,
+          limit(999)
+        );
+
+        const snapshot = await getDocs(searchQuery);
+        totalReadCount += snapshot.docs.length;
+        console.log(`📊 Firebase Reads for detailed search: ${totalReadCount}`);
+
+        searchResults = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // Apply filters in memory
+        if (Object.values(searchFilters).some(filter => filter)) {
+          searchResults = searchResults.filter(location => {
+            if (searchFilters.siteId && !location.siteId?.toLowerCase().includes(searchFilters.siteId.toLowerCase())) return false;
+            if (searchFilters.siteName && !location.siteName?.toLowerCase().includes(searchFilters.siteName.toLowerCase())) return false;
+            if (searchFilters.address && !(
+              location.address1?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
+              location.address2?.toLowerCase().includes(searchFilters.address.toLowerCase()) ||
+              location.address3?.toLowerCase().includes(searchFilters.address.toLowerCase())
+            )) return false;
+            if (searchFilters.city && !location.city?.toLowerCase().includes(searchFilters.city.toLowerCase())) return false;
+            if (searchFilters.country && !location.country?.toLowerCase().includes(searchFilters.country.toLowerCase())) return false;
+            return true;
+          });
+        }
+
+        if (searchResults.length > 0) {
+          lastDocument = snapshot.docs[snapshot.docs.length - 1];
+          firstDocument = snapshot.docs[0];
+        }
+      }
+
+      console.log(`✅ Search completed. Total reads: ${totalReadCount}`);
+
+      // Only update state once at the end
+      if (searchResults.length === 0) {
+        console.log('❌ No results found');
+        toast.error('No results found');
+        // Reset the table
+        setData([]);
+        setTotalRows(0);
+        setLastDoc(null);
+        setFirstDoc(null);
+      } else {
+        // Batch update all state changes
+        console.log(`📊 Updating table with ${searchResults.length} results`);
+        setData(searchResults);
+        setTotalRows(searchResults.length);
+        setLastDoc(lastDocument);
+        setFirstDoc(firstDocument);
+      }
+
+    } catch (error) {
+      console.error('🚨 Search error:', error);
+      toast.error('Failed to search locations');
+      // Reset the table on error
+      setData([]);
+      setTotalRows(0);
+      setLastDoc(null);
+      setFirstDoc(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add this useEffect for initial data load
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
@@ -780,13 +1093,13 @@ const ViewCustomers = () => {
           orderBy('customerId', 'asc'),
           limit(10)
         );
- 
+
         const snapshot = await getDocs(initialQuery);
         const customers = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
- 
+
         setData(customers);
         setTotalRows(customers.length);
         setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
@@ -799,283 +1112,13 @@ const ViewCustomers = () => {
         setLoading(false);
       }
     };
- 
+
     if (initialLoad) {
       loadInitialData();
     }
   }, [initialLoad]);
 
-  // Add quick actions menu
-  const QuickActions = ({ customer }) => (
-    <DropdownButton
-      size="sm"
-      variant="light"
-      title="Actions"
-    >
-      <Dropdown.Item onClick={() => handleViewDetails(customer)}>
-        <Eye size={14} className="me-2" />
-        View Details
-      </Dropdown.Item>
-      <Dropdown.Item onClick={() => handleEditCustomer(customer)}>
-        <Edit size={14} className="me-2" />
-        Edit
-      </Dropdown.Item>
-      <Dropdown.Divider />
-      <Dropdown.Item 
-        className="text-danger"
-        onClick={() => handleDeleteCustomer(customer)}
-      >
-        <Trash size={14} className="me-2" />
-        Delete
-      </Dropdown.Item>
-    </DropdownButton>
-  );
-
   
-  // Add search handler
-  const handleSearch = async (searchFilters) => {
-    console.log('🔍 Starting search with filters:', searchFilters);
-    setLoading(true);
-    
-    try {
-      const customersRef = collection(db, 'customers');
-      let searchQuery;
-      let snapshot;
-
-      // Get the search term from any of the filter fields
-      const searchTerm = searchFilters.customerCode || 
-                        searchFilters.customerName || 
-                        searchFilters.email || 
-                        searchFilters.phone || 
-                        '';
-
-      if (searchTerm) {
-        // Create queries for each field we want to search
-        const queries = [
-          // Search by customer ID
-          query(
-            customersRef,
-            where('customerId', '==', searchTerm.toUpperCase()),
-            limit(10)
-          ),
-          // Search by customer name
-          query(
-            customersRef,
-            where('customerName', '==', searchTerm),
-            limit(10)
-          ),
-          // Search by email
-          query(
-            customersRef,
-            where('customerContact.email', '==', searchTerm.toLowerCase()),
-            limit(10)
-          ),
-          // Search by phone
-          query(
-            customersRef,
-            where('customerContact.phoneNumber', '==', searchTerm),
-            limit(10)
-          ),
-          // Search by mobile
-          query(
-            customersRef,
-            where('customerContact.mobileNumber', '==', searchTerm),
-            limit(10)
-          )
-        ];
-
-        // Execute all queries in parallel
-        const snapshots = await Promise.all(queries.map(q => getDocs(q)));
-        
-        // Combine results and remove duplicates
-        const searchResults = snapshots
-          .flatMap(snapshot => 
-            snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }))
-          )
-          .filter((customer, index, self) => 
-            index === self.findIndex((c) => c.id === customer.id)
-          );
-
-        console.log('Query complete. Found documents:', searchResults.length);
-
-        // Update state based on results
-        if (searchResults.length === 0) {
-          console.log('❌ No results found');
-          toast.error('No customers found matching your search criteria');
-          setData([]);
-          setTotalRows(0);
-        } else {
-          console.log(`✅ Found ${searchResults.length} matching customers:`, searchResults);
-          setData(searchResults);
-          setTotalRows(searchResults.length);
-          toast.success(`Found ${searchResults.length} matching customers`);
-        }
-
-        // Update pagination docs using the first non-empty snapshot
-        const firstNonEmptySnapshot = snapshots.find(s => !s.empty);
-        if (firstNonEmptySnapshot) {
-          setLastDoc(firstNonEmptySnapshot.docs[firstNonEmptySnapshot.docs.length - 1]);
-          setFirstDoc(firstNonEmptySnapshot.docs[0]);
-        } else {
-          setLastDoc(null);
-          setFirstDoc(null);
-        }
-
-      } else {
-        // Default query if no search term
-        console.log('No search term, fetching first 10 customers');
-        searchQuery = query(
-          customersRef,
-          limit(10)
-        );
-
-        snapshot = await getDocs(searchQuery);
-        const searchResults = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        if (searchResults.length === 0) {
-          toast.error('No customers found');
-          setData([]);
-          setTotalRows(0);
-        } else {
-          setData(searchResults);
-          setTotalRows(searchResults.length);
-        }
-
-        if (snapshot.docs.length > 0) {
-          setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-          setFirstDoc(snapshot.docs[0]);
-        } else {
-          setLastDoc(null);
-          setFirstDoc(null);
-        }
-      }
-
-    } catch (error) {
-      console.error('🚨 Search error:', error);
-      toast.error('Failed to search customers');
-      setData([]);
-      setTotalRows(0);
-      setLastDoc(null);
-      setFirstDoc(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update the search input in your JSX
-  <div className="d-flex align-items-center">
-    <div className="position-relative">
-      <input
-        type="text"
-        className="form-control"
-        placeholder="Search customers..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        onKeyPress={handleSearch}
-      />
-      {searchLoading && (
-        <div className="position-absolute top-50 end-0 translate-middle-y me-2">
-          <Spinner
-            animation="border"
-            size="sm"
-            role="status"
-            aria-hidden="true"
-          />
-        </div>
-      )}
-    </div>
-    <Button 
-      variant="primary" 
-      className="ms-2"
-      onClick={() => handleSearch({ key: 'Enter' })}
-      disabled={searchLoading}
-    >
-      {searchLoading ? (
-        <Spinner
-          as="span"
-          animation="border"
-          size="sm"
-          role="status"
-          aria-hidden="true"
-        />
-      ) : (
-        <Search size={18} />
-      )}
-    </Button>
-  </div>
-
-  // Update the table body rendering to use pagination
-  {table.getRowModel().rows.map(row => (
-    <tr key={row.id}>
-      {row.getVisibleCells().map(cell => (
-        <td key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </td>
-      ))}
-    </tr>
-  ))}
-
-  // Update the pagination info display
-  const PaginationInfo = () => {
-    const { pageSize, pageIndex } = table.getState().pagination;
-    const start = pageIndex * pageSize + 1;
-    const end = Math.min((pageIndex + 1) * pageSize, filteredData.length);
-    
-    return (
-      <div className="text-muted small">
-        Showing {start} to {end} of {filteredData.length} entries
-      </div>
-    );
-  };
-
-  // Update handlePerRowsChange
-  const handlePerRowsChange = useCallback((newPerPage) => {
-    table.setPageSize(newPerPage);
-  }, [table]);
-
-  // Add loadNextPage function for pagination
-  const loadNextPage = async () => {
-    if (!lastDoc || isLoadingMore) return;
-    console.log(' Loading next page...');
-    setIsLoadingMore(true);
-    
-    try {
-      const customersRef = collection(db, 'customers');
-      const nextQuery = query(
-        customersRef,
-        orderBy('customerId', 'asc'),
-        startAfter(lastDoc),
-        limit(10)
-      );
- 
-      const snapshot = await getDocs(nextQuery);
-      console.log(`📊 Firebase Reads for next page: ${snapshot.docs.length}`);
-      
-      if (!snapshot.empty) {
-        const newCustomers = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
- 
-        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        setFirstDoc(snapshot.docs[0]);
-        setData(prevData => [...prevData, ...newCustomers]);
-        setTotalRows(prevTotal => prevTotal + newCustomers.length);
-      }
-    } catch (error) {
-      console.error('🚨 Error loading next page:', error);
-      toast.error('Failed to load more customers');
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
   return (
     <Fragment>
       <GeeksSEO title="Customers | VITAR Group" />
@@ -1129,31 +1172,8 @@ const ViewCustomers = () => {
               
               
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <div className="d-flex align-items-center">
-                  <span className="text-muted me-2">Show:</span>
-                  <div className="position-relative" style={{ width: '90px' }}>
-                    <Form.Select
-                      size="sm"
-                      value={perPage}
-                      onChange={(e) => handlePerRowsChange(Number(e.target.value))}
-                      className="me-2"
-                      disabled={loading}
-                    >
-                      {TABLE_CONFIG.PAGE_SIZES.OPTIONS.map(size => (
-                        <option key={size} value={size}>{size}</option>
-                      ))}
-                    </Form.Select>
-                  </div>
-                  <span className="text-muted">entries per page</span>
-                </div>
-                <div className="text-muted">
-                  <ListUl size={14} className="me-2" />
-                  {loading ? (
-                    <small>Loading...</small>
-                  ) : (
-                    <PaginationInfo />
-                  )}
-                </div>
+                <EntriesPerPage />
+                <PaginationInfo />
               </div>
 
               <div className="table-responsive">
@@ -1194,12 +1214,10 @@ const ViewCustomers = () => {
                               {filters.customerName || filters.customerCode || filters.email || filters.phone ? (
                                 'Searching customers...'
                               ) : (
-                                'Loading all customers...'
+                                'Loading customers...'
                               )}
                             </div>
-                            <small className="text-muted mt-1">
-                              Please wait a moment
-                            </small>
+                            <small className="text-muted mt-1">Please wait a moment</small>
                           </div>
                         </td>
                       </tr>
@@ -1236,13 +1254,14 @@ const ViewCustomers = () => {
                   <Button
                     variant="outline-primary"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
                   >
+                    <ChevronLeft size={14} className="me-1" />
                     Previous
                   </Button>
                   <div className="d-flex align-items-center gap-1">
-                    {getPageNumbers(currentPage, Math.ceil(filteredData.length / 10)).map((page, index) => (
+                    {pageNumbers.map((page, index) => (
                       page === '...' ? (
                         <span key={`dot-${index}`} className="px-2 text-muted">...</span>
                       ) : (
@@ -1250,7 +1269,8 @@ const ViewCustomers = () => {
                           key={page}
                           variant={currentPage === page ? "primary" : "outline-primary"}
                           size="sm"
-                          onClick={() => setCurrentPage(page)}
+                          onClick={() => handlePageChange(page)}
+                          disabled={loading}
                           style={{ minWidth: '32px' }}
                         >
                           {page}
@@ -1261,11 +1281,11 @@ const ViewCustomers = () => {
                   <Button
                     variant="outline-primary"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredData.length / 10), prev + 1))}
-                    disabled={currentPage === Math.ceil(filteredData.length / 10)}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === Math.ceil(filteredData.length / perPage) || loading}
                   >
                     Next
-                    <FeatherChevronRight size={14} className="ms-1" />
+                    <ChevronRight size={14} className="ms-1" />
                   </Button>
                 </div>
               </div>
@@ -1502,8 +1522,8 @@ const TOAST_STYLES = {
     borderLeft: '6px solid #ffc107'
   },
   ERROR: {
-    color: '#dc3545',
-    borderLeft: '6px solid #dc3545'
+    color: '#1e40a6',
+    borderLeft: '6px solid #1e40a6'
   },
   LOADING: {
     color: '#0d6efd',

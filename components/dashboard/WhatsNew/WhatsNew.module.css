@@ -5,7 +5,7 @@
   }
   
   .header {
-    background: #E31837;
+    background: #305cde;
     color: white;
     padding: 20px 24px;
     position: sticky;
@@ -105,7 +105,7 @@
   .featureCard:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border-color: #E31837;
+    border-color: #305cde;
   }
   
   .featureIcon {
@@ -144,7 +144,7 @@
   }
   
   .highlight {
-    background: linear-gradient(135deg, #E31837 0%, #C41230 100%);
+    background: linear-gradient(135deg, #305cde 0%, #305cde 100%);
     color: white;
   }
   

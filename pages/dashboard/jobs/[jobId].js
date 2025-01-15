@@ -213,7 +213,7 @@ const getPriorityColor = (priority) => {
       case 1: return '#198754'; // Low - green
       case 2: return '#0d6efd'; // Normal - blue
       case 3: return '#fd7e14'; // High - orange
-      case 4: return '#dc3545'; // Urgent - red
+      case 4: return '#1e40a6'; // Urgent - red
       case 5: return '#6610f2'; // Critical - purple
       default: return '#6c757d'; // Default - grey
     }
@@ -222,7 +222,7 @@ const getPriorityColor = (priority) => {
   // Handle string priorities (fallback)
   const priorityStr = String(priority || '').toLowerCase();
   switch (priorityStr) {
-    case 'urgent': return '#dc3545';
+    case 'urgent': return '#1e40a6';
     case 'high': return '#fd7e14';
     case 'normal': return '#0d6efd';
     case 'low': return '#198754';
@@ -1936,7 +1936,7 @@ const JobDetails = () => {
                 onClick: handleEditClick
               }}
               customStyles={{
-                background: "linear-gradient(90deg, #C41230 0%, #E31837 100%)"
+                background: "linear-gradient(90deg, #305cde 0%, #1e40a6 100%)"
               }}
             />
           </Col>

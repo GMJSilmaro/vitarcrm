@@ -214,7 +214,7 @@ const FilterPanel = ({
                     value={tempFilters.quickSearch || ''}
                     onChange={(e) => handleFilterChange('quickSearch', e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Quick search by Site ID or Site Name..."
+                    placeholder="Quick search by Site Name..."
                     style={{ fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}
                   />
                 </Form.Group>
@@ -699,9 +699,23 @@ const ViewLocations = () => {
   const [firstDoc, setFirstDoc] = useState(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const columnHelper = createColumnHelper()
-
   const columns = useMemo(() => [
+    {
+      accessorKey: 'index',
+      header: '#',
+      size: 50,
+      cell: info => {
+        const rowIndex = info.row.index;
+        const pageIndex = table.getState().pagination.pageIndex;
+        const pageSize = table.getState().pagination.pageSize;
+        const displayIndex = rowIndex + (pageIndex * pageSize) + 1;
+        return (
+          <div className="d-flex align-items-center">
+            <span className="text-primary">{displayIndex}</span>
+          </div>
+        );
+      }
+    },
     {
       accessorKey: 'siteId',
       header: 'Site ID',
@@ -750,10 +764,6 @@ const ViewLocations = () => {
     }
   ], []);
 
-  // Add new state for search loading
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  
 
   const filteredData = useMemo(() => {
     return data.filter(location => {
@@ -763,7 +773,7 @@ const ViewLocations = () => {
 
       // Site Name filter
       const matchesSiteName = !filters.siteName || 
-        location.siteName?.toLowerCase().includes(filters.siteName.toLowerCase());
+        location.siteName?.toLowerCase().includes('%' + filters.siteName.toLowerCase() + '%');
 
       // Address filter (check all address fields)
       const matchesAddress = !filters.address || (
@@ -793,19 +803,27 @@ const ViewLocations = () => {
 
   // Optimize the table configuration
   const table = useReactTable({
-    data: filteredData.slice((currentPage - 1) * perPage, currentPage * perPage), // Use perPage here
+    data: filteredData.slice((currentPage - 1) * perPage, currentPage * perPage), // Paginate the data
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
       pagination: {
-        pageIndex: currentPage - 1,
-        pageSize: perPage // Use perPage here
+        pageIndex: currentPage - 1, // Convert 1-based to 0-based index
+        pageSize: perPage
       }
     },
     manualPagination: true,
-    pageCount: Math.ceil(filteredData.length / perPage), // Use perPage here
+    pageCount: Math.ceil(filteredData.length / perPage) // Calculate total pages
   });
+
+  // Add pagination change handler
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  // Update the getPageNumbers function to use filteredData length
+  const pageNumbers = getPageNumbers(currentPage, Math.ceil(filteredData.length / perPage));
 
   const handleViewDetails = (location) => {
     console.log('Viewing location:', location);
@@ -833,7 +851,6 @@ const ViewLocations = () => {
       const clearQuery = query(
         locationsRef,
         orderBy('siteId', 'asc'),
-        limit(10)
       );
 
       const snapshot = await getDocs(clearQuery);
@@ -954,64 +971,61 @@ const ViewLocations = () => {
 
 
   // Add this function to handle per page changes
-  const handlePerRowsChange = useCallback((newPerPage) => {
+  const handlePerRowsChange = async (newPerPage) => {
     setLoading(true);
     try {
       setPerPage(newPerPage);
       setCurrentPage(1); // Reset to first page when changing items per page
       
-      // Update the table data
-      const start = 0;
-      const end = Math.min(newPerPage, filteredData.length);
-      const pageData = filteredData.slice(start, end);
+      // Fetch fresh data with new limit if using server-side pagination
+      const locationsRef = collection(db, 'locations');
+      const newQuery = query(
+        locationsRef,
+        orderBy('siteId', 'asc'),
+        limit(newPerPage)
+      );
+
+      const snapshot = await getDocs(newQuery);
+      const locations = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setData(locations);
+      setTotalRows(locations.length);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+      setFirstDoc(snapshot.docs[0]);
       
-      setData(pageData);
-      setTotalRows(filteredData.length);
     } catch (error) {
       console.error('Error changing page size:', error);
       toast.error('Failed to update page size');
     } finally {
       setLoading(false);
     }
-  }, [filteredData]);
-
-
-  // Add function to load next page
-  const loadNextPage = async () => {
-    if (!lastDoc || isLoadingMore) return;
-    console.log('📥 Loading next page...');
-    setIsLoadingMore(true);
-    
-    try {
-      const locationsRef = collection(db, 'locations');
-      const nextQuery = query(
-        locationsRef,
-        orderBy('siteId', 'asc'),
-        startAfter(lastDoc),
-        limit(10)
-      );
-
-      const snapshot = await getDocs(nextQuery);
-      console.log(`📊 Firebase Reads for next page: ${snapshot.docs.length}`);
-      
-      if (!snapshot.empty) {
-        const newLocations = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        setFirstDoc(snapshot.docs[0]);
-        setData(prevData => [...prevData, ...newLocations]);
-        setTotalRows(prevTotal => prevTotal + newLocations.length);
-      }
-    } catch (error) {
-      console.error('🚨 Error loading next page:', error);
-      toast.error('Failed to load more locations');
-    } finally {
-      setIsLoadingMore(false);
-    }
   };
+
+  // Update the entries per page dropdown
+  const EntriesPerPage = () => (
+    <div className="d-flex align-items-center">
+      <span className="text-muted me-2">Show:</span>
+      <Form.Select
+        size="sm"
+        value={perPage}
+        onChange={(e) => handlePerRowsChange(Number(e.target.value))}
+        style={{ width: '80px' }}
+        disabled={loading}
+      >
+        <option value={5}>5</option>
+        <option value={10}>10</option>
+        <option value={25}>25</option>
+        <option value={50}>50</option>
+        <option value={100}>100</option>
+      </Form.Select>
+      <span className="text-muted ms-2">entries</span>
+    </div>
+  );
+
+
 
   // Update the FilterPanel's handleSearch function to work with direct data
   const handleSearch = async (searchFilters) => {
@@ -1034,7 +1048,7 @@ const ViewLocations = () => {
         let searchQuery = query(
           locationsRef,
           where('city', '==', searchTerm),
-          limit(10)
+          limit(999)
         );
 
         let snapshot = await getDocs(searchQuery);
@@ -1052,7 +1066,7 @@ const ViewLocations = () => {
             locationsRef,
             where('siteName', '>=', searchTerm),
             where('siteName', '<=', searchTerm + '\uf8ff'),
-            limit(10)
+            limit(999)
           );
 
           snapshot = await getDocs(searchQuery);
@@ -1284,33 +1298,8 @@ const ViewLocations = () => {
               
               
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <div className="d-flex align-items-center">
-                  <span className="text-muted me-2">Show:</span>
-                  <div className="position-relative" style={{ width: '90px' }}>
-                    <Form.Select
-                      size="sm"
-                      value={perPage}
-                      onChange={(e) => handlePerRowsChange(Number(e.target.value))}
-                      className="me-2"
-                      disabled={loading}
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </Form.Select>
-                  </div>
-                  <span className="text-muted">entries per page</span>
-                </div>
-                <div className="text-muted">
-                  <ListUl size={14} className="me-2" />
-                  {loading ? (
-                    <small>Loading...</small>
-                  ) : (
-                    <PaginationInfo />
-                  )}
-                </div>
+                <EntriesPerPage />
+                <PaginationInfo />
               </div>
 
               <div className="table-responsive">
@@ -1381,13 +1370,14 @@ const ViewLocations = () => {
                   <Button
                     variant="outline-primary"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
                   >
+                    <ChevronLeft size={14} className="me-1" />
                     Previous
                   </Button>
                   <div className="d-flex align-items-center gap-1">
-                    {getPageNumbers(currentPage, Math.ceil(filteredData.length / perPage)).map((page, index) => (
+                    {pageNumbers.map((page, index) => (
                       page === '...' ? (
                         <span key={`dot-${index}`} className="px-2 text-muted">...</span>
                       ) : (
@@ -1395,7 +1385,8 @@ const ViewLocations = () => {
                           key={page}
                           variant={currentPage === page ? "primary" : "outline-primary"}
                           size="sm"
-                          onClick={() => setCurrentPage(page)}
+                          onClick={() => handlePageChange(page)}
+                          disabled={loading}
                           style={{ minWidth: '32px' }}
                         >
                           {page}
@@ -1406,8 +1397,8 @@ const ViewLocations = () => {
                   <Button
                     variant="outline-primary"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredData.length / perPage), prev + 1))}
-                    disabled={currentPage === Math.ceil(filteredData.length / perPage)}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === Math.ceil(filteredData.length / perPage) || loading}
                   >
                     Next
                     <ChevronRight size={14} className="ms-1" />
@@ -1647,8 +1638,8 @@ const TOAST_STYLES = {
     borderLeft: '6px solid #ffc107'
   },
   ERROR: {
-    color: '#dc3545',
-    borderLeft: '6px solid #dc3545'
+    color: '#1e40a6',
+    borderLeft: '6px solid #1e40a6'
   },
   LOADING: {
     color: '#0d6efd',

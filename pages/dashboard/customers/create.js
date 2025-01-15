@@ -365,7 +365,7 @@ const CreateCustomer = () => {
   };
 
   const progressFillStyles = {
-    backgroundColor: '#dc3545', // Bootstrap red
+    backgroundColor: '#1e40a6', // Bootstrap red
     height: '100%',
     width: '0%',
     borderRadius: '4px',
@@ -897,7 +897,7 @@ const CreateCustomer = () => {
 
       <style jsx global>{`
         :root {
-          --primary-color: #dc3545;      // Bootstrap red
+          --primary-color: #1e40a6;      // Bootstrap red
           --primary-hover: #c82333;      // Darker red
           --primary-light: #f8d7da;      // Light red
           --primary-dark: #bd2130;       // Very dark red
@@ -993,7 +993,7 @@ const CreateCustomer = () => {
 
         .form-control:focus, .form-select:focus {
           background-color: white;
-          border-color: #dc3545;
+          border-color: #1e40a6;
           box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
           transform: translateY(-1px);
         }
@@ -1015,7 +1015,7 @@ const CreateCustomer = () => {
 
         /* Required Field Indicator */
         .required-field {
-          color: #dc3545;
+          color: #1e40a6;
           margin-left: 4px;
         }
 
@@ -1057,7 +1057,7 @@ const CreateCustomer = () => {
         }
 
         .progress-bar-fill {
-          background-color: #dc3545;
+          background-color: #1e40a6;
           height: 100%;
           border-radius: 999px;
           transition: width 0.5s ease;
@@ -1088,14 +1088,14 @@ const CreateCustomer = () => {
 
         .nav-pills .nav-link:hover {
           background: #fef2f2;
-          color: #dc3545;
+          color: #1e40a6;
           transform: translateX(4px);
         }
 
         .nav-pills .nav-link.active {
-          background: #dc3545;
+          background: #1e40a6;
           color: white;
-          border-color: #dc3545;
+          border-color: #1e40a6;
           transform: translateX(8px);
           box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
         }
@@ -1126,8 +1126,8 @@ const CreateCustomer = () => {
         }
 
         .btn-primary {
-          background-color: #dc3545;
-          border-color: #dc3545;
+          background-color: #1e40a6;
+          border-color: #1e40a6;
           box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
         }
 
@@ -1177,7 +1177,7 @@ const CreateCustomer = () => {
         }
 
         .is-invalid {
-          border-color: #dc3545;
+          border-color: #1e40a6;
         }
 
         .valid-feedback, .invalid-feedback {

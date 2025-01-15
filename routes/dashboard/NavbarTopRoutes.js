@@ -8,106 +8,86 @@ const NavbarDefault = [
 		link: '/dashboard',
 		icon: 'HouseDoorFill',
 		children: [
-			{ id: uuid(), menuitem: 'Overview', link: '/dashboard'},
+			{id: uuid(), menuitem: 'Overview', link: '/dashboard', icon: 'HouseDoorFill'},
+			{ id: uuid(), menuitem: 'Report Editor', icon: 'FileEarmarkBarGraphFill', link: '/reports'},
 		],
 		isAuthenticated: true,
 	},
-	// {
-	// 	id: uuid(),
-	// 	menuitem: 'Manage Customer',
-	// 	link: '#',
-	// 	icon: 'PeopleFill',
-	// 	children: [
-	// 		{
-	// 			id: uuid(),
-	// 			header: true,
-	// 			header_text: 'Customer Menu'
-	// 		},
-	// 		{
-	// 			id: uuid(),
-	// 			menuitem: 'Customers',
-	// 			link: '/customers',
-	// 			icon: 'PersonFill'
-	// 		},
-	// 		// {
-	// 		// 	id: uuid(),
-	// 		// 	menuitem: 'Service Locations',
-				
-	// 		// 	link: '/dashboard/locations/list',
-	// 		// 	icon: 'GeoAltFill'
-	// 		// },
-	// 	],
-	// 	isAuthenticated: true,
-	// },
-	// // {
-	// 	id: uuid(),
-	// 	menuitem: 'Manage Sites',
-	// 	link: '#',
-	// 	icon: 'BuildingFill',
-	// 	children: [
-	// 		{
-	// 			id: uuid(),
-	// 			header: true,
-	// 			header_text: 'Sites Menu'
-	// 		},
-	// 		{
-	// 			id: uuid(),
-	// 			menuitem: 'Sites',
-	// 			link: '/sites',
-	// 			icon: 'BuildingFill'
-	// 		},
-		
-	// 	],
-	// 	isAuthenticated: true,
-	// },
-	// {
-	// 	id: uuid(),
-	// 	menuitem: 'Manage Equipments',
-	// 	link: '#',
-	// 	icon: 'GearFill',
-	// 	children: [
-	// 		{
-	// 			id: uuid(),
-	// 			header: true,
-	// 			header_text: 'Equipments Menu'
-	// 		},
-	// 		{
-	// 			id: uuid(),
-	// 			menuitem: 'Calibration Equipments',
-	// 			link: '/inventory',
-	// 			icon: 'ThermometerFill'
-	// 		},
-	// 	],
-	// 	isAuthenticated: true,
-	// },
 	{
 		id: uuid(),
-		menuitem: 'Master Data Management',
+		menuitem: 'Customer Management',
 		link: '/dashboard/master',
-		badge: 'Work In Progress',
-		icon: 'GearFill',
+		icon: 'PersonFill',
 		hasSubmenu: true,
 		children: [
 			{
 				id: uuid(),
 				header: true,
-				header_text: 'Master Data Menu'
+				header_text: 'CRM Management Menu'
 			},
 			{
 				id: uuid(),
 				menuitem: 'Customers',
 				icon: 'PersonFill',
-				link: '/dashboard/customers/list'
+				link: '/customers',
+				hasSubmenu: false,
 			},
 			{
 				id: uuid(),
 				menuitem: 'Sites',
+				link: '/sites',
 				icon: 'BuildingFill',
-				link: '/dashboard/locations/list'
+				hasSubmenu: true,	
+			},
+		
+		]
+	},
+	{
+		id: uuid(),
+		menuitem: 'Vitar',
+		icon: 'GearFill',
+		children: [
+			{
+				id: uuid(),
+				header: true,
+				header_text: 'Vitar Management Menu'
 			},
 			{
 				id: uuid(),
-				menuitem: 'Calibration',
+				menuitem: 'Technicians',
+				link: '#',
+				icon: 'PersonLinesFill',
+				hasSubmenu: true,
+				children: [
+					{
+						id: uuid(),
+						menuitem: 'Technicians List',
+						link: '/workers',
+						icon: 'PersonLinesFill'
+					},
+					{
+						id: uuid(),
+						menuitem: 'Schedule',
+						link: '/schedule',
+						icon: 'CalendarWeekFill'
+					},
+				]
+			},
+			{
+				id: uuid(),
+				menuitem: 'Calendar',
+				link: '/jobs/calendar',
+				icon: 'CalendarWeekFill'
+			},
+			// {
+			// 	id: uuid(),
+			// 	menuitem: 'Jobs',
+			// 	link: '#',
+			// 	icon: 'BriefcaseFill'
+			// },
+			{
+				id: uuid(),
+				menuitem: 'Calibration Devices',
 				icon: 'ThermometerHigh',
 				hasSubmenu: true,
 				children: [
@@ -156,50 +136,6 @@ const NavbarDefault = [
 			}
 		]
 	},
-	{
-		id: uuid(),
-		menuitem: 'Manage Workers',
-		icon: 'PeopleFill',
-		children: [
-			{
-				id: uuid(),
-				header: true,
-				header_text: 'Workers Menu'
-			},
-			{
-				id: uuid(),
-				menuitem: 'Workers',
-				link: '/workers',
-				icon: 'PersonLinesFill'
-			}
-		]
-	},
-	// {
-	// 	id: uuid(),
-	// 	menuitem: 'Manage Jobs',
-	// 	link: '#',
-	// 	icon: 'BriefcaseFill',
-	// 	children: [
-	// 		{
-	// 			id: uuid(),
-	// 			header: true,
-	// 			header_text: 'Jobs Menu'
-	// 		},
-	// 		{
-	// 			id: uuid(),
-	// 			menuitem: 'Jobs',
-	// 			link: '/jobs',
-	// 			icon: 'ListTask'
-	// 		},
-	// 		{
-	// 			id: uuid(),
-	// 			menuitem: 'Jobs Calendar',
-	// 			link: '/jobs/calendar',
-	// 			icon: 'CalendarWeekFill'
-	// 		},
-	// 	],
-	// 	isAuthenticated: true,
-	// },
 ];
 
 //console.log('NavbarDefault:', JSON.stringify(NavbarDefault, null, 2));

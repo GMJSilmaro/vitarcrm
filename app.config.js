@@ -7,7 +7,7 @@ export const settings = {
         supportEmail: "ask@pixelcareconsulting.com"
     },
     theme: {
-        skin: "light",
+        skin: "dark",
         primaryColor: "#0061f2",
         secondaryColor: "#6900f2",
         fontFamily: "Inter, sans-serif"

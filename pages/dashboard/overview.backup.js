@@ -180,36 +180,6 @@ const useFirebaseCache = () => {
   return { fetchWithCache };
 };
 
-// Add this helper function after the constants
-const generateDummyData = () => {
-  // Generate random jobs for the last 30 days
-  const jobs = [];
-  const jobTypes = ['Installation', 'Maintenance', 'Repair', 'Emergency', 'Other'];
-  const jobStatuses = ['Created', 'In Progress', 'Completed', 'Job Complete'];
-  const now = new Date();
-
-  for (let i = 0; i < 150; i++) {
-    const daysAgo = Math.floor(Math.random() * 30);
-    const hoursAgo = Math.floor(Math.random() * 24);
-    const date = new Date(now);
-    date.setDate(date.getDate() - daysAgo);
-    date.setHours(date.getHours() - hoursAgo);
-
-    jobs.push({
-      id: `job-${i}`,
-      jobContactType: jobTypes[Math.floor(Math.random() * jobTypes.length)],
-      jobStatus: jobStatuses[Math.floor(Math.random() * jobStatuses.length)],
-      createdAt: date,
-      assignedWorkers: Array(Math.floor(Math.random() * 3) + 1).fill(null).map((_, index) => ({
-        id: `worker-${index}`,
-        name: `Technician ${index + 1}`
-      }))
-    });
-  }
-
-  return jobs;
-};
-
 // Main Component
 const Overview = () => {
   // Router
@@ -751,7 +721,7 @@ const fetchInitialData = useCallback(async () => {
   try {
     setIsInitialLoading(true);
 
- // Cache user details fetch
+    // Cache user details fetch
     const currentEmail = Cookies.get("email");
     if (currentEmail) {
       const userData = await fetchWithCache(`user-${currentEmail}`, async () => {
@@ -772,13 +742,26 @@ const fetchInitialData = useCallback(async () => {
       }
     }
 
-    // Generate and use dummy jobs
-    const dummyJobs = generateDummyData();
-    setAllJobs(dummyJobs);
+    // Cache jobs fetch
+    const jobs = await fetchWithCache('all-jobs', async () => {
+      const jobsRef = collection(db, "jobs");
+      const jobsQuery = query(jobsRef, orderBy("createdAt", "desc"));
+      const jobsSnapshot = await getDocs(jobsQuery);
+      
+      return jobsSnapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        createdAt: doc.data().createdAt?.seconds ? 
+          new Date(doc.data().createdAt.seconds * 1000) :
+          new Date(doc.data().formattedStartDateTime || null)
+      })).filter(job => job.createdAt && !isNaN(job.createdAt.getTime()));
+    });
 
-    // Initial calculations with dummy data
+    setAllJobs(jobs);
+
+    // Initial calculations
     const dateRange = getDateRange("Today");
-    const filteredJobs = filterJobsByDateRange(dummyJobs, dateRange);
+    const filteredJobs = filterJobsByDateRange(jobs, dateRange);
     updateDashboardStats(filteredJobs, dateRange);
     updateChartData(filteredJobs, "Today");
 
@@ -788,7 +771,7 @@ const fetchInitialData = useCallback(async () => {
   } finally {
     setIsInitialLoading(false);
   }
-}, [filterJobsByDateRange, updateDashboardStats, updateChartData]);
+}, [fetchWithCache]);
 
 // Optimize useEffect
 useEffect(() => {
@@ -869,7 +852,6 @@ return (
       FilterComponent={FilterButtons}
       currentFilter={timeFilter}
       onFilterChange={handleTimeFilterChange}
-      customStyle="dashboard-header"
     />
 
     {/* Dashboard Content */}
@@ -926,7 +908,7 @@ return (
                   <div>
                     <p className="text-muted mb-1">Pending Jobs ({timeFilter})</p>
                     <h3 className="mb-1">{pendingTasks}</h3>
-                    <Badge bg={pendingTasks > 5 ? "danger" : "danger"}>
+                    <Badge bg={pendingTasks > 5 ? "danger" : "warning"}>
                       {pendingTasks > 5 ? 'Critical' : 'Urgent'}
                     </Badge>
                   </div>

@@ -16,10 +16,10 @@ const ContentHeader = ({
     <div className="dashboard-header">
       <div
         style={{
-          background: "linear-gradient(135deg, #E31837 0%, #C41230 100%)",
+          background: "linear-gradient(135deg, #305cde 0%, #1e40a6 100%)",
           padding: "1.5rem 2rem",
           borderRadius: "0 0 24px 24px",
-          marginTop: "-39px",
+          marginTop: "-31px",
           marginLeft: "10px",
           marginRight: "10px",
           marginBottom: "20px",
@@ -76,7 +76,7 @@ const ContentHeader = ({
                 className="badge" 
                 style={{ 
                   background: '#FFFFFF',
-                  color: '#E31837',
+                  color: '#305cde',
                   padding: '6px 12px',
                   borderRadius: '6px',
                   fontWeight: '500',
@@ -149,7 +149,7 @@ const ContentHeader = ({
                     gap: '0.5rem',
                     transition: 'all 0.2s ease',
                     border: button.variant.includes('outline') ? '1px solid' : 'none',
-                    backgroundColor: button.variant === 'danger' ? '#dc3545' : 
+                    backgroundColor: button.variant === 'danger' ? '#1e40a6' : 
                                    button.variant === 'outline-primary' ? 'transparent' : 
                                    button.variant === 'outline-secondary' ? 'transparent' : '#fff',
                     color: button.variant.includes('outline') ? '#fff' : 
@@ -199,7 +199,7 @@ const ContentHeader = ({
         }
 
         .custom-action-button.btn-danger {
-          background-color: #dc3545;
+          background-color: #1e40a6;
           border: none;
         }
 

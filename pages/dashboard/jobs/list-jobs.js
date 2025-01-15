@@ -1565,7 +1565,7 @@ const ViewJobs = () => {
             onClick: () => router.push('/jobs/create')
           }}
           customStyles={{
-            background: "linear-gradient(90deg, #C41230 0%, #E31837 100%)"
+            background: "linear-gradient(90deg, #305cde 0%, #1e40a6 100%)"
           }}
         />
         <Row>

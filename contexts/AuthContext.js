@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
   const [workerId, setWorkerId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+ // const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
   let activityTimer;
   const router = useRouter();
 
@@ -38,16 +38,6 @@ export function AuthProvider({ children }) {
           setWorkerId(workerId);
           setIsAdmin(isAdmin);
           
-          // Verify session with backend
-          fetch('/api/auth/verify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-          }).catch(error => {
-            console.error('Session verification error:', error);
-          });
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -76,7 +66,7 @@ export function AuthProvider({ children }) {
           icon: 'error',
           title: 'Authentication Failed',
           text: data.message || 'Failed to sign in. Please try again.',
-          confirmButtonColor: '#dc3545'
+          confirmButtonColor: '#1e40a6'
         });
         return false;
       }
@@ -108,7 +98,7 @@ export function AuthProvider({ children }) {
         icon: 'error',
         title: 'Sign In Error',
         text: error.message || 'An unexpected error occurred. Please try again.',
-        confirmButtonColor: '#dc3545'
+        confirmButtonColor: '#1e40a6'
       });
       return false;
     }
@@ -163,7 +153,7 @@ export function AuthProvider({ children }) {
         icon: 'error',
         title: 'Sign Out Error',
         text: 'There was a problem signing you out. Please try again.',
-        confirmButtonColor: '#dc3545'
+        confirmButtonColor: '#1e40a6'
       });
       throw error;
     }
@@ -174,7 +164,7 @@ export function AuthProvider({ children }) {
     if (currentUser) {
       SessionManager.updateLastActive(currentUser.email);
       clearTimeout(activityTimer);
-      activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
+     // activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
     }
   };
 
@@ -186,7 +176,7 @@ export function AuthProvider({ children }) {
         icon: 'warning',
         title: 'Session Expired',
         text: 'Your session has expired due to inactivity. Please sign in again.',
-        confirmButtonColor: '#dc3545',
+        confirmButtonColor: '#1e40a6',
         timer: 5000,
         timerProgressBar: true,
         didOpen: () => {
@@ -202,7 +192,7 @@ export function AuthProvider({ children }) {
     if (currentUser) {
       window.addEventListener('mousemove', handleUserActivity);
       window.addEventListener('keydown', handleUserActivity);
-      activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
+      //activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
     }
 
     return () => {

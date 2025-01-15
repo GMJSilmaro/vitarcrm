@@ -67,7 +67,7 @@ const CertificatePreview = ({ show, onHide, equipment, certificate }) => {
       <div className="text-center mb-4 certificate-header">
         <Row>
           <Col md={3}>
-            <Image src="/images/VITARLOGO.png" alt="Company Logo" height={60} />
+            <Image src="/images/VITARLOGONEW.jpg" alt="Company Logo" height={60} />
           </Col>
           <Col md={6} className="text-center">
             <h4 className="mb-0">{equipment.category.toUpperCase()} CALIBRATION CERTIFICATE</h4>

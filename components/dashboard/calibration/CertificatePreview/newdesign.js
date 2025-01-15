@@ -67,7 +67,7 @@ const CertificatePreview = ({ show, onHide, equipment, certificate }) => {
       <div className="text-center mb-4 certificate-header">
         <Row>
           <Col md={3}>
-            <Image src="/images/VITARLOGO.png" alt="Company Logo" height={60} />
+            <Image src="/images/VITARLOGONEW.jpg" alt="Company Logo" height={60} />
           </Col>
           <Col md={6} className="text-center">
             <h4 className="mb-0 fw-bold text-center">
@@ -258,7 +258,7 @@ const CertificatePreview = ({ show, onHide, equipment, certificate }) => {
 
         .section-title {
           color: #333;
-          border-bottom: 2px solid #dc3545;
+          border-bottom: 2px solid #1e40a6;
           padding-bottom: 0.5rem;
           margin-bottom: 1rem;
           font-size: 1.1rem;
@@ -281,7 +281,7 @@ const CertificatePreview = ({ show, onHide, equipment, certificate }) => {
         }
 
         .certificate-header h4 {
-          color: #dc3545;
+          color: #1e40a6;
           letter-spacing: 0.5px;
         }
 

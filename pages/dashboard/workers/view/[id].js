@@ -998,7 +998,7 @@ const WorkerDetails = () => {
                       <Badge 
                         className="profile-badge"
                         style={{
-                          background: 'linear-gradient(45deg, #C41230, #E31837)',
+                          background: 'linear-gradient(45deg, #305cde, #1e40a6)',
                           padding: '8px 16px',
                           borderRadius: '8px',
                           color: 'white',
@@ -1254,7 +1254,7 @@ const WorkerDetails = () => {
                       <Badge 
                         className="profile-badge"
                         style={{
-                          background: 'linear-gradient(45deg, #C41230, #E31837)',
+                          background: 'linear-gradient(45deg, #305cde, #1e40a6)',
                           padding: '8px 16px',
                           borderRadius: '8px',
                           color: 'white',
@@ -1302,7 +1302,7 @@ const WorkerDetails = () => {
                             style={{ 
                               padding: '10px 20px', 
                               borderRadius: '8px',
-                              background: 'linear-gradient(45deg, #C41230, #E31837)',
+                              background: 'linear-gradient(45deg, #305cde, #1e40a6)',
                               border: 'none',
                               boxShadow: '0 2px 4px rgba(196, 18, 48, 0.2)'
                             }}
@@ -1382,14 +1382,14 @@ const WorkerDetails = () => {
                   </Card.Header>
                   <Card.Body>
                     <div className="text-center mb-4">
-                      <div style={{ fontSize: '2.5rem', fontWeight: '600', color: '#C41230' }}>
+                      <div style={{ fontSize: '2.5rem', fontWeight: '600', color: '#305cde' }}>
                         {worker.skills?.length || 0}
                       </div>
                       <div className="text-muted" style={{ fontSize: '16px' }}>Total Skills</div>
                     </div>
                     <div className="skills-info p-3" style={{ background: '#f8fafc', borderRadius: '12px' }}>
                       <div className="d-flex align-items-center gap-2 mb-2">
-                        <i className="fe fe-info text-primary" style={{ color: '#C41230' }}></i>
+                        <i className="fe fe-info text-primary" style={{ color: '#305cde' }}></i>
                         <span style={{ fontSize: '14px', fontWeight: '500' }}>Quick Guide</span>
                       </div>
                       <ul className="list-unstyled mb-0" style={{ fontSize: '14px' }}>
@@ -1420,7 +1420,7 @@ const WorkerDetails = () => {
                       <Badge 
                         className="profile-badge"
                         style={{
-                          background: 'linear-gradient(45deg, #C41230, #E31837)',
+                          background: 'linear-gradient(45deg, #305cde, #1e40a6)',
                           padding: '8px 16px',
                           borderRadius: '8px',
                           color: 'white',
@@ -1703,14 +1703,14 @@ const WorkerDetails = () => {
           }
 
           .nav-tabs .nav-link:hover {
-            color: #C41230;
+            color: #305cde;
             border-color: transparent;
             background-color: #f8fafc;
           }
 
           .nav-tabs .nav-link.active {
-            color: #C41230;
-            border-bottom: 2px solid #C41230;
+            color: #305cde;
+            border-bottom: 2px solid #305cde;
             background-color: transparent;
           }
 
@@ -1756,7 +1756,7 @@ const WorkerDetails = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #C41230;
+    color: #305cde;
     font-size: 1.2rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
@@ -1895,7 +1895,7 @@ const WorkerDetails = () => {
 
   .certificate-id code {
     display: block;
-    color: #C41230;
+    color: #305cde;
     font-family: monospace;
     font-size: 0.875rem;
   }
@@ -1986,7 +1986,7 @@ const WorkerDetails = () => {
     justify-content: center;
     background: #e2e8f0;
     border-radius: 6px;
-    color: #C41230;
+    color: #305cde;
   }
 
   .skill-name {
@@ -2080,7 +2080,7 @@ const WorkerDetails = () => {
 
   .certificate-id code {
     display: block;
-    color: #C41230;
+    color: #305cde;
     font-family: monospace;
     font-size: 0.875rem;
   }
@@ -2161,7 +2161,7 @@ const WorkerDetails = () => {
   }
 
   .form-control:focus, .form-select:focus {
-    border-color: #C41230;
+    border-color: #305cde;
     box-shadow: 0 0 0 0.2rem rgba(196, 18, 48, 0.25);
   }
 
@@ -2207,7 +2207,7 @@ const WorkerDetails = () => {
 
   .filter-panel .form-control:focus,
   .filter-panel .form-select:focus {
-    border-color: #C41230;
+    border-color: #305cde;
     box-shadow: 0 0 0 2px rgba(196, 18, 48, 0.1);
   }
 

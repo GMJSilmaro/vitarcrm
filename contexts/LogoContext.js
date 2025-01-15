@@ -7,7 +7,7 @@ export function useLogo() {
 }
 
 export function LogoProvider({ children }) {
-  const [logo, setLogo] = useState('/images/VITARLOGO.png'); // Default logo path
+  const [logo, setLogo] = useState('/images/VITARLOGONEW.jpg'); // Default logo path
 
   const value = {
     logo,

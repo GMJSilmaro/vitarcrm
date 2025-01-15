@@ -342,7 +342,7 @@ const SearchBar = React.memo(({ value, onChange, onSubmit, onClear }) => {
                 padding: '0.6rem 1.2rem',
                 border: 'none',
                 transition: 'all 0.2s ease',
-                background: 'linear-gradient(135deg, #C41230 0%, #E31837 100%)',
+                background: 'linear-gradient(135deg, #305cde 0%, #1e40a6 100%)',
               }}
             >
               <FaSearch size={14} />
@@ -614,7 +614,7 @@ const QuickMenu = ({ children }) => {
       
       Swal.fire({
         icon: 'error',
-        iconColor: '#dc3545',
+        iconColor: '#1e40a6',
         title: '<span class="fw-bold text-danger">Sign Out Error</span>',
         text: 'An unexpected error occurred. Please try again or refresh the page.',
         showConfirmButton: true,
@@ -715,7 +715,7 @@ const QuickMenu = ({ children }) => {
   // Optimize company logo fetch
   useEffect(() => {
     const loadCompanyDetails = async () => {
-      if (logo === '/images/VITARLOGO.png') {
+      if (logo === '/images/VITARLOGONEW.jpg') {
         const cachedLogo = localStorage.getItem('companyLogo');
         if (cachedLogo) {
           setLogo(cachedLogo);

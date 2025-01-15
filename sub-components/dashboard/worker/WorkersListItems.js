@@ -434,7 +434,7 @@ const WorkersListItems = () => {
       text: 'This action cannot be undone.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#dc3545',
+      confirmButtonColor: '#1e40a6',
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Yes, remove',
       cancelButtonText: 'Cancel',
@@ -516,7 +516,7 @@ const WorkersListItems = () => {
       text: `Are you sure you want to delete ${selectedRows.length} worker${selectedRows.length > 1 ? 's' : ''}? This action cannot be undone.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#dc3545',
+      confirmButtonColor: '#1e40a6',
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Yes, delete',
       cancelButtonText: 'Cancel',
@@ -804,7 +804,7 @@ const WorkersListItems = () => {
               className="btn-icon-text"
               onClick={() => handleRowClick(info.row.original)}
               style={{
-                backgroundColor: '#C41230',
+                backgroundColor: '#305cde',
                 border: 'none',
                 boxShadow: '0 2px 4px rgba(59, 130, 246, 0.15)',
                 display: 'inline-flex',
