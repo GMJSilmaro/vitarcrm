@@ -597,8 +597,11 @@ const CreateLocations = () => {
 
   // Update the contact save handler
   const handleSaveContact = async () => {
+    // Set loading state
+    setLoading(true);
+    setContactLoading(true);
+    
     try {
-      setContactLoading(true); // Use separate loading state for contact save
       const uid = getCookie('uid');
       const email = getCookie('email');
       const displayName = getCookie('displayName') || getCookie('workerID') || 'Admin';
@@ -619,7 +622,7 @@ const CreateLocations = () => {
       if (!contactId) {
         throw new Error('Failed to generate contact ID');
       }
-      contactLoading(true);
+
       // Create contact data structure to match location's contact structure
       const contactData = {
         contactId,
@@ -687,13 +690,12 @@ const CreateLocations = () => {
         phone: ''
       });
       setShowNewContactForm(false);
-
       toast.success('Contact saved successfully');
-      contactLoading(false);
     } catch (error) {
       console.error('Error saving contact:', error);
       toast.error('Failed to save contact: ' + error.message);
     } finally {
+      setLoading(false);
       setContactLoading(false);
     }
   };
@@ -1270,8 +1272,18 @@ const CreateLocations = () => {
                       variant="primary"
                       size="sm"
                       onClick={handleSaveContact}
-                      disabled={!newContactData.firstName || !newContactData.lastName || !newContactData.email}
+                      disabled={loading || !newContactData.firstName || !newContactData.lastName || !newContactData.email}
                     >
+                      {loading && (
+                      <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                            className="me-2"
+                          />
+                      )}
                       Save Contact
                     </Button>
                   </div>
