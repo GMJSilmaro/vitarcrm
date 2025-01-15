@@ -1773,7 +1773,7 @@ const WorkerDetails = () => {
   }
 
   .info-value {
-    color: #1e293b;
+    color: #305cde;
     font-weight: 500;
     font-size: 0.9375rem;
   }
@@ -1832,7 +1832,7 @@ const WorkerDetails = () => {
   }
 
   .emergency-value {
-    color: #1e293b;
+    color: #305cde;
     font-weight: 500;
     font-size: 0.9375rem;
   }
@@ -1874,7 +1874,7 @@ const WorkerDetails = () => {
   .certificate-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #305cde;
     margin-bottom: 0.5rem;
   }
 
@@ -1975,7 +1975,7 @@ const WorkerDetails = () => {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: #1e293b;
+    color: #305cde;
   }
 
   .skill-icon {
@@ -2054,7 +2054,7 @@ const WorkerDetails = () => {
   .certificate-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1e293b;
+    color: #305cde;
     margin-bottom: 0.5rem;
     letter-spacing: -0.02em;
   }

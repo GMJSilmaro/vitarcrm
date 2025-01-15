@@ -1945,67 +1945,80 @@ const CreateLocations = () => {
         type={alertConfig.type}
         showActions={alertConfig.showActions}
       />
-      <style jsx global>{`
+           <style jsx global>{`
         :root {
-          --primary-color: #dc3545;      // Bootstrap red
+          --primary-color: #1e40a6;      // Bootstrap red
           --primary-hover: #c82333;      // Darker red
           --primary-light: #f8d7da;      // Light red
           --primary-dark: #bd2130;       // Very dark red
         }
+
         .nav-pills .nav-link {
-          color: #495057;
+          color: #1e40a6;
           background: #f8f9fa;
           border: 1px solid #e9ecef;
           transition: all 0.2s ease;
         }
+
         .nav-pills .nav-link:hover {
-          background: #f8d7da;
+          background: #1e40a6;
           transform: translateX(3px);
         }
+
         .nav-pills .nav-link.active {
           background: var(--primary-color);
           color: white;
           border-color: var(--primary-color);
           transform: translateX(5px);
         }
+
         .form-control:focus, .form-select:focus {
           border-color: var(--primary-color);
           box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
         }
+
         .progress-bar {
           background-color: var(--primary-color);
           border-radius: 4px;
         }
+
         .btn-primary {
           background-color: var(--primary-color);
           border-color: var(--primary-color);
         }
+
         .btn-primary:hover {
           background-color: var(--primary-hover);
           border-color: var(--primary-hover);
         }
+
         .btn-outline-primary {
           color: var(--primary-color);
           border-color: var(--primary-color);
         }
+
         .btn-outline-primary:hover {
           background-color: var(--primary-color);
           border-color: var(--primary-color);
           color: white;
         }
+
         /* Update form validation styles */
         .form-control:focus {
           border-color: var(--primary-color);
           box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
         }
+
         /* Update text colors */
         .text-primary {
           color: var(--primary-color) !important;
         }
+
         /* Update the active tab indicator color */
         .nav-pills .nav-link.active::before {
           background-color: var(--primary-color);
         }
+
         /* Card and Container Styles */
         .form-card {
           background: white;
@@ -2013,9 +2026,11 @@ const CreateLocations = () => {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
           transition: all 0.3s ease;
         }
+
         .form-card:hover {
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
+
         /* Input Field Styles */
         .form-control, .form-select {
           border: 1.5px solid #e2e8f0;
@@ -2025,18 +2040,21 @@ const CreateLocations = () => {
           transition: all 0.2s ease;
           background-color: #f8fafc;
         }
+
         .form-control:focus, .form-select:focus {
           background-color: white;
-          border-color: #dc3545;
+          border-color: #1e40a6;
           box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
           transform: translateY(-1px);
         }
+
         /* Read-only input styling */
         .form-control[readonly] {
           background-color: #f1f5f9;
           border-style: dashed;
           color: #64748b;
         }
+
         /* Label Styles */
         .form-label {
           font-weight: 500;
@@ -2044,11 +2062,13 @@ const CreateLocations = () => {
           margin-bottom: 0.5rem;
           font-size: 0.9rem;
         }
+
         /* Required Field Indicator */
         .required-field {
-          color: #dc3545;
+          color: #1e40a6;
           margin-left: 4px;
         }
+
         /* Info Icon Styles */
         .info-icon {
           color: #94a3b8;
@@ -2057,9 +2077,11 @@ const CreateLocations = () => {
           cursor: help;
           transition: color 0.2s ease;
         }
+
         .info-icon:hover {
           color: #64748b;
         }
+
         /* Progress Bar Container */
         .progress-container {
           background: white;
@@ -2068,12 +2090,14 @@ const CreateLocations = () => {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
           margin-top: 1.5rem;
         }
+
         .progress-title {
           font-size: 0.9rem;
           font-weight: 600;
           color: #334155;
           margin-bottom: 1rem;
         }
+
         /* Progress Bar */
         .progress-bar-container {
           background-color: #fee2e2;
@@ -2081,24 +2105,27 @@ const CreateLocations = () => {
           border-radius: 999px;
           overflow: hidden;
         }
+
         .progress-bar-fill {
-          background-color: #dc3545;
+          background-color: #1e40a6;
           height: 100%;
           border-radius: 999px;
           transition: width 0.5s ease;
         }
+
         /* Progress Text */
         .progress-text {
           font-size: 0.8rem;
-          color: #64748b;
+          color: #1e40a6;
           margin-top: 0.75rem;
           display: flex;
           justify-content: space-between;
         }
+
         /* Navigation Pills */
         .nav-pills .nav-link {
           padding: 0.75rem 1rem;
-          color: #64748b;
+          color: #1e40a6;
           background: white;
           border: 1px solid #e2e8f0;
           border-radius: 8px;
@@ -2108,33 +2135,38 @@ const CreateLocations = () => {
           align-items: center;
           gap: 0.75rem;
         }
+
         .nav-pills .nav-link:hover {
           background: #fef2f2;
-          color: #dc3545;
+          color: #1e40a6;
           transform: translateX(4px);
         }
+
         .nav-pills .nav-link.active {
-          background: #dc3545;
+          background: #1e40a6;
           color: white;
-          border-color: #dc3545;
+          border-color: #1e40a6;
           transform: translateX(8px);
           box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
         }
+
         /* Section Title */
         .section-title {
           font-size: 1.1rem;
           font-weight: 600;
-          color: #334155;
+          color: #1e40a6;
           margin-bottom: 1.5rem;
           padding-bottom: 0.75rem;
           border-bottom: 2px solid #f1f5f9;
         }
+
         /* Helper Text */
         .helper-text {
           font-size: 0.8rem;
-          color: #94a3b8;
+          color: #1e40a6;
           margin-top: 0.25rem;
         }
+
         /* Buttons */
         .btn {
           padding: 0.6rem 1.2rem;
@@ -2142,65 +2174,80 @@ const CreateLocations = () => {
           border-radius: 8px;
           transition: all 0.2s ease;
         }
+
         .btn-primary {
-          background-color: #dc3545;
-          border-color: #dc3545;
+          background-color: #1e40a6;
+          border-color: #1e40a6;
           box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
         }
+
         .btn-primary:hover {
           background-color: #c82333;
           border-color: #c82333;
           transform: translateY(-1px);
           box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
         }
+
         .btn-light {
           background-color: #f8fafc;
           border-color: #e2e8f0;
         }
+
         .btn-light:hover {
           background-color: #f1f5f9;
           border-color: #cbd5e1;
         }
+
         /* Tooltip Styles */
         .tooltip {
           font-size: 0.8rem;
           padding: 0.5rem 0.75rem;
         }
+
         /* Form Groups */
         .form-group {
           margin-bottom: 1.5rem;
         }
+
         /* Input Groups */
         .input-group {
           border-radius: 8px;
           overflow: hidden;
         }
+
         .input-group-text {
           background-color: #f8fafc;
           border-color: #e2e8f0;
           color: #64748b;
         }
+
         /* Validation States */
         .is-valid {
           border-color: #198754;
         }
+
         .is-invalid {
-          border-color: #dc3545;
+          border-color: #1e40a6;
         }
+
         .valid-feedback, .invalid-feedback {
           font-size: 0.8rem;
           margin-top: 0.25rem;
         }
+
         /* Animation for tab transitions */
         .tab-content {
           position: relative;
         }
+
         .tab-pane {
           transition: all 0.3s ease;
         }
+
         .tab-pane.active {
           animation: fadeIn 0.3s ease;
         }
+
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -2210,296 +2257,6 @@ const CreateLocations = () => {
             opacity: 1;
             transform: translateY(0);
           }
-        }
-        /* Collapse Animation Styles */
-        .address-cards {
-          transition: all 0.3s ease-in-out;
-          max-height: 2000px; /* Adjust based on your needs */
-          overflow: hidden;
-        }
-        .address-cards.collapsed {
-          max-height: 0;
-        }
-        /* Chevron Animation */
-        .fe-chevron-up, .fe-chevron-down {
-          transition: transform 0.3s ease;
-        }
-        .fe-chevron-down {
-          transform: rotate(180deg);
-        }
-        .section-title-clickable {
-          cursor: pointer;
-          padding: 0.5rem;
-          margin: -0.5rem;
-          border-radius: 4px;
-          transition: background-color 0.2s ease;
-        }
-        .section-title-clickable:hover {
-          background-color: rgba(0, 0, 0, 0.05);
-        }
-        .fe-chevron-up, .fe-chevron-down {
-          transition: transform 0.3s ease;
-        }
-        .fe-chevron-down {
-          transform: rotate(180deg);
-        }
-        .address-cards {
-          max-height: 700px;
-          overflow-y: auto;
-          padding-right: 10px;
-          scrollbar-width: thin;
-          scrollbar-color: #dc3545 #f1f5f9;
-        }
-        .address-cards::-webkit-scrollbar {
-          width: 8px;
-        }
-        .address-cards::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-        .address-cards::-webkit-scrollbar-thumb {
-          background-color: #dc3545;
-          border-radius: 4px;
-        }
-        .customer-search {
-          position: relative;
-        }
-        .customer-search .spinner-border {
-          position: absolute;
-          right: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-        }
-        .customer-select {
-          max-height: 200px;
-          overflow-y: auto;
-        }
-        .customer-select::-webkit-scrollbar {
-          width: 8px;
-        }
-        .customer-select::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-        .customer-select::-webkit-scrollbar-thumb {
-          background-color: #dc3545;
-          border-radius: 4px;
-        }
-        .react-select-container {
-          font-size: 0.95rem;
-        }
-        .react-select__control {
-          min-height: 42px;
-          border-radius: 8px !important;
-          border: 1.5px solid #e2e8f0 !important;
-          background-color: #f8fafc !important;
-          transition: all 0.2s ease !important;
-        }
-        .react-select__control:hover {
-          border-color: #dc3545 !important;
-        }
-        .react-select__control--is-focused {
-          background-color: white !important;
-          border-color: #dc3545 !important;
-          box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
-          transform: translateY(-1px);
-        }
-        .react-select__option {
-          padding: 8px 12px;
-        }
-        .react-select__option:hover {
-          background-color: #f8f9fa;
-        }
-        .react-select__option--is-focused {
-          background-color: #f8f9fa !important;
-        }
-        .react-select__option--is-selected {
-          background-color: #dc3545 !important;
-        }
-        .react-select__indicator-separator {
-          background-color: #e2e8f0 !important;
-        }
-        .react-select__loading-indicator {
-          color: #dc3545 !important;
-        }
-        .customer-option {
-          padding: 4px 0;
-          width: 100%;
-        }
-        .customer-left {
-          flex: 1;
-        }
-        .customer-right {
-          margin-left: 16px;
-          text-align: right;
-          max-width: 40%;
-        }
-        .customer-id {
-          font-weight: 500;
-          color: #dc3545;
-          margin-right: 8px;
-        }
-        .customer-name {
-          color: #212529;
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .customer-type {
-          font-size: 0.75em;
-          padding: 2px 6px;
-        }
-        .customer-sub {
-          font-size: 0.85em;
-          margin-top: 2px;
-        }
-        .react-select__menu {
-          will-change: transform;
-          transform: translateZ(0);
-          backface-visibility: hidden;
-          perspective: 1000px;
-        }
-        .react-select__menu-list {
-          scrollbar-width: thin;
-          scrollbar-color: #dc3545 #f1f5f9;
-        }
-        .react-select__menu-list::-webkit-scrollbar {
-          width: 8px;
-        }
-        .react-select__menu-list::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-        .react-select__menu-list::-webkit-scrollbar-thumb {
-          background-color: #dc3545;
-          border-radius: 4px;
-        }
-        /* Add GPU acceleration for smoother rendering */
-        .customer-option {
-          transform: translateZ(0);
-          backface-visibility: hidden;
-        }
-        /* Customer Option Styles */
-        .customer-option {
-          border-bottom: 1px solid #f1f5f9;
-          transition: background-color 0.2s ease;
-        }
-        .customer-option:last-child {
-          border-bottom: none;
-        }
-        .customer-left {
-          flex: 1;
-          min-width: 0; /* Enables text truncation */
-        }
-        .customer-id {
-          font-weight: 600;
-          color: #dc3545;
-          margin-right: 8px;
-          white-space: nowrap;
-        }
-        .customer-name {
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-        }
-        .customer-sub {
-          font-size: 0.75rem;
-          color: #6c757d;
-        }
-        .customer-type {
-          font-size: 0.7rem;
-          padding: 0.25rem 0.5rem;
-          font-weight: 500;
-        }
-        .customer-right {
-          text-align: right;
-          margin-left: 16px;
-        }
-        /* Improve dropdown menu appearance */
-        .react-select__menu {
-          margin-top: 4px !important;
-          border: 1px solid #e2e8f0 !important;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        }
-        .react-select__option {
-          cursor: pointer !important;
-        }
-        .react-select__option--is-focused {
-          background-color: #f8f9fa !important;
-        }
-        /* Loading state styles */
-        .react-select__loading-indicator {
-          color: #dc3545 !important;
-        }
-        .react-select__loading-message {
-          color: #6c757d;
-          font-size: 0.875rem;
-          padding: 8px 12px;
-        }
-        .custom-menu-list {
-          max-height: 250px;
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        .search-results-footer {
-          padding: 8px 12px;
-          background: #f8f9fa;
-          border-top: 1px solid #e9ecef;
-          color: #6c757d;
-          font-size: 0.875rem;
-          text-align: left;
-        }
-        .customer-dropdown {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 0;
-          max-height: 300px;
-          overflow-y: auto;
-          background: white;
-          border: 1px solid rgba(0,0,0,0.1);
-          border-radius: 0.375rem;
-          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-          z-index: 1000;
-          margin-top: 4px;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-     
-        .customer-info {
-          flex: 1;
-          min-width: 0;
-          margin-right: 8px;
-        }
-        .customer-id {
-          color: #dc3545;
-          font-weight: 500;
-          font-size: 0.8rem;
-          padding: 0.2rem 0.4rem;
-          background-color: rgba(220, 53, 69, 0.1);
-          border-radius: 0.25rem;
-          flex-shrink: 0;
-        }
-        .customer-name {
-          flex: 1;
-          min-width: 0;
-          font-size: 0.9rem;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .location-badge {
-          font-size: 0.7rem;
-          padding: 0.25em 0.5em;
-          font-weight: 500;
-        }
-        .dropdown-item.text-muted.small {
-          font-size: 0.8rem;
-          padding: 0.5rem 0.75rem;
-          background-color: #f8f9fa;
         }
       `}</style>
     </>
