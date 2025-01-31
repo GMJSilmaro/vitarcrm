@@ -1,9 +1,19 @@
-import { Fragment, useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { Card, Form, Button, Image, Spinner, InputGroup, Container, Row, Col } from "react-bootstrap";
-import { toast } from "react-hot-toast";
-import { useSettings } from "../../hooks/useSettings";
+import { Fragment, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import {
+  Card,
+  Form,
+  Button,
+  Image,
+  Spinner,
+  InputGroup,
+  Container,
+  Row,
+  Col,
+} from 'react-bootstrap';
+import { toast } from 'react-hot-toast';
+import { useSettings } from '../../hooks/useSettings';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -15,49 +25,49 @@ const loadingMessages = [
   {
     title: '<span class="fw-bold text-primary">Welcome Back! 👋</span>',
     message: 'Verifying your credentials...',
-    progress: 15
+    progress: 15,
   },
   {
     title: '<span class="fw-bold text-primary">Authenticating! 🔐</span>',
     message: 'Establishing secure connection...',
-    progress: 30
+    progress: 30,
   },
   {
     title: '<span class="fw-bold text-primary">Connecting to VITAR Database! 🔄</span>',
     message: 'Initializing VITAR Database connection...',
-    progress: 45
+    progress: 45,
   },
   {
     title: '<span class="fw-bold text-primary">Setting Up! ⚡</span>',
     message: 'Creating session and retrieving company databases...',
-    progress: 60
+    progress: 60,
   },
   {
     title: '<span class="fw-bold text-primary">Almost Ready! 📊</span>',
     message: 'Loading user permissions and preferences...',
-    progress: 75
+    progress: 75,
   },
   {
     title: '<span class="fw-bold text-primary">Final Steps! 🚀</span>',
     message: 'Synchronizing with VITAR services...',
-    progress: 90
-  }
+    progress: 90,
+  },
 ];
 
 const LoadingMessage = () => {
   const messages = [
-    "Preparing your workspace...",
-    "Checking credentials...",
-    "Almost there...",
-    "Starting up the engines...",
-    "Loading your dashboard...",
-    "Connecting to services...",
-    "Configuring your settings...",
-    "Getting everything ready...",
+    'Preparing your workspace...',
+    'Checking credentials...',
+    'Almost there...',
+    'Starting up the engines...',
+    'Loading your dashboard...',
+    'Connecting to services...',
+    'Configuring your settings...',
+    'Getting everything ready...',
   ];
 
   const [message, setMessage] = useState(messages[0]);
-  
+
   useEffect(() => {
     let currentIndex = 0;
     const interval = setInterval(() => {
@@ -69,12 +79,11 @@ const LoadingMessage = () => {
       setTimeout(() => {
         currentIndex = (currentIndex + 1) % messages.length;
         setMessage(messages[currentIndex]);
-        
+
         if (messageElement) {
           messageElement.style.opacity = '1';
         }
       }, 500);
-
     }, 3500);
 
     return () => clearInterval(interval);
@@ -82,14 +91,14 @@ const LoadingMessage = () => {
 
   return (
     <div style={{ fontFamily: 'Inter, sans-serif' }}>
-      <div className="fw-semibold mb-2">Signing in...</div>
-      <small 
-        id="loading-message" 
-        className="text-muted"
+      <div className='fw-semibold mb-2'>Signing in...</div>
+      <small
+        id='loading-message'
+        className='text-muted'
         style={{
           display: 'block',
           transition: 'opacity 0.5s ease-in-out',
-          opacity: 1
+          opacity: 1,
         }}
       >
         {message}
@@ -101,8 +110,8 @@ const LoadingMessage = () => {
 const SignIn = () => {
   const { signIn } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -117,15 +126,15 @@ const SignIn = () => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Authentication failed');
       }
@@ -165,7 +174,7 @@ const SignIn = () => {
           try {
             // Just call signIn directly - it will handle the API call
             const signInSuccess = await signIn(email, password);
-            
+
             if (!signInSuccess) {
               throw new Error('Authentication failed');
             }
@@ -173,8 +182,8 @@ const SignIn = () => {
             // Continue with your loading messages and success state
             // Simulate connection steps with proper error handling
             for (let i = 1; i < loadingMessages.length; i++) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+
               modal.querySelector('.swal2-title').innerHTML = loadingMessages[i].title;
               modal.querySelector('.swal2-html-container').innerHTML = `
                 <div class="text-center mb-2">
@@ -193,7 +202,7 @@ const SignIn = () => {
             }
 
             // Show success state
-            modal.querySelector('.swal2-title').innerHTML = 
+            modal.querySelector('.swal2-title').innerHTML =
               '<span class="fw-bold text-success">Connection Established! 🎉</span>';
             modal.querySelector('.swal2-html-container').innerHTML = `
               <div class="text-center">
@@ -221,11 +230,10 @@ const SignIn = () => {
               Swal.close();
               router.push('/');
             }, 2000);
-
           } catch (error) {
             console.error('Authentication Error:', error);
             Swal.close();
-            
+
             await Swal.fire({
               icon: 'error',
               title: 'Authentication Failed',
@@ -236,14 +244,13 @@ const SignIn = () => {
               customClass: {
                 popup: 'shadow-lg',
                 confirmButton: 'btn btn-primary px-4 me-2',
-                cancelButton: 'btn btn-outline-secondary px-4'
+                cancelButton: 'btn btn-outline-secondary px-4',
               },
-              buttonsStyling: false
+              buttonsStyling: false,
             });
           }
-        }
+        },
       });
-
     } catch (error) {
       console.error('Login Error:', error);
       toast.error(error.message || 'Authentication failed. Please try again.');
@@ -255,54 +262,56 @@ const SignIn = () => {
   return (
     <Fragment>
       <Toaster
-        position="top-center"
+        position='top-center'
         toastOptions={{
           id: 'login-notification',
-          style: { zIndex: 9999 }
+          style: { zIndex: 9999 },
         }}
       />
-      
-      <Container fluid className="p-0">
-        <Row className="g-0 min-vh-100">
+
+      <Container fluid className='p-0'>
+        <Row className='g-0 min-vh-100'>
           {/* Left side with field service background */}
-          <Col md={6} className="d-none d-md-block position-relative">
-            <div className="bg-image h-100">
-              <div className="overlay-gradient d-flex flex-column justify-content-center text-white p-5 h-100">
-                <h1 className="display-4 fw-bold mb-4">Welcome Back!</h1>
-                <p className="lead">
-                  Access your CRM & Calibration Management dashboard and manage your operations efficiently.
+          <Col md={6} className='d-none d-md-block position-relative'>
+            <div className='bg-image h-100'>
+              <div className='overlay-gradient d-flex flex-column justify-content-center text-white p-5 h-100'>
+                <h1 className='display-4 fw-bold mb-4'>Welcome Back!</h1>
+                <p className='lead'>
+                  Access your CRM & Calibration Management dashboard and manage your operations
+                  efficiently.
                 </p>
               </div>
             </div>
           </Col>
 
           {/* Right side - Sign In Form */}
-          <Col md={6} className="d-flex align-items-center justify-content-center bg-white p-4 p-md-5">
-            <Card className="border-0 w-100 shadow-lg">
-              <Card.Body className="p-4 p-md-5">
-                <div className="text-center mb-5">
+          <Col
+            md={6}
+            className='d-flex align-items-center justify-content-center bg-white p-4 p-md-5'
+          >
+            <Card className='border-0 w-100 shadow-lg'>
+              <Card.Body className='p-4 p-md-5'>
+                <div className='text-center mb-5'>
                   <Image
-                    src="/images/VITARLOGO.png"
-                    alt="Vitar Logo"
-                    width={300}
-                    height={100}
-                    className="mb-4 img-fluid"
+                    src='/images/VITARLOGO.svg'
+                    alt='Vitar Logo'
+                    className='mb-4 img-fluid mw-100'
                   />
-                  <h2 className="fw-bold text-dark mb-3">Sign In</h2>
-                  <p className="text-muted">Enter your credentials to continue</p>
+                  <h2 className='fw-bold text-dark mb-3'>Sign In</h2>
+                  <p className='text-muted'>Enter your credentials to continue</p>
                 </div>
 
                 <Form onSubmit={handleSubmit}>
-                  <Form.Group className="mb-4" controlId="email">
-                    <Form.Label className="fw-semibold text-dark">Email Address</Form.Label>
-                    <InputGroup className="shadow-sm">
-                      <InputGroup.Text className="bg-light border-0">
-                        <FaEnvelope className="text-primary" />
+                  <Form.Group className='mb-4' controlId='email'>
+                    <Form.Label className='fw-semibold text-dark'>Email Address</Form.Label>
+                    <InputGroup className='shadow-sm'>
+                      <InputGroup.Text className='bg-light border-0'>
+                        <FaEnvelope className='text-primary' />
                       </InputGroup.Text>
                       <Form.Control
-                        type="email"
-                        placeholder="name@email.com"
-                        className="border-0 py-2.5"
+                        type='email'
+                        placeholder='name@email.com'
+                        className='border-0 py-2.5'
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={isLoading}
@@ -311,22 +320,22 @@ const SignIn = () => {
                     </InputGroup>
                   </Form.Group>
 
-                  <Form.Group className="mb-4" controlId="password">
-                    <InputGroup className="shadow-sm">
-                      <InputGroup.Text className="bg-light border-0">
-                        <FaLock className="text-muted" />
+                  <Form.Group className='mb-4' controlId='password'>
+                    <InputGroup className='shadow-sm'>
+                      <InputGroup.Text className='bg-light border-0'>
+                        <FaLock className='text-muted' />
                       </InputGroup.Text>
                       <Form.Control
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        className="border-0 py-2.5"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder='Enter your password'
+                        className='border-0 py-2.5'
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={isLoading}
                         required
                       />
                       <Button
-                        variant="light"
+                        variant='light'
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={isLoading}
                       >
@@ -335,28 +344,24 @@ const SignIn = () => {
                     </InputGroup>
                   </Form.Group>
 
-                  <Form.Group className="mb-4">
+                  <Form.Group className='mb-4'>
                     <Form.Check
-                      type="checkbox"
-                      id="rememberMe"
-                      label="Remember me"
-                      className="text-muted"
+                      type='checkbox'
+                      id='rememberMe'
+                      label='Remember me'
+                      className='text-muted'
                     />
                   </Form.Group>
 
                   <Button
-                    variant="primary"
-                    type="submit"
-                    className="w-75 py-3 mb-4 rounded-pill shadow-sm mx-auto d-block"
+                    variant='primary'
+                    type='submit'
+                    className='w-75 py-3 mb-4 rounded-pill shadow-sm mx-auto d-block'
                     disabled={isLoading}
                   >
                     {isLoading ? (
-                      <div className="d-flex align-items-center justify-content-center">
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                          className="me-2"
-                        />
+                      <div className='d-flex align-items-center justify-content-center'>
+                        <Spinner animation='border' size='sm' className='me-2' />
                         <span>Signing in...</span>
                       </div>
                     ) : (
@@ -364,14 +369,14 @@ const SignIn = () => {
                     )}
                   </Button>
 
-                  <div className="text-center">
-                    <p className="text-muted small">
+                  <div className='text-center'>
+                    <p className='text-muted small'>
                       By signing in, you agree to our{' '}
-                      <Link href="#" className="text-primary text-decoration-none">
+                      <Link href='#' className='text-primary text-decoration-none'>
                         Terms of Service
                       </Link>{' '}
                       and{' '}
-                      <Link href="#" className="text-primary text-decoration-none">
+                      <Link href='#' className='text-primary text-decoration-none'>
                         Privacy Policy
                       </Link>
                     </p>
@@ -410,17 +415,16 @@ const SignIn = () => {
           transition: all 0.3s ease;
         }
 
-        .form-control, .input-group-text {
+        .form-control,
+        .input-group-text {
           border: none;
           padding: 0.75rem 1rem;
         }
-
 
         .input-group {
           border-radius: 0.75rem;
           overflow: hidden;
         }
-
 
         .display-4 {
           font-size: 3.5rem;
@@ -462,7 +466,7 @@ const SignIn = () => {
             opacity: 0;
             transform: translate3d(0, 20px, 0);
           }
-          
+
           to {
             opacity: 1;
             transform: none;
@@ -483,10 +487,7 @@ const SignIn = () => {
         }
 
         .bg-gradient-overlay {
-          background: linear-gradient(
-            rgba(0, 97, 242, 0.8),
-            rgba(105, 0, 242, 0.8)
-          );
+          background: linear-gradient(rgba(0, 97, 242, 0.8), rgba(105, 0, 242, 0.8));
         }
 
         .img-fluid {
@@ -506,7 +507,8 @@ const SignIn = () => {
           box-shadow: 0 5px 15px rgba(0, 97, 242, 0.1);
         }
 
-        .form-control, .input-group-text {
+        .form-control,
+        .input-group-text {
           border: none;
           padding: 0.75rem 1rem;
           transition: all 0.3s ease;
@@ -559,9 +561,15 @@ const SignIn = () => {
 
         /* Add a subtle pulse animation to the icon when focused */
         @keyframes iconPulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-          100% { transform: scale(1); }
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.1);
+          }
+          100% {
+            transform: scale(1);
+          }
         }
 
         .input-group:focus-within .input-group-text svg {
@@ -622,14 +630,20 @@ const SignIn = () => {
         }
 
         .shadow-lg {
-          box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important;
+          box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
         }
 
         /* Animation for error icon */
         @keyframes errorPulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-          100% { transform: scale(1); }
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
+          100% {
+            transform: scale(1);
+          }
         }
 
         .swal2-icon.swal2-error {
@@ -642,7 +656,6 @@ const SignIn = () => {
           border-radius: 0.5rem;
           overflow: hidden;
         }
-
 
         /* Optimize animations */
         .swal2-popup {
@@ -712,12 +725,12 @@ const SignIn = () => {
             transform: scale(1);
             box-shadow: 0 0 0 0 rgba(0, 97, 242, 0.7);
           }
-          
+
           70% {
             transform: scale(1.05);
             box-shadow: 0 0 0 10px rgba(0, 97, 242, 0);
           }
-          
+
           100% {
             transform: scale(1);
             box-shadow: 0 0 0 0 rgba(0, 97, 242, 0);
@@ -753,7 +766,6 @@ const SignIn = () => {
           animation-name: fadeInUp;
         }
 
-  
         /* Container Styles */
         .countdown-text {
           font-size: 1.1rem;
@@ -902,86 +914,89 @@ const SignIn = () => {
           margin-bottom: 1rem;
         }
 
-      
-
         /* Animation for countdown */
         @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.7; }
-          100% { opacity: 1; }
+          0% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.7;
+          }
+          100% {
+            opacity: 1;
+          }
         }
 
         .countdown-text .fw-bold {
           animation: pulse 1s infinite;
         }
 
-
         .btn-primary {
-  background: linear-gradient(135deg, #FF0000 0%, #cc0000 100%);
-  border: none;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-}
+          background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+          border: none;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          transition: all 0.3s ease;
+        }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
-}
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
+        }
 
-.text-primary {
-  color: #FF0000 !important;
-}
+        .text-primary {
+          color: #ff0000 !important;
+        }
 
-.form-control:focus {
-  box-shadow: none;
-  border-color: #FF0000;
-}
+        .form-control:focus {
+          box-shadow: none;
+          border-color: #ff0000;
+        }
 
-.input-group:focus-within .input-group-text {
-  color: #FF0000;
-}
+        .input-group:focus-within .input-group-text {
+          color: #ff0000;
+        }
 
-.form-label::after {
-  background: linear-gradient(135deg, #FF0000 0%, #cc0000 100%);
-}
+        .form-label::after {
+          background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+        }
 
-.input-group:focus-within .input-group-text svg {
-  color: #FF0000;
-}
+        .input-group:focus-within .input-group-text svg {
+          color: #ff0000;
+        }
 
-.input-group:focus-within {
-  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
-}
+        .input-group:focus-within {
+          box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+        }
 
-.alert-info {
-  border-left: 4px solid #FF0000;
-}
+        .alert-info {
+          border-left: 4px solid #ff0000;
+        }
 
-.progress-bar {
-  background: linear-gradient(135deg, #FF0000 0%, #cc0000 100%);
-}
+        .progress-bar {
+          background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+        }
 
-.swal2-success-ring {
-  border-color: #FF0000 !important;
-}
+        .swal2-success-ring {
+          border-color: #ff0000 !important;
+        }
 
-.swal2-icon.swal2-success {
-  border-color: #FF0000 !important;
-  color: #FF0000 !important;
-}
+        .swal2-icon.swal2-success {
+          border-color: #ff0000 !important;
+          color: #ff0000 !important;
+        }
 
-.swal2-icon.swal2-success [class^='swal2-success-line'] {
-  background-color: #FF0000 !important;
-}
+        .swal2-icon.swal2-success [class^='swal2-success-line'] {
+          background-color: #ff0000 !important;
+        }
 
-.swal2-timer-progress-bar {
-  background: linear-gradient(to right, #FF0000, #cc0000) !important;
-}
+        .swal2-timer-progress-bar {
+          background: linear-gradient(to right, #ff0000, #cc0000) !important;
+        }
 
-.countdown-text strong {
-  color: #FF0000;
-}
+        .countdown-text strong {
+          color: #ff0000;
+        }
       `}</style>
     </Fragment>
   );

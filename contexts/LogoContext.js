@@ -7,16 +7,12 @@ export function useLogo() {
 }
 
 export function LogoProvider({ children }) {
-  const [logo, setLogo] = useState('/images/VITARLOGONEW.jpg'); // Default logo path
+  const [logo, setLogo] = useState('/images/VITARLOGO.svg'); // Default logo path
 
   const value = {
     logo,
-    setLogo
+    setLogo,
   };
 
-  return (
-    <LogoContext.Provider value={value}>
-      {children}
-    </LogoContext.Provider>
-  );
-} 
+  return <LogoContext.Provider value={value}>{children}</LogoContext.Provider>;
+}

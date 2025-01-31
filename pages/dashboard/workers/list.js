@@ -8,24 +8,22 @@ import Link from 'next/link';
 import { GeeksSEO, GridListViewButton } from 'widgets';
 
 // import sub components
-import { WorkerGridCard,  WorkersListItems }  from 'sub-components';
-
+import { WorkerGridCard, WorkersListItems } from 'sub-components';
 
 const Worker = () => {
-	return (
-		<Fragment>
-			<GeeksSEO title="Worker's List | VITAR Group" />
-			<Tab.Container defaultActiveKey="list">
+  return (
+    <Fragment>
+      <GeeksSEO title="Worker's List | VITAR Group" />
 
-				<Tab.Content>
-					<Tab.Pane eventKey="list" className="pb-4 tab-pane-custom-margin">
-						<WorkersListItems />
-					</Tab.Pane>
-				</Tab.Content>
-			</Tab.Container>
-			
-		</Fragment>
-	);
+      <Tab.Container defaultActiveKey='list'>
+        <Tab.Content>
+          <Tab.Pane eventKey='list' className='pb-4 tab-pane-custom-margin'>
+            <WorkersListItems />
+          </Tab.Pane>
+        </Tab.Content>
+      </Tab.Container>
+    </Fragment>
+  );
 };
 
 export default Worker;

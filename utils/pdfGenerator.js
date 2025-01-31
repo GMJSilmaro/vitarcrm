@@ -8,16 +8,16 @@ export const generateCertificatePDF = async (element) => {
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
-      logging: false
+      logging: false,
     });
-    
+
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
+
     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    
+
     // Add page numbers
     const pageCount = pdf.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
@@ -30,7 +30,7 @@ export const generateCertificatePDF = async (element) => {
         { align: 'center' }
       );
     }
-    
+
     return pdf;
   } catch (error) {
     console.error('Error generating PDF:', error);
@@ -40,17 +40,17 @@ export const generateCertificatePDF = async (element) => {
 
 export const generateTablePDF = (data, filename) => {
   const doc = new jsPDF();
-  
+
   doc.autoTable({
     head: [['Date', 'Certificate No', 'Equipment', 'Status']],
-    body: data.map(item => [
+    body: data.map((item) => [
       format(new Date(item.date), 'dd/MM/yyyy'),
       item.certificateNo,
       item.description,
-      item.status
+      item.status,
     ]),
-    theme: 'grid'
+    theme: 'grid',
   });
-  
+
   return doc;
-}; 
+};
