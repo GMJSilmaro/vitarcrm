@@ -15,6 +15,7 @@ const EditProfile = () => {
   const [contactData, setContactData] = useState({});
   // const [skillsData, setSkillsData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // State to hold all submitted data
   const [submittedData, setSubmittedData] = useState({});
@@ -69,12 +70,15 @@ const EditProfile = () => {
 
   const handlePersonalFormSubmit = async (personalFormData) => {
     try {
+      setIsProcessing(true);
       const workerRef = doc(collection(db, 'users'), workerId);
       await setDoc(workerRef, { ...personalFormData }, { merge: true });
       setSubmittedData((prevData) => ({
         ...prevData,
         personal: personalFormData,
-      })); // Save personal data
+      }));
+      setIsProcessing(false);
+      // Save personal data
       console.log('All Submitted Data:', {
         ...submittedData,
         personal: personalFormData,
@@ -88,6 +92,7 @@ const EditProfile = () => {
   const handleContactFormSubmit = async (contactFormData) => {
     console.log('Submitting contact form data:', contactFormData); // Debug log
     try {
+      setIsProcessing(true);
       const workerRef = doc(collection(db, 'users'), workerId);
 
       // Update the worker document directly with contactFormData fields
@@ -107,7 +112,6 @@ const EditProfile = () => {
         },
         { merge: true }
       );
-
       console.log('Contact data saved successfully.'); // Debug log
       handleTabChange('personal'); // Only change tab after saving
     } catch (error) {
@@ -169,10 +173,16 @@ const EditProfile = () => {
                   <EditPersonalTab
                     onSubmit={handlePersonalFormSubmit}
                     initialValues={personalData}
+                    isProcessing={isProcessing}
                   />
                 </Tab>
                 <Tab eventKey='contact' title='Contact'>
-                  <EditContactTab onSubmit={handleContactFormSubmit} initialValues={contactData} />
+                  <EditContactTab
+                    onSubmit={handleContactFormSubmit}
+                    initialValues={contactData}
+                    isProcessing={isProcessing}
+                    setIsProcessing={setIsProcessing}
+                  />
                 </Tab>
                 {/* <Tab eventKey="skills" title="Skills">
                   <SkillsTab

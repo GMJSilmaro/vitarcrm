@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Container, Row, Col, Form, Button, Image, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Image, InputGroup, Spinner } from 'react-bootstrap';
 import { db, storage } from '../../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, getDocs } from 'firebase/firestore';
@@ -7,7 +7,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import AvatarChooser from './AvatarChooser';
 import { Trash } from 'lucide-react';
 
-export const PersonalTab = ({ onSubmit, initialValues }) => {
+export const PersonalTab = ({ onSubmit, initialValues, isProcessing }) => {
   const [profilePicture, setProfilePicture] = useState('/images/avatar/NoProfile.png');
   const [activeUser, setActiveUser] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -319,7 +319,17 @@ export const PersonalTab = ({ onSubmit, initialValues }) => {
         </Row>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button variant='primary' type='submit'>
+          <Button disabled={isProcessing} variant='primary' type='submit'>
+            {isProcessing && (
+              <Spinner
+                className='me-2'
+                as='span'
+                animation='border'
+                size='sm'
+                role='status'
+                aria-hidden='true'
+              />
+            )}
             Next
           </Button>
         </div>

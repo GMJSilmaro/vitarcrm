@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Container, Row, Col, Form, Button, Image } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Image, Spinner } from 'react-bootstrap';
 import { storage } from '../../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import AvatarChooser from './AvatarChooser';
 import { Trash } from 'lucide-react';
 
-export const EditPersonalTab = ({ onSubmit, initialValues }) => {
+export const EditPersonalTab = ({ onSubmit, initialValues, isProcessing }) => {
   const [profilePicture, setProfilePicture] = useState();
   //   const [activeUser, setActiveUser] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -282,7 +282,17 @@ export const EditPersonalTab = ({ onSubmit, initialValues }) => {
         </Row>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button variant='primary' type='submit'>
+          <Button disabled={isProcessing} variant='primary' type='submit'>
+            {isProcessing && (
+              <Spinner
+                className='me-2'
+                as='span'
+                animation='border'
+                size='sm'
+                role='status'
+                aria-hidden='true'
+              />
+            )}
             Next
           </Button>
         </div>

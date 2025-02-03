@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Form, Button } from 'react-bootstrap';
+import { Row, Col, Form, Button, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2'; // SweetAlert2 import
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-export const EditContactTab = ({ onSubmit, initialValues }) => {
+export const EditContactTab = ({ onSubmit, initialValues, isProcessing, setIsProcessing }) => {
   const { workerId } = useAuth();
 
   const [primaryPhone, setPrimaryPhone] = useState('');
@@ -78,6 +78,7 @@ export const EditContactTab = ({ onSubmit, initialValues }) => {
       icon: 'success',
       confirmButtonText: 'OK',
     }).then(() => {
+      setIsProcessing(false);
       // Redirect to profile tab after clicking "OK"
       router.refresh(); // Change '/profile' to your desired route
     });
@@ -202,7 +203,17 @@ export const EditContactTab = ({ onSubmit, initialValues }) => {
       </Row>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant='primary' type='submit'>
+        <Button disabled={isProcessing} variant='primary' type='submit'>
+          {isProcessing && (
+            <Spinner
+              className='me-2'
+              as='span'
+              animation='border'
+              size='sm'
+              role='status'
+              aria-hidden='true'
+            />
+          )}
           Submit
         </Button>
       </div>
