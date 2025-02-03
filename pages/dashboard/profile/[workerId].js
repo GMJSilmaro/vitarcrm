@@ -109,7 +109,7 @@ const EditProfile = () => {
       );
 
       console.log('Contact data saved successfully.'); // Debug log
-      handleTabChange('skills'); // Only change tab after saving
+      handleTabChange('personal'); // Only change tab after saving
     } catch (error) {
       console.error('Error updating contact data:', error);
       toast.error('Failed to save contact data.');

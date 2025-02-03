@@ -1,13 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Container, Row, Col, Form, Button, Image } from 'react-bootstrap';
-import { db, storage } from '../../../firebase';
+import { storage } from '../../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, getDocs } from 'firebase/firestore';
 import AvatarChooser from './AvatarChooser';
 import { Trash } from 'lucide-react';
 
 export const EditPersonalTab = ({ onSubmit, initialValues }) => {
-  const [profilePicture, setProfilePicture] = useState('/images/avatar/NoProfile.png');
+  const [profilePicture, setProfilePicture] = useState();
   //   const [activeUser, setActiveUser] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isFieldWorker, setIsFieldWorker] = useState(false);

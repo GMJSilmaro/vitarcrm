@@ -1785,6 +1785,7 @@ const WorkerDetails = () => {
           </Tab.Pane>
         </Tab.Content>
       </Tab.Container>
+
       <style jsx global>{`
         .nav-tabs {
           border-bottom: 1px solid #e2e8f0;

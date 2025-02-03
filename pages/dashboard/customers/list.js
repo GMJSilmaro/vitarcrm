@@ -74,10 +74,13 @@ import {
   orderBy,
   limit,
   startAfter,
+  doc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
+import { row } from '@syncfusion/ej2-react-grids';
 
 // Add this utility function at the top of your file, before the ViewCustomers component
 const getPageNumbers = (currentPage, totalPages) => {
@@ -735,6 +738,7 @@ TableRow.displayName = 'TableRow';
 const ViewCustomers = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [totalRows, setTotalRows] = useState(0);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -760,17 +764,53 @@ const ViewCustomers = () => {
   const [firstDoc, setFirstDoc] = useState(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  const handleRemoveCustomer = useCallback(async (row) => {
+    const confirmDelete = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#1e40a6',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, remove',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (confirmDelete.isConfirmed) {
+      try {
+        const customerRef = doc(db, 'customers', row.id);
+        await deleteDoc(customerRef);
+        // No need to manually refresh - onSnapshot will handle it
+
+        toast.success('Customer removed successfully', {
+          position: 'top-right',
+          className: 'bg-success text-white',
+        });
+      } catch (error) {
+        console.error('Error removing customer:', error);
+        toast.error('Error removing customer: ' + error.message, {
+          position: 'top-right',
+          className: 'bg-danger text-white',
+        });
+      }
+    }
+  });
+
   const handleRowClick = async (row) => {
     withReactContent(Swal).fire({
+      showConfirmButton: false,
+      showCloseButton: true,
+      width: '300px',
       html: (
-        <div className='d-flex flex-column align-items-center w-100'>
+        <div className='d-flex flex-column align-items-center'>
           <div className='d-flex align-items-center mx-auto'>
             <Building className='me-2' size={14} />
             <span className='text-primary'>{row.customerId}</span>
           </div>
           <h5 className='mt-2 mb-1'>{row.customerName}</h5>
           <Badge
-            bg={row.status === 'Active' ? 'success' : 'danger'}
+            className='mb-4'
+            bg={row.status === 'active' ? 'success' : 'danger'}
             style={{
               padding: '6px 12px',
               borderRadius: '6px',
@@ -778,8 +818,43 @@ const ViewCustomers = () => {
               fontWeight: '500',
             }}
           >
-            {row.status === 'Active' ? 'Active' : 'Inactive'}
+            {row.status === 'active' ? 'Active' : 'Inactive'}
           </Badge>
+
+          <div class='d-grid gap-2'>
+            <button
+              class='btn btn-primary'
+              id='viewBtn'
+              onClick={() => {
+                Swal.close();
+                router.push(`/customers/view/${row.id}`);
+              }}
+            >
+              <i class='fas fa-eye me-2'></i>View Details
+            </button>
+            <button
+              class='btn btn-warning'
+              id='editBtn'
+              onClick={() => {
+                setIsEditing(true);
+                Swal.close();
+                router.push(`/customers/edit-customer/${row.id}`);
+                setIsEditing(false);
+              }}
+            >
+              <i class='fas fa-edit me-2'></i>Edit Customer
+            </button>
+            <button
+              class='btn btn-outline-danger'
+              id='removeBtn'
+              onClick={() => {
+                Swal.close();
+                handleRemoveCustomer(row);
+              }}
+            >
+              <i class='fas fa-trash-alt me-2'></i>Remove Customer
+            </button>
+          </div>
         </div>
       ),
     });
@@ -878,6 +953,7 @@ const ViewCustomers = () => {
         accessorKey: 'status',
         header: 'Status',
         size: 100,
+        cell: (info) => <div className='text-capitalize'>{info.row?.original?.status}</div>,
       },
       {
         id: 'actions',
@@ -1120,7 +1196,7 @@ const ViewCustomers = () => {
 
   // Add search handler
   const PaginationInfo = () => (
-    <div className='text-muted small'>
+    <div className='text-muted small me-2'>
       Showing {(currentPage - 1) * perPage + 1} to {Math.min(currentPage * perPage, totalRows)} of{' '}
       {totalRows} entries
     </div>
@@ -1529,7 +1605,7 @@ const ViewCustomers = () => {
                 </table>
               </div>
 
-              <div className='d-flex justify-content-end mt-3'>
+              <div className='d-flex justify-content-end mt-3 align-items-center'>
                 <PaginationInfo />
                 <div className='d-flex gap-2'>
                   <Button
@@ -1576,130 +1652,133 @@ const ViewCustomers = () => {
           </Card>
         </Col>
       </Row>
+
       <div className='Toaster'></div>
+
       <style jsx global>{`
-        /* Create Button Style */
-        .create-customer-button {
-          background-color: #ffffff;
-          color: #4171f5;
-          transition: all 0.2s ease;
-        }
+        //  // // /* Create Button Style */
+        //   .create-customer-button {
+        //     background-color: #ffffff;
+        //     color: #4171f5;
+        //     transition: all 0.2s ease;
+        //   }
 
-        .create-customer-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
+        //   .create-customer-button:hover {
+        //     transform: translateY(-2px);
+        //     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        //   }
 
-        .create-customer-button:active {
-          transform: translateY(0);
-        }
+        //   .create-customer-button:active {
+        //     transform: translateY(0);
+        //   }
 
-        /* Card Animations */
-        .card {
-          transition: all 0.2s ease;
-        }
+        //  // // /* Card Animations */
+        //   .card {
+        //     transition: all 0.2s ease;
+        //   }
 
-        .card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+        //   .card:hover {
+        //     transform: translateY(-2px);
+        //     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        //   }
 
-        /* Table Row Hover Effects */
-        .table-row-hover:hover {
-          background-color: #f1f5f9;
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
+        //   /* Table Row Hover Effects */
+        //   .table-row-hover:hover {
+        //     background-color: #f1f5f9;
+        //     transform: translateY(-1px);
+        //     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        //   }
 
-        /* Tooltip Styles */
-        .tooltip-inner {
-          max-width: 300px;
-          padding: 8px 12px;
-          background-color: #305cde;
-          border-radius: 6px;
-          font-size: 12px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+        //   /* Tooltip Styles */
+        //   .tooltip-inner {
+        //     max-width: 300px;
+        //     padding: 8px 12px;
+        //     background-color: #305cde;
+        //     border-radius: 6px;
+        //     font-size: 12px;
+        //     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        //   }
 
-        .tooltip.show {
-          opacity: 1;
-        }
+        //   .tooltip.show {
+        //     opacity: 1;
+        //   }
 
-        /* Navigation Button Styles */
-        .prev-btn,
-        .next-btn {
-          transition: all 0.2s ease;
-        }
+        //   // // /* Navigation Button Styles */
+        //   .prev-btn,
+        //   .next-btn {
+        //     transition: all 0.2s ease;
+        //   }
 
-        .prev-btn:hover,
-        .next-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+        //   .prev-btn:hover,
+        //   .next-btn:hover {
+        //     transform: translateY(-1px);
+        //     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        //   }
 
-        .prev-btn:active,
-        .next-btn:active {
-          transform: translateY(0);
-        }
+        //   .prev-btn:active,
+        //   .next-btn:active {
+        //     transform: translateY(0);
+        //   }
 
-        /* Button wrapper styles */
-        .button-wrapper {
-          position: relative;
-          transition: all 0.3s ease;
-        }
+        //  // //  /* Button wrapper styles */
+        //   .button-wrapper {
+        //     position: relative;
+        //     transition: all 0.3s ease;
+        //   }
 
-        .button-wrapper.disabled {
-          cursor: not-allowed;
-        }
+        //   .button-wrapper.disabled {
+        //     cursor: not-allowed;
+        //   }
 
-        .button-wrapper.disabled::before {
-          content: '?';
-          position: absolute;
-          right: -20px;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 16px;
-          height: 16px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 12px;
-          opacity: 0;
-          transition: all 0.3s ease;
-        }
+        //   .button-wrapper.disabled::before {
+        //     content: '?';
+        //     position: absolute;
+        //     right: -20px;
+        //     top: 50%;
+        //     transform: translateY(-50%);
+        //     width: 16px;
+        //     height: 16px;
+        //     background: rgba(255, 255, 255, 0.2);
+        //     border-radius: 50%;
+        //     display: flex;
+        //     align-items: center;
+        //     justify-content: center;
+        //     color: white;
+        //     font-size: 12px;
+        //     opacity: 0;
+        //     transition: all 0.3s ease;
+        //   }
 
-        .button-wrapper.disabled:hover::before {
-          opacity: 1;
-          right: -24px;
-        }
+        //   .button-wrapper.disabled:hover::before {
+        //     opacity: 1;
+        //     right: -24px;
+        //   }
 
-        .button-wrapper.disabled .custom-button {
-          opacity: 0.7;
-          transform: scale(0.99);
-          box-shadow: none;
-        }
+        //   .button-wrapper.disabled .custom-button {
+        //     opacity: 0.7;
+        //     transform: scale(0.99);
+        //     box-shadow: none;
+        //   }
 
-        .custom-button {
-          transition: all 0.3s ease !important;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-        }
+        //   .custom-button {
+        //     transition: all 0.3s ease !important;
+        //     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        //   }
 
-        .custom-button:not(:disabled):hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
-        }
+        //   .custom-button:not(:disabled):hover {
+        //     transform: translateY(-1px);
+        //     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+        //   }
 
-        .custom-tooltip {
-          opacity: 0;
-          transition: all 0.3s ease !important;
-        }
+        //   .custom-tooltip {
+        //     opacity: 0;
+        //     transition: all 0.3s ease !important;
+        //   }
 
-        .custom-tooltip.show {
-          opacity: 1 !important;
-        }
+        //   .custom-tooltip.show {
+        //     opacity: 1 !important;
+        //   }
+        //
       `}</style>
     </Fragment>
   );
