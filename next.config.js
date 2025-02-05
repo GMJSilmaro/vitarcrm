@@ -60,6 +60,10 @@ const nextConfig = {
         source: '/customers/view/:id',
         destination: '/dashboard/customers/view/:id',
       },
+      {
+        source: '/customers/edit-customer/:customerId',
+        destination: '/dashboard/customers/:customerId',
+      },
       //404
       {
         source: '/404',

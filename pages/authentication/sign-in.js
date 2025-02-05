@@ -175,6 +175,8 @@ const SignIn = () => {
             // Just call signIn directly - it will handle the API call
             const signInSuccess = await signIn(email, password);
 
+            console.log({ signInSuccess });
+
             if (!signInSuccess) {
               throw new Error('Authentication failed');
             }

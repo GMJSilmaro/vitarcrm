@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
   const [workerId, setWorkerId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
- // const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+  // const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
   let activityTimer;
   const router = useRouter();
 
@@ -37,7 +37,6 @@ export function AuthProvider({ children }) {
           setUserRole(userRole);
           setWorkerId(workerId);
           setIsAdmin(isAdmin);
-          
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -56,7 +55,7 @@ export function AuthProvider({ children }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -66,7 +65,7 @@ export function AuthProvider({ children }) {
           icon: 'error',
           title: 'Authentication Failed',
           text: data.message || 'Failed to sign in. Please try again.',
-          confirmButtonColor: '#1e40a6'
+          confirmButtonColor: '#1e40a6',
         });
         return false;
       }
@@ -98,7 +97,7 @@ export function AuthProvider({ children }) {
         icon: 'error',
         title: 'Sign In Error',
         text: error.message || 'An unexpected error occurred. Please try again.',
-        confirmButtonColor: '#1e40a6'
+        confirmButtonColor: '#1e40a6',
       });
       return false;
     }
@@ -113,7 +112,7 @@ export function AuthProvider({ children }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: currentUser?.email })
+        body: JSON.stringify({ email: currentUser?.email }),
       });
 
       if (!response.ok) {
@@ -123,7 +122,7 @@ export function AuthProvider({ children }) {
       if (currentUser) {
         await SessionManager.endSession(currentUser.email);
       }
-      
+
       // Clear all cookies
       Cookies.remove('session');
       Cookies.remove('email');
@@ -142,7 +141,7 @@ export function AuthProvider({ children }) {
         title: 'Signed Out Successfully',
         text: 'You have been safely logged out.',
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
       });
 
       router.push('/authentication/sign-in');
@@ -153,7 +152,7 @@ export function AuthProvider({ children }) {
         icon: 'error',
         title: 'Sign Out Error',
         text: 'There was a problem signing you out. Please try again.',
-        confirmButtonColor: '#1e40a6'
+        confirmButtonColor: '#1e40a6',
       });
       throw error;
     }
@@ -164,7 +163,7 @@ export function AuthProvider({ children }) {
     if (currentUser) {
       SessionManager.updateLastActive(currentUser.email);
       clearTimeout(activityTimer);
-     // activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
+      // activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
     }
   };
 
@@ -181,29 +180,31 @@ export function AuthProvider({ children }) {
         timerProgressBar: true,
         didOpen: () => {
           Swal.showLoading();
-        }
+        },
       });
       await signOut();
     }
   };
 
-  // Set up activity listeners
-  useEffect(() => {
-    if (currentUser) {
-      window.addEventListener('mousemove', handleUserActivity);
-      window.addEventListener('keydown', handleUserActivity);
-      //activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
-    }
+  //* Comment for now causing expensive writes to the firebase db
+  //* Triggers every mouse movement and mouse down.
+  // // Set up activity listeners
+  // useEffect(() => {
+  //   if (currentUser) {
+  //     window.addEventListener('mousemove', handleUserActivity);
+  //     window.addEventListener('keydown', handleUserActivity);
+  //     //activityTimer = setTimeout(handleIdle, IDLE_TIMEOUT);
+  //   }
 
-    return () => {
-      if (currentUser) {
-        SessionManager.endSession(currentUser.email);
-      }
-      clearTimeout(activityTimer);
-      window.removeEventListener('mousemove', handleUserActivity);
-      window.removeEventListener('keydown', handleUserActivity);
-    };
-  }, [currentUser]);
+  //   return () => {
+  //     if (currentUser) {
+  //       SessionManager.endSession(currentUser.email);
+  //     }
+  //     clearTimeout(activityTimer);
+  //     window.removeEventListener('mousemove', handleUserActivity);
+  //     window.removeEventListener('keydown', handleUserActivity);
+  //   };
+  // }, [currentUser]);
 
   // Initialize loading state
   useEffect(() => {
@@ -218,7 +219,7 @@ export function AuthProvider({ children }) {
     loading,
     error,
     signIn,
-    signOut
+    signOut,
   };
 
   return (

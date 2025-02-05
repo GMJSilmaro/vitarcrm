@@ -2,9 +2,10 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Building2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Badge, Card, Col, Nav, Row, Spinner, Tab } from 'react-bootstrap';
+import { Badge, Button, Card, Col, Nav, Row, Spinner, Tab } from 'react-bootstrap';
 import { Activity, Phone, Calendar, Building, Exclamation } from 'react-bootstrap-icons';
 import { User } from 'react-feather';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -48,13 +49,18 @@ const CustomerDetails = () => {
 
   if (!customer) {
     return (
-      <div className='text-center py-5'>
-        <h3>Customer not found</h3>
-        <Link href='/customer'>
-          <Button variant='primary' className='mt-3'>
-            Back to Customer List
-          </Button>
-        </Link>
+      <div
+        className='d-flex justify-content-center align-items-center text-center py-5'
+        style={{ height: '63vh' }}
+      >
+        <div>
+          <h3>Customer not found</h3>
+          <Link href='/customers'>
+            <Button variant='primary' className='mt-3'>
+              Back to Customer List
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
@@ -221,6 +227,7 @@ const CustomerDetails = () => {
                 </Card>
               </Col>
 
+              {/*Contract */}
               <Col lg={4}>
                 <Card className='border-0 shadow-sm mb-4'>
                   <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
@@ -372,8 +379,8 @@ const CustomerDetails = () => {
                         {(!Array.isArray(customer.locations) || customer.locations.length < 1) && (
                           <div className='text-center py-5'>
                             <Exclamation size={80} className='text-muted' />
-                            <h6>No Contacts Available</h6>
-                            <p className='text-muted small'>Add contacts to your customer</p>
+                            <h6>No Location Available</h6>
+                            <p className='text-muted small'>Add location to your customer</p>
                           </div>
                         )}
 

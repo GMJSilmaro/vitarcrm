@@ -562,8 +562,8 @@ const WorkersListItems = () => {
                   info.row.original.isOnline ? 'bg-success' : 'bg-secondary'
                 }`}
                 style={{
-                  width: '12px',
-                  height: '12px',
+                  width: '14px',
+                  height: '14px',
                   borderRadius: '50%',
                   border: '2px solid #fff',
                 }}

@@ -1,13 +1,14 @@
 import { getAuth } from 'firebase/auth';
-import { app } from '@/firebase';
+import { app, db } from '@/firebase';
 import { SessionManager } from '@/utils/sessionManager';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 
 const COOKIE_OPTIONS = {
   path: '/',
   secure: true,
   sameSite: 'lax',
   httpOnly: true,
-  expires: new Date(0)
+  expires: new Date(0),
 };
 
 export default async function handler(req, res) {
@@ -16,11 +17,28 @@ export default async function handler(req, res) {
   }
 
   const auth = getAuth(app);
+  const user = auth.currentUser;
+
+  // Get user details from Firestore by matching UIDs
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, where('uid', '==', user.uid));
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.empty) {
+    return res.status(404).json({ message: 'User not found in database' });
+  }
+
+  // Get the first matching document
+  const userDoc = querySnapshot.docs[0];
+  const userData = userDoc.data();
+
+  // Use the workerId from userData instead of document ID
+  const workerId = userData.workerId;
 
   try {
     // Get user email from request cookies or body
     const userEmail = req.cookies.email || req.body.email;
-    
+
     // End user session in Firestore
     if (userEmail) {
       await SessionManager.endSession(userEmail);
@@ -28,39 +46,38 @@ export default async function handler(req, res) {
 
     // Sign out from Firebase
     await auth.signOut();
+    // update online status
+    await updateDoc(doc(db, 'users', workerId), { isOnline: false });
 
     // List of all cookies to clear
-    const cookiesToClear = [
-      'customToken',
-      'email',
-      'isAdmin',
-      'uid',
-      'workerId'
-    ];
+    const cookiesToClear = ['customToken', 'email', 'isAdmin', 'uid', 'workerId'];
 
     // Clear all cookies with consistent options
-    const cookieStrings = cookiesToClear.map(cookieName => {
+    const cookieStrings = cookiesToClear.map((cookieName) => {
       const options = {
         ...COOKIE_OPTIONS,
-        httpOnly: ['customToken'].includes(cookieName)
+        httpOnly: ['customToken'].includes(cookieName),
       };
 
-      return `${cookieName}=; Path=/; ${options.httpOnly ? 'HttpOnly;' : ''} Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      return `${cookieName}=; Path=/; ${
+        options.httpOnly ? 'HttpOnly;' : ''
+      } Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     });
 
     res.setHeader('Set-Cookie', cookieStrings);
 
-    return res.status(200).json({ 
+    return res.status(200).json({
+      workerId,
       message: 'Logout successful',
       cleared: cookiesToClear,
-      sessionEnded: !!userEmail
+      sessionEnded: !!userEmail,
     });
   } catch (error) {
     console.error('Logout error:', error);
-  
+
     // Attempt to clear cookies even if logout fails
     const emergencyCookieClear = [
-      'customToken=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      'customToken=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
     ];
     res.setHeader('Set-Cookie', emergencyCookieClear);
 
@@ -74,10 +91,10 @@ export default async function handler(req, res) {
       console.error('Session cleanup error:', sessionError);
     }
 
-    return res.status(500).json({ 
-      message: 'Partial logout completed with errors', 
+    return res.status(500).json({
+      message: 'Partial logout completed with errors',
       error: error.message,
-      sessionCleanupAttempted: true
+      sessionCleanupAttempted: true,
     });
   }
 }

@@ -60,7 +60,7 @@ import {
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { TABLE_CONFIG } from 'constants/tableConfig';
 import Link from 'next/link';
 import { FaPlus } from 'react-icons/fa';
@@ -780,21 +780,14 @@ const ViewCustomers = () => {
       try {
         const customerRef = doc(db, 'customers', row.id);
         await deleteDoc(customerRef);
-        // No need to manually refresh - onSnapshot will handle it
 
-        toast.success('Customer removed successfully', {
-          position: 'top-right',
-          className: 'bg-success text-white',
-        });
+        toast.success('Customer removed successfully', { position: 'top-right' });
       } catch (error) {
         console.error('Error removing customer:', error);
-        toast.error('Error removing customer: ' + error.message, {
-          position: 'top-right',
-          className: 'bg-danger text-white',
-        });
+        toast.error('Error removing customer: ' + error.message, { position: 'top-right' });
       }
     }
-  });
+  }, []);
 
   const handleRowClick = async (row) => {
     withReactContent(Swal).fire({
@@ -803,11 +796,11 @@ const ViewCustomers = () => {
       width: '300px',
       html: (
         <div className='d-flex flex-column align-items-center'>
-          <div className='d-flex align-items-center mx-auto'>
+          <h4 className='mt-2 mb-1 fs-3'>{row.customerName}</h4>
+          <div className='d-flex align-items-center mx-auto fs-5 text-muted mb-2'>
             <Building className='me-2' size={14} />
-            <span className='text-primary'>{row.customerId}</span>
+            <span className='fs-4'>{row.customerId}</span>
           </div>
-          <h5 className='mt-2 mb-1'>{row.customerName}</h5>
           <Badge
             className='mb-4'
             bg={row.status === 'active' ? 'success' : 'danger'}
@@ -1455,38 +1448,33 @@ const ViewCustomers = () => {
   };
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      try {
-        const customersRef = collection(db, 'customers');
-        const initialQuery = query(
-          customersRef,
-          orderBy('customerId', 'asc')
-          //limit(10)
-        );
+    setLoading(true);
+    const q = query(collection(db, 'customers'), orderBy('customerId', 'asc'));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const customers = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
 
-        const snapshot = await getDocs(initialQuery);
-        const customers = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        setData(customers);
-        setTotalRows(customers.length);
-        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        setFirstDoc(snapshot.docs[0]);
-        setInitialLoad(false);
-      } catch (error) {
+          setLoading(false);
+          setData(customers);
+          setTotalRows(customers.length);
+          setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+          setFirstDoc(snapshot.docs[0]);
+          setInitialLoad(false);
+        }
+      },
+      (err) => {
+        setLoading(false);
         console.error('Error loading initial data:', error);
         toast.error('Failed to load customers');
-      } finally {
-        setLoading(false);
       }
-    };
+    );
 
-    if (initialLoad) {
-      loadInitialData();
-    }
+    return () => unsubscribe();
   }, [initialLoad]);
 
   return (
@@ -1653,7 +1641,21 @@ const ViewCustomers = () => {
         </Col>
       </Row>
 
-      <div className='Toaster'></div>
+      {/* <div className='Toaster'></div> */}
+
+      <Toaster
+        position='top-right'
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#ffffff',
+            color: '#1f2937',
+            padding: '16px',
+            borderRadius: '4px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+          },
+        }}
+      />
 
       <style jsx global>{`
         //  // // /* Create Button Style */
