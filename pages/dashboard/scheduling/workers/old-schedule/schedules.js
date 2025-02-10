@@ -9,7 +9,7 @@ import {
   ResourceDirective,
   Inject,
 } from '@syncfusion/ej2-react-schedule';
-import { db } from '../../../../firebase';
+import { db } from '../../../../../firebase';
 import { collection, query, where, doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { toast, ToastContainer } from 'react-toastify';
 import { DateTimePickerComponent } from '@syncfusion/ej2-react-calendars';
@@ -35,7 +35,7 @@ import {
   BsEye,
 } from 'react-icons/bs';
 import SchedulerFilterPanel from './SchedulerFilterPanel';
-import ContentHeader from '../../../../components/dashboard/ContentHeader';
+import ContentHeader from '../../../../../components/dashboard/ContentHeader';
 import { format, parseISO, isValid } from 'date-fns';
 import { FaHome, FaPlus } from 'react-icons/fa';
 

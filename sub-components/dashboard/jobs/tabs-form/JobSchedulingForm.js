@@ -16,7 +16,7 @@ import { toast } from 'react-toastify';
 const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   const router = useRouter();
 
-  const { startDate, startTime } = router.query;
+  const { startDate, startTime, workerId } = router.query;
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
@@ -102,10 +102,22 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
     }),
   };
 
+  //* set startDate and startTime from router query
   useEffect(() => {
     if (startDate) form.setValue('startDate', startDate);
     if (startTime) form.setValue('startTime', startTime);
   }, [startDate, startTime]);
+
+  //* set workerId from router query
+  useEffect(() => {
+    if (workerId && workersOptions.data.length > 0) {
+      console.log({ workersOptions, workerId });
+      form.setValue(
+        'worker',
+        workersOptions.data.find((w) => w.id === workerId)
+      );
+    }
+  }, [workerId, workersOptions]);
 
   //* set default value
   useEffect(() => {
@@ -144,7 +156,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   return (
     <>
       <Form>
-        {/* <div className='mb-4'> {JSON.stringify(form.watch(), null, 2)}</div> */}
+        <div className='mb-4'> {JSON.stringify(form.watch('workerId'), null, 2)}</div>
 
         <h5 className='mb-1'>Job</h5>
         <p className='text-muted'>Details about the job.</p>

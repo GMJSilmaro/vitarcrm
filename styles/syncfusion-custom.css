@@ -6,7 +6,7 @@
 }
 
 .e-indicator {
-  display: none;
+  display: none !important;
 }
 
 .e-event-popup .e-popup-header {
@@ -24,4 +24,57 @@
 
 .e-popup-footer {
   padding: 0px !important;
+}
+
+.e-schedule .e-schedule-toolbar .e-active-view .e-tbar-btn-text,
+.e-schedule .e-schedule-toolbar .e-active-view .e-icons {
+  color: #3f51b5 !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+}
+
+.e-schedule .e-timeline-view .e-date-header-wrap table td.e-current-day,
+.e-schedule .e-timeline-month-view .e-date-header-wrap table td.e-current-day {
+  color: #3f51b5 !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+.e-schedule .e-month-view .e-date-header-wrap table td.e-current-day,
+.e-schedule .e-month-agenda-view .e-date-header-wrap table td.e-current-day {
+  color: #dc2626 !important;
+}
+
+.e-schedule .e-vertical-view .e-header-cells.e-current-day {
+  color: #dc2626 !important;
+}
+
+.e-schedule .e-vertical-view .e-header-cells.e-current-day {
+  color: #dc2626 !important;
+}
+
+.e-schedule .e-agenda-view .e-day-date-header.e-current-day {
+  color: #dc2626 !important;
+}
+
+.e-schedule .e-month-view .e-current-date .e-date-header,
+.e-schedule .e-month-agenda-view .e-current-date .e-date-header {
+  background-color: #dc2626 !important;
+}
+
+.e-schedule .e-timeline-view .e-clone-time-indicator,
+.e-schedule .e-timeline-view .e-current-time {
+  color: #dc2626 !important;
+  font-size: 12px !important;
+}
+
+.e-current-timeline {
+  border-left: 1px solid #dc2626 !important;
+}
+
+.e-resource-cells.e-child-node {
+  text-align: left !important;
+  vertical-align: center !important;
+  padding: 0 !important;
+  border: solid 1px #3f51b5 !important;
 }
