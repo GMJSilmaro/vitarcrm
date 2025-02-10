@@ -2,7 +2,7 @@ import {
   processExcelUploadLocations,
   processExcelUploadEquipment,
 } from '@/services/excelUploadService';
-import { parseExcel } from '@/utils/excelParser';
+import { parseExcelFile } from '@/utils/excelParser';
 
 const LOCATIONS_HEADERS = [
   'Site_ID',
@@ -36,8 +36,8 @@ const EQUIPMENT_HEADER = [
 ];
 
 export const dataExcelParser = {
-  locations: (file) => parseExcel(file, LOCATIONS_HEADERS),
-  equipments: (file) => parseExcel(file, EQUIPMENT_HEADER),
+  locations: (file) => parseExcelFile(file, LOCATIONS_HEADERS),
+  equipments: (file) => parseExcelFile(file, EQUIPMENT_HEADER),
 };
 
 export const dataProcessExcelUploader = {

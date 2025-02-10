@@ -87,7 +87,7 @@ export const parseExcelFileTemperature = (file) => {
 };
 
 // dynamic
-export const parseExcel = (file, header) => {
+export const parseExcelFile = (file, header) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
