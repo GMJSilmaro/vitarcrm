@@ -39,6 +39,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { getCookie } from 'cookies-next';
 import { Toaster } from 'react-hot-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 const CustomAlertModal = ({
   show,
@@ -164,6 +165,7 @@ const CustomerForm = ({ data }) => {
     // Change single contact to contacts array
     customerContact: [
       {
+        id: uuidv4(),
         firstName: '',
         lastName: '',
         phone: '',
@@ -339,6 +341,7 @@ const CustomerForm = ({ data }) => {
         tinNumber: formData.tinNumber?.trim() || '',
         brnNumber: formData.brnNumber?.trim() || '',
         customerContact: formData.customerContact.map((contact) => ({
+          id: contact.id,
           firstName: contact.firstName.trim(),
           lastName: contact.lastName.trim(),
           phone: contact.phone.trim(),
@@ -445,6 +448,7 @@ const CustomerForm = ({ data }) => {
       customerContact: [
         ...prev.customerContact,
         {
+          id: uuidv4(),
           firstName: '',
           lastName: '',
           phone: '',
@@ -522,7 +526,7 @@ const CustomerForm = ({ data }) => {
           {
             icon: <People className='me-2' size={14} />,
             text: 'Customers',
-            link: '/dashboard/customers/list',
+            link: '/dashboard/customers',
           },
           {
             icon: <PencilFill className='me-2' size={14} />,

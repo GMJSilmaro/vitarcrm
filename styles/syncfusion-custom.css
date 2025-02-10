@@ -1,0 +1,27 @@
+/* custom syncfusion css */
+
+/* custom css for schedule */
+.e-appointment-details > div {
+  width: 100%;
+}
+
+.e-indicator {
+  display: none;
+}
+
+.e-event-popup .e-popup-header {
+  background-color: white !important;
+  padding: 8px;
+}
+
+.e-popup-content {
+  padding: 0px 20px 0px 20px !important;
+}
+
+.e-quick-popup-wrapper .e-event-popup .e-popup-footer {
+  display: unset !important;
+}
+
+.e-popup-footer {
+  padding: 0px !important;
+}

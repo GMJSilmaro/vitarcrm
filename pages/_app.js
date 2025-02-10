@@ -1,19 +1,19 @@
-import Head from "next/head";
+import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { Provider } from "react-redux";
-import { store } from "store/store";
-import { Fragment, useEffect } from "react";
-import { registerLicense } from "@syncfusion/ej2-base";
+import { Provider } from 'react-redux';
+import { store } from 'store/store';
+import { Fragment, useEffect } from 'react';
+import { registerLicense } from '@syncfusion/ej2-base';
 import ActivityTracker from '../components/ActivityTracker';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { LogoProvider } from '../contexts/LogoContext';
-import DefaultDashboardLayout from "layouts/dashboard/DashboardIndexTop";
-import DefaultMarketingLayout from "layouts/marketing/DefaultLayout";
-import MainLayout from "@/layouts/MainLayout";
-import "../styles/theme.scss";
+import DefaultDashboardLayout from 'layouts/dashboard/DashboardIndexTop';
+import DefaultMarketingLayout from 'layouts/marketing/DefaultLayout';
+import MainLayout from '@/layouts/MainLayout';
+import '../styles/theme.scss';
 
 registerLicense(process.env.SYNCFUSION_LICENSE_KEY);
 
@@ -22,8 +22,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-    }
-  }
+    },
+  },
 });
 
 // Separate Protected Layout Component
@@ -92,8 +92,8 @@ function MyApp({ Component, pageProps }) {
   return (
     <Fragment>
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <meta name='viewport' content='width=device-width, initial-scale=1' />
+        <link rel='icon' type='image/x-icon' href='/favicon.ico' />
       </Head>
       <AuthProvider>
         <LogoProvider>
@@ -109,7 +109,8 @@ function MyApp({ Component, pageProps }) {
               </MainLayout>
             </QueryClientProvider>
           </Provider>
-         
+
+          <Toaster />
         </LogoProvider>
       </AuthProvider>
     </Fragment>
@@ -117,4 +118,3 @@ function MyApp({ Component, pageProps }) {
 }
 
 export default MyApp;
-

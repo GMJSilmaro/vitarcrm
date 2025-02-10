@@ -1,4 +1,4 @@
-import CustomerForm from '@/sub-components/customer/CustomerForm';
+import CustomerForm from '@/sub-components/dashboard/customer/CustomerForm';
 
 const CreateCustomer = () => {
   return <CustomerForm />;

@@ -1,10 +1,10 @@
 import { db } from '@/firebase';
-import CustomerForm from '@/sub-components/customer/CustomerForm';
+import CustomerForm from '@/sub-components/dashboard/customer/CustomerForm';
 import { doc, getDoc } from 'firebase/firestore';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
-import { Link } from 'react-bootstrap-icons';
 
 const EditCustomer = () => {
   const router = useRouter();
@@ -44,6 +44,7 @@ const EditCustomer = () => {
     return (
       <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
         <Spinner animation='border' variant='primary' />
+        <span className='ms-3'>Loading Customer...</span>
       </div>
     );
   }

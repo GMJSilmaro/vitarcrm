@@ -37,7 +37,7 @@ const DataTable = ({
   return (
     <div>
       <div className='table-responsive'>
-        <Table hover className='align-middle'>
+        <Table striped bordered hover responsive className='align-middle'>
           <thead>
             <tr>
               {columns.map((column, index) => (

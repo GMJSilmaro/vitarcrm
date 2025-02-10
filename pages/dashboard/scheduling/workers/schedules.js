@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   TimelineViews,
   TimelineMonth,
@@ -8,90 +8,86 @@ import {
   ResourcesDirective,
   ResourceDirective,
   Inject,
-} from "@syncfusion/ej2-react-schedule";
-import { db } from "../../../../firebase";
-import {
-  collection,
-  query,
-  where,
-  doc,
-  updateDoc,
-  onSnapshot,
-} from "firebase/firestore";
-import { toast, ToastContainer } from "react-toastify";
-import { DateTimePickerComponent } from "@syncfusion/ej2-react-calendars";
-import styles from "./SchedulerStyles.module.css";
-import { GeeksSEO } from "widgets";
-import {
-  Row,
-  Col,
-  Form,
-  Button,
-} from "react-bootstrap";
+} from '@syncfusion/ej2-react-schedule';
+import { db } from '../../../../firebase';
+import { collection, query, where, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { toast, ToastContainer } from 'react-toastify';
+import { DateTimePickerComponent } from '@syncfusion/ej2-react-calendars';
+import styles from './SchedulerStyles.module.css';
+import { GeeksSEO } from 'widgets';
+import { Row, Col, Form, Button } from 'react-bootstrap';
 import { useRouter } from 'next/router';
 import Swal from 'sweetalert2';
-import { 
-  BsClock, 
-  BsFillPersonFill, 
-  BsGeoAlt, 
-  BsBuilding, 
-  BsTools, 
-  BsX, 
+import {
+  BsClock,
+  BsFillPersonFill,
+  BsGeoAlt,
+  BsBuilding,
+  BsTools,
+  BsX,
   BsArrowRight,
-  BsFillPersonBadgeFill, 
-  BsCode, 
-  BsGear, 
-  BsPlus, 
-  BsCircleFill, 
-  BsFlag, 
-  BsEye, 
-} from "react-icons/bs";
+  BsFillPersonBadgeFill,
+  BsCode,
+  BsGear,
+  BsPlus,
+  BsCircleFill,
+  BsFlag,
+  BsEye,
+} from 'react-icons/bs';
 import SchedulerFilterPanel from './SchedulerFilterPanel';
 import ContentHeader from '../../../../components/dashboard/ContentHeader';
 import { format, parseISO, isValid } from 'date-fns';
 import { FaHome, FaPlus } from 'react-icons/fa';
 
-
 const LoadingOverlay = () => (
-  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="bg-white/90 backdrop-blur rounded-2xl p-8 shadow-2xl flex flex-col items-center" 
-      style={{ 
+  <div className='fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50'>
+    <div
+      className='bg-white/90 backdrop-blur rounded-2xl p-8 shadow-2xl flex flex-col items-center'
+      style={{
         background: 'rgba(255, 255, 255, 0.95)',
         border: '1px solid rgba(65, 113, 245, 0.1)',
         maxWidth: '400px',
-        width: '90%'
-      }}>
-      <div className="relative mb-6">
-        <div className="absolute inset-0 animate-spin-slow">
-          <svg className="w-12 h-12" viewBox="0 0 24 24">
-            <circle 
-              className="opacity-25" 
-              cx="12" 
-              cy="12" 
-              r="10" 
-              stroke="#4171F5" 
-              strokeWidth="4" 
-              fill="none"
+        width: '90%',
+      }}
+    >
+      <div className='relative mb-6'>
+        <div className='absolute inset-0 animate-spin-slow'>
+          <svg className='w-12 h-12' viewBox='0 0 24 24'>
+            <circle
+              className='opacity-25'
+              cx='12'
+              cy='12'
+              r='10'
+              stroke='#4171F5'
+              strokeWidth='4'
+              fill='none'
             />
-            <path 
-              className="opacity-75" 
-              fill="#4171F5" 
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            <path
+              className='opacity-75'
+              fill='#4171F5'
+              d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
             />
           </svg>
         </div>
       </div>
-      <h4 className="text-xl font-semibold mb-3 bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+      <h4 className='text-xl font-semibold mb-3 bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent'>
         Preparing Your Workspace
       </h4>
-      <div className="flex flex-col items-center gap-3">
-        <p className="text-sm text-gray-600 text-center">
-          Loading schedules and assignments...
-        </p>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0s' }}></div>
-          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-          <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+      <div className='flex flex-col items-center gap-3'>
+        <p className='text-sm text-gray-600 text-center'>Loading schedules and assignments...</p>
+        <div className='flex items-center gap-1.5'>
+          <div
+            className='w-2 h-2 rounded-full bg-primary animate-bounce'
+            style={{ animationDelay: '0s' }}
+          ></div>
+          <div
+            className='w-2 h-2 rounded-full bg-primary animate-bounce'
+            style={{ animationDelay: '0.2s' }}
+          ></div>
+          <div
+            className='w-2 h-2 rounded-full bg-primary animate-bounce'
+            style={{ animationDelay: '0.4s' }}
+          ></div>
         </div>
       </div>
     </div>
@@ -102,14 +98,14 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 const calculateDuration = (startTime, endTime) => {
   if (!startTime || !endTime) return 'Duration not available';
-  
+
   const start = new Date(startTime);
   const end = new Date(endTime);
   const durationMs = end - start;
-  
+
   const hours = Math.floor(durationMs / (1000 * 60 * 60));
   const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-  
+
   if (hours === 0) {
     return `${minutes} minutes`;
   } else if (minutes === 0) {
@@ -174,12 +170,12 @@ const getWorkerColor = (workerId) => {
 };
 
 const processWorkers = (workers) => {
-  return workers.map(worker => ({
+  return workers.map((worker) => ({
     ...worker,
     color: getWorkerColor(worker.workerId || worker.id),
     text: worker.fullName || worker.text || `${worker.firstName} ${worker.lastName}`,
     id: worker.workerId || worker.id,
-    workerId: worker.workerId
+    workerId: worker.workerId,
   }));
 };
 
@@ -214,28 +210,28 @@ const FieldServiceSchedules = () => {
   const [stats, setStats] = useState({
     totalWorkers: 0,
     activeJobs: 0,
-    lastFetchTime: null
+    lastFetchTime: null,
   });
 
   // Calculate filtered schedule data
   const filteredScheduleData = useMemo(() => {
-    const filtered = scheduleData.filter(event => 
-      filteredWorkers.some(worker => worker.id === event.WorkerId)
+    const filtered = scheduleData.filter((event) =>
+      filteredWorkers.some((worker) => worker.id === event.WorkerId)
     );
     console.log('Filtered schedule data calculation:', {
       allData: scheduleData,
       filteredWorkers,
-      result: filtered
+      result: filtered,
     });
     return filtered;
   }, [scheduleData, filteredWorkers]);
 
   // Define updateStats after filteredScheduleData is defined
   const updateStats = useCallback((workers, jobs) => {
-    setStats(prevStats => ({
+    setStats((prevStats) => ({
       totalWorkers: workers?.length || prevStats.totalWorkers,
       activeJobs: jobs?.length || 0,
-      lastFetchTime: Date.now()
+      lastFetchTime: Date.now(),
     }));
   }, []);
 
@@ -250,7 +246,7 @@ const FieldServiceSchedules = () => {
   // Filter workers based on search
   useEffect(() => {
     if (fieldWorkers.length > 0) {
-      const filtered = fieldWorkers.filter(worker =>
+      const filtered = fieldWorkers.filter((worker) =>
         worker.text.toLowerCase().includes(searchFilter.toLowerCase())
       );
       const processedWorkers = processWorkers(filtered);
@@ -264,7 +260,7 @@ const FieldServiceSchedules = () => {
     console.log('Current state:', {
       workers: fieldWorkers,
       filteredWorkers,
-      scheduleData
+      scheduleData,
     });
   }, [fieldWorkers, filteredWorkers, scheduleData]);
 
@@ -275,14 +271,14 @@ const FieldServiceSchedules = () => {
       startDate: data.startDate || null,
       startTime: data.startTime || null,
       endDate: data.endDate || null,
-      endTime: data.endTime || null
+      endTime: data.endTime || null,
     };
   };
 
   // Updated parseDate function with null checks
   const parseDate = (dateStr, timeStr) => {
     if (!dateStr) return null;
-    
+
     try {
       // If dateStr already includes time information, use it directly
       if (dateStr.includes('T')) {
@@ -297,11 +293,11 @@ const FieldServiceSchedules = () => {
       const timeString = timeStr || '00:00';
       const combinedStr = `${dateStr}T${timeString}`;
       const date = parseISO(combinedStr);
-      
+
       if (!isValid(date)) {
         throw new Error(`Invalid date: ${combinedStr}`);
       }
-      
+
       return date;
     } catch (error) {
       console.warn('Date parsing error:', error);
@@ -313,102 +309,104 @@ const FieldServiceSchedules = () => {
   const processJobDates = (job) => {
     const dates = getJobDates(job);
     console.log('Processing dates for job', job.id, ':', dates);
-    
+
     try {
       const start = parseDate(dates.startDate, dates.startTime);
       const end = parseDate(dates.endDate, dates.endTime);
-      
+
       return {
         start,
         end,
-        isValid: Boolean(start && end)
+        isValid: Boolean(start && end),
       };
     } catch (error) {
       console.log('Error processing dates for job', job.id, ':', error);
       return {
         start: null,
         end: null,
-        isValid: false
+        isValid: false,
       };
     }
   };
 
   // Then define setupJobsListener
   const setupJobsListener = useCallback((worker) => {
-    console.log("Setting up jobs listener for worker:", {
+    console.log('Setting up jobs listener for worker:', {
       worker,
       workerId: worker.workerId,
-      workerName: worker.text
+      workerName: worker.text,
     });
 
-    const jobsQuery = query(collection(db, "jobs"));
+    const jobsQuery = query(collection(db, 'jobs'));
 
     return onSnapshot(jobsQuery, (snapshot) => {
-      console.log("Jobs snapshot received:", snapshot.size, "documents");
-      
-      const allJobs = snapshot.docs.map((doc) => {
-        try {
-          const jobData = doc.data();
-          console.log("Processing job:", { id: doc.id, data: jobData });
-      
-          // Check if this job is assigned to the current worker
-          const isAssigned = jobData.assignedWorkers?.some(
-            (assigned) => assigned.workerId === worker.workerId
-          );
-      
-          console.log("Job assignments check:", {
-            jobId: doc.id,
-            jobName: jobData.jobName,
-            assignedWorkers: jobData.assignedWorkers,
-            currentWorker: worker
-          });
-      
-          if (!isAssigned) return null;
-      
-          // Process the job dates
-          const processedJob = processJobDates({ id: doc.id, data: jobData });
-          if (!processedJob || !processedJob.start || !processedJob.end) {
-            console.warn('Invalid dates for job:', doc.id);
+      console.log('Jobs snapshot received:', snapshot.size, 'documents');
+
+      const allJobs = snapshot.docs
+        .map((doc) => {
+          try {
+            const jobData = doc.data();
+            console.log('Processing job:', { id: doc.id, data: jobData });
+
+            // Check if this job is assigned to the current worker
+            const isAssigned = jobData.assignedWorkers?.some(
+              (assigned) => assigned.workerId === worker.workerId
+            );
+
+            console.log('Job assignments check:', {
+              jobId: doc.id,
+              jobName: jobData.jobName,
+              assignedWorkers: jobData.assignedWorkers,
+              currentWorker: worker,
+            });
+
+            if (!isAssigned) return null;
+
+            // Process the job dates
+            const processedJob = processJobDates({ id: doc.id, data: jobData });
+            if (!processedJob || !processedJob.start || !processedJob.end) {
+              console.warn('Invalid dates for job:', doc.id);
+              return null;
+            }
+
+            // Create the job object with validated dates
+            const jobObject = {
+              Id: doc.id,
+              WorkerId: worker.workerId,
+              Subject: jobData.jobName || 'Untitled Job',
+              StartTime: processedJob.start,
+              EndTime: processedJob.end,
+              Description: jobData.jobDescription?.replace(/<[^>]*>/g, '') || '',
+              JobStatus: jobData.jobStatus || 'Pending',
+              Customer: jobData.customerName || 'No Customer',
+              ServiceLocation: jobData.location?.locationName || 'No Location',
+              Priority: jobData.priority || 'Medium',
+              Category: 'General',
+              IsAllDay: false,
+              Status: jobData.jobStatus || 'Pending',
+              AssignedWorkers: jobData.assignedWorkers || [],
+              Color: worker.color || '#B8B5FF',
+              TextColor: '#FFFFFF',
+            };
+
+            // Validate the job object before returning
+            if (!(jobObject.StartTime instanceof Date) || !(jobObject.EndTime instanceof Date)) {
+              console.warn('Invalid date objects in job:', doc.id);
+              return null;
+            }
+
+            return jobObject;
+          } catch (error) {
+            console.error('Error processing job:', doc.id, error);
             return null;
           }
-      
-          // Create the job object with validated dates
-          const jobObject = {
-            Id: doc.id,
-            WorkerId: worker.workerId,
-            Subject: jobData.jobName || 'Untitled Job',
-            StartTime: processedJob.start,
-            EndTime: processedJob.end,
-            Description: jobData.jobDescription?.replace(/<[^>]*>/g, '') || "",
-            JobStatus: jobData.jobStatus || 'Pending',
-            Customer: jobData.customerName || 'No Customer',
-            ServiceLocation: jobData.location?.locationName || 'No Location',
-            Priority: jobData.priority || 'Medium',
-            Category: "General",
-            IsAllDay: false,
-            Status: jobData.jobStatus || 'Pending',
-            AssignedWorkers: jobData.assignedWorkers || [],
-            Color: worker.color || '#B8B5FF',
-            TextColor: '#FFFFFF'
-          };
-      
-          // Validate the job object before returning
-          if (!(jobObject.StartTime instanceof Date) || !(jobObject.EndTime instanceof Date)) {
-            console.warn('Invalid date objects in job:', doc.id);
-            return null;
-          }
-      
-          return jobObject;
-        } catch (error) {
-          console.error('Error processing job:', doc.id, error);
-          return null;
-        }
-      }).filter(Boolean); // Remove null entries
-      
+        })
+        .filter(Boolean); // Remove null entries
+
       // Update the schedule data with proper error handling
       try {
-        setScheduleData(prevData => {
-          const filteredData = prevData.filter(job => job.WorkerId !== worker.workerId);
+        setScheduleData((prevData) => {
+          const filteredData = prevData.filter((job) => job.WorkerId !== worker.workerId);
           return [...filteredData, ...allJobs];
         });
       } catch (error) {
@@ -420,15 +418,15 @@ const FieldServiceSchedules = () => {
         worker: worker.text,
         workerId: worker.workerId,
         jobCount: allJobs.length,
-        jobs: allJobs.map(j => ({
+        jobs: allJobs.map((j) => ({
           id: j.Id,
           subject: j.Subject,
-          start: j.StartTime instanceof Date ? j.StartTime.toLocaleString() : 'Invalid Date'
-        }))
+          start: j.StartTime instanceof Date ? j.StartTime.toLocaleString() : 'Invalid Date',
+        })),
       });
 
-      setScheduleData(prevData => {
-        const filteredData = prevData.filter(job => job.WorkerId !== worker.workerId);
+      setScheduleData((prevData) => {
+        const filteredData = prevData.filter((job) => job.WorkerId !== worker.workerId);
         const newData = [...filteredData, ...allJobs];
         return newData;
       });
@@ -437,11 +435,8 @@ const FieldServiceSchedules = () => {
 
   // Then define setupWorkersListener
   const setupWorkersListener = useCallback(() => {
-    console.log("Setting up workers listener");
-    const workersQuery = query(
-      collection(db, "users"),
-      where("role", "==", "Worker")
-    );
+    console.log('Setting up workers listener');
+    const workersQuery = query(collection(db, 'users'), where('role', '==', 'Worker'));
 
     return onSnapshot(workersQuery, (snapshot) => {
       const workers = snapshot.docs.map((doc) => {
@@ -452,20 +447,23 @@ const FieldServiceSchedules = () => {
           text: data.fullName || `${data.firstName} ${data.lastName}`.trim(),
           color: WORKER_COLORS[data.workerId] || '#B8B5FF', // Use predefined color or default
           role: data.role || 'Worker',
-          ...data
+          ...data,
         };
       });
-      
-      console.log('Workers with colors:', workers.map(w => ({
-        name: w.text,
-        color: w.color
-      })));
+
+      console.log(
+        'Workers with colors:',
+        workers.map((w) => ({
+          name: w.text,
+          color: w.color,
+        }))
+      );
 
       setFieldWorkers(workers);
       setFilteredWorkers(workers);
       updateStats(workers, null);
 
-      workers.forEach(worker => {
+      workers.forEach((worker) => {
         setupJobsListener(worker);
       });
     });
@@ -484,9 +482,12 @@ const FieldServiceSchedules = () => {
 
     return (
       <div className={styles.headerContainer}>
-        <div className={styles.headerBar} style={{ backgroundColor: isEmptyCell ? '#4171F5' : '#90EE90' }}>
+        <div
+          className={styles.headerBar}
+          style={{ backgroundColor: isEmptyCell ? '#4171F5' : '#90EE90' }}
+        >
           {isEmptyCell ? 'New Job Assignment' : props.Subject}
-          <button 
+          <button
             className={styles.closeButton}
             onClick={() => {
               if (scheduleRef.current) {
@@ -510,9 +511,9 @@ const FieldServiceSchedules = () => {
       console.log('handleSaveInTemplate called with:', updatedEvent);
       try {
         // Update the schedule data immediately
-        setScheduleData(prevData => {
+        setScheduleData((prevData) => {
           console.log('Previous schedule data:', prevData);
-          const newData = prevData.map(item => 
+          const newData = prevData.map((item) =>
             item.Id === updatedEvent.Id ? updatedEvent : item
           );
           console.log('New schedule data:', newData);
@@ -536,13 +537,14 @@ const FieldServiceSchedules = () => {
     };
 
     if (isEmptyCell) {
-      const workerId = props.GroupIndex !== undefined ? filteredWorkers[props.GroupIndex]?.id : null;
+      const workerId =
+        props.GroupIndex !== undefined ? filteredWorkers[props.GroupIndex]?.id : null;
       const workerName = filteredWorkers[props.GroupIndex]?.text || 'Unknown Worker';
-      
+
       return (
         <div className={styles.quickInfoContent}>
           <h2 className={styles.title}>Create New Job</h2>
-          
+
           <div className={styles.infoRow}>
             <BsClock className={styles.icon} />
             <span>Time:</span>
@@ -550,17 +552,15 @@ const FieldServiceSchedules = () => {
               {formatDate(props.startTime)} - {formatDate(props.endTime)}
             </div>
           </div>
-  
+
           <div className={styles.infoRow}>
             <BsFillPersonFill className={styles.icon} />
             <span>Worker:</span>
-            <div className={styles.infoValue}>
-              {workerName}
-            </div>
+            <div className={styles.infoValue}>{workerName}</div>
           </div>
-  
+
           <div className={styles.emptyMessage}>
-            <BsPlus size={20} className="me-2" />
+            <BsPlus size={20} className='me-2' />
             Double-click to create a new job assignment
           </div>
         </div>
@@ -569,8 +569,8 @@ const FieldServiceSchedules = () => {
 
     if (isEditing) {
       return (
-        <QuickEditForm 
-          data={props} 
+        <QuickEditForm
+          data={props}
           onSave={handleSaveInTemplate}
           onCancel={() => setIsEditing(false)}
         />
@@ -581,24 +581,24 @@ const FieldServiceSchedules = () => {
       <div className={styles.quickInfoContent}>
         <div className={styles.headerRow}>
           <h2 className={styles.title}>{props.Subject}</h2>
-          <Button 
-            variant="link" 
-            className={styles.editLink}
-            onClick={() => setIsEditing(true)}
-          >
-            <BsGear size={14} className="me-1" />
+          <Button variant='link' className={styles.editLink} onClick={() => setIsEditing(true)}>
+            <BsGear size={14} className='me-1' />
             Quick Edit
           </Button>
         </div>
-        
+
         <div className={styles.statusSection}>
-          <div className={`${styles.statusBadge} ${styles[props.JobStatus?.toLowerCase() || 'pending']}`}>
-            <BsCircleFill size={8} className="me-1" />
+          <div
+            className={`${styles.statusBadge} ${
+              styles[props.JobStatus?.toLowerCase() || 'pending']
+            }`}
+          >
+            <BsCircleFill size={8} className='me-1' />
             {props.JobStatus || 'Pending'}
           </div>
-          
+
           <div className={styles.priorityBadge}>
-            <BsFlag size={12} className="me-1" />
+            <BsFlag size={12} className='me-1' />
             {props.Priority || 'Medium'} Priority
           </div>
         </div>
@@ -614,17 +614,13 @@ const FieldServiceSchedules = () => {
         <div className={styles.infoRow}>
           <BsGeoAlt className={styles.icon} />
           <span>Location:</span>
-          <div className={styles.infoValue}>
-            {props.ServiceLocation || 'Not specified'}
-          </div>
+          <div className={styles.infoValue}>{props.ServiceLocation || 'Not specified'}</div>
         </div>
 
         <div className={styles.infoRow}>
           <BsBuilding className={styles.icon} />
           <span>Customer:</span>
-          <div className={styles.infoValue}>
-            {props.Customer || 'Not specified'}
-          </div>
+          <div className={styles.infoValue}>{props.Customer || 'Not specified'}</div>
         </div>
 
         {props.Description && (
@@ -635,23 +631,23 @@ const FieldServiceSchedules = () => {
         )}
 
         <div className={styles.actionsRow}>
-          <Button 
-            variant="primary" 
-            size="sm" 
+          <Button
+            variant='primary'
+            size='sm'
             className={styles.actionButton}
             onClick={() => router.push(`/jobs/edit-jobs/${props.Id}`)}
           >
-            <BsGear size={14} className="me-1" />
+            <BsGear size={14} className='me-1' />
             Full Edit
           </Button>
 
-          <Button 
-            variant="outline-primary" 
-            size="sm"
+          <Button
+            variant='outline-primary'
+            size='sm'
             className={styles.actionButton}
             onClick={() => router.push(`/jobs/view/${props.Id}`)}
           >
-            <BsEye size={14} className="me-1" />
+            <BsEye size={14} className='me-1' />
             View Details
           </Button>
         </div>
@@ -664,26 +660,22 @@ const FieldServiceSchedules = () => {
       </div>
     );
   };
-  
 
   // Update footer template to match new design
   const footerTemplate = (props) => {
     const isEmptyCell = !props.Subject;
-  
+
     if (isEmptyCell) {
       return (
         <div className={styles.quickInfoFooter}>
-          <button 
-            className={styles.createButton}
-            onClick={() => handleCellDoubleClick(props)}
-          >
+          <button className={styles.createButton} onClick={() => handleCellDoubleClick(props)}>
             Create Job
             <BsArrowRight size={16} />
           </button>
         </div>
       );
     }
-  
+
     // Footer for existing events
     return (
       <div className={styles.quickInfoFooter}>
@@ -697,79 +689,87 @@ const FieldServiceSchedules = () => {
   };
 
   // Cell double click handler
-  const handleCellDoubleClick = useCallback((args) => {
-    console.log('Double Click Event:', args);
-    
-    // Cancel the default behavior
-    args.cancel = true;
+  const handleCellDoubleClick = useCallback(
+    (args) => {
+      console.log('xxDouble Click Event:', args);
 
-    // Check if args exists
-    if (!args) {
-      console.warn('Invalid args in double click event');
-      return;
-    }
+      // Cancel the default behavior
+      args.cancel = true;
 
-    try {
-      // Handle appointment click
-      const appointmentElement = args.element?.closest('.e-appointment');
-      if (appointmentElement) {
-        console.log('Double clicked on appointment');
-        
-        if (scheduleRef.current) {
-          const eventData = scheduleRef.current.getEventDetails(appointmentElement);
-          console.log('Event Data:', eventData);
-          
-          if (eventData) {
-            scheduleRef.current.openEditor(eventData, 'Add');
-          }
-        }
+      // Check if args exists
+      if (!args) {
+        console.warn('Invalid args in double click event');
         return;
       }
 
-      // Handle empty cell click
-      const workCellElement = args.element?.closest('.e-work-cells');
-      if (workCellElement) {
-        const startTime = args.startTime;
-        const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-        const workerId = args.groupIndex !== undefined ? filteredWorkers[args.groupIndex]?.id : null;
-        const workerName = filteredWorkers[args.groupIndex]?.text || 'Unknown Worker';
+      try {
+        // Handle appointment click
+        const appointmentElement = args.element?.closest('.e-appointment');
+        if (appointmentElement) {
+          console.log('Double clicked on appointment');
 
-        // Verify we have required data before showing dialog
-        if (!workerId || !startTime || !endTime) {
-          console.warn('Missing required data for job creation', { workerId, startTime, endTime });
-          toast.error('Unable to create job: Missing required information');
+          if (scheduleRef.current) {
+            const eventData = scheduleRef.current.getEventDetails(appointmentElement);
+            console.log('Event Data:', eventData);
+
+            if (eventData) {
+              scheduleRef.current.openEditor(eventData, 'Add');
+            }
+          }
           return;
         }
 
-        Swal.fire({
-          title: 'Create a Job?',
-          text: `Are you sure you want to create a job for ${workerName}?`,
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Yes, create job'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            router.push({
-              pathname: '/jobs/create',
-              query: {
-                startDate: startTime.toISOString().split('T')[0],
-                endDate: endTime.toISOString().split('T')[0],
-                startTime: startTime.toTimeString().split(' ')[0],
-                endTime: endTime.toTimeString().split(' ')[0],
-                workerId: workerId,
-                scheduleSession: 'custom'
-              }
+        // Handle empty cell click
+        const workCellElement = args.element?.closest('.e-work-cells');
+        if (workCellElement) {
+          const startTime = args.startTime;
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+          const workerId =
+            args.groupIndex !== undefined ? filteredWorkers[args.groupIndex]?.id : null;
+          const workerName = filteredWorkers[args.groupIndex]?.text || 'Unknown Worker';
+
+          // Verify we have required data before showing dialog
+          if (!workerId || !startTime || !endTime) {
+            console.warn('Missing required data for job creation', {
+              workerId,
+              startTime,
+              endTime,
             });
+            toast.error('Unable to create job: Missing required information');
+            return;
           }
-        });
+
+          Swal.fire({
+            title: 'Create a Job?',
+            text: `Are you sure you want to create a job for ${workerName}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, create job',
+          }).then((result) => {
+            if (result.isConfirmed) {
+              router.push({
+                pathname: '/jobs/create',
+                query: {
+                  startDate: startTime.toISOString().split('T')[0],
+                  endDate: endTime.toISOString().split('T')[0],
+                  startTime: startTime.toTimeString().split(' ')[0],
+                  endTime: endTime.toTimeString().split(' ')[0],
+                  workerId: workerId,
+                  scheduleSession: 'custom',
+                },
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error in handleCellDoubleClick:', error);
+        toast.error('An error occurred while handling the click event');
       }
-    } catch (error) {
-      console.error('Error in handleCellDoubleClick:', error);
-      toast.error('An error occurred while handling the click event');
-    }
-  }, [filteredWorkers, router]);
+    },
+    [filteredWorkers, router]
+  );
 
   // Define colors outside of the component to avoid recreation
   const eventColors = [
@@ -807,7 +807,7 @@ const FieldServiceSchedules = () => {
       currentDate: currentDate,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       browserLocale: navigator.language,
-      sampleDate: new Date('2024-11-12T01:30:00').toLocaleString()
+      sampleDate: new Date('2024-11-12T01:30:00').toLocaleString(),
     });
   }, [currentDate]);
 
@@ -815,12 +815,18 @@ const FieldServiceSchedules = () => {
   const debugScheduleData = (data) => {
     console.log('Schedule Data Debug:', {
       data,
-      firstItem: data[0] ? {
-        ...data[0],
-        startTime: data[0].StartTime instanceof Date ? data[0].StartTime.toLocaleString() : 'Invalid Date',
-        endTime: data[0].EndTime instanceof Date ? data[0].EndTime.toLocaleString() : 'Invalid Date'
-      } : null,
-      currentDate: new Date().toLocaleString()
+      firstItem: data[0]
+        ? {
+            ...data[0],
+            startTime:
+              data[0].StartTime instanceof Date
+                ? data[0].StartTime.toLocaleString()
+                : 'Invalid Date',
+            endTime:
+              data[0].EndTime instanceof Date ? data[0].EndTime.toLocaleString() : 'Invalid Date',
+          }
+        : null,
+      currentDate: new Date().toLocaleString(),
     });
   };
 
@@ -836,14 +842,14 @@ const FieldServiceSchedules = () => {
   }, []);
 
   useEffect(() => {
-    const dates = [...new Set(scheduleData.map(job => job.StartTime.toDateString()))];
+    const dates = [...new Set(scheduleData.map((job) => job.StartTime.toDateString()))];
     console.log('Available job dates:', {
       dates,
-      jobs: scheduleData.map(job => ({
+      jobs: scheduleData.map((job) => ({
         date: job.StartTime.toDateString(),
         name: job.Subject,
-        worker: job.WorkerId
-      }))
+        worker: job.WorkerId,
+      })),
     });
   }, [scheduleData]);
 
@@ -873,7 +879,7 @@ const FieldServiceSchedules = () => {
     },
     '.e-schedule .e-vertical-view .e-work-cells.e-work-hours': {
       backgroundColor: '#fafafa',
-    }
+    },
   };
 
   // Create a function to get the appropriate icon based on role
@@ -952,7 +958,7 @@ const FieldServiceSchedules = () => {
     workerId: '',
     workerName: '',
     role: '',
-    status: ''
+    status: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -960,9 +966,9 @@ const FieldServiceSchedules = () => {
   const handleSearch = useCallback(async () => {
     try {
       setLoading(true); // You should already have this state
-      
+
       // Filter workers based on the name filter
-      const filteredWorkersList = fieldWorkers.filter(worker => {
+      const filteredWorkersList = fieldWorkers.filter((worker) => {
         const nameMatch = worker.text.toLowerCase().includes(filters.workerName.toLowerCase());
         return nameMatch;
       });
@@ -971,12 +977,12 @@ const FieldServiceSchedules = () => {
       setFilteredWorkers(filteredWorkersList);
 
       // Filter schedule data based on the filtered workers
-      const filteredJobs = scheduleData.filter(event => 
-        filteredWorkersList.some(worker => worker.id === event.WorkerId)
+      const filteredJobs = scheduleData.filter((event) =>
+        filteredWorkersList.some((worker) => worker.id === event.WorkerId)
       );
 
       // Update the filtered schedule data
-      setScheduleData(prevData => {
+      setScheduleData((prevData) => {
         const updatedData = [...prevData];
         return filteredJobs;
       });
@@ -996,16 +1002,16 @@ const FieldServiceSchedules = () => {
       workerId: '',
       workerName: '',
       role: '',
-      status: ''
+      status: '',
     });
 
     // Reset to show all workers
     setFilteredWorkers(fieldWorkers);
-    
+
     // Reset schedule data to show all events
-    setScheduleData(prevData => {
-      const allJobs = prevData.filter(event => 
-        fieldWorkers.some(worker => worker.id === event.WorkerId)
+    setScheduleData((prevData) => {
+      const allJobs = prevData.filter((event) =>
+        fieldWorkers.some((worker) => worker.id === event.WorkerId)
       );
       return allJobs;
     });
@@ -1013,11 +1019,10 @@ const FieldServiceSchedules = () => {
     toast.info('Filters cleared');
   }, [fieldWorkers]);
 
- 
   const onPopupOpen = useCallback((args) => {
     if (args.type === 'Editor' || args.type === 'QuickInfo') {
       console.log('Popup opening:', args);
-      
+
       // For new events
       if (args.type === 'Editor' && !args.data.Id) {
         args.cancel = true;
@@ -1026,25 +1031,25 @@ const FieldServiceSchedules = () => {
         }
         return;
       }
-  
+
       if (args.type === 'QuickInfo') {
         // For empty cells
         if (!args.data || !args.data.Subject) {
           args.cancel = true;
           return;
         }
-    
+
         // For existing events
         if (args.data && args.data.Subject) {
           // Ensure we have valid dates
           const startTime = args.data.StartTime instanceof Date ? args.data.StartTime : null;
           const endTime = args.data.EndTime instanceof Date ? args.data.EndTime : null;
-    
+
           if (!startTime || !endTime) {
             args.cancel = true;
             return;
           }
-    
+
           args.cancel = false;
         }
       } else if (args.type === 'Editor') {
@@ -1059,7 +1064,7 @@ const FieldServiceSchedules = () => {
   const onCellClick = useCallback((args) => {
     console.log('Cell clicked:', args);
   }, []);
-  
+
   // QuickEditForm component with integrated handleSave
   const QuickEditForm = ({ data, onSave, onCancel }) => {
     console.log('QuickEditForm initialized with data:', data);
@@ -1070,7 +1075,7 @@ const FieldServiceSchedules = () => {
       StartTime: data.StartTime instanceof Date ? data.StartTime : new Date(),
       EndTime: data.EndTime instanceof Date ? data.EndTime : new Date(),
       Priority: data.Priority || 'Medium',
-      JobStatus: data.JobStatus || 'Pending'
+      JobStatus: data.JobStatus || 'Pending',
     });
 
     const handleSave = async (updatedData) => {
@@ -1088,14 +1093,14 @@ const FieldServiceSchedules = () => {
           jobStatus: updatedData.JobStatus,
           formattedStartDateTime: updatedData.StartTime,
           formattedEndDateTime: updatedData.EndTime,
-          lastModifiedAt: new Date()
+          lastModifiedAt: new Date(),
         };
 
         console.log('Formatted data for Firestore:', formattedData);
         console.log('Updating document with ID:', data.Id);
 
         // Update Firestore
-        await updateDoc(doc(db, "jobs", data.Id), formattedData);
+        await updateDoc(doc(db, 'jobs', data.Id), formattedData);
         console.log('Firestore update successful');
 
         // Create the updated schedule event object
@@ -1111,12 +1116,12 @@ const FieldServiceSchedules = () => {
           Customer: data.Customer,
           ServiceLocation: data.ServiceLocation,
           Color: data.Color,
-          TextColor: data.TextColor
+          TextColor: data.TextColor,
         };
 
         console.log('Created updatedEvent:', updatedEvent);
         onSave(updatedEvent);
-        
+
         toast.success('Job updated successfully');
       } catch (error) {
         console.error('Error updating job:', error);
@@ -1136,74 +1141,74 @@ const FieldServiceSchedules = () => {
 
     return (
       <Form onSubmit={handleSubmit} className={styles.quickEditForm}>
-        <Form.Group className="mb-2">
+        <Form.Group className='mb-2'>
           <Form.Label>Job Name</Form.Label>
           <Form.Control
-            type="text"
+            type='text'
             value={formData.Subject}
-            onChange={(e) => setFormData(prev => ({ ...prev, Subject: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, Subject: e.target.value }))}
             required
           />
         </Form.Group>
 
-        <Form.Group className="mb-2">
+        <Form.Group className='mb-2'>
           <Form.Label>Start Time</Form.Label>
           <DateTimePickerComponent
             value={formData.StartTime}
             onChange={(e) => {
               if (e.value instanceof Date) {
-                setFormData(prev => ({ ...prev, StartTime: e.value }));
+                setFormData((prev) => ({ ...prev, StartTime: e.value }));
               }
             }}
-            format="dd/MM/yy hh:mm a"
+            format='dd/MM/yy hh:mm a'
             step={15}
           />
         </Form.Group>
 
-        <Form.Group className="mb-2">
+        <Form.Group className='mb-2'>
           <Form.Label>End Time</Form.Label>
           <DateTimePickerComponent
             value={formData.EndTime}
             onChange={(e) => {
               if (e.value instanceof Date) {
-                setFormData(prev => ({ ...prev, EndTime: e.value }));
+                setFormData((prev) => ({ ...prev, EndTime: e.value }));
               }
             }}
-            format="dd/MM/yy hh:mm a"
+            format='dd/MM/yy hh:mm a'
             step={15}
           />
         </Form.Group>
 
-        <Form.Group className="mb-2">
+        <Form.Group className='mb-2'>
           <Form.Label>Priority</Form.Label>
           <Form.Select
             value={formData.Priority}
-            onChange={(e) => setFormData(prev => ({ ...prev, Priority: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, Priority: e.target.value }))}
           >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
+            <option value='Low'>Low</option>
+            <option value='Medium'>Medium</option>
+            <option value='High'>High</option>
           </Form.Select>
         </Form.Group>
 
-        <Form.Group className="mb-2">
+        <Form.Group className='mb-2'>
           <Form.Label>Status</Form.Label>
           <Form.Select
             value={formData.JobStatus}
-            onChange={(e) => setFormData(prev => ({ ...prev, JobStatus: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, JobStatus: e.target.value }))}
           >
-            <option value="Pending">Pending</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Completed">Completed</option>
-            <option value="Scheduled">Scheduled</option>
+            <option value='Pending'>Pending</option>
+            <option value='In Progress'>In Progress</option>
+            <option value='Completed'>Completed</option>
+            <option value='Scheduled'>Scheduled</option>
           </Form.Select>
         </Form.Group>
 
         <div className={styles.formActions}>
-          <Button type="submit" variant="primary" size="sm">
+          <Button type='submit' variant='primary' size='sm'>
             Save Changes
           </Button>
-          <Button variant="outline-secondary" size="sm" onClick={onCancel}>
+          <Button variant='outline-secondary' size='sm' onClick={onCancel}>
             Cancel
           </Button>
         </div>
@@ -1220,66 +1225,65 @@ const FieldServiceSchedules = () => {
 
   return (
     <div>
-      <GeeksSEO title="Worker Schedules - VITAR Group | Portal" />
+      <GeeksSEO title='Worker Schedules - VITAR Group | Portal' />
 
       <Row>
         <Col lg={12} md={12} sm={12}>
           <ContentHeader
             title="Worker's Dispatch"
-            description="Manage and monitor field service schedules and assignments in real-time"
-            infoText="Double-click on any time slot to create a new job assignment for a worker"
-            badgeText="Worker Management"
-            badgeText2="Scheduling"
+            description='Manage and monitor field service schedules and assignments in real-time'
+            infoText='Double-click on any time slot to create a new job assignment for a worker'
+            badgeText='Worker Management'
+            badgeText2='Scheduling'
             breadcrumbItems={[
-              { 
-                text: "Dashboard", 
-                link: "/", 
-                icon: <FaHome className="me-2" style={{ fontSize: '14px' }} /> 
+              {
+                text: 'Dashboard',
+                link: '/',
+                icon: <FaHome className='me-2' style={{ fontSize: '14px' }} />,
               },
-              { 
-                text: "Workers", 
-                link: "/workers"
+              {
+                text: 'Workers',
+                link: '/workers',
               },
-              { 
-                text: "Schedules"
-              }
+              {
+                text: 'Schedules',
+              },
             ]}
-            actionButton={{
-              text: "Create New Worker",
-              icon: <FaPlus size={16} />,
-              variant: "light",
-              href: "/workers/create",
-              tooltip: "Create a new worker",
-              onClick: () => router.push('/workers/create')
-            }}
-          >
-           
-          </ContentHeader>
+            actionButtons={[
+              {
+                text: 'Create New Worker',
+                icon: <FaPlus size={16} />,
+                variant: 'light',
+                href: '/workers/create',
+                tooltip: 'Create a new worker',
+                onClick: () => router.push('/workers/create'),
+              },
+            ]}
+          ></ContentHeader>
         </Col>
       </Row>
-      <div className="schedule-control-section">
-        <ToastContainer position="top-right" autoClose={5000} />
-        <div className="col-lg-12 control-section">
-          <div className="control-wrapper">
-           
-
-            {/* {process.env.NODE_ENV === 'development' && (
-              <div className="mb-3 p-3 bg-light">
+      <div className='schedule-control-section'>
+        <ToastContainer position='top-right' autoClose={5000} />
+        <div className='col-lg-12 control-section'>
+          <div className='control-wrapper'>
+            {process.env.NODE_ENV === 'development' && (
+              <div className='mb-3 p-3 bg-light'>
                 <h6>Debug Info</h6>
                 <div>Current Date: {currentDate.toLocaleString()}</div>
                 <div>Jobs for current view:</div>
                 <ul>
-                  {filteredScheduleData.map(job => (
+                  {filteredScheduleData.map((job) => (
                     <li key={job.Id}>
-                      {job.Subject} - {job.StartTime.toLocaleString()} to {job.EndTime.toLocaleString()}
+                      {job.Subject} - {job.StartTime.toLocaleString()} to{' '}
+                      {job.EndTime.toLocaleString()}
                       (Worker: {job.WorkerId})
                     </li>
                   ))}
                 </ul>
               </div>
-            )} */}
+            )}
 
-            <SchedulerFilterPanel 
+            <SchedulerFilterPanel
               filters={filters}
               setFilters={setFilters}
               onClear={handleClearFilters}
@@ -1289,57 +1293,60 @@ const FieldServiceSchedules = () => {
 
             <ScheduleComponent
               ref={scheduleRef}
-              cssClass="custom-scheduler"
-              width="100%"
-              height="650px"
-              currentView="TimelineDay"
+              cssClass='custom-scheduler'
+              width='100%'
+              height='650px'
+              currentView='TimelineDay'
               selectedDate={currentDate}
-              startHour="00:00"
-              endHour="24:00"
+              startHour='00:00'
+              endHour='24:00'
               workDays={workDays}
               popupOpen={onPopupOpen}
               eventRendered={onEventRendered}
               rowAutoHeight={false}
-              timezone="Asia/Taipei"
+              timezone='Asia/Taipei'
               eventSettings={{
                 dataSource: filteredScheduleData,
                 enableTooltip: true,
-                template: props => {
+                template: (props) => {
                   const workerColor = getWorkerColor(props.WorkerId);
                   console.log('Worker ID:', props.WorkerId, 'Color:', workerColor);
-                  
+
                   return (
-                    <div className="custom-event" style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: workerColor,
-                      padding: '4px 8px',
-                      color: '#000000',
-                    }}>
+                    <div
+                      className='custom-event'
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: workerColor,
+                        padding: '4px 8px',
+                        color: '#000000',
+                      }}
+                    >
                       <div style={{ fontWeight: '500' }}>{props.Subject}</div>
                       <div style={{ fontSize: '0.85em' }}>
-                        {new Date(props.StartTime).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })} 
+                        {new Date(props.StartTime).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                         {' - '}
-                        {new Date(props.EndTime).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
+                        {new Date(props.EndTime).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })}
                       </div>
                     </div>
                   );
-                }
+                },
               }}
-              group={{ 
+              group={{
                 byGroupID: false,
                 resources: ['Workers'],
                 headerHeight: 'auto', // Allows header to adjust height
-                allowGroupDragAndDrop: false
+                allowGroupDragAndDrop: false,
               }}
               quickInfoTemplates={{
                 header: headerTemplate,
@@ -1348,35 +1355,39 @@ const FieldServiceSchedules = () => {
               }}
               cellClick={onCellClick}
               cellDoubleClick={handleCellDoubleClick}
-              timeScale={{ 
-                enable: true, 
-                interval: 60, 
-                slotCount: 2 
+              timeScale={{
+                enable: true,
+                interval: 60,
+                slotCount: 2,
               }}
               workHours={{
                 highlight: true,
                 start: '00:00',
-                end: '24:00'
+                end: '24:00',
               }}
               cellTemplate={(props) => {
                 return (
-                  <div className="template-wrap" style={{
-                    width: '100%',
-                    height: '100%',
-                    minHeight: '50px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer'
-                  }}>
-                 
-                    <div style={{
-                      fontSize: '12px',
-                      color: '#999',
-                      display: props.elementType === 'emptyCells' ? 'flex' : 'none',
+                  <div
+                    className='template-wrap'
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      minHeight: '50px',
+                      display: 'flex',
                       alignItems: 'center',
-                      gap: '4px'
-                    }}>
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        color: '#999',
+                        display: props.elementType === 'emptyCells' ? 'flex' : 'none',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
                       <BsPlus size={14} />
                       <span>Add Job</span>
                     </div>
@@ -1384,84 +1395,104 @@ const FieldServiceSchedules = () => {
                 );
               }}
               navigating={onNavigating}
-              resourceHeaderTemplate={props => (
-                <div className="worker-header" style={{ 
-                  backgroundColor: getWorkerColor(props.resourceData.workerId),
-                  padding: '6px 8px',
-                  borderRadius: '6px',
-                  color: '#000000',
-                  width: '100%',
-                  height: '100%',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  minHeight: '100%'
-                }}>
+              resourceHeaderTemplate={(props) => (
+                <div
+                  className='worker-header'
+                  style={{
+                    backgroundColor: getWorkerColor(props.resourceData.workerId),
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    color: '#000000',
+                    width: '100%',
+                    height: '100%',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minHeight: '100%',
+                  }}
+                >
                   {/* Worker Name */}
-                  <div style={{ 
-                    fontWeight: '600',
-                    fontSize: '0.9em',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    marginBottom: '2px'
-                  }}>
+                  <div
+                    style={{
+                      fontWeight: '600',
+                      fontSize: '0.9em',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      marginBottom: '2px',
+                    }}
+                  >
                     {props.resourceData.text}
                   </div>
 
                   {/* Role and Status Row */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '4px',
-                    fontSize: '0.75em'
-                  }}>
-                    {/* Role */}
-                    <div style={{ 
-                      display: 'inline-flex',
+                  <div
+                    style={{
+                      display: 'flex',
                       alignItems: 'center',
-                      backgroundColor: 'rgba(255,255,255,0.5)',
-                      padding: '2px 6px',
-                      borderRadius: '12px',
-                      maxWidth: '40%'
-                    }}>
-                      <span style={{
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
+                      justifyContent: 'space-between',
+                      gap: '4px',
+                      fontSize: '0.75em',
+                    }}
+                  >
+                    {/* Role */}
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(255,255,255,0.5)',
+                        padding: '2px 6px',
+                        borderRadius: '12px',
+                        maxWidth: '40%',
+                      }}
+                    >
+                      <span
+                        style={{
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
                         {props.resourceData.role || 'Worker'}
                       </span>
                     </div>
 
                     {/* Status and Tasks */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      color: 'rgba(0,0,0,0.6)',
-                      fontSize: '0.9em'
-                    }}>
-                      {/* Status Dot */}
-                      <div style={{
+                    <div
+                      style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '3px'
-                      }}>
-                        <BsCircleFill size={6} color={props.resourceData.isActive ? '#4CAF50' : '#757575'} />
+                        gap: '8px',
+                        color: 'rgba(0,0,0,0.6)',
+                        fontSize: '0.9em',
+                      }}
+                    >
+                      {/* Status Dot */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                        }}
+                      >
+                        <BsCircleFill
+                          size={6}
+                          color={props.resourceData.isActive ? '#4CAF50' : '#757575'}
+                        />
                         <span style={{ whiteSpace: 'nowrap' }}>
                           {props.resourceData.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
 
                       {/* Tasks Count */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px'
-                      }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                        }}
+                      >
                         <span style={{ whiteSpace: 'nowrap' }}>
                           {`${props.resourceData.taskCount || 0} tasks`}
                         </span>
@@ -1473,20 +1504,20 @@ const FieldServiceSchedules = () => {
             >
               <ResourcesDirective>
                 <ResourceDirective
-                  field="WorkerId"
-                  title="Field Workers"
-                  name="Workers"
+                  field='WorkerId'
+                  title='Field Workers'
+                  name='Workers'
                   allowMultiple={false}
                   dataSource={filteredWorkers}
-                  textField="text"
-                  idField="id"
+                  textField='text'
+                  idField='id'
                 />
               </ResourcesDirective>
               <ViewsDirective>
-                <ViewDirective option="TimelineDay" />
-                <ViewDirective option="TimelineWeek" />
-                <ViewDirective option="TimelineWorkWeek" />
-                <ViewDirective option="TimelineMonth" />
+                <ViewDirective option='TimelineDay' />
+                <ViewDirective option='TimelineWeek' />
+                <ViewDirective option='TimelineWorkWeek' />
+                <ViewDirective option='TimelineMonth' />
               </ViewsDirective>
               <Inject services={[TimelineViews, TimelineMonth]} />
             </ScheduleComponent>
