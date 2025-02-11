@@ -54,7 +54,10 @@ const JobForm = ({ data }) => {
         const { jobId, equipments, ...jobHeaders } = formData;
 
         const promises = [
-          setDoc(doc(db, 'jobHeaders', jobId), { ...jobHeaders }),
+          setDoc(doc(db, 'jobHeaders', jobId), {
+            ...jobHeaders,
+            contact: jobHeaders?.contact ?? null,
+          }),
           setDoc(doc(db, 'jobDetails', jobId), {
             equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
           }),

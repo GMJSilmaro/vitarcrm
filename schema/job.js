@@ -33,7 +33,7 @@ export const summarySchema = z.object({
       if (typeof formData === 'object') {
         return { id: formData.id, name: formData.name };
       }
-      return undefined;
+      return null;
     }),
   contact: z
     .record(z.string(), z.any(), {
@@ -44,7 +44,7 @@ export const summarySchema = z.object({
       if (typeof formData === 'object') {
         return { id: formData.id, name: formData.firstName + ' ' + formData.lastName };
       }
-      return undefined;
+      return null;
     })
     .optional(),
   location: z
@@ -54,7 +54,7 @@ export const summarySchema = z.object({
     })
     .transform((formData) => {
       if (typeof formData === 'object') return { id: formData.siteId, name: formData.siteName };
-      return undefined;
+      return null;
     }),
   equipments: z
     .array(
@@ -66,7 +66,7 @@ export const summarySchema = z.object({
             certificateNo: formData.certificateNo,
           };
         }
-        return undefined;
+        return null;
       })
     )
     .min(1, { message: 'Please select at least one equipment.' }),
