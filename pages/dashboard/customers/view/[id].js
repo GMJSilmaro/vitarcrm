@@ -7,7 +7,16 @@ import { Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Badge, Button, Card, Col, Row, Spinner, Tab, Tabs } from 'react-bootstrap';
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Row,
+  Spinner,
+  Tab,
+  Tabs,
+} from 'react-bootstrap';
 import { Activity, Calendar, Exclamation } from 'react-bootstrap-icons';
 import { FaArrowLeft } from 'react-icons/fa';
 
@@ -42,7 +51,10 @@ const CustomerDetails = () => {
 
   if (loading) {
     return (
-      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
+      <div
+        className='d-flex justify-content-center align-items-center'
+        style={{ height: '100vh' }}
+      >
         <Spinner animation='border' variant='primary' />
       </div>
     );
@@ -71,7 +83,7 @@ const CustomerDetails = () => {
       {/* Header Section */}
       <ContentHeader
         title={`View Details for ${customer.customerName}`}
-        description='View comprehensive customer details including personal info, contacts and contracts'
+        description='View comprehensive customer details including overview, contacts, locations, equipments and job histories.'
         badgeText='Customer Management'
         badgeText2='Customers'
         breadcrumbItems={[
@@ -90,13 +102,15 @@ const CustomerDetails = () => {
             icon: <i className='fe fe-user' style={{ marginRight: '8px' }} />,
           },
         ]}
-        actionButton={{
-          text: 'Back to Customers List',
-          icon: <FaArrowLeft size={16} />,
-          variant: 'light',
-          tooltip: 'Back to Customers List',
-          onClick: () => router.push('/customers'),
-        }}
+        actionButtons={[
+          {
+            text: 'Back to Customers List',
+            icon: <FaArrowLeft size={16} />,
+            variant: 'light',
+            tooltip: 'Back to Customers List',
+            onClick: () => router.push('/customers'),
+          },
+        ]}
       />
 
       <Card>
@@ -106,17 +120,20 @@ const CustomerDetails = () => {
               <Row>
                 <Col lg={8}>
                   {/* Personal Information Card */}
-                  <Card className='border-0 shadow-none mb-4'>
+                  <Card className='border-0 shadow-none'>
                     <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
                       <div className='d-flex justify-content-between align-items-center'>
                         <div>
                           <h5 className='mb-0'>Personal Information</h5>
-                          <small className='text-muted'>Basic customer details</small>
+                          <small className='text-muted'>
+                            Basic customer details
+                          </small>
                         </div>
                         <Badge
                           className='profile-badge'
                           style={{
-                            background: 'linear-gradient(45deg, #305cde, #1e40a6)',
+                            background:
+                              'linear-gradient(45deg, #305cde, #1e40a6)',
                             padding: '8px 16px',
                             borderRadius: '8px',
                             color: 'white',
@@ -136,94 +153,103 @@ const CustomerDetails = () => {
 
                     <Card.Body className='pt-4'>
                       <div className='d-flex flex-column gap-4'>
-                        <div>
-                          <Row className='row-gap-3'>
-                            <Col md={4}>
-                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
-                                <div
-                                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                                  style={{ width: '40px', height: '40px' }}
-                                >
-                                  <i className='fe fe-user'></i>
+                        <Row className='row-gap-3'>
+                          <Col md={4}>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                              <div
+                                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                                style={{ width: '40px', height: '40px' }}
+                              >
+                                <i className='fe fe-user'></i>
+                              </div>
+                              <div>
+                                <div className='text-secondary fs-6'>
+                                  Full Name
                                 </div>
-                                <div>
-                                  <div className='text-secondary fs-6'>Full Name</div>
-                                  <div className='text-primary-label fw-semibold'>
-                                    {customer.customerName}
-                                  </div>
+                                <div className='text-primary-label fw-semibold'>
+                                  {customer.customerName}
                                 </div>
                               </div>
-                            </Col>
+                            </div>
+                          </Col>
 
-                            <Col md={4}>
-                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
-                                <div
-                                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                                  style={{ width: '40px', height: '40px' }}
-                                >
-                                  <i className='fe fe-hash'></i>
+                          <Col md={4}>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                              <div
+                                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                                style={{ width: '40px', height: '40px' }}
+                              >
+                                <i className='fe fe-hash'></i>
+                              </div>
+                              <div className='flex-grow-1'>
+                                <div className='text-secondary fs-6'>
+                                  Customer ID
                                 </div>
-                                <div className='flex-grow-1'>
-                                  <div className='text-secondary fs-6'>Customer ID</div>
-                                  <div className='text-primary-label fw-semibold'>
-                                    {customer.id}
-                                  </div>
+                                <div className='text-primary-label fw-semibold'>
+                                  {customer.id}
                                 </div>
                               </div>
-                            </Col>
+                            </div>
+                          </Col>
 
-                            <Col md={4}>
-                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
-                                <div
-                                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                                  style={{ width: '40px', height: '40px' }}
-                                >
-                                  <i className='fe fe-hash'></i>
+                          <Col md={4}>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                              <div
+                                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                                style={{ width: '40px', height: '40px' }}
+                              >
+                                <i className='fe fe-hash'></i>
+                              </div>
+                              <div className='flex-grow-1'>
+                                <div className='text-secondary fs-6'>
+                                  TIN Number
                                 </div>
-                                <div className='flex-grow-1'>
-                                  <div className='text-secondary fs-6'>TIN Number</div>
-                                  <div className='text-primary-label fw-semibold'>
-                                    {customer.tinNumber}
-                                  </div>
+                                <div className='text-primary-label fw-semibold'>
+                                  {customer.tinNumber}
                                 </div>
                               </div>
-                            </Col>
+                            </div>
+                          </Col>
 
-                            <Col md={4}>
-                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
-                                <div
-                                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                                  style={{ width: '40px', height: '40px' }}
-                                >
-                                  <i className='fe fe-hash'></i>
+                          <Col md={4}>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                              <div
+                                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                                style={{ width: '40px', height: '40px' }}
+                              >
+                                <i className='fe fe-hash'></i>
+                              </div>
+                              <div className='flex-grow-1'>
+                                <div className='text-secondary fs-6'>
+                                  BRN Number
                                 </div>
-                                <div className='flex-grow-1'>
-                                  <div className='text-secondary fs-6'>BRN Number</div>
-                                  <div className='text-primary-label fw-semibold'>
-                                    {customer.registrationNumber ?? customer.brnNumber}
-                                  </div>
+                                <div className='text-primary-label fw-semibold'>
+                                  {customer.registrationNumber ??
+                                    customer.brnNumber}
                                 </div>
                               </div>
-                            </Col>
+                            </div>
+                          </Col>
 
-                            <Col md={4}>
-                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
-                                <div
-                                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                                  style={{ width: '40px', height: '40px' }}
-                                >
-                                  <i className='fe fe-activity'></i>
+                          <Col md={4}>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                              <div
+                                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                                style={{ width: '40px', height: '40px' }}
+                              >
+                                <i className='fe fe-activity'></i>
+                              </div>
+                              <div className='flex-grow-1'>
+                                <div className='text-secondary fs-6'>
+                                  Status
                                 </div>
-                                <div className='flex-grow-1'>
-                                  <div className='text-secondary fs-6'>Status</div>
-                                  <div className='text-primary-label fw-semibold text-capitalize'>
-                                    {customer.status}
-                                  </div>
+                                <div className='text-primary-label fw-semibold text-capitalize'>
+                                  {customer.status}
                                 </div>
                               </div>
-                            </Col>
-                          </Row>
-                        </div>
+                            </div>
+                          </Col>
+                        </Row>
                       </div>
                     </Card.Body>
                   </Card>
@@ -243,39 +269,49 @@ const CustomerDetails = () => {
                           <div className='text-muted'>Contract Status</div>
                         </div>
                         <Badge
-                          bg={customer.contract.status === 'Y' ? 'success' : 'danger'}
+                          bg={
+                            customer.contract.status === 'Y'
+                              ? 'success'
+                              : 'danger'
+                          }
                           className='status-badge'
                         >
-                          {customer.contract.status === 'Y' ? 'Active' : 'Inactive'}
+                          {customer.contract.status === 'Y'
+                            ? 'Active'
+                            : 'Inactive'}
                         </Badge>
                       </div>
 
-                      {customer.contract && customer.contract.status === 'Y' && (
-                        <div className='status-item'>
-                          <div className='d-flex flex-column align-items-center'>
-                            <div className='d-flex w-100 mb-2'>
-                              <Calendar size={16} className='text-primary me-2' />
-                              <div className='text-muted'>Contract Date</div>
-                            </div>
-
-                            <div className='flex w-100'>
-                              <div className='d-flex gap-2 align-items-center mb-2'>
-                                <div>Start:</div>
-                                <Badge bg='secondary' className='ms-2'>
-                                  {customer.contract.startDate ?? 'N/A'}
-                                </Badge>
+                      {customer.contract &&
+                        customer.contract.status === 'Y' && (
+                          <div className='status-item'>
+                            <div className='d-flex flex-column align-items-center'>
+                              <div className='d-flex w-100 mb-2'>
+                                <Calendar
+                                  size={16}
+                                  className='text-primary me-2'
+                                />
+                                <div className='text-muted'>Contract Date</div>
                               </div>
 
-                              <div className='d-flex gap-2 align-items-center'>
-                                <div>End:</div>
-                                <Badge bg='secondary' className='ms-2'>
-                                  {customer.contract.endDate ?? 'N/A'}
-                                </Badge>
+                              <div className='flex w-100'>
+                                <div className='d-flex gap-2 align-items-center mb-2'>
+                                  <div>Start:</div>
+                                  <Badge bg='secondary' className='ms-2'>
+                                    {customer.contract.startDate ?? 'N/A'}
+                                  </Badge>
+                                </div>
+
+                                <div className='d-flex gap-2 align-items-center'>
+                                  <div>End:</div>
+                                  <Badge bg='secondary' className='ms-2'>
+                                    {customer.contract.endDate ?? 'N/A'}
+                                  </Badge>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </Card.Body>
                   </Card>
                 </Col>
@@ -297,14 +333,18 @@ const CustomerDetails = () => {
                             <div className='text-center py-5'>
                               <Exclamation size={80} className='text-muted' />
                               <h6>No Contacts Available</h6>
-                              <p className='text-muted small'>Add contacts to your customer</p>
+                              <p className='text-muted small'>
+                                Add contacts to your customer
+                              </p>
                             </div>
                           )}
 
                           {Array.isArray(customer.customerContact) &&
                             customer.customerContact.map((contact, i) => (
                               <div>
-                                <h5 className='text-primary-label mb-2 fs-5'>Contact #{i + 1}</h5>
+                                <h5 className='text-primary-label mb-2 fs-5'>
+                                  Contact #{i + 1}
+                                </h5>
 
                                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
                                   <div
@@ -322,35 +362,45 @@ const CustomerDetails = () => {
                                     )}
 
                                     <Col lg={3}>
-                                      <div className='text-secondary fs-6'>First Name</div>
+                                      <div className='text-secondary fs-6'>
+                                        First Name
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {contact.firstName}
                                       </div>
                                     </Col>
 
                                     <Col lg={3}>
-                                      <div className='text-secondary fs-6'>Last Name</div>
+                                      <div className='text-secondary fs-6'>
+                                        Last Name
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {contact.lastName}
                                       </div>
                                     </Col>
 
                                     <Col lg={3}>
-                                      <div className='text-secondary fs-6'>Phone</div>
+                                      <div className='text-secondary fs-6'>
+                                        Phone
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {contact.phone}
                                       </div>
                                     </Col>
 
                                     <Col lg={3}>
-                                      <div className='text-secondary fs-6'>Email</div>
+                                      <div className='text-secondary fs-6'>
+                                        Email
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {contact.email}
                                       </div>
                                     </Col>
 
                                     <Col lg={3}>
-                                      <div className='text-secondary fs-6'>Role</div>
+                                      <div className='text-secondary fs-6'>
+                                        Role
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {contact.role}
                                       </div>
@@ -372,12 +422,21 @@ const CustomerDetails = () => {
                     </Card.Header>
                     <Card.Body>
                       <div className='text-center mb-4'>
-                        <div style={{ fontSize: '2.5rem', fontWeight: '600', color: '#305cde' }}>
+                        <div
+                          style={{
+                            fontSize: '2.5rem',
+                            fontWeight: '600',
+                            color: '#305cde',
+                          }}
+                        >
                           {Array.isArray(customer.customerContact)
                             ? customer.customerContact.length
                             : 0}
                         </div>
-                        <div className='text-muted' style={{ fontSize: '16px' }}>
+                        <div
+                          className='text-muted'
+                          style={{ fontSize: '16px' }}
+                        >
                           Total Contacts
                         </div>
                       </div>
@@ -392,21 +451,28 @@ const CustomerDetails = () => {
                 <Col lg={8}>
                   <Card className='border-0 shadow-none mb-4'>
                     <Card.Body>
-                      <div className='overflow-auto' style={{ maxHeight: '800px' }}>
+                      <div
+                        className='overflow-auto'
+                        style={{ maxHeight: '800px' }}
+                      >
                         <div className='d-flex flex-column gap-4 locations-container'>
                           {(!Array.isArray(customer.locations) ||
                             customer.locations.length < 1) && (
                             <div className='text-center py-5'>
                               <Exclamation size={80} className='text-muted' />
                               <h6>No Location Available</h6>
-                              <p className='text-muted small'>Add location to your customer</p>
+                              <p className='text-muted small'>
+                                Add location to your customer
+                              </p>
                             </div>
                           )}
 
                           {Array.isArray(customer.locations) &&
                             customer.locations.map((location, i) => (
                               <div>
-                                <h5 className='text-primary-label mb-2 fs-5'>Location #{i + 1}</h5>
+                                <h5 className='text-primary-label mb-2 fs-5'>
+                                  Location #{i + 1}
+                                </h5>
 
                                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
                                   <div
@@ -424,21 +490,27 @@ const CustomerDetails = () => {
                                     )}
 
                                     <Col lg={12}>
-                                      <div className='text-secondary fs-6'>Main Address</div>
+                                      <div className='text-secondary fs-6'>
+                                        Main Address
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {location.mainAddress}
                                       </div>
                                     </Col>
 
                                     <Col lg={3}>
-                                      <div className='text-secondary fs-6'>ID</div>
+                                      <div className='text-secondary fs-6'>
+                                        ID
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {location.siteId}
                                       </div>
                                     </Col>
 
                                     <Col lg={3}>
-                                      <div className='text-secondary fs-6'>Name</div>
+                                      <div className='text-secondary fs-6'>
+                                        Name
+                                      </div>
                                       <div className='text-primary-label fw-semibold'>
                                         {location.siteName}
                                       </div>
@@ -460,10 +532,21 @@ const CustomerDetails = () => {
                     </Card.Header>
                     <Card.Body>
                       <div className='text-center mb-4'>
-                        <div style={{ fontSize: '2.5rem', fontWeight: '600', color: '#305cde' }}>
-                          {Array.isArray(customer.locations) ? customer.locations.length : 0}
+                        <div
+                          style={{
+                            fontSize: '2.5rem',
+                            fontWeight: '600',
+                            color: '#305cde',
+                          }}
+                        >
+                          {Array.isArray(customer.locations)
+                            ? customer.locations.length
+                            : 0}
                         </div>
-                        <div className='text-muted' style={{ fontSize: '16px' }}>
+                        <div
+                          className='text-muted'
+                          style={{ fontSize: '16px' }}
+                        >
                           Total Locations
                         </div>
                       </div>
@@ -485,31 +568,6 @@ const CustomerDetails = () => {
       </Card>
 
       <style jsx global>{`
-        .nav-tabs {
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .nav-tabs .nav-link {
-          color: #64748b;
-          border: none;
-          border-bottom: 2px solid transparent;
-          padding: 1rem 1.5rem;
-          transition: all 0.2s ease;
-          font-weight: 500;
-        }
-
-        .nav-tabs .nav-link:hover {
-          color: #305cde;
-          border-color: transparent;
-          background-color: #f8fafc;
-        }
-
-        .nav-tabs .nav-link.active {
-          color: #305cde;
-          border-bottom: 2px solid #305cde;
-          background-color: transparent;
-        }
-
         @media (max-width: 768px) {
           .certificate-dates {
             grid-template-columns: 1fr;

@@ -1,81 +1,19 @@
-import DataTable from '@/components/dashboard/DataTable';
-import React, { useState } from 'react';
 import { Button, Card } from 'react-bootstrap';
 import { Eye } from 'react-bootstrap-icons';
 
-const COLUMNS = [
-  {
-    header: 'Inventory ID',
-    accessorKey: 'inventoryId',
-  },
-  {
-    header: 'Category',
-    accessorKey: 'category',
-  },
-  {
-    header: 'Description',
-    accessorKey: 'description',
-  },
-  {
-    header: 'Tag ID',
-    accessorKey: 'tagId',
-  },
-  {
-    header: 'Make',
-    accessorKey: 'make',
-  },
-  {
-    header: 'Model',
-    accessorKey: 'model',
-  },
-  {
-    header: 'Serial Number',
-    accessorKey: 'serialNumber',
-  },
-  {
-    header: 'Type',
-    accessorKey: 'type',
-  },
-  {
-    header: 'Range (Min)',
-    accessorKey: 'rangeMin',
-  },
-  {
-    header: 'Range (Max)',
-    accessorKey: 'rangeMax',
-  },
-  {
-    header: 'Certificate No',
-    accessorKey: 'certificateNo',
-  },
-  {
-    header: 'Traceability',
-    accessorKey: 'traceability',
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    cell: ({ row }) => {
-      if (!row?.original) return null;
+import DataTable from '../../../../components/common/DataTable';
+import DataTableViewOptions from '../../../../components/common/DataTableViewOptions';
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
+import { useMemo } from 'react';
 
-      return (
-        <div className='d-flex align-items-center gap-2'>
-          <Button
-            variant='primary'
-            size='sm'
-            className='d-flex align-items-center gap-1'
-            onClick={() => {}}
-          >
-            <Eye size={14} />
-            <span>View</span>
-          </Button>
-        </div>
-      );
-    },
-  },
-];
-
-const CUSTOMER_EQUIPMENTS = [
+const data = [
   {
     inventoryId: 'D001',
     category: 'DIMENSIONAL',
@@ -287,27 +225,92 @@ const CUSTOMER_EQUIPMENTS = [
 ];
 
 const EquipmentsTab = () => {
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState([]);
-  const [totalRows, setTotalRows] = useState(CUSTOMER_EQUIPMENTS.length);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+  const columnHelper = createColumnHelper();
+
+  const columns = useMemo(() => {
+    return [
+      columnHelper.accessor('inventoryId', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
+        size: 100,
+      }),
+      columnHelper.accessor('category', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Category' />,
+      }),
+      columnHelper.accessor('description', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
+      }),
+      columnHelper.accessor('tagId', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Tag ID' />,
+        size: 250,
+      }),
+      columnHelper.accessor('make', {
+        size: 250,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
+      }),
+      columnHelper.accessor('model', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Model' />,
+      }),
+      columnHelper.accessor('serialNumber', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Serial Number' />,
+      }),
+      columnHelper.accessor('type', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Type' />,
+      }),
+      columnHelper.accessor('rangeMin', {
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Min)' />,
+      }),
+      columnHelper.accessor('rangeMax', {
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Max)' />,
+      }),
+      columnHelper.accessor('certificateNo', {
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Certificate No.' />,
+      }),
+      columnHelper.accessor('traceability', {
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Traceability' />,
+      }),
+      columnHelper.accessor('actions', {
+        id: 'actions',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          if (!row?.original) return null;
+
+          return (
+            <Button
+              variant='primary'
+              size='sm'
+              className='d-flex align-items-center gap-1'
+              onClick={() => {}}
+            >
+              <Eye className='me-1' size={14} />
+              <span>View</span>
+            </Button>
+          );
+        },
+      }),
+    ];
+  }, []);
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
   return (
     <Card className='border-0 shadow-none'>
       <Card.Body className='p-4'>
-        <DataTable
-          columns={COLUMNS}
-          data={CUSTOMER_EQUIPMENTS}
-          loading={loading}
-          currentPage={currentPage}
-          perPage={perPage}
-          totalRows={totalRows}
-          onPageChange={setCurrentPage}
-          onPerPageChange={setPerPage}
-          emptyMessage='No customer equipments found'
-          loadingMessage='Loading customer equipment...'
-        />
+        <DataTable table={table}>
+          <div className='d-flex justify-content-end'>
+            <DataTableViewOptions table={table} />
+          </div>
+        </DataTable>
       </Card.Body>
     </Card>
   );

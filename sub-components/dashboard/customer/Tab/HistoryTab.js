@@ -1,9 +1,18 @@
-import DataTable from '@/components/dashboard/DataTable';
-import { useState } from 'react';
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { useMemo } from 'react';
 import { Badge, Button, Card } from 'react-bootstrap';
 import { Eye } from 'react-bootstrap-icons';
+import DataTableViewOptions from '../../../../components/common/DataTableViewOptions';
+import DataTable from '../../../../components/common/DataTable';
+import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
 
-const CUSTOMER_JOB_HISTORY = [
+const data = [
   {
     id: '0000001',
     date: '2024-03-20',
@@ -56,101 +65,98 @@ const CUSTOMER_JOB_HISTORY = [
   },
 ];
 
-const COLUMNS = [
-  {
-    header: 'Job ID',
-    accessorKey: 'id',
-  },
-  {
-    header: 'Date',
-    accessorKey: 'date',
-  },
-  {
-    header: 'Scope',
-    accessorKey: 'scope',
-    cell: ({ row }) => {
-      const colors = {
-        Lab: 'info',
-        Onsite: 'warning',
-      };
+export const HistoryTab = () => {
+  const columnHelper = createColumnHelper();
 
-      return <Badge bg={colors[row.original.scope] || 'secondary'}>{row.original.scope}</Badge>;
-    },
-  },
-  {
-    header: 'Customer',
-    accessorKey: 'customer',
-  },
-  {
-    header: 'Location',
-    accessorKey: 'location',
-  },
-  {
-    header: 'Description',
-    accessorKey: 'description',
-  },
-  {
-    header: 'Status',
-    accessorKey: 'status',
-    cell: ({ row }) => {
-      const colors = {
-        Completed: 'success',
-        Pending: 'warning',
-        'In Progress': 'primary',
-        Cancelled: 'danger',
-      };
-      return <Badge bg={colors[row.original.status] || 'secondary'}>{row.original.status}</Badge>;
-    },
-  },
-  {
-    header: 'Duration',
-    accessorKey: 'duration',
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    cell: ({ row }) => {
-      if (!row?.original) return null;
+  const columns = useMemo(() => {
+    return [
+      columnHelper.accessor('id', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Job ID' />,
+        size: 100,
+      }),
+      columnHelper.accessor('date', {
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Date' />,
+      }),
+      columnHelper.accessor('scope', {
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Scope' />,
+        cell: ({ row }) => {
+          const colors = {
+            Lab: 'info',
+            Onsite: 'warning',
+          };
 
-      return (
-        <div className='d-flex align-items-center gap-2'>
-          <Button
-            variant='primary'
-            size='sm'
-            className='d-flex align-items-center gap-1'
-            onClick={() => {}}
-          >
-            <Eye size={14} />
-            <span>View</span>
-          </Button>
-        </div>
-      );
-    },
-  },
-];
+          return <Badge bg={colors[row.original.scope] || 'secondary'}>{row.original.scope}</Badge>;
+        },
+      }),
+      columnHelper.accessor('customer', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Customer' />,
+      }),
+      columnHelper.accessor('location', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Location' />,
+      }),
+      columnHelper.accessor('description', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
+      }),
+      columnHelper.accessor('status', {
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
+        cell: ({ row }) => {
+          const colors = {
+            Completed: 'success',
+            Pending: 'warning',
+            'In Progress': 'primary',
+            Cancelled: 'danger',
+          };
+          return (
+            <Badge bg={colors[row.original.status] || 'secondary'}>{row.original.status}</Badge>
+          );
+        },
+      }),
+      columnHelper.accessor('duration', {
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Duration' />,
+      }),
+      columnHelper.accessor('actions', {
+        id: 'actions',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          if (!row?.original) return null;
 
-export const HistoryTab = ({ customerData }) => {
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState([]);
-  const [totalRows, setTotalRows] = useState(CUSTOMER_JOB_HISTORY.length);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
+          return (
+            <Button
+              variant='primary'
+              size='sm'
+              className='d-flex align-items-center gap-1'
+              onClick={() => {}}
+            >
+              <Eye className='me-1' size={14} />
+              <span>View</span>
+            </Button>
+          );
+        },
+      }),
+    ];
+  }, []);
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
   return (
     <Card className='border-0 shadow-none'>
       <Card.Body className='p-4'>
-        <DataTable
-          columns={COLUMNS}
-          data={CUSTOMER_JOB_HISTORY}
-          loading={loading}
-          currentPage={currentPage}
-          perPage={perPage}
-          totalRows={totalRows}
-          onPageChange={setCurrentPage}
-          onPerPageChange={setPerPage}
-          emptyMessage='No customer equipments found'
-          loadingMessage='Loading customer equipment...'
-        />
+        <DataTable table={table}>
+          <div className='d-flex justify-content-end'>
+            <DataTableViewOptions table={table} />
+          </div>
+        </DataTable>
       </Card.Body>
     </Card>
   );

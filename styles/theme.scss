@@ -41,7 +41,9 @@
 @import 'user';
 
 // custom syncfusion css
-@import 'syncfusion-custom.css'; // /* Theme: Geeks */
+@import 'syncfusion-custom.css';
+
+@import 'bootstrap-custom'; // /* Theme: Geeks */
 
 // // Inter Fonts
 // @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");

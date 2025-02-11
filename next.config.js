@@ -110,7 +110,7 @@ const nextConfig = {
       },
       {
         source: '/jobs/view/:jobId',
-        destination: '/dashboard/jobs/:jobId', // Rewrite to /dashboard/jobs/{jobId}
+        destination: '/dashboard/jobs/view/:jobId', // Rewrite to /dashboard/jobs/{jobId}
       },
       {
         source: '/jobs/edit-jobs/:jobId',

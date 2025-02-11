@@ -156,7 +156,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   return (
     <>
       <Form>
-        <div className='mb-4'> {JSON.stringify(form.watch('workerId'), null, 2)}</div>
+        {/* <div className='mb-4'> {JSON.stringify(form.watch(), null, 2)}</div> */}
 
         <h5 className='mb-1'>Job</h5>
         <p className='text-muted'>Details about the job.</p>

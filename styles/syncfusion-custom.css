@@ -72,6 +72,16 @@
   border-left: 1px solid #dc2626 !important;
 }
 
+.e-calendar .e-content td.e-today.e-selected span.e-day {
+  background-color: #dc2626 !important;
+  border: solid 1px #dc2626 !important;
+}
+
+.e-btn.e-flat.e-primary,
+.e-css.e-btn.e-flat.e-primary {
+  color: #dc2626 !important;
+}
+
 .e-resource-cells.e-child-node {
   text-align: left !important;
   vertical-align: center !important;

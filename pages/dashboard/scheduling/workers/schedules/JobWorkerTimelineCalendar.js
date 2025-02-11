@@ -26,7 +26,7 @@ import { collection, deleteDoc, doc, limit, onSnapshot, query, where } from 'fir
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
-import { Badge, Button, Spinner } from 'react-bootstrap';
+import { Badge, Button, Image, Spinner } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import { BsCircleFill } from 'react-icons/bs';
@@ -180,7 +180,9 @@ const JobWorkerTimelineCalendar = () => {
     return () => unsubscribe();
   }, [jobs]);
 
-  const handleViewJob = (id) => {};
+  const handleViewJob = (id) => {
+    router.push(`/jobs/view/${id}`);
+  };
 
   const handleEditJob = (id) => {
     router.push(`/jobs/edit-jobs/${id}`);
@@ -357,16 +359,27 @@ const JobWorkerTimelineCalendar = () => {
     return (
       <div className='d-flex flex-column p-2 row-gap-2'>
         <div className='d-flex align-items-center gap-1'>
-          <BsCircleFill
-            className='flex-shrink-0'
-            size={7.5}
-            color={worker?.isOnline ? '#00d17a' : '#757575'}
-          />
+          <div className='position-relative'>
+            <Image
+              src={worker?.profilePicture || '/images/avatar/default-avatar.png'}
+              alt={resourceData?.text}
+              width={28}
+              height={28}
+              className='rounded-circle'
+            />
+
+            <BsCircleFill
+              className='position-absolute bottom-0 end-0 flex-shrink-0'
+              size={8}
+              color={worker?.isOnline ? '#00d17a' : '#757575'}
+            />
+          </div>
+
           <span className='fs-6 fw-semibold text-truncate'>{resourceData?.text}</span>
         </div>
         <div className='d-flex gap-2 align-content-center'>
           <Badge style={{ fontSize: '10px' }} bg='primary'>
-            {worker?.role || 'N/A'}
+            {worker?.role === 'Worker' ? 'Technician' : worker?.role || 'N/A'}
           </Badge>
 
           <Badge style={{ fontSize: '12px' }} bg='warning'>
@@ -447,8 +460,6 @@ const JobWorkerTimelineCalendar = () => {
       Job: job,
     }));
 
-    console.log({ jobsEvents });
-
     return { dataSource: jobsEvents, template: timelineEventTemnplate };
   }, [jobs]);
 
@@ -510,10 +521,10 @@ const JobWorkerTimelineCalendar = () => {
         />
       </ResourcesDirective>
       <ViewsDirective>
-        <ViewDirective option='TimelineDay' />
-        <ViewDirective option='TimelineWeek' />
-        <ViewDirective option='TimelineWorkWeek' />
-        <ViewDirective option='TimelineMonth' />
+        <ViewDirective option='TimelineDay' allowVirtualScrolling={true} />
+        <ViewDirective option='TimelineWeek' allowVirtualScrolling={true} />
+        <ViewDirective option='TimelineWorkWeek' allowVirtualScrolling={true} />
+        <ViewDirective option='TimelineMonth' allowVirtualScrolling={true} />
       </ViewsDirective>
       <Inject services={[TimelineViews, TimelineMonth]} />
     </ScheduleComponent>

@@ -75,6 +75,10 @@ const JobCalendar = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleViewJob = (id) => {
+    router.push(`/jobs/view/${id}`);
+  };
+
   const handleEditJob = (id) => {
     router.push(`/jobs/edit-jobs/${id}`);
   };
