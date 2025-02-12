@@ -296,9 +296,17 @@ const JobCalendar = () => {
                 pathname: '/jobs/create',
                 query: {
                   startDate: formattedStartDate,
-                  startTime: isMonthView ? undefined : formattedStartTime,
+                  startTime: isMonthView
+                    ? undefined
+                    : formattedStartTime === '24:00'
+                    ? '00:00'
+                    : formattedStartTime,
                   endDate: formattedEndDate,
-                  endTime: isMonthView ? undefined : formattedEndTime,
+                  endTime: isMonthView
+                    ? undefined
+                    : formattedEndTime === '24:00'
+                    ? '00:00'
+                    : formattedEndTime,
                 },
               });
             }
