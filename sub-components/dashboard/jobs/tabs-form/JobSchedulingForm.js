@@ -2,8 +2,16 @@ import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
-import { PRIORITY_LEVELS, SCOPE_TYPE } from '@/schema/job';
-import { collection, documentId, limit, onSnapshot, query, where } from 'firebase/firestore';
+import { PRIORITY_LEVELS, SCOPE_TYPE, STATUS } from '@/schema/job';
+import {
+  collection,
+  documentId,
+  getDocs,
+  limit,
+  onSnapshot,
+  query,
+  where,
+} from 'firebase/firestore';
 import _, { orderBy } from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -16,7 +24,7 @@ import { toast } from 'react-toastify';
 const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   const router = useRouter();
 
-  const { startDate, startTime, workerId } = router.query;
+  const { startDate, startTime, endDate, endTime, workerId } = router.query;
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
@@ -24,6 +32,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   const [workersOptions, setWorkersOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
   const [prioritiesOptions] = useState(PRIORITY_LEVELS.map((prority) => ({ value: prority, label: _.capitalize(prority) }))); //prettier-ignore
   const [scopesOptions] = useState(SCOPE_TYPE.map((scope) => ({ value: scope, label: _.capitalize(scope) }))); //prettier-ignore
+  const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.capitalize(status) }))); //prettier-ignore
   const [teamOptions] = useState([{ value: 'individual', label: 'Individual' }]);
 
   //* query workers
@@ -54,6 +63,8 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
             isLoading: false,
             isError: false,
           });
+        } else {
+          setWorkersOptions({ data: [], isLoading: false, isError: false });
         }
       },
       (err) => {
@@ -69,14 +80,13 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   useEffect(() => {
     if (data) return;
 
-    const q = query(collection(db, 'jobHeaders'), orderBy(documentId(), 'desc'), limit(1));
+    const q = query(collection(db, 'jobHeaders'));
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
         if (!snapshot.empty) {
-          const lastJob = { jobId: snapshot.docs[0].id, ...snapshot.docs[0].data() };
-          const lastJobId = parseInt(lastJob.jobId, 10);
+          const lastJobId = parseInt(snapshot.docs.pop().id, 10);
 
           form.setValue('jobId', (lastJobId + 1).toString().padStart(6, '0'));
         } else form.setValue('jobId', '000001');
@@ -106,7 +116,9 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   useEffect(() => {
     if (startDate) form.setValue('startDate', startDate);
     if (startTime) form.setValue('startTime', startTime);
-  }, [startDate, startTime]);
+    if (endDate) form.setValue('endDate', endDate);
+    if (endTime) form.setValue('endTime', endTime);
+  }, [startDate, startTime, endDate, endTime]);
 
   //* set workerId from router query
   useEffect(() => {
@@ -122,6 +134,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   //* set default value
   useEffect(() => {
     form.setValue('team', teamOptions[0]);
+    form.setValue('status', statusesOptions[0]);
   }, []);
 
   //* set job id if data exist
@@ -162,12 +175,12 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
         <p className='text-muted'>Details about the job.</p>
 
         <Row className='mb-3'>
-          <Form.Group as={Col} md='4'>
+          <Form.Group as={Col} md='3'>
             <Form.Label>ID</Form.Label>
             <Form.Control required type='text' value={form.watch('jobId')} readOnly disabled />
           </Form.Group>
 
-          <Form.Group as={Col} md='4'>
+          <Form.Group as={Col} md='3'>
             <RequiredLabel label='Priority' id='priority' />
             <OverlayTrigger
               placement='right'
@@ -207,7 +220,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
             />
           </Form.Group>
 
-          <Form.Group as={Col} md='4'>
+          <Form.Group as={Col} md='3'>
             <RequiredLabel label='Scope' id='scope' />
             <OverlayTrigger
               placement='right'
@@ -238,6 +251,46 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
 
                   {formErrors && formErrors.scope?.message && (
                     <Form.Text className='text-danger'>{formErrors.scope?.message}</Form.Text>
+                  )}
+                </>
+              )}
+            />
+          </Form.Group>
+
+          <Form.Group as={Col} md='3'>
+            <RequiredLabel label='Status' id='status' />
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Job Status Search'
+                    info={["Search by job's status type"]}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
+
+            <Controller
+              name='status'
+              control={form.control}
+              render={({ field }) => (
+                <>
+                  <Select
+                    {...field}
+                    styles={selectCustomStyles}
+                    inputId='status'
+                    instanceId='status'
+                    onChange={(option) => field.onChange(option)}
+                    options={statusesOptions}
+                    placeholder='Search by job status type'
+                    noOptionsMessage={() => 'No job statuses found'}
+                  />
+
+                  {formErrors && formErrors.status?.message && (
+                    <Form.Text className='text-danger'>{formErrors.status?.message}</Form.Text>
                   )}
                 </>
               )}

@@ -1,8 +1,8 @@
-import { getZodEffectShape } from '@/utils/zod';
 import { z } from 'zod';
 
 export const PRIORITY_LEVELS = ['normal', 'urgent'];
 export const SCOPE_TYPE = ['lab', 'onsite'];
+export const STATUS = ['pending', 'in progress', 'completed'];
 
 const priorityEnum = z.enum(PRIORITY_LEVELS, { message: 'Please select a job priority level.' });
 const scopeEnum = z.enum(SCOPE_TYPE, { message: 'Please select a job scope type.' });
@@ -86,6 +86,10 @@ export const tasksSchema = z.object({
 export const scheduleSchema = z
   .object({
     jobId: z.string().min(1, { message: 'Job No. is required.' }),
+    status: z.union([z.enum(STATUS), z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
     worker: z
       .record(z.string(), z.any(), {
         message: 'Please select worker',
@@ -95,7 +99,7 @@ export const scheduleSchema = z
         if (typeof formData === 'object') {
           return { id: formData.id, name: formData.name };
         }
-        return undefined;
+        return null;
       }),
     scope: z.union([scopeEnum, z.record(z.string(), z.any())]).transform((formData) => {
       if (typeof formData === 'object') return formData.value;
