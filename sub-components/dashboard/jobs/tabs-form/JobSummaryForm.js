@@ -333,10 +333,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                     customersOptions.isLoading ? 'Loading...' : 'No customers found'
                   }
                 />
-
-                {formErrors && formErrors.customer?.message && (
-                  <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
-                )}
               </>
             )}
           />

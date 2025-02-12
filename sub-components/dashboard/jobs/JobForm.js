@@ -108,16 +108,13 @@ const JobForm = ({ data }) => {
     setActiveKey(key);
   };
 
-  console.log({ auth });
-
   // console.log({ errors: form.formState.errors });
 
   return (
     <>
-      <div className='mb-4'>
-        {' '}
+      {/* <div className='mb-4'>
         {JSON.stringify(form.watch(['startDate', 'startTime', 'endDate', 'endTime']), null, 2)}
-      </div>
+      </div> */}
       {/* <div className='mb-4'> {JSON.stringify(contactsOptions, null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify(equipmentForm.watch(), null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify({ equipments }, null, 2)}</div> */}
