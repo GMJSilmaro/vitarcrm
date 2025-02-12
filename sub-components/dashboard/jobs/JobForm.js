@@ -4,15 +4,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, Tab, Tabs } from 'react-bootstrap';
 import { jobSchema, scheduleSchema, summarySchema, tasksSchema } from '@/schema/job';
 import { getFormDefaultValues } from '@/utils/zod';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import TaskForm from './tabs-form/JobTaskForm';
 import JobSchedulingForm from './tabs-form/JobSchedulingForm';
 import toast from 'react-hot-toast';
 import JobSummaryForm from './tabs-form/JobSummaryForm';
 import { useRouter } from 'next/router';
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobForm = ({ data }) => {
+  const auth = useAuth();
+
   const router = useRouter();
   const [activeKey, setActiveKey] = useState('0');
 
@@ -56,15 +59,31 @@ const JobForm = ({ data }) => {
         const { jobId, equipments, ...jobHeaders } = formData;
 
         const promises = [
-          setDoc(doc(db, 'jobHeaders', jobId), {
-            ...jobHeaders,
-            jobId,
-            contact: jobHeaders?.contact ?? null,
-          }),
-          setDoc(doc(db, 'jobDetails', jobId), {
-            jobId,
-            equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
-          }),
+          setDoc(
+            doc(db, 'jobHeaders', jobId),
+            {
+              ...jobHeaders,
+              jobId,
+              contact: jobHeaders?.contact ?? null,
+              ...(!data && { createdAt: serverTimestamp() }),
+              updatedAt: serverTimestamp(),
+              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            },
+            { merge: true }
+          ),
+          setDoc(
+            doc(db, 'jobDetails', jobId),
+            {
+              jobId,
+              equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
+              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            },
+            { merge: true }
+          ),
         ];
         await Promise.all(promises);
         router.push(`/jobs/edit-jobs/${jobId}`);
@@ -89,11 +108,16 @@ const JobForm = ({ data }) => {
     setActiveKey(key);
   };
 
+  console.log({ auth });
+
   // console.log({ errors: form.formState.errors });
 
   return (
     <>
-      <div className='mb-4'> {JSON.stringify(form.watch('contact'), null, 2)}</div>
+      <div className='mb-4'>
+        {' '}
+        {JSON.stringify(form.watch(['startDate', 'startTime', 'endDate', 'endTime']), null, 2)}
+      </div>
       {/* <div className='mb-4'> {JSON.stringify(contactsOptions, null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify(equipmentForm.watch(), null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify({ equipments }, null, 2)}</div> */}

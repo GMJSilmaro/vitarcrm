@@ -37,9 +37,7 @@ const TechnicianSchedule = () => {
 
       <Card>
         <Card.Body>
-          <div style={{ height: '84vh' }}>
-            <JobWorkerTimelineCalendar />
-          </div>
+          <JobWorkerTimelineCalendar />
         </Card.Body>
       </Card>
     </>
