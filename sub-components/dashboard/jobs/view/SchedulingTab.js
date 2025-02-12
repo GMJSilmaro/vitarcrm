@@ -1,13 +1,4 @@
-import {
-  Calendar,
-  Clock,
-  ExclamationOctagon,
-  Hash,
-  People,
-  Person,
-  PersonLinesFill,
-} from 'react-bootstrap-icons';
-
+import { Calendar, Clock, ExclamationOctagon, Hash, People, Person } from 'react-bootstrap-icons';
 const { Row, Col, Card } = require('react-bootstrap');
 
 const SchedulingTab = ({ job }) => {
@@ -26,7 +17,7 @@ const SchedulingTab = ({ job }) => {
 
           <Card.Body className='pt-4'>
             <Row className='row-gap-3'>
-              <Col md={4} className='d-flex flex-column gap-3'>
+              <Col md={3} className='d-flex flex-column gap-3'>
                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -41,7 +32,7 @@ const SchedulingTab = ({ job }) => {
                 </div>
               </Col>
 
-              <Col md={4} className='d-flex flex-column gap-3'>
+              <Col md={3} className='d-flex flex-column gap-3'>
                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -58,7 +49,7 @@ const SchedulingTab = ({ job }) => {
                 </div>
               </Col>
 
-              <Col md={4} className='d-flex flex-column gap-3'>
+              <Col md={3} className='d-flex flex-column gap-3'>
                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -69,7 +60,24 @@ const SchedulingTab = ({ job }) => {
                   <div>
                     <div className='text-secondary fs-6'>Scope:</div>
                     <div className='text-primary-label fw-semibold text-capitalize'>
-                      {job?.Scope || 'N/A'}
+                      {job?.scope || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={3} className='d-flex flex-column gap-3'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <ExclamationOctagon size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Status:</div>
+                    <div className='text-primary-label fw-semibold text-capitalize'>
+                      {job?.status || 'N/A'}
                     </div>
                   </div>
                 </div>

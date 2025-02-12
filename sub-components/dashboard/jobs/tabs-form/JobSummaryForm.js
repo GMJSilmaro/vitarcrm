@@ -67,6 +67,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
             isLoading: false,
             isError: false,
           });
+        } else {
+          setCustomersOptions({ data: [], isLoading: false, isError: false });
         }
       },
       (err) => {
@@ -87,6 +89,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
       getDoc(docRef).then((doc) => {
         if (doc.exists()) {
           form.setValue('location', { ...form.getValues('location'), ...doc.data() });
+          setLocationIsLoading(false);
+        } else {
           setLocationIsLoading(false);
         }
       });
@@ -119,6 +123,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               };
             }),
           });
+        } else {
+          setEquipmentsOptions({ data: [], isLoading: false, isError: false });
         }
       },
       (err) => {
@@ -199,6 +205,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
         form.setValue('contact', defaultContact);
         form.clearErrors('contact');
       }
+    } else {
+      form.setValue('contact', null);
     }
 
     if (lOptions.length > 0) {
@@ -208,6 +216,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
         form.setValue('location', defaultLocation);
         form.clearErrors('location');
       }
+    } else {
+      form.setValue('location', null);
     }
   };
 
