@@ -108,8 +108,6 @@ const JobForm = ({ data }) => {
     setActiveKey(key);
   };
 
-  console.log({ auth });
-
   // console.log({ errors: form.formState.errors });
 
   return (
