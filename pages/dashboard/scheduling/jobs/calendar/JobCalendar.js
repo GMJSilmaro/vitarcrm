@@ -23,7 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, deleteDoc, doc, limit, onSnapshot, query } from 'firebase/firestore';
 import _, { orderBy } from 'lodash';
 import { db } from '@/firebase';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { Badge, Button, Spinner } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import { useRouter } from 'next/router';
@@ -40,7 +40,7 @@ const JobCalendar = () => {
 
   //* query jobs
   useEffect(() => {
-    const constraints = [orderBy('jobId', 'asc')];
+    const constraints = [];
 
     if (!isProd) {
       const devQueryConstraint = [limit(2)];
@@ -64,6 +64,8 @@ const JobCalendar = () => {
             isLoading: false,
             isError: false,
           });
+        } else {
+          setJobs({ data: [], isLoading: false, isError: false });
         }
       },
       (err) => {
@@ -258,40 +260,53 @@ const JobCalendar = () => {
     args.element.style.border = 'solid 1px #3f51b5'; //* add border
   };
 
-  const handleCellDoubleClick = useCallback(
+  const handleSelected = useCallback(
     (args) => {
-      if (args.element.classList.contains('e-work-cells')) {
-        const startDate = args.startTime;
-        const formattedStartDate = format(startDate, 'yyyy-MM-dd');
-        const formattedStartTime = format(startDate, 'kk:mm');
+      if (args && args.requestType === 'cellSelect' && !args.showQuickPopup) {
+        const data = args.data;
+        const startDate = data.StartTime;
+        const endDate = data.EndTime;
 
-        const isDontHaveTime = startDate.getHours() === 0 && startDate.getMinutes() === 0;
+        if (args.element.classList.contains('e-work-cells') && calendarRef && calendarRef.current) {
+          const isMonthView = calendarRef.current.currentView === 'Month';
 
-        Swal.fire({
-          title: 'Create a Job?',
-          text: `Are you sure you want to create a new job starting on ${format(
-            startDate,
-            'MMMM d, yyyy'
-          )}${!isDontHaveTime ? ' at ' + format(startDate, 'p') : ''}?`,
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Yes, create job',
-        }).then((result) => {
-          if (result.isConfirmed) {
-            router.push({
-              pathname: '/jobs/create',
-              query: {
-                startDate: formattedStartDate,
-                startTime: isDontHaveTime ? undefined : formattedStartTime,
-              },
-            });
-          }
-        });
+          const lessOneDayEndDate = isMonthView ? subDays(endDate, 1) : endDate;
+
+          const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+          const formattedStartTime = format(startDate, 'kk:mm');
+          const formattedEndDate = format(lessOneDayEndDate, 'yyyy-MM-dd');
+          const formattedEndTime = format(lessOneDayEndDate, 'kk:mm');
+
+          const startDateToDisplay = format(startDate, 'MMMM d, yyyy');
+          const startTimeToDisplay = format(startDate, 'p');
+          const endDateToDisplay = format(lessOneDayEndDate, 'MMMM d, yyyy');
+          const endTimeToDisplay = format(lessOneDayEndDate, 'p');
+
+          Swal.fire({
+            title: 'Create a Job?',
+            text: `Are you sure you want to create a new job starting on ${startDateToDisplay}${!isMonthView ? ' at ' + startTimeToDisplay : ''} and ending on ${endDateToDisplay}${!isMonthView ? ' at ' + endTimeToDisplay : ''}?`, // prettier-ignore
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, create job',
+          }).then((result) => {
+            if (result.isConfirmed) {
+              router.push({
+                pathname: '/jobs/create',
+                query: {
+                  startDate: formattedStartDate,
+                  startTime: isMonthView ? undefined : formattedStartTime,
+                  endDate: formattedEndDate,
+                  endTime: isMonthView ? undefined : formattedEndTime,
+                },
+              });
+            }
+          });
+        }
       }
     },
-    [router]
+    [router, calendarRef]
   );
 
   const eventSettings = useMemo(() => {
@@ -324,25 +339,22 @@ const JobCalendar = () => {
       width='100%'
       height='84vh'
       currentView='Month'
+      startHour='00:00'
+      endHour='24:00'
       selectedDate={new Date()}
       eventRendered={eventRendered}
       eventSettings={eventSettings}
+      popupOpen={handlePopupOpen}
+      eventDoubleClick={handleEventDoubleClick}
+      select={handleSelected}
       quickInfoTemplates={{
         header: quickInfoHeaderTemplate,
         content: quickInfoContentTemplate,
         footer: quickInfoFooterTemplate,
       }}
-      popupOpen={handlePopupOpen}
-      eventDoubleClick={handleEventDoubleClick}
-      cellDoubleClick={handleCellDoubleClick}
       allowDragAndDrop={false}
       allowResizing={false}
-      allowKeyboardInteraction={false}
-      allowSwiping={false}
-      allowInline={false}
-      allowMultiCellSelection={false}
       allowMultiDrag={false}
-      allowMultiRowSelection={false}
     >
       <ViewsDirective>
         <ViewDirective option='Month' eventTemplate={monthWeekDayEventTemplate} />

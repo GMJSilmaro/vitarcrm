@@ -18,7 +18,7 @@ const JobSchedule = () => {
       <ContentHeader
         title='Job Calendar'
         description='View and manage all job schedules in an interactive calendar view'
-        infoText='Double-click on any date to create a new job assignment'
+        infoText='Click or click & drag on any time slot to create a new job assignment for a technician'
         badgeText='Schedule Management'
         badgeText2='Calendar View'
         breadcrumbItems={[

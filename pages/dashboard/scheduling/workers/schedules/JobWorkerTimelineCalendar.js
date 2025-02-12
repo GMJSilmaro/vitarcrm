@@ -25,7 +25,7 @@ import _, { orderBy } from 'lodash';
 import { collection, deleteDoc, doc, limit, onSnapshot, query, where } from 'firebase/firestore';
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { Badge, Button, Image, Spinner } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
@@ -46,55 +46,12 @@ const JobWorkerTimelineCalendar = () => {
     isError: false,
   });
 
-  const data = [
-    {
-      Id: 1,
-      Subject: 'Job: 000001',
-      Description: 'Job 000001 Description',
-      Location: 'A & T INGREDIENTS SDN. BHD.',
-      StartTime: new Date(2025, 1, 4, 9, 36),
-      EndTime: new Date(2025, 1, 7, 11, 36),
-    },
-    {
-      Id: 2,
-      Subject: 'Job: 000002',
-      Description: 'Job 000001 Description',
-      Location: 'Xenova Solutions Sdn. Bhd.',
-      StartTime: new Date(2025, 1, 4, 9, 36),
-      EndTime: new Date(2025, 1, 7, 11, 36),
-    },
-    {
-      Id: 3,
-      Subject: 'Job: 000003',
-      Description: 'Job 000001 Description',
-      Location: 'PrimeTech Ingredients Sdn. Bhd.',
-      StartTime: new Date(2025, 1, 4, 9, 36),
-      EndTime: new Date(2025, 1, 7, 11, 36),
-    },
-    {
-      Id: 4,
-      Subject: 'Job: 000004',
-      Description: 'Job 000001 Description',
-      Location: 'EverGrow Manufacturing Sdn. Bhd.',
-      StartTime: new Date(2025, 1, 4, 9, 36),
-      EndTime: new Date(2025, 1, 7, 11, 36),
-    },
-    {
-      Id: 5,
-      Subject: 'Job: 000005',
-      Description: 'Job 000001 Description',
-      Location: 'FusionChem Resources Sdn. Bhd.',
-      StartTime: new Date(2025, 1, 4, 9, 36),
-      EndTime: new Date(2025, 1, 7, 11, 36),
-    },
-  ];
-
   //* query jobs
   useEffect(() => {
-    const constraints = [orderBy('jobId', 'asc')];
+    const constraints = [];
 
     if (!isProd) {
-      const devQueryConstraint = [limit(2)];
+      const devQueryConstraint = [limit(10)];
       devQueryConstraint.forEach((constraint) => constraints.push(constraint));
     }
 
@@ -115,6 +72,8 @@ const JobWorkerTimelineCalendar = () => {
             isLoading: false,
             isError: false,
           });
+        } else {
+          setJobs({ data: [], isLoading: false, isError: false });
         }
       },
       (err) => {
@@ -128,8 +87,6 @@ const JobWorkerTimelineCalendar = () => {
 
   //* query workers
   useEffect(() => {
-    if (jobs.data.length === 0) return;
-
     const constraints = [orderBy('workerId', 'asc'), where('role', '==', 'Worker')];
 
     if (!isProd) {
@@ -168,6 +125,9 @@ const JobWorkerTimelineCalendar = () => {
             isLoading: false,
             isError: false,
           });
+        } else {
+          setWorkers({ data: [], isLoading: false, isError: false });
+          setResourceWorkers({ data: [], isLoading: false, isError: false });
         }
       },
       (err) => {
@@ -285,6 +245,16 @@ const JobWorkerTimelineCalendar = () => {
 
     if (elementType === 'cell') return null;
 
+    const getStatusColor = (status) => {
+      const statusMap = {
+        pending: 'warning',
+        'in progress': 'primary',
+        completed: 'success',
+      };
+
+      return statusMap[status] || 'secondary';
+    };
+
     return (
       <div className='fs-5 mt-2'>
         <p className='mb-1'>
@@ -315,6 +285,12 @@ const JobWorkerTimelineCalendar = () => {
           <span className='pe-1 fs-6'>Team:</span>
           <strong className='text-capitalize'>{job?.team}</strong>
         </p>
+        <p className='mb-1'>
+          <span className='pe-1 fs-6'>Status:</span>
+          <Badge bg={getStatusColor(job?.status)} className='text-capitalize'>
+            {job?.status}
+          </Badge>
+        </p>
       </div>
     );
   };
@@ -322,6 +298,8 @@ const JobWorkerTimelineCalendar = () => {
   const quickInfoFooterTemplate = (props) => {
     const elementType = props.elementType;
     const job = props.Job;
+
+    console.log('quick-info-footer', { props });
 
     if (elementType === 'cell') return null;
 
@@ -375,7 +353,12 @@ const JobWorkerTimelineCalendar = () => {
             />
           </div>
 
-          <span className='fs-6 fw-semibold text-truncate'>{resourceData?.text}</span>
+          <span
+            className='fs-6 fw-semibold text-truncate'
+            title={resourceData?.text ?? 'technician'}
+          >
+            {resourceData?.text}
+          </span>
         </div>
         <div className='d-flex gap-2 align-content-center'>
           <Badge style={{ fontSize: '10px' }} bg='primary'>
@@ -406,26 +389,47 @@ const JobWorkerTimelineCalendar = () => {
     args.element.style.border = 'solid 1px #3f51b5'; //* add border
   };
 
-  const handleCellDoubleClick = useCallback(
-    (args) => {
-      const groupIndex = args.groupIndex;
-      const worker = resourceWorkers.data[groupIndex];
+  const handleCreateJob = useCallback(
+    ({ args, startDate, endDate, groupIndex, worker, calendarRef }) => {
+      if (calendarRef) {
+        const isSlotAvailable = calendarRef?.current?.isSlotAvailable(startDate, endDate, groupIndex) // prettier-ignore
 
-      if (args.element.classList.contains('e-work-cells')) {
-        const startDate = args.startTime;
+        if (!isSlotAvailable) {
+          Swal.fire({
+            title: 'Slot Unavailable',
+            text: `This slot is unavailable ${
+              worker ? 'for ' + worker.text : ''
+            }. Please choose another slot.`,
+            icon: 'error',
+            showCancelButton: true,
+            showCancelButton: false,
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'OK',
+          });
+          return;
+        }
+      }
+
+      if (args.element.classList.contains('e-work-cells') && calendarRef && calendarRef.current) {
+        const isTimelineMonthView = calendarRef.current.currentView === 'TimelineMonth';
+
+        const lessOneDayEndDate = isTimelineMonthView ? subDays(endDate, 1) : endDate;
+
         const formattedStartDate = format(startDate, 'yyyy-MM-dd');
         const formattedStartTime = format(startDate, 'kk:mm');
+        const formattedEndDate = format(lessOneDayEndDate, 'yyyy-MM-dd');
+        const formattedEndTime = format(lessOneDayEndDate, 'kk:mm');
 
-        const isDontHaveTime = startDate.getHours() === 0 && startDate.getMinutes() === 0;
+        const startDateToDisplay = format(startDate, 'MMMM d, yyyy');
+        const startTimeToDisplay = format(startDate, 'p');
+        const endDateToDisplay = format(lessOneDayEndDate, 'MMMM d, yyyy');
+        const endTimeToDisplay = format(lessOneDayEndDate, 'p');
 
         Swal.fire({
           title: 'Create a Job?',
-          text: `Are you sure you want to create a new job starting on ${format(
-            startDate,
-            'MMMM d, yyyy'
-          )}${!isDontHaveTime ? ' at ' + format(startDate, 'p') : ''}${
+          text: `Are you sure you want to create a new job starting on ${startDateToDisplay}${!isTimelineMonthView ? ' at ' + startTimeToDisplay : ''} and ending on ${endDateToDisplay}${!isTimelineMonthView ? ' at ' + endTimeToDisplay : ''}${
             worker ? ' for ' + worker.text : ''
-          }?`,
+          }?`, // prettier-ignore
           icon: 'question',
           showCancelButton: true,
           confirmButtonColor: '#3085d6',
@@ -437,7 +441,9 @@ const JobWorkerTimelineCalendar = () => {
               pathname: '/jobs/create',
               query: {
                 startDate: formattedStartDate,
-                startTime: isDontHaveTime ? undefined : formattedStartTime,
+                startTime: isTimelineMonthView ? undefined : formattedStartTime,
+                endDate: formattedEndDate,
+                endTime: isTimelineMonthView ? undefined : formattedEndTime,
                 workerId: worker.workerId,
               },
             });
@@ -445,7 +451,22 @@ const JobWorkerTimelineCalendar = () => {
         });
       }
     },
-    [router, resourceWorkers]
+    [router, resourceWorkers, calendarRef]
+  );
+
+  const handleSelected = useCallback(
+    (args) => {
+      if (args && args.requestType === 'cellSelect' && !args.showQuickPopup) {
+        const data = args.data;
+        const startDate = data.StartTime;
+        const endDate = data.EndTime;
+        const groupIndex = resourceWorkers.data.map((worker) => worker.id).indexOf(data.WorkerId);
+        const worker = resourceWorkers.data[groupIndex];
+
+        handleCreateJob({ args, startDate, endDate, groupIndex, worker, calendarRef });
+      }
+    },
+    [router, resourceWorkers, calendarRef]
   );
 
   const eventSettings = useMemo(() => {
@@ -482,32 +503,27 @@ const JobWorkerTimelineCalendar = () => {
       selectedDate={new Date()}
       startHour='00:00'
       endHour='24:00'
+      timezone='Asia/Taipei'
       eventRendered={eventRendered}
       eventSettings={eventSettings}
+      popupOpen={handlePopupOpen}
+      eventDoubleClick={handleEventDoubleClick}
+      select={handleSelected}
       quickInfoTemplates={{
         header: quickInfoHeaderTemplate,
         content: quickInfoContentTemplate,
         footer: quickInfoFooterTemplate,
       }}
-      timezone='Asia/Taipei'
-      popupOpen={handlePopupOpen}
-      eventDoubleClick={handleEventDoubleClick}
-      cellDoubleClick={handleCellDoubleClick}
+      resourceHeaderTemplate={resourceHeaderTemplate}
       allowDragAndDrop={false}
       allowResizing={false}
-      allowKeyboardInteraction={false}
-      allowSwiping={false}
-      allowInline={false}
-      allowMultiCellSelection={false}
       allowMultiDrag={false}
-      allowMultiRowSelection={false}
       group={{
         byGroupID: false,
         resources: ['Workers'],
         headerHeight: 'auto', // Allows header to adjust height
         allowGroupDragAndDrop: false,
       }}
-      resourceHeaderTemplate={resourceHeaderTemplate}
     >
       <ResourcesDirective>
         <ResourceDirective
