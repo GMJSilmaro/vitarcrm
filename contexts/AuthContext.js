@@ -30,10 +30,12 @@ export function AuthProvider({ children }) {
         const email = Cookies.get('email');
         const userRole = Cookies.get('userRole');
         const workerId = Cookies.get('workerId');
+        const displayName = Cookies.get('displayName');
+        const uid = Cookies.get('uid');
         const isAdmin = Cookies.get('isAdmin') === 'true';
 
         if (session && email) {
-          setCurrentUser({ email });
+          setCurrentUser({ displayName, email, uid });
           setUserRole(userRole);
           setWorkerId(workerId);
           setIsAdmin(isAdmin);
@@ -71,7 +73,7 @@ export function AuthProvider({ children }) {
       }
 
       // Set user state based on the response
-      setCurrentUser({ email });
+      setCurrentUser({ email, displayName: data.user.displayName, uid: data.user.uid });
       setIsAdmin(data.user.isAdmin);
       setUserRole(data.user.userRole);
       setWorkerId(data.user.workerId);
@@ -79,6 +81,8 @@ export function AuthProvider({ children }) {
       // Store auth state in cookies
       Cookies.set('session', 'true', { secure: true });
       Cookies.set('email', email, { secure: true });
+      Cookies.set('displayName', data.user.displayName, { secure: true });
+      Cookies.set('uid', data.user.uid, { secure: true });
       Cookies.set('userRole', data.user.userRole, { secure: true });
       Cookies.set('workerId', data.user.workerId, { secure: true });
       Cookies.set('isAdmin', data.user.isAdmin, { secure: true });
@@ -126,6 +130,8 @@ export function AuthProvider({ children }) {
       // Clear all cookies
       Cookies.remove('session');
       Cookies.remove('email');
+      Cookies.remove('displayName');
+      Cookies.remove('uid');
       Cookies.remove('userRole');
       Cookies.remove('workerId');
       Cookies.remove('isAdmin');
