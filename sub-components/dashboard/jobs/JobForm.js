@@ -10,8 +10,10 @@ import TaskForm from './tabs-form/JobTaskForm';
 import JobSchedulingForm from './tabs-form/JobSchedulingForm';
 import toast from 'react-hot-toast';
 import JobSummaryForm from './tabs-form/JobSummaryForm';
+import { useRouter } from 'next/router';
 
 const JobForm = ({ data }) => {
+  const router = useRouter();
   const [activeKey, setActiveKey] = useState('0');
 
   const tabsLength = 2;
@@ -56,13 +58,16 @@ const JobForm = ({ data }) => {
         const promises = [
           setDoc(doc(db, 'jobHeaders', jobId), {
             ...jobHeaders,
+            jobId,
             contact: jobHeaders?.contact ?? null,
           }),
           setDoc(doc(db, 'jobDetails', jobId), {
+            jobId,
             equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
           }),
         ];
         await Promise.all(promises);
+        router.push(`/jobs/edit-jobs/${jobId}`);
         toast.success(`Job ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
         setIsLoading(false);
       } catch (error) {
@@ -88,7 +93,7 @@ const JobForm = ({ data }) => {
 
   return (
     <>
-      {/* <div className='mb-4'> {JSON.stringify(form.watch(), null, 2)}</div> */}
+      <div className='mb-4'> {JSON.stringify(form.watch('contact'), null, 2)}</div>
       {/* <div className='mb-4'> {JSON.stringify(contactsOptions, null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify(equipmentForm.watch(), null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify({ equipments }, null, 2)}</div> */}
