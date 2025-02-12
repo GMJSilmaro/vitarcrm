@@ -13,7 +13,7 @@ const TechnicianSchedule = () => {
       <ContentHeader
         title="Technician's Dispatch"
         description='Manage and monitor field service schedules and assignments in real-time'
-        infoText='Double-click on any time slot to create a new job assignment for a technician'
+        infoText='Click or click & drag on any time slot to create a new job assignment for a technician'
         badgeText='Technician Management'
         badgeText2='Scheduling'
         breadcrumbItems={[
