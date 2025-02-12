@@ -46,7 +46,7 @@ export const summarySchema = z.object({
       }
       return null;
     })
-    .optional(),
+    .nullish(),
   location: z
     .record(z.string(), z.any(), {
       message: 'Please select location',
