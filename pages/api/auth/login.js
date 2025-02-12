@@ -46,6 +46,8 @@ export default async function handler(req, res) {
     // Use the workerId from userData instead of document ID
     const workerId = userData.workerId;
     const userRole = userData.role;
+    const userFullName = userData.fullName;
+    const userUid = userData.uid;
 
     console.log('Found user with matching UID:', user.uid);
     console.log('Using userRole from userData:', userRole);
@@ -68,28 +70,15 @@ export default async function handler(req, res) {
 
     // Set cookies using the workerId from userData
     res.setHeader('Set-Cookie', [
-      `session=true; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${
-        cookieOptions.maxAge
-      }`,
-      `customToken=${customToken}; Path=/; ${
-        cookieOptions.secure ? 'Secure;' : ''
-      } HttpOnly; SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
-      `uid=${user.uid}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${
-        cookieOptions.maxAge
-      }`,
-      `email=${email}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${
-        cookieOptions.maxAge
-      }`,
-      `workerId=${workerId}; Path=/; ${
-        cookieOptions.secure ? 'Secure;' : ''
-      } SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
-      `userRole=${userRole}; Path=/; ${
-        cookieOptions.secure ? 'Secure;' : ''
-      } SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
-      `isAdmin=${userData.isAdmin === true}; Path=/; ${
-        cookieOptions.secure ? 'Secure;' : ''
-      } SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
-    ]);
+      `session=true; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${ cookieOptions.maxAge}`,
+      `customToken=${customToken}; Path=/; ${cookieOptions.secure ? 'Secure;' : '' } HttpOnly; SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+      `uid=${userUid}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge }`,
+      `email=${email}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+      `displayName=${userFullName}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+      `workerId=${workerId}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+      `userRole=${userRole}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+      `isAdmin=${userData.isAdmin === true}; Path=/; ${ cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+    ]); // prettier-ignore
 
     return res.status(200).json({
       success: true,
@@ -98,7 +87,8 @@ export default async function handler(req, res) {
         email,
         workerId,
         userRole,
-        uid: user.uid,
+        displayName: userFullName,
+        uid: userUid,
         isAdmin: userData.isAdmin === true,
       },
     });
@@ -110,6 +100,7 @@ export default async function handler(req, res) {
       'customToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'uid=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+      'displayName=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'workerId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'userRole=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'isAdmin=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',

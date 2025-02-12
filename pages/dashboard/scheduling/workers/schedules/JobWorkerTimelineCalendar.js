@@ -335,7 +335,7 @@ const JobWorkerTimelineCalendar = () => {
     const hasJob = worker?.jobs?.length > 0;
 
     return (
-      <div className='d-flex flex-column p-2 row-gap-2'>
+      <div className='d-flex flex-column ps-2 row-gap-2'>
         <div className='d-flex align-items-center gap-1'>
           <div className='position-relative'>
             <Image
@@ -441,9 +441,17 @@ const JobWorkerTimelineCalendar = () => {
               pathname: '/jobs/create',
               query: {
                 startDate: formattedStartDate,
-                startTime: isTimelineMonthView ? undefined : formattedStartTime,
+                startTime: isTimelineMonthView
+                  ? undefined
+                  : formattedStartTime === '24:00'
+                  ? '00:00'
+                  : formattedStartTime,
                 endDate: formattedEndDate,
-                endTime: isTimelineMonthView ? undefined : formattedEndTime,
+                endTime: isTimelineMonthView
+                  ? undefined
+                  : formattedEndTime === '24:00'
+                  ? '00:00'
+                  : formattedEndTime,
                 workerId: worker.workerId,
               },
             });
