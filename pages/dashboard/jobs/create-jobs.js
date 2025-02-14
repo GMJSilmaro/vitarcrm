@@ -1,11 +1,14 @@
 'use client';
 
-import { Col, Container, Card } from 'react-bootstrap';
+import { Container, Card } from 'react-bootstrap';
 import { GeeksSEO } from 'widgets';
 import ContentHeader from 'components/dashboard/ContentHeader';
 import JobForm from '@/sub-components/dashboard/jobs/JobForm';
+import { useRouter } from 'next/router';
 
 const CreateJobs = () => {
+  const router = useRouter();
+
   return (
     <Container>
       <GeeksSEO title='Create Job | SAS&ME - SAP B1 | Portal' />
@@ -25,15 +28,11 @@ const CreateJobs = () => {
           {
             text: 'Jobs',
             link: '/jobs',
-            icon: (
-              <i className='fe fe-briefcase' style={{ marginRight: '8px' }} />
-            ),
+            icon: <i className='fe fe-briefcase' style={{ marginRight: '8px' }} />,
           },
           {
             text: 'Create Job',
-            icon: (
-              <i className='fe fe-plus-circle' style={{ marginRight: '8px' }} />
-            ),
+            icon: <i className='fe fe-plus-circle' style={{ marginRight: '8px' }} />,
           },
         ]}
         actionButtons={[

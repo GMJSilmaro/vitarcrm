@@ -41,7 +41,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     const constraints = [orderBy('customerId', 'asc')];
 
     if (!isProd) {
-      const devQueryConstraint = [where('customerId', '==', 'C003769'), limit(10)];
+      const devQueryConstraint = [limit(100)];
       devQueryConstraint.forEach((constraint) => constraints.push(constraint));
     }
 
@@ -243,33 +243,46 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
       //* selected customer
       const customer = customersOptions.data.find((option) => option.value === data.customer.id);
 
-      //* contact options
-      const cOptions = customer.contacts.map((contact) => ({
-        value: contact.id,
-        label: `${contact.firstName} ${contact.lastName}`,
-        ...contact,
-      }));
+      console.log('ZZzzzz', customer);
 
-      //* location options
-      const lOptions = customer.locations.map((location) => ({
-        value: location.siteId,
-        label: `${location.siteId} - ${location.siteName}`,
-        ...location,
-      }));
+      //* set customer
+      if (customer) form.setValue('customer', customer);
 
-      //* selected contact
-      const contact = cOptions.find((contact) => contact.value === data.contact.id);
-      //* selected location
-      const location = lOptions.find((location) => location.value === data.location.id);
+      if (customer?.contacts && Array.isArray(customer?.contacts)) {
+        //* contact options
+        const cOptions = customer.contacts.map((contact) => ({
+          value: contact.id,
+          label: `${contact.firstName} ${contact.lastName}`,
+          ...contact,
+        }));
 
-      //* set options
-      setContactsOpions(cOptions);
-      setLocationsOptions(lOptions);
+        //* selected contact
+        const contact = cOptions.find((contact) => contact.value === data.contact.id);
 
-      //* set form values
-      form.setValue('customer', customer);
-      form.setValue('contact', contact);
-      form.setValue('location', location);
+        //* set options
+        setContactsOpions(cOptions);
+
+        //* set contact
+        form.setValue('contact', contact);
+      }
+
+      if (customer?.locations && Array.isArray(customer?.locations)) {
+        //* location options
+        const lOptions = customer.locations.map((location) => ({
+          value: location.siteId,
+          label: `${location.siteId} - ${location.siteName}`,
+          ...location,
+        }));
+
+        //* selected location
+        const location = lOptions.find((location) => location.value === data.location.id);
+
+        //* set options
+        setLocationsOptions(lOptions);
+
+        //* set location
+        form.setValue('location', location);
+      }
     }
   }, [data, customersOptions]);
 

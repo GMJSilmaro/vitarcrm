@@ -21,9 +21,9 @@ import {
 } from '@syncfusion/ej2-react-schedule';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, deleteDoc, doc, limit, onSnapshot, query } from 'firebase/firestore';
-import _, { orderBy } from 'lodash';
+import _ from 'lodash';
 import { db } from '@/firebase';
-import { format, subDays } from 'date-fns';
+import { format, isBefore, subDays } from 'date-fns';
 import { Badge, Button, Spinner } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import { useRouter } from 'next/router';
@@ -43,7 +43,7 @@ const JobCalendar = () => {
     const constraints = [];
 
     if (!isProd) {
-      const devQueryConstraint = [limit(2)];
+      const devQueryConstraint = [limit(10)];
       devQueryConstraint.forEach((constraint) => constraints.push(constraint));
     }
 
@@ -118,12 +118,8 @@ const JobCalendar = () => {
 
   const monthWeekDayEventTemplate = (props) => {
     return (
-      <div className='fs-6 w-100 text-center d-flex justify-content-between'>
-        <span className='d-none d-md-inline-block'>{format(props.StartTime, 'p')}</span>
-        <span className='d-inline-block text-text-truncate' style={{ width: '85%' }}>
-          {props.Subject} - {props.Location}
-        </span>
-        <spann className='d-none d-md-inline-block'>{format(props.EndTime, 'p')}</spann>
+      <div className='fs-5 h-100 w-100 d-flex justify-content-center align-items-center'>
+        <span className='d-inline-block text-text-truncate'>#{props.Subject}</span>
       </div>
     );
   };
@@ -179,6 +175,18 @@ const JobCalendar = () => {
 
     if (elementType === 'cell') return null;
 
+    const getStatusColor = (status) => {
+      const statusMap = {
+        confirmed: 'info',
+        completed: 'success',
+        created: 'warning',
+        'in progress': 'primary',
+        cancelled: 'danger',
+      };
+
+      return statusMap[status] || 'secondary';
+    };
+
     return (
       <div className='fs-5 mt-2'>
         <p className='mb-1'>
@@ -208,6 +216,26 @@ const JobCalendar = () => {
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Team:</span>
           <strong className='text-capitalize'>{job?.team}</strong>
+        </p>
+        <p className='mb-1'>
+          <span className='pe-1 fs-6'>Status:</span>
+          <Badge bg={getStatusColor(job?.status)} className='text-capitalize'>
+            {job?.status}
+          </Badge>
+        </p>
+        <p className='mb-1'>
+          <span className='pe-1 fs-6'>Created:</span>
+          <strong className='text-capitalize'>
+            {format(job?.createdAt.toDate(), 'yyyy-MM-dd')}{' '}
+          </strong>
+          by <strong>{job?.createdBy?.displayName || 'N/A'}</strong>
+        </p>
+        <p className='mb-1'>
+          <span className='pe-1 fs-6'>Updated:</span>
+          <strong className='text-capitalize'>
+            {format(job?.updatedAt.toDate(), 'yyyy-MM-dd')}{' '}
+          </strong>
+          by <strong>{job?.updatedBy?.displayName || 'N/A'}</strong>
         </p>
       </div>
     );
@@ -250,7 +278,9 @@ const JobCalendar = () => {
   };
 
   const handlePopupOpen = (args) => {
-    if (args?.data && _.isEmpty(args?.data.Job)) {
+    const type = args.type;
+
+    if (args?.data && _.isEmpty(args?.data.Job) && type !== 'EventContainer') {
       args.cancel = true; //* prevent popup when selecting cell
       args.element.style.border = 'none'; //* remove border
       return;
@@ -262,10 +292,24 @@ const JobCalendar = () => {
 
   const handleSelected = useCallback(
     (args) => {
-      if (args && args.requestType === 'cellSelect' && !args.showQuickPopup) {
+      if (args && args.requestType === 'cellSelect' && args.data && !args.showQuickPopup) {
         const data = args.data;
         const startDate = data.StartTime;
         const endDate = data.EndTime;
+
+        //* not allowed to create jobs in the past
+        if (isBefore(startDate, new Date()) || isBefore(endDate, new Date())) {
+          Swal.fire({
+            title: 'Job Creation Not Allowed',
+            text: `You are not allowed to create a job in the past. Please select a date in the present or the future.`,
+            icon: 'error',
+            showCancelButton: true,
+            showCancelButton: false,
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'OK',
+          });
+          return;
+        }
 
         if (args.element.classList.contains('e-work-cells') && calendarRef && calendarRef.current) {
           const isMonthView = calendarRef.current.currentView === 'Month';

@@ -1,17 +1,20 @@
-import { Button, Card } from 'react-bootstrap';
-import { Eye } from 'react-bootstrap-icons';
+import { Button, Card, Dropdown, OverlayTrigger } from 'react-bootstrap';
+import { CardList, Eye, PencilSquare, ThreeDotsVertical, Trash } from 'react-bootstrap-icons';
 
 import DataTable from '../../../../components/common/DataTable';
 import DataTableViewOptions from '../../../../components/common/DataTableViewOptions';
 import {
   createColumnHelper,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
 import { useMemo } from 'react';
+import { fuzzyFilter } from '@/utils/datatable';
+import DataTableSearch from '@/components/common/DataTableSearch';
 
 const data = [
   {
@@ -256,14 +259,14 @@ const EquipmentsTab = () => {
       columnHelper.accessor('type', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Type' />,
       }),
-      columnHelper.accessor('rangeMin', {
-        size: 50,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Min)' />,
-      }),
-      columnHelper.accessor('rangeMax', {
-        size: 50,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Max)' />,
-      }),
+      // columnHelper.accessor('rangeMin', {
+      //   size: 50,
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Min)' />,
+      // }),
+      // columnHelper.accessor('rangeMax', {
+      //   size: 50,
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Max)' />,
+      // }),
       columnHelper.accessor('certificateNo', {
         size: 50,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Certificate No.' />,
@@ -280,15 +283,23 @@ const EquipmentsTab = () => {
           if (!row?.original) return null;
 
           return (
-            <Button
-              variant='primary'
-              size='sm'
-              className='d-flex align-items-center gap-1'
-              onClick={() => {}}
+            <OverlayTrigger
+              rootClose
+              trigger='click'
+              placement='left-start'
+              overlay={
+                <Dropdown.Menu show style={{ zIndex: 999 }}>
+                  <Dropdown.Item onClick={() => handleViewJob(id)}>
+                    <Eye className='me-2' size={16} />
+                    View Equipment
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              }
             >
-              <Eye className='me-1' size={14} />
-              <span>View</span>
-            </Button>
+              <Button variant='light' className='p-2' size='sm'>
+                <ThreeDotsVertical size={16} />
+              </Button>
+            </OverlayTrigger>
           );
         },
       }),
@@ -301,13 +312,17 @@ const EquipmentsTab = () => {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    filterFns: { fuzzy: fuzzyFilter },
+    globalFilterFn: 'fuzzy',
   });
 
   return (
     <Card className='border-0 shadow-none'>
       <Card.Body className='p-4'>
         <DataTable table={table}>
-          <div className='d-flex justify-content-end'>
+          <div className='d-flex justify-content-between'>
+            <DataTableSearch table={table} />
             <DataTableViewOptions table={table} />
           </div>
         </DataTable>

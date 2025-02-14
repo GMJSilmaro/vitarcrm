@@ -25,7 +25,7 @@ import _, { orderBy } from 'lodash';
 import { collection, deleteDoc, doc, limit, onSnapshot, query, where } from 'firebase/firestore';
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
-import { format, subDays } from 'date-fns';
+import { format, isBefore, subDays } from 'date-fns';
 import { Badge, Button, Image, Spinner } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
@@ -181,15 +181,8 @@ const JobWorkerTimelineCalendar = () => {
 
   const timelineEventTemnplate = (props) => {
     return (
-      <div className='fs-6 w-100 d-flex flex-column'>
-        <span className='d-inline-block text-text-truncate' style={{ width: '85%' }}>
-          {props.Subject} - {props.Location}
-        </span>
-        <div className='d-flex mt-n1'>
-          <span className='d-none d-md-inline-block'>{format(props.StartTime, 'p')}</span>
-          <span className='px-2'>-</span>
-          <spann className='d-none d-md-inline-block'>{format(props.EndTime, 'p')}</spann>
-        </div>
+      <div className='fs-5 h-100 w-100 d-flex justify-content-center align-items-center'>
+        <span className='d-inline-block text-text-truncate'>#{props.Subject}</span>
       </div>
     );
   };
@@ -247,9 +240,11 @@ const JobWorkerTimelineCalendar = () => {
 
     const getStatusColor = (status) => {
       const statusMap = {
-        pending: 'warning',
-        'in progress': 'primary',
+        confirmed: 'info',
         completed: 'success',
+        created: 'warning',
+        'in progress': 'primary',
+        cancelled: 'danger',
       };
 
       return statusMap[status] || 'secondary';
@@ -291,6 +286,20 @@ const JobWorkerTimelineCalendar = () => {
             {job?.status}
           </Badge>
         </p>
+        <p className='mb-1'>
+          <span className='pe-1 fs-6'>Created:</span>
+          <strong className='text-capitalize'>
+            {format(job?.createdAt.toDate(), 'yyyy-MM-dd')}{' '}
+          </strong>
+          by <strong>{job?.createdBy?.displayName || 'N/A'}</strong>
+        </p>
+        <p className='mb-1'>
+          <span className='pe-1 fs-6'>Updated:</span>
+          <strong className='text-capitalize'>
+            {format(job?.updatedAt.toDate(), 'yyyy-MM-dd')}{' '}
+          </strong>
+          by <strong>{job?.updatedBy?.displayName || 'N/A'}</strong>
+        </p>
       </div>
     );
   };
@@ -298,8 +307,6 @@ const JobWorkerTimelineCalendar = () => {
   const quickInfoFooterTemplate = (props) => {
     const elementType = props.elementType;
     const job = props.Job;
-
-    console.log('quick-info-footer', { props });
 
     if (elementType === 'cell') return null;
 
@@ -379,7 +386,9 @@ const JobWorkerTimelineCalendar = () => {
   };
 
   const handlePopupOpen = (args) => {
-    if (args?.data && _.isEmpty(args?.data.Job)) {
+    const type = args.type;
+
+    if (args?.data && _.isEmpty(args?.data.Job) && type !== 'EventContainer') {
       args.cancel = true; //* prevent popup when selecting cell
       args.element.style.border = 'none'; //* remove border
       return;
@@ -394,7 +403,11 @@ const JobWorkerTimelineCalendar = () => {
       if (calendarRef) {
         const isSlotAvailable = calendarRef?.current?.isSlotAvailable(startDate, endDate, groupIndex) // prettier-ignore
 
-        if (!isSlotAvailable) {
+        if (
+          !isSlotAvailable &&
+          calendarRef &&
+          calendarRef.current.currentView !== 'TimelineMonth'
+        ) {
           Swal.fire({
             title: 'Slot Unavailable',
             text: `This slot is unavailable ${
@@ -464,12 +477,26 @@ const JobWorkerTimelineCalendar = () => {
 
   const handleSelected = useCallback(
     (args) => {
-      if (args && args.requestType === 'cellSelect' && !args.showQuickPopup) {
+      if (args && args.requestType === 'cellSelect' && args.data && !args.showQuickPopup) {
         const data = args.data;
         const startDate = data.StartTime;
         const endDate = data.EndTime;
         const groupIndex = resourceWorkers.data.map((worker) => worker.id).indexOf(data.WorkerId);
         const worker = resourceWorkers.data[groupIndex];
+
+        //* not allowed to create jobs in the past
+        if (isBefore(startDate, new Date()) || isBefore(endDate, new Date())) {
+          Swal.fire({
+            title: 'Job Creation Not Allowed',
+            text: `You are not allowed to create a job in the past. Please select a date in the present or the future.`,
+            icon: 'error',
+            showCancelButton: true,
+            showCancelButton: false,
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'OK',
+          });
+          return;
+        }
 
         handleCreateJob({ args, startDate, endDate, groupIndex, worker, calendarRef });
       }

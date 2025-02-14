@@ -26,6 +26,25 @@
   padding: 0px !important;
 }
 
+.e-more-popup-wrapper {
+  width: 400px !important;
+  display: flex;
+}
+
+.e-more-appointment-wrapper .e-appointment {
+  display: block !important;
+  width: 100 !important;
+}
+
+.e-more-popup-wrapper .e-more-event-content {
+  min-height: 200px !important;
+  max-height: 400px !important;
+}
+
+.e-more-popup-wrapper .e-more-event-date-header .e-current-date {
+  color: #dc2626 !important;
+}
+
 .e-schedule .e-schedule-toolbar .e-active-view .e-tbar-btn-text,
 .e-schedule .e-schedule-toolbar .e-active-view .e-icons {
   color: #3f51b5 !important;

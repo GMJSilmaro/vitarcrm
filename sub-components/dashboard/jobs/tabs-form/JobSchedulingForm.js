@@ -3,6 +3,7 @@ import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
 import { PRIORITY_LEVELS, SCOPE_TYPE, STATUS } from '@/schema/job';
+import { format } from 'date-fns';
 import {
   collection,
   documentId,
@@ -346,15 +347,15 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
 
         <Row className='mb-3'>
           <Form.Group as={Col} md='4'>
-            <RequiredLabel label='Assigned Worker' id='worker' />
+            <RequiredLabel label='Assigned Technician' id='worker' />
             <OverlayTrigger
               placement='right'
               overlay={
                 <Tooltip>
                   <TooltipContent
-                    title='Worker Search'
+                    title='Technician Search'
                     info={[
-                      "Search by worker's id or name",
+                      "Search by technician's id or name",
                       'Required to proceed with job creation',
                     ]}
                   />
@@ -379,12 +380,12 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
                     options={workersOptions.data}
                     placeholder={
                       workersOptions.isLoading
-                        ? 'Loading workers...'
-                        : "Search by worker's id or name"
+                        ? 'Loading technician...'
+                        : "Search by technician's id or name"
                     }
                     isDisabled={workersOptions.isLoading}
                     noOptionsMessage={() =>
-                      workersOptions.isLoading ? 'Loading...' : 'No workers found'
+                      workersOptions.isLoading ? 'Loading...' : 'No technician found'
                     }
                   />
 
@@ -435,7 +436,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
               control={form.control}
               render={({ field }) => (
                 <>
-                  <Form.Control {...field} type='date' />
+                  <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
 
                   {formErrors && formErrors.startDate?.message && (
                     <Form.Text className='text-danger'>{formErrors.startDate?.message}</Form.Text>
@@ -471,7 +472,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
               control={form.control}
               render={({ field }) => (
                 <>
-                  <Form.Control {...field} type='date' />
+                  <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
 
                   {formErrors && formErrors.endDate?.message && (
                     <Form.Text className='text-danger'>{formErrors.endDate?.message}</Form.Text>

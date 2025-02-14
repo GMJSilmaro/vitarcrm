@@ -9,6 +9,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { orderBy } from 'lodash';
 import { useRouter } from 'next/router';
@@ -16,12 +17,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import {
   Building,
+  Clock,
   Envelope,
   ExclamationCircleFill,
   Eye,
   Geo,
   Map,
   Person,
+  PersonFill,
   PersonVcard,
   Phone,
   Signpost,
@@ -358,7 +361,7 @@ const SummaryTab = ({ job }) => {
                 <div className='d-flex justify-content-between align-items-center'>
                   <div>
                     <h5 className='mb-0'>Location Details</h5>
-                    <small className='text-muted'>Basic location details</small>
+                    <small className='text-muted'>Basic location details.</small>
                   </div>
                 </div>
               </Card.Header>
@@ -538,6 +541,86 @@ const SummaryTab = ({ job }) => {
               </Card.Body>
             </>
           )}
+
+          <Card.Header className='bg-transparent border-0 pb-0'>
+            <div className='d-flex justify-content-between align-items-center'>
+              <div>
+                <h5 className='mb-0'>Record Details</h5>
+                <small className='text-muted'>
+                  Details about who created or updated the record and when it was modified.
+                </small>
+              </div>
+            </div>
+          </Card.Header>
+
+          <Card.Body>
+            <Row className='row-gap-3'>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Clock size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Date:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {job?.createdAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <PersonFill size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Created By:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {job?.createdBy?.displayName || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Clock size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Last Updated:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {job?.updatedAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <PersonFill size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Updated By:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {job?.updatedBy?.displayName || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Card.Body>
 
           {location.isError && renderError()}
 
