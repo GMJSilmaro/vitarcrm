@@ -1,3 +1,4 @@
+import { GeeksSEO } from '@/widgets';
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -7,30 +8,34 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
+import { Badge, Button, Card, Dropdown, OverlayTrigger, Popover, Spinner } from 'react-bootstrap';
 import {
+  BriefcaseFill,
   CardList,
   Eye,
+  HouseDoorFill,
   PencilSquare,
   PersonFill,
   PersonLinesFill,
   ThreeDotsVertical,
   Trash,
 } from 'react-bootstrap-icons';
-import DataTableViewOptions from '../../../../components/common/DataTableViewOptions';
-import DataTable from '../../../../components/common/DataTable';
-import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
-import { useRouter } from 'next/router';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import ContentHeader from '@/components/dashboard/ContentHeader';
+import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
+import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { fuzzyFilter } from '@/utils/datatable';
-import DataTableSearch from '@/components/common/DataTableSearch';
-
+import DataTableViewOptions from '@/components/common/DataTableViewOptions';
+import DataTable from '@/components/common/DataTable';
 import { format, formatDistanceStrict } from 'date-fns';
+import { useRouter } from 'next/router';
+import Swal from 'sweetalert2';
+import { FaPlus } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import DataTableSearch from '@/components/common/DataTableSearch';
+import { fuzzyFilter } from '@/utils/datatable';
 
-export const HistoryTab = () => {
+const JobList = () => {
   const router = useRouter();
-  const { id } = router.query;
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
 
@@ -48,13 +53,13 @@ export const HistoryTab = () => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
       }),
-      columnHelper.accessor((row) => format(row.createdAt.toDate(), 'dd-MM-yyyy'), {
+      columnHelper.accessor((row) => format(row.createdAt.toDate(), 'yyyy-MM-dd'), {
         id: 'Date',
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Date' />,
         cell: ({ row }) => {
           const createdAt = row.original.createdAt.toDate();
-          return <div>{format(createdAt, 'dd-MM-yyyy')}</div>;
+          return <div>{format(createdAt, 'yyyy-MM-dd')}</div>;
         },
       }),
       columnHelper.accessor('scope', {
@@ -156,13 +161,13 @@ export const HistoryTab = () => {
           },
         }
       ),
-      columnHelper.accessor((row) => format(row.updatedAt.toDate(), 'dd-MM-yyyy'), {
+      columnHelper.accessor((row) => format(row.updatedAt.toDate(), 'yyyy-MM-dd'), {
         id: 'last updated',
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Last Updated' />,
         cell: ({ row }) => {
           const updatedAt = row.original.updatedAt.toDate();
-          return <div>{`${format(updatedAt, 'dd-MM-yyyy')} at ${format(updatedAt, 'p')}`}</div>;
+          return <div>{`${format(updatedAt, 'yyyy-MM-dd')} at ${format(updatedAt, 'p')}`}</div>;
         },
       }),
       columnHelper.accessor((row) => row.createdBy?.displayName || 'N/A', {
@@ -282,9 +287,7 @@ export const HistoryTab = () => {
   });
 
   useEffect(() => {
-    if (!id) return;
-
-    const q = query(collection(db, 'jobHeaders'), where('customer.id', '==', id));
+    const q = query(collection(db, 'jobHeaders'));
 
     const unsubscribe = onSnapshot(
       q,
@@ -309,20 +312,52 @@ export const HistoryTab = () => {
     );
 
     return () => unsubscribe();
-  }, [id]);
+  }, []);
 
   return (
-    <Card className='border-0 shadow-none'>
-      <Card.Body className='p-4'>
-        <DataTable table={table} isLoading={jobs.isLoading} isError={jobs.isError}>
-          <div className='d-flex justify-content-between'>
-            <DataTableSearch table={table} />
-            <DataTableViewOptions table={table} />
-          </div>
-        </DataTable>
-      </Card.Body>
-    </Card>
+    <>
+      <GeeksSEO title='Jobs- VITAR Group | Portal' />
+
+      <ContentHeader
+        title='Job List'
+        description='Create, manage and tract all your jobs assignments in once centralize dashboard'
+        infoText='Manage job assignment and track progress updates'
+        badgeText='Job Management'
+        badgeText2='Scheduling'
+        breadcrumbItems={[
+          {
+            text: 'Dashboard',
+            link: '/',
+            icon: <HouseDoorFill className='me-2' style={{ fontSize: '14px' }} />,
+          },
+          {
+            text: 'Job List',
+            link: '/jobs',
+            icon: <BriefcaseFill className='me-2' size={14} />,
+          },
+        ]}
+        actionButtons={[
+          {
+            text: 'Create Job',
+            icon: <FaPlus size={16} />,
+            variant: 'light',
+            onClick: () => router.push('/jobs/create'),
+          },
+        ]}
+      />
+
+      <Card className='border-0 shadow-none'>
+        <Card.Body className='p-4'>
+          <DataTable table={table} isLoading={jobs.isLoading} isError={jobs.isError}>
+            <div className='d-flex justify-content-between'>
+              <DataTableSearch table={table} />
+              <DataTableViewOptions table={table} />
+            </div>
+          </DataTable>
+        </Card.Body>
+      </Card>
+    </>
   );
 };
 
-export default HistoryTab;
+export default JobList;

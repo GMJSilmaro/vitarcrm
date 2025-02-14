@@ -106,7 +106,7 @@ const nextConfig = {
       // JOBS
       {
         source: '/jobs',
-        destination: '/dashboard/jobs/list-jobs',
+        destination: '/dashboard/jobs/list',
       },
       {
         source: '/jobs/view/:jobId',
