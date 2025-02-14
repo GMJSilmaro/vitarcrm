@@ -25,7 +25,7 @@ import _, { orderBy } from 'lodash';
 import { collection, deleteDoc, doc, limit, onSnapshot, query, where } from 'firebase/firestore';
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
-import { format, isBefore, subDays } from 'date-fns';
+import { format, isBefore, startOfDay, subDays } from 'date-fns';
 import { Badge, Button, Image, Spinner } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
@@ -477,15 +477,27 @@ const JobWorkerTimelineCalendar = () => {
 
   const handleSelected = useCallback(
     (args) => {
-      if (args && args.requestType === 'cellSelect' && args.data && !args.showQuickPopup) {
+      if (
+        args &&
+        args.requestType === 'cellSelect' &&
+        args.data &&
+        !args.showQuickPopup &&
+        calendarRef &&
+        calendarRef.current
+      ) {
         const data = args.data;
         const startDate = data.StartTime;
         const endDate = data.EndTime;
         const groupIndex = resourceWorkers.data.map((worker) => worker.id).indexOf(data.WorkerId);
         const worker = resourceWorkers.data[groupIndex];
+        const isTimelineMonthView = calendarRef.current.currentView === 'TimelineMonth';
+
+        //* dates to compare without time, start of day 00:00:00
+        const sd = startOfDay(startDate);
+        const ed = startOfDay(isTimelineMonthView ? subDays(endDate, 1) : endDate);
 
         //* not allowed to create jobs in the past
-        if (isBefore(startDate, new Date()) || isBefore(endDate, new Date())) {
+        if (isBefore(sd, startOfDay(new Date())) || isBefore(ed, startOfDay(new Date()))) {
           Swal.fire({
             title: 'Job Creation Not Allowed',
             text: `You are not allowed to create a job in the past. Please select a date in the present or the future.`,
