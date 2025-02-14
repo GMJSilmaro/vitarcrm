@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
 import {
   ChevronDoubleLeft,
   ChevronDoubleRight,
@@ -14,18 +14,37 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
 
   return (
     <div className='d-flex justify-content-between align-items-center column-gap-3'>
-      <Select
-        value={selectedPageSize}
-        onChange={(option) => {
-          table.setPageSize(option.value);
-          setSelectedPageSize(option);
-        }}
-        options={paginationSizeOptions}
-        noOptionsMessage={() => 'No page size options found'}
-      />
       <div className='d-flex align-items-center column-gap-3'>
+        <Select
+          value={selectedPageSize}
+          onChange={(option) => {
+            table.setPageSize(option.value);
+            setSelectedPageSize(option);
+          }}
+          options={paginationSizeOptions}
+          noOptionsMessage={() => 'No page size options found'}
+        />
         <div className='text-muted fw-medium'>
           Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+        </div>
+      </div>
+
+      <div className='d-flex align-items-center column-gap-3'>
+        <div className='d-flex align-items-center column-gap-2'>
+          <span>Go to page:</span>
+
+          <Form.Control
+            size='sm'
+            type='number'
+            min={1}
+            max={table.getPageCount()}
+            defautValue={table.getState().pagination.pageIndex + 1}
+            onChange={(e) => {
+              const page = e.target.value ? Number(e.target.value) - 1 : 0;
+              table.setPageIndex(page);
+            }}
+            style={{ width: '60px', height: '40px' }}
+          />
         </div>
         <div className='d-flex align-items-center column-gap-2'>
           <Button
@@ -34,7 +53,7 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
           >
-            <ChevronDoubleLeft size={18} />
+            <ChevronDoubleLeft size={17} />
           </Button>
           <Button
             className='p-2'
@@ -42,7 +61,7 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={17} />
           </Button>
           <Button
             className='p-2'
@@ -50,7 +69,7 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={17} />
           </Button>
           <Button
             className='p-2'
@@ -58,7 +77,7 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
           >
-            <ChevronDoubleRight size={18} />
+            <ChevronDoubleRight size={17} />
           </Button>
         </div>
       </div>
