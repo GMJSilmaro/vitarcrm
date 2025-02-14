@@ -27,10 +27,12 @@ const JobEquipmentList = ({ data, handleRemoveEquipment, height }) => {
 
       {data &&
         data.length > 0 &&
-        data.map((equipment) => (
+        data.map((equipment, i) => (
           <div
             key={equipment.inventoryId}
-            className='d-flex p-3 justify-content-between align-items-center border-bottom border-primary'
+            className={`d-flex p-3 justify-content-between align-items-center border-primary ${
+              i === data.length - 1 ? '' : 'border-bottom'
+            }`}
           >
             <div className='d-flex align-items-center gap-3'>
               <div>
