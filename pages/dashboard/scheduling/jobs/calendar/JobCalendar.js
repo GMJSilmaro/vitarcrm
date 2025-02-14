@@ -23,7 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, deleteDoc, doc, limit, onSnapshot, query } from 'firebase/firestore';
 import _ from 'lodash';
 import { db } from '@/firebase';
-import { format, isBefore, subDays } from 'date-fns';
+import { format, isBefore, startOfDay, subDays } from 'date-fns';
 import { Badge, Button, Spinner } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import { useRouter } from 'next/router';
@@ -292,13 +292,25 @@ const JobCalendar = () => {
 
   const handleSelected = useCallback(
     (args) => {
-      if (args && args.requestType === 'cellSelect' && args.data && !args.showQuickPopup) {
+      if (
+        args &&
+        args.requestType === 'cellSelect' &&
+        args.data &&
+        !args.showQuickPopup &&
+        calendarRef &&
+        calendarRef.current
+      ) {
         const data = args.data;
         const startDate = data.StartTime;
         const endDate = data.EndTime;
+        const isMonthView = calendarRef.current.currentView === 'Month';
+
+        //* dates to compare without time, start of day 00:00:00
+        const sd = startOfDay(startDate);
+        const ed = startOfDay(isMonthView ? subDays(endDate, 1) : endDate);
 
         //* not allowed to create jobs in the past
-        if (isBefore(startDate, new Date()) || isBefore(endDate, new Date())) {
+        if (isBefore(sd, startOfDay(new Date())) || isBefore(ed, startOfDay(new Date()))) {
           Swal.fire({
             title: 'Job Creation Not Allowed',
             text: `You are not allowed to create a job in the past. Please select a date in the present or the future.`,
@@ -311,9 +323,7 @@ const JobCalendar = () => {
           return;
         }
 
-        if (args.element.classList.contains('e-work-cells') && calendarRef && calendarRef.current) {
-          const isMonthView = calendarRef.current.currentView === 'Month';
-
+        if (args.element.classList.contains('e-work-cells')) {
           const lessOneDayEndDate = isMonthView ? subDays(endDate, 1) : endDate;
 
           const formattedStartDate = format(startDate, 'yyyy-MM-dd');
