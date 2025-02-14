@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Row,
   Col,
@@ -29,17 +29,28 @@ import {
   XCircle,
   ExclamationCircle,
   PencilFill,
+  Trash,
 } from 'react-bootstrap-icons';
 import { useRouter } from 'next/router';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { GeeksSEO } from 'widgets';
 import { customerDataFetchers } from '@/utils/customers/dataFetchers';
 import { db } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  limit,
+  query,
+  collection,
+  onSnapshot,
+} from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { getCookie } from 'cookies-next';
 import { Toaster } from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { isProd } from '@/constants/environment';
+import Select from 'react-select';
 
 const CustomAlertModal = ({
   show,
@@ -97,6 +108,9 @@ const CustomerForm = ({ data }) => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('basic');
 
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [locationOptions, setLocationOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
+
   // Add this state to track the latest customer ID
   const [latestCustomerId, setLatestCustomerId] = useState('C000000');
 
@@ -111,6 +125,44 @@ const CustomerForm = ({ data }) => {
     const nextNumber = numericPart + 1;
     return `C${String(nextNumber).padStart(6, '0')}`;
   };
+
+  useEffect(() => {
+    const constraints = [];
+
+    if (!isProd) {
+      const devQueryConstraint = [limit(100)];
+      devQueryConstraint.forEach((constraint) => constraints.push(constraint));
+    }
+
+    const q = query(collection(db, 'locations'), ...constraints);
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setLocationOptions({
+            data: snapshot.docs.map((doc) => {
+              const data = doc.data();
+
+              return {
+                value: doc.id,
+                label: `${data.siteName} - ${data.siteId}`,
+                ...data,
+              };
+            }),
+          });
+        } else {
+          setLocationOptions({ data: [], isLoading: false, isError: false });
+        }
+      },
+      (err) => {
+        console.error(err.message);
+        setLocationOptions({ data: [], isLoading: false, isError: true });
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchLatestCustomerId = async () => {
@@ -130,8 +182,9 @@ const CustomerForm = ({ data }) => {
       }
     };
 
+    console.log({ data });
+
     if (data) {
-      console.log('aaaaa');
       setFormData({
         ...data,
         ...(data?.customerContact && Array.isArray(data.customerContact)
@@ -148,6 +201,7 @@ const CustomerForm = ({ data }) => {
                 },
               ],
             }),
+        locations: data?.locations && Array.isArray(data.locations) ? data.locations : [],
       });
 
       console.log('customerContact', data?.customerContact && Array.isArray(data.customerContact));
@@ -174,6 +228,8 @@ const CustomerForm = ({ data }) => {
         isDefault: true, // First contact is default
       },
     ],
+
+    locations: [],
 
     contract: {
       status: 'N',
@@ -275,7 +331,7 @@ const CustomerForm = ({ data }) => {
 
   // Update the Next button click handler
   const handleNextClick = () => {
-    const tabs = ['basic', 'contact', 'contract'];
+    const tabs = ['basic', 'contact', 'contract', 'location'];
     const currentIndex = tabs.indexOf(activeTab);
 
     // Update progress for current tab before moving to next
@@ -348,6 +404,12 @@ const CustomerForm = ({ data }) => {
           email: contact.email.trim(),
           isDefault: contact.isDefault,
           role: contact.role.trim(),
+        })),
+        locations: formData.locations.map((location) => ({
+          isDefault: location.isDefault,
+          siteId: location.siteId,
+          siteName: location.siteName,
+          mainAddress: location.mainAddress,
         })),
         contract: formData.contract,
         createdAt: serverTimestamp(),
@@ -508,6 +570,43 @@ const CustomerForm = ({ data }) => {
     return Math.round((filledFields / totalFields) * 100);
   };
 
+  const handleAddLocation = useCallback(() => {
+    if (!selectedLocation) return;
+
+    const isExist = formData.locations.find(
+      (location) => location.siteId === selectedLocation.value
+    );
+
+    if (isExist) {
+      toast.error('Location already selected');
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      locations: [
+        ...prev.locations,
+        {
+          isDefault: prev.locations.length === 0 ? true : false,
+          mainAddress: selectedLocation?.additionalInformation?.locationCoordinates?.mainAddress || 'N/A', // prettier-ignore
+          siteId: selectedLocation.value,
+          siteName: selectedLocation?.siteName || 'N/A',
+        },
+      ],
+    }));
+    setSelectedLocation(null);
+  }, [selectedLocation]);
+
+  const handleRemoveLocation = useCallback(
+    (id) => {
+      setFormData((prev) => ({
+        ...prev,
+        locations: prev.locations.filter((location) => location.siteId !== id),
+      }));
+    },
+    [selectedLocation]
+  );
+
   return (
     <>
       <GeeksSEO title='Create Customer | VITAR Group' />
@@ -526,7 +625,7 @@ const CustomerForm = ({ data }) => {
           {
             icon: <People className='me-2' size={14} />,
             text: 'Customers',
-            link: '/dashboard/customers',
+            link: '/customers',
           },
           {
             icon: <PencilFill className='me-2' size={14} />,
@@ -577,9 +676,18 @@ const CustomerForm = ({ data }) => {
                             <span>Contract Information</span>
                           </Nav.Link>
                         </Nav.Item>
+                        <Nav.Item>
+                          <Nav.Link
+                            eventKey='location'
+                            className='d-flex align-items-center gap-2 mb-2'
+                          >
+                            <Building size={18} />
+                            <span>Location List</span>
+                          </Nav.Link>
+                        </Nav.Item>
                       </Nav>
 
-                      <div className='mt-4 p-3 bg-light rounded'>
+                      {/* <div className='mt-4 p-3 bg-light rounded'>
                         <h6 className='mb-2'>Form Progress</h6>
                         <div style={progressBarStyles}>
                           <div
@@ -592,7 +700,7 @@ const CustomerForm = ({ data }) => {
                         <small className='text-muted mt-2 d-block'>
                           {calculateOverallProgress()}% Complete
                         </small>
-                      </div>
+                      </div> */}
                     </div>
                   </Col>
 
@@ -871,6 +979,69 @@ const CustomerForm = ({ data }) => {
                           </Card.Body>
                         </Card>
                       </Tab.Pane>
+
+                      <Tab.Pane eventKey='location'>
+                        <Card className='border-0 shadow-sm mb-4'>
+                          <Card.Body className='p-4'>
+                            <div className='d-flex column-gap-3 w-100 align-items-center'>
+                              <Select
+                                className='w-100'
+                                inputId='location'
+                                instanceId='location'
+                                value={selectedLocation}
+                                onChange={(option) => {
+                                  setSelectedLocation(option);
+                                }}
+                                options={locationOptions.data}
+                                placeholder="Search by location's id or name"
+                                isDisabled={locationOptions.isLoading}
+                                noOptionsMessage={() => 'No locations found'}
+                              />
+
+                              <Button size='sm' onClick={() => handleAddLocation()}>
+                                Add
+                              </Button>
+                            </div>
+
+                            <div
+                              className='mt-5 d-flex flex-column rounded border border-primary px-2'
+                              style={{ minHeight: '300px', maxHeight: '460px', overflow: 'auto' }}
+                            >
+                              {formData?.locations &&
+                                formData?.locations.map((location, i) => (
+                                  <div
+                                    key={location.siteId}
+                                    className={`d-flex p-3 justify-content-between align-items-center border-primary ${
+                                      i === formData.locations.length - 1 ? '' : 'border-bottom'
+                                    }`}
+                                  >
+                                    <div className='d-flex align-items-center gap-3'>
+                                      <div className='d-flex flex-column'>
+                                        <p className='mb-0'>
+                                          <strong className='pe-1'>ID:</strong>
+                                          <span className='text-muted'>{location?.siteId}</span>
+                                        </p>
+                                        <p className='mb-0'>
+                                          <strong className='pe-1'>NAME:</strong>
+                                          <span className='text-muted'>{location?.siteName}</span>
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <Button
+                                      className='p-2'
+                                      variant='danger'
+                                      size='sm'
+                                      onClick={() => handleRemoveLocation(location.siteId)}
+                                    >
+                                      <Trash size={18} />
+                                    </Button>
+                                  </div>
+                                ))}
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      </Tab.Pane>
                     </Tab.Content>
                   </Col>
                 </Row>
@@ -893,7 +1064,7 @@ const CustomerForm = ({ data }) => {
                     <Button
                       variant='outline-primary'
                       onClick={() => {
-                        const tabs = ['basic', 'contact', 'contract'];
+                        const tabs = ['basic', 'contact', 'contract', 'location'];
                         const currentIndex = tabs.indexOf(activeTab);
                         setActiveTab(tabs[currentIndex - 1]);
                       }}
@@ -904,7 +1075,7 @@ const CustomerForm = ({ data }) => {
                     </Button>
                   )}
 
-                  {activeTab !== 'contract' ? (
+                  {activeTab !== 'location' ? (
                     <Button
                       variant='primary'
                       onClick={handleNextClick}
@@ -947,20 +1118,6 @@ const CustomerForm = ({ data }) => {
           </Card>
         </Col>
       </Row>
-
-      <Toaster
-        position='top-right'
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#ffffff',
-            color: '#1f2937',
-            padding: '16px',
-            borderRadius: '4px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          },
-        }}
-      />
 
       <CustomAlertModal
         show={showAlert}

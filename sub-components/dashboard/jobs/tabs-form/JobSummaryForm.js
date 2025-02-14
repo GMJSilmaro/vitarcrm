@@ -11,6 +11,7 @@ import { collection, doc, getDoc, limit, onSnapshot, query, where } from 'fireba
 import { orderBy } from 'lodash';
 import Select from 'react-select';
 import { isProd } from '@/constants/environment';
+import toast from 'react-hot-toast';
 
 const JobSummaryForm = ({ data, isLoading, handleNext }) => {
   const form = useFormContext();
@@ -225,6 +226,18 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     equipmentForm.trigger('equipment');
     const data = equipmentForm.getValues('equipment');
     if (!data) return;
+
+    const currentEquipments = form.getValues('equipments');
+
+    const isExist = currentEquipments.find(
+      (equipment) => equipment.inventoryId === data.inventoryId
+    );
+
+    if (isExist) {
+      toast.error('Equipment already selected');
+      return;
+    }
+
     form.setValue('equipments', [...equipments, data]);
     form.clearErrors('equipments');
     equipmentForm.setValue('equipment', null);
