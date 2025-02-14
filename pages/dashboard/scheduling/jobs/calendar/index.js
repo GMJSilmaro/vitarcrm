@@ -38,8 +38,6 @@ const JobSchedule = () => {
             text: 'Create New Job',
             icon: <FaPlus size={16} />,
             variant: 'light',
-            href: '/jobs/create',
-            tooltip: 'Create a new job schedule',
             onClick: () => router.push('/jobs/create'),
           },
         ]}

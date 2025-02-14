@@ -2,10 +2,13 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { GeeksSEO } from '@/widgets';
 import { Card } from 'react-bootstrap';
 import { CalendarWeekFill, PersonLinesFill } from 'react-bootstrap-icons';
-import { FaHome } from 'react-icons/fa';
+import { FaHome, FaPlus } from 'react-icons/fa';
 import JobWorkerTimelineCalendar from './JobWorkerTimelineCalendar';
+import { useRouter } from 'next/router';
 
 const TechnicianSchedule = () => {
+  const router = useRouter();
+
   return (
     <>
       <GeeksSEO title='Technician Schedules - VITAR Group | Portal' />
@@ -31,6 +34,14 @@ const TechnicianSchedule = () => {
             text: 'Schedule',
             link: '/schedule',
             icon: <CalendarWeekFill className='me-2' style={{ fontSize: '14px' }} />,
+          },
+        ]}
+        actionButtons={[
+          {
+            text: 'Create Job',
+            icon: <FaPlus size={16} />,
+            variant: 'light',
+            onClick: () => router.push('/jobs/create'),
           },
         ]}
       />

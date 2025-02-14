@@ -92,12 +92,12 @@ const NavbarDefault = [
         link: '/jobs/calendar',
         icon: 'CalendarWeekFill',
       },
-      // {
-      // 	id: uuid(),
-      // 	menuitem: 'Jobs',
-      // 	link: '#',
-      // 	icon: 'BriefcaseFill'
-      // },
+      {
+        id: uuid(),
+        menuitem: 'Jobs',
+        link: '/jobs',
+        icon: 'BriefcaseFill',
+      },
       {
         id: uuid(),
         menuitem: 'Equipments',
