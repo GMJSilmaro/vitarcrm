@@ -27,7 +27,7 @@ const DataTableColumnHeader = ({ column, title, className }) => {
               Asc
             </Dropdown.Item>
             <Dropdown.Item onClick={() => column.toggleSorting(true)}>
-              <ArrowDownShort className='me-2' size={17} />
+              <ArrowUpShort className='me-2' size={17} />
               Desc
             </Dropdown.Item>
             {column.getCanSort() && column.getCanHide() && <Dropdown.Divider />}
