@@ -23,10 +23,11 @@ import DataTableColumnHeader from '../../../../components/common/DataTableColumn
 import { useRouter } from 'next/router';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { fuzzyFilter } from '@/utils/datatable';
+import { dateFilter, dateSort, fuzzyFilter } from '@/utils/datatable';
 import DataTableSearch from '@/components/common/DataTableSearch';
 
 import { format, formatDistanceStrict } from 'date-fns';
+import DataTableFilter from '@/components/common/DataTableFilter';
 
 export const HistoryTab = () => {
   const router = useRouter();
@@ -49,12 +50,22 @@ export const HistoryTab = () => {
         size: 100,
       }),
       columnHelper.accessor((row) => format(row.createdAt.toDate(), 'dd-MM-yyyy'), {
-        id: 'Date',
+        id: 'date',
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Date' />,
         cell: ({ row }) => {
           const createdAt = row.original.createdAt.toDate();
           return <div>{format(createdAt, 'dd-MM-yyyy')}</div>;
+        },
+        filterFn: (row, columnId, filterValue, addMeta) => {
+          const createdAt = row.original.createdAt.toDate();
+          const filterDateValue = new Date(filterValue);
+          return dateFilter(createdAt, filterDateValue);
+        },
+        sortingFn: (rowA, rowB, columnId) => {
+          const rowACreatedAt = rowA.original.createdAt.toDate();
+          const rowBCreatedAt = rowB.original.createdAt.toDate();
+          return dateSort(rowACreatedAt, rowBCreatedAt);
         },
       }),
       columnHelper.accessor('scope', {
@@ -75,7 +86,7 @@ export const HistoryTab = () => {
       }),
       columnHelper.accessor('priority', {
         size: 100,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Scope' />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Priority' />,
         cell: ({ row }) => {
           const colors = {
             normal: 'secondary',
@@ -92,9 +103,7 @@ export const HistoryTab = () => {
       columnHelper.accessor((row) => `${row.customer.name}`, {
         id: 'customer',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Customer' />,
-        cell: ({ row }) => {
-          return <div>{row.original.customer.name}</div>;
-        },
+        cell: ({ row }) => <span>{row.original.customer.name}</span>,
       }),
       columnHelper.accessor((row) => `${row.location.name}`, {
         id: 'location',
@@ -162,11 +171,21 @@ export const HistoryTab = () => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Last Updated' />,
         cell: ({ row }) => {
           const updatedAt = row.original.updatedAt.toDate();
-          return <div>{`${format(updatedAt, 'dd-MM-yyyy')} at ${format(updatedAt, 'p')}`}</div>;
+          return <div>{format(updatedAt, 'dd-MM-yyyy, p')}</div>;
+        },
+        filterFn: (row, columnId, filterValue, addMeta) => {
+          const updatedAt = row.original.updatedAt.toDate();
+          const filterDateValue = new Date(filterValue);
+          return dateFilter(updatedAt, filterDateValue);
+        },
+        sortingFn: (rowA, rowB, columnId) => {
+          const rowAUpdatedAt = rowA.original.updatedAt.toDate();
+          const rowBUpdatedAt = rowB.original.updatedAt.toDate();
+          return dateSort(rowAUpdatedAt, rowBUpdatedAt);
         },
       }),
       columnHelper.accessor((row) => row.createdBy?.displayName || 'N/A', {
-        id: 'created By',
+        id: 'created by',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Created By' />,
         cell: ({ row }) => {
           const displayName = row.original.createdBy?.displayName || 'N/A';
@@ -270,6 +289,98 @@ export const HistoryTab = () => {
     ];
   }, []);
 
+  const filterFields = useMemo(() => {
+    return [
+      {
+        label: 'Job ID',
+        columnId: 'id',
+        type: 'text',
+        placeholder: 'Search by job id...',
+      },
+      {
+        label: 'Customer',
+        columnId: 'customer',
+        type: 'text',
+        placeholder: 'Search by customer...',
+      },
+      {
+        label: 'Location',
+        columnId: 'location',
+        type: 'text',
+        placeholder: 'Search by location...',
+      },
+      {
+        label: 'Description',
+        columnId: 'description',
+        type: 'text',
+        placeholder: 'Search by description...',
+      },
+      {
+        label: 'Technician',
+        columnId: 'worker',
+        type: 'text',
+        placeholder: 'Search by technician...',
+      },
+      {
+        label: 'Duration',
+        columnId: 'duration',
+        type: 'text',
+        placeholder: 'Search by duration...',
+      },
+      {
+        label: 'Scope',
+        columnId: 'scope',
+        type: 'select',
+        options: [
+          { label: 'All Scope', value: '' },
+          { label: 'Lab', value: 'lab' },
+          { label: 'Onsite', value: 'onsite' },
+        ],
+        placeholder: 'Search by Scope...',
+      },
+      {
+        label: 'Priority',
+        columnId: 'priority',
+        type: 'select',
+        options: [
+          { label: 'All Priority', value: '' },
+          { label: 'Normal', value: 'normal' },
+          { label: 'Urgent', value: 'urgent' },
+        ],
+        placeholder: 'Search by Priority...',
+      },
+      {
+        label: 'Status',
+        columnId: 'status',
+        type: 'select',
+        options: [
+          { label: 'All Status', value: '' },
+          { label: 'Created', value: 'created' },
+          { label: 'Confirmed', value: 'confirmed' },
+          { label: 'In Progress', value: 'in progress' },
+          { label: 'Completed', value: 'completed' },
+          { label: 'Cancelled', value: 'cancelled' },
+        ],
+      },
+      {
+        label: 'Created By',
+        columnId: 'created by',
+        type: 'text',
+        placeholder: 'Search by created by...',
+      },
+      {
+        label: 'Date',
+        columnId: 'date',
+        type: 'date',
+      },
+      {
+        label: 'Last Updated',
+        columnId: 'last updated',
+        type: 'date',
+      },
+    ];
+  }, []);
+
   const table = useReactTable({
     data: jobs.data,
     columns,
@@ -317,7 +428,11 @@ export const HistoryTab = () => {
         <DataTable table={table} isLoading={jobs.isLoading} isError={jobs.isError}>
           <div className='d-flex justify-content-between'>
             <DataTableSearch table={table} />
-            <DataTableViewOptions table={table} />
+
+            <div className='d-flex align-items-center gap-2'>
+              <DataTableFilter table={table} filterFields={filterFields} />
+              <DataTableViewOptions table={table} />
+            </div>
           </div>
         </DataTable>
       </Card.Body>

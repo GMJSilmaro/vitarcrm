@@ -12,6 +12,11 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
   const paginationSizeOptions = pageSize.map((size) => ({ value: size, label: size }));
   const [selectedPageSize, setSelectedPageSize] = useState(paginationSizeOptions[0]);
 
+  const rowModel = table.getRowModel();
+  const page = table.getState().pagination.pageIndex + 1;
+  const pageCount = table.getPageCount() || 0;
+  const totalRows = rowModel?.rows.length || 0;
+
   return (
     <div className='d-flex justify-content-between align-items-center column-gap-3'>
       <div className='d-flex align-items-center column-gap-3'>
@@ -23,9 +28,22 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
           }}
           options={paginationSizeOptions}
           noOptionsMessage={() => 'No page size options found'}
+          theme={(theme) => ({
+            ...theme,
+            colors: {
+              ...theme.colors,
+              primary: '#1e40a6',
+              primary75: '#4b66b8',
+              primary50: '#8fa0d3',
+              primary25: '#d2d9ed',
+            },
+          })}
         />
         <div className='text-muted fw-medium'>
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          <span className='pe-1'>
+            Page {page} of {pageCount}
+          </span>
+          <span>of {totalRows} entries</span>
         </div>
       </div>
 

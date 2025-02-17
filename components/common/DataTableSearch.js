@@ -19,7 +19,7 @@ const DataTableSearch = ({ table }) => {
 
   return (
     <Form.Control
-      className='fs-6 py-2 px-3'
+      className='fs-5 py-2 px-3'
       size='sm'
       type='text'
       placeholder='Search...'
