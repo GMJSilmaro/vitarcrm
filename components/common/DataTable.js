@@ -36,7 +36,7 @@ const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }
           </tfoot>
         )}
         <tbody>
-          {table.getRowModel()?.rows?.length === 0 && (
+          {table.getRowModel()?.rows?.length === 0 && !isLoading && (
             <tr>
               <td colSpan={table.getAllColumns().length}>
                 <div
