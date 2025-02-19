@@ -50,10 +50,10 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
   useEffect(() => {
     const constraints = [];
 
-    if (!isProd) {
-      const devQueryConstraint = [limit(20), where('customerId', '==', 'C003769')];
-      devQueryConstraint.forEach((constraint) => constraints.push(constraint));
-    }
+    // if (!isProd) {
+    //   const devQueryConstraint = [limit(20), where('customerId', '==', 'C003769')];
+    //   devQueryConstraint.forEach((constraint) => constraints.push(constraint));
+    // }
 
     Promise.all([
       getDocs(query(collection(db, 'customers'), ...constraints)),
@@ -525,9 +525,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                 required
                 type='text'
                 value={
-                  locationIsLoading
-                    ? 'Loading...'
-                    : form.watch('location.additionalInformation.locationCoordinates.latitude')
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.latitude')
                 }
                 readOnly
                 disabled
@@ -539,9 +537,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                 required
                 type='text'
                 value={
-                  locationIsLoading
-                    ? 'Loading...'
-                    : form.watch('location.additionalInformation.locationCoordinates.longitude')
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.longitude')
                 }
                 readOnly
                 disabled
@@ -555,7 +551,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.streetAddress1')}
+                value={
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street1')
+                }
                 readOnly
                 disabled
               />
@@ -565,7 +563,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.streetAddress2')}
+                value={
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street2')
+                }
                 readOnly
                 disabled
               />
@@ -575,7 +575,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.streetAddress3')}
+                value={
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street3')
+                }
                 readOnly
                 disabled
               />
@@ -588,7 +590,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.city')}
+                value={locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.city')}
                 readOnly
                 disabled
               />
@@ -598,7 +600,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.postalCode')}
+                value={
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.postalCode')
+                }
                 readOnly
                 disabled
               />
@@ -608,7 +612,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.province')}
+                value={
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.province')
+                }
                 readOnly
                 disabled
               />
@@ -621,7 +627,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.country')}
+                value={
+                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.country')
+                }
                 readOnly
                 disabled
               />

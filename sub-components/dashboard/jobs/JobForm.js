@@ -259,6 +259,7 @@ const JobForm = ({ data }) => {
       {/* <div className='mb-4'> {JSON.stringify(equipmentForm.watch(), null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify({ equipments }, null, 2)}</div> */}
       {/* <div className='mb-4'> {JSON.stringify({ activeKey }, null, 2)}</div> */}
+      {/* <div>{JSON.stringify(form.watch('location'))}</div> */}
 
       <FormProvider {...form}>
         <Form>
