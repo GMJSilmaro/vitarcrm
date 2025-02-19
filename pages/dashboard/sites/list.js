@@ -195,6 +195,8 @@ const SiteList = () => {
           };
 
           const handleDeleteSite = (id) => {
+            //TODO: add cascade delete when location delete in customer, it also delete the location element in customer
+
             Swal.fire({
               title: 'Are you sure?',
               text: 'This action cannot be undone.',
