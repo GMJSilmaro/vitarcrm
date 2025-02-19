@@ -276,7 +276,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
         }));
 
         //* selected contact
-        const contact = cOptions.find((contact) => contact.value === data.contact.id);
+        const contact = cOptions.find((contact) => contact.value === data?.contact?.id);
 
         //* set options
         setContactsOpions(cOptions);
