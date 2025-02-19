@@ -1,6 +1,6 @@
 import { db } from '@/firebase';
 import CustomerForm from '@/sub-components/dashboard/customer/CustomerForm';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -14,17 +14,35 @@ const EditCustomer = () => {
 
   useEffect(() => {
     const fetchCustomer = async () => {
-      const docRef = doc(db, 'customers', customerId);
-      const customerDoc = await getDoc(docRef);
+      const customerDocRef = doc(db, 'customers', customerId);
+      const contactsDocRef =  query(collection(db, 'contacts'), where('customerId', '==', customerId)); // prettier-ignore
+
+      const [customerDoc, contactsDocs] = await Promise.all([
+        getDoc(customerDocRef),
+        getDocs(contactsDocRef),
+      ]);
+
       const data = customerDoc.data();
+
       if (customerDoc.exists()) {
+        const contacts = contactsDocs.empty
+          ? []
+          : contactsDocs.docs.map((doc) => ({
+              id: doc.id,
+              firstName: doc.data().firstName,
+              lastName: doc.data().lastName,
+              phone: doc.data().phone,
+              email: doc.data().email,
+              isDefault: doc.data().isDefault,
+            }));
+
         setCustomer({
           customerId: data.customerId,
           customerName: data.customerName || '',
           tinNumber: data.tinNumber || '',
           brnNumber: data.brnNumber || '',
           status: data.status || 'active',
-          customerContact: data.customerContact || [],
+          contacts: contacts,
           contract: data.contract || { status: 'N', startDate: '', endDate: '' },
           locations: data?.locations || [],
         });

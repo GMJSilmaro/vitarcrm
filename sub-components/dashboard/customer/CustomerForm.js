@@ -12,6 +12,7 @@ import {
   Tooltip,
   Spinner,
   Modal,
+  Badge,
 } from 'react-bootstrap';
 import {
   House,
@@ -44,6 +45,9 @@ import {
   query,
   collection,
   onSnapshot,
+  deleteDoc,
+  runTransaction,
+  getDocs,
 } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import { getCookie } from 'cookies-next';
@@ -51,6 +55,8 @@ import { Toaster } from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
 import { isProd } from '@/constants/environment';
 import Select from 'react-select';
+import { useAuth } from '@/contexts/AuthContext';
+import Swal from 'sweetalert2';
 
 const CustomAlertModal = ({
   show,
@@ -103,6 +109,8 @@ const CustomAlertModal = ({
 };
 
 const CustomerForm = ({ data }) => {
+  const auth = useAuth();
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -111,8 +119,11 @@ const CustomerForm = ({ data }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [locationOptions, setLocationOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
 
+  const [toDeleteContact, setToDeleteContact] = useState([]);
+
   // Add this state to track the latest customer ID
   const [latestCustomerId, setLatestCustomerId] = useState('C000000');
+  const [latestContactId, setLatestContactId] = useState('CP000000');
 
   // Get user info from cookies
   const userEmail = getCookie('userEmail');
@@ -124,6 +135,12 @@ const CustomerForm = ({ data }) => {
     const numericPart = parseInt(currentId.substring(1));
     const nextNumber = numericPart + 1;
     return `C${String(nextNumber).padStart(6, '0')}`;
+  };
+
+  const generateNextContactId = (currentId) => {
+    const numericPart = parseInt(currentId.substring(2));
+    const nextNumber = numericPart + 1;
+    return `CP${String(nextNumber).padStart(5, '0')}`;
   };
 
   useEffect(() => {
@@ -146,7 +163,7 @@ const CustomerForm = ({ data }) => {
 
               return {
                 value: doc.id,
-                label: `${data.siteName} - ${data.siteId}`,
+                label: `${data.siteId} - ${data.siteName}`,
                 ...data,
               };
             }),
@@ -158,6 +175,27 @@ const CustomerForm = ({ data }) => {
       (err) => {
         console.error(err.message);
         setLocationOptions({ data: [], isLoading: false, isError: true });
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  //* query latest contactId
+  useEffect(() => {
+    const q = query(collection(db, 'contacts'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const lastDocId = snapshot.docs.pop().id;
+          setLatestContactId(lastDocId);
+        }
+      },
+      (err) => {
+        console.error(err.message);
+        toast.error(err.message);
       }
     );
 
@@ -184,27 +222,15 @@ const CustomerForm = ({ data }) => {
 
     console.log({ data });
 
+    // TODO get from contacts not from contactss
     if (data) {
       setFormData({
         ...data,
-        ...(data?.customerContact && Array.isArray(data.customerContact)
-          ? { customerContact: data.customerContact }
-          : {
-              customerContact: [
-                {
-                  firstName: '',
-                  lastName: '',
-                  phone: '',
-                  email: '',
-                  role: '',
-                  isDefault: true, // First contact is default
-                },
-              ],
-            }),
+        ...(data?.contacts && Array.isArray(data.contacts)
+          ? { contacts: data.contacts }
+          : { contacts: [] }),
         locations: data?.locations && Array.isArray(data.locations) ? data.locations : [],
       });
-
-      console.log('customerContact', data?.customerContact && Array.isArray(data.customerContact));
     } else fetchLatestCustomerId();
   }, [data]);
 
@@ -217,15 +243,15 @@ const CustomerForm = ({ data }) => {
     status: 'active',
 
     // Change single contact to contacts array
-    customerContact: [
+    contacts: [
       {
-        id: uuidv4(),
+        id: '',
         firstName: '',
         lastName: '',
         phone: '',
         email: '',
-        role: '',
-        isDefault: true, // First contact is default
+        isDefault: true,
+        additionalInformation: {},
       },
     ],
 
@@ -396,15 +422,6 @@ const CustomerForm = ({ data }) => {
         status: formData.status,
         tinNumber: formData.tinNumber?.trim() || '',
         brnNumber: formData.brnNumber?.trim() || '',
-        customerContact: formData.customerContact.map((contact) => ({
-          id: contact.id,
-          firstName: contact.firstName.trim(),
-          lastName: contact.lastName.trim(),
-          phone: contact.phone.trim(),
-          email: contact.email.trim(),
-          isDefault: contact.isDefault,
-          role: contact.role.trim(),
-        })),
         locations: formData.locations.map((location) => ({
           isDefault: location.isDefault,
           siteId: location.siteId,
@@ -416,10 +433,90 @@ const CustomerForm = ({ data }) => {
         updatedAt: serverTimestamp(),
       };
 
-      console.log({ formData, customerData }); //
+      let currentId = latestContactId;
+      const contacts = [];
 
-      await setDoc(doc(db, 'customers', formData.customerId), customerData);
-      await customerDataFetchers.refreshCustomersCache();
+      const contactsPromises = formData.contacts.map((contact) => {
+        if (!contact.id) {
+          contact.id = generateNextContactId(currentId);
+          currentId = contact.id;
+        }
+
+        contacts.push(contact.id);
+
+        const { id, ...contactData } = contact;
+
+        return setDoc(
+          doc(db, 'contacts', contact.id),
+          {
+            ...contactData,
+            customerId: formData.customerId,
+            customerName: formData.customerName,
+            status: 'active',
+            ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser,
+          },
+          { merge: true }
+        );
+      });
+
+      let deleteContactPromises = [];
+
+      if (toDeleteContact.length > 0) {
+        const customerRef = doc(db, 'customers', formData.customerId);
+
+        deleteContactPromises = runTransaction(db, async (transaction) => {
+          //* in transaction read operation comes first
+          //* throw err inside transaction makes make transaction fail and does not write to db
+
+          //* delete contact from locations
+          const q = query(collection(db, 'locations'));
+
+          try {
+            getDocs(q)
+              .then(async (snapshot) => {
+                if (!snapshot.empty) {
+                  snapshot.docs.forEach((doc) => {
+                    const locationContacts = doc.data().contacts;
+                    const filteredContacts = locationContacts?.filter((contactId) => !toDeleteContact.includes(contactId)); // prettier-ignore
+
+                    if (
+                      locationContacts &&
+                      locationContacts.length > 0 &&
+                      filteredContacts.length > 0
+                    ) {
+                      transaction.update(doc.ref, { contacts: filteredContacts });
+                    }
+                  });
+                }
+              })
+              .catch((err) => {
+                throw err;
+              });
+
+            //* delete contact
+            toDeleteContact.forEach((contactId) => {
+              const contactRef = doc(db, 'contacts', contactId);
+              transaction.delete(contactRef);
+            });
+
+            //* update customer
+            transaction.update(customerRef, { contacts: formData.contacts });
+          } catch (err) {
+            throw err;
+          }
+        });
+      }
+
+      console.log({ formData, customerData, contacts }); //
+
+      await Promise.all([
+        ...contactsPromises,
+        setDoc(doc(db, 'customers', formData.customerId), { ...customerData, contacts }),
+        customerDataFetchers.refreshCustomersCache(),
+        deleteContactPromises,
+      ]);
 
       // Simple success toast
       toast.success(`Customer ${data ? 'updated' : 'created'} successfully!`);
@@ -504,35 +601,59 @@ const CustomerForm = ({ data }) => {
   };
 
   // Add these functions for contact management
-  const handleAddContact = () => {
+  const handleAddContact = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
-      customerContact: [
-        ...prev.customerContact,
+      contacts: [
+        ...prev.contacts,
         {
-          id: uuidv4(),
+          id: '',
           firstName: '',
           lastName: '',
           phone: '',
           email: '',
           isDefault: false,
-          role: '',
+          additionalInformation: {},
         },
       ],
     }));
-  };
+  }, [latestContactId]);
 
-  const handleRemoveContact = (index) => {
+  const handleRemmovedContact = (index, id) => {
+    if (id) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'This is a saved contact. Deleting it will permanently remove it from the customer. This action cannot be undone, and all data associated with this contact will be unlinked/removed',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#1e40a6',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, remove',
+        cancelButtonText: 'Cancel',
+      }).then((data) => {
+        if (data.isConfirmed) {
+          setToDeleteContact((prev) => [...prev, id]);
+
+          setFormData((prev) => ({
+            ...prev,
+            contacts: prev.contacts.filter((_, i) => i !== index),
+          }));
+        }
+      });
+
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      customerContact: prev.customerContact.filter((_, i) => i !== index),
+      contacts: prev.contacts.filter((_, i) => i !== index),
     }));
   };
 
   const handleContactChange = (index, field, value) => {
     setFormData((prev) => ({
       ...prev,
-      customerContact: prev.customerContact.map((contact, i) => {
+      contacts: prev.contacts.map((contact, i) => {
         if (i === index) {
           return {
             ...contact,
@@ -553,13 +674,13 @@ const CustomerForm = ({ data }) => {
 
   // Function to calculate contact completion
   const calculateContactProgress = () => {
-    if (formData.customerContact.length === 0) return 0;
+    if (formData.contacts.length === 0) return 0;
 
     const requiredFields = ['firstName', 'lastName', 'phone', 'email'];
-    const totalFields = formData.customerContact.length * requiredFields.length;
+    const totalFields = formData.contacts.length * requiredFields.length;
     let filledFields = 0;
 
-    formData.customerContact.forEach((contact) => {
+    formData.contacts.forEach((contact) => {
       requiredFields.forEach((field) => {
         if (contact[field] && contact[field].trim() !== '') {
           filledFields++;
@@ -705,7 +826,7 @@ const CustomerForm = ({ data }) => {
                   </Col>
 
                   <Col md={9}>
-                    <Tab.Content>
+                    <Tab.Content className='h-100'>
                       <Tab.Pane eventKey='basic'>
                         <Card className='border-0 shadow-sm mb-4'>
                           <Card.Body className='p-4'>
@@ -816,9 +937,9 @@ const CustomerForm = ({ data }) => {
                         </Card>
                       </Tab.Pane>
 
-                      <Tab.Pane eventKey='contact'>
-                        <Card className='border-0 shadow-sm mb-4'>
-                          <Card.Body className='p-4'>
+                      <Tab.Pane eventKey='contact' className='h-100'>
+                        <Card className='border-0 shadow-sm mb-4 h-100'>
+                          <Card.Body className='p-4 h-100'>
                             <div className='d-flex justify-content-between align-items-center mb-4'>
                               <h5 className='mb-0'>Contact Information</h5>
                               <Button
@@ -831,100 +952,107 @@ const CustomerForm = ({ data }) => {
                               </Button>
                             </div>
 
-                            {formData.customerContact.map((contact, index) => (
-                              <Card key={index} className='border mb-4'>
-                                <Card.Header className='bg-light d-flex justify-content-between align-items-center'>
-                                  <h6 className='mb-0'>
-                                    Contact {index + 1} {contact.isDefault && '(Default)'}
-                                  </h6>
-                                  {!contact.isDefault && (
-                                    <Button
-                                      variant='link'
-                                      className='text-danger p-0'
-                                      onClick={() => handleRemoveContact(index)}
-                                    >
-                                      <X size={20} />
-                                    </Button>
-                                  )}
-                                </Card.Header>
-                                <Card.Body>
-                                  <Row>
-                                    <Col md={6}>
-                                      <Form.Group className='mb-3'>
-                                        <RequiredFieldWithTooltip label='First Name' />
-                                        <Form.Control
-                                          type='text'
-                                          value={contact.firstName}
-                                          onChange={(e) =>
-                                            handleContactChange(index, 'firstName', e.target.value)
-                                          }
-                                          required
-                                        />
-                                      </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
-                                      <Form.Group className='mb-3'>
-                                        <RequiredFieldWithTooltip label='Last Name' />
-                                        <Form.Control
-                                          type='text'
-                                          value={contact.lastName}
-                                          onChange={(e) =>
-                                            handleContactChange(index, 'lastName', e.target.value)
-                                          }
-                                          required
-                                        />
-                                      </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
-                                      <Form.Group className='mb-3'>
-                                        <RequiredFieldWithTooltip label='Phone' />
-                                        <Form.Control
-                                          type='tel'
-                                          value={contact.phone}
-                                          onChange={(e) =>
-                                            handleContactChange(index, 'phone', e.target.value)
-                                          }
-                                          required
-                                        />
-                                      </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
-                                      <Form.Group className='mb-3'>
-                                        <RequiredFieldWithTooltip label='Email' />
-                                        <Form.Control
-                                          type='email'
-                                          value={contact.email}
-                                          onChange={(e) =>
-                                            handleContactChange(index, 'email', e.target.value)
-                                          }
-                                          required
-                                        />
-                                      </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
-                                      <Form.Group className='mb-3'>
-                                        <RequiredFieldWithTooltip label='Role' />
-                                        <Form.Select
-                                          value={contact.role}
-                                          onChange={(e) =>
-                                            handleContactChange(index, 'role', e.target.value)
-                                          }
-                                          required
-                                        >
-                                          <option value=''>Select Role</option>
-                                          <option value='Director'>Director</option>
-                                          <option value='Manager'>Manager</option>
-                                          <option value='Supervisor'>Supervisor</option>
-                                          <option value='Administrator'>Administrator</option>
-                                          <option value='Coordinator'>Coordinator</option>
-                                          <option value='Other'>Other</option>
-                                        </Form.Select>
-                                      </Form.Group>
-                                    </Col>
-                                  </Row>
-                                </Card.Body>
-                              </Card>
-                            ))}
+                            {formData.contacts.length > 0 ? (
+                              formData.contacts.map((contact, index) => (
+                                <Card key={index} className='border mb-4'>
+                                  <Card.Header className='bg-light d-flex justify-content-between align-items-center'>
+                                    <h6 className='mb-0'>
+                                      <span className='me-2'>Contact #{index + 1}</span>
+
+                                      {contact.isDefault && (
+                                        <Badge className='me-2' bg='primary'>
+                                          Default
+                                        </Badge>
+                                      )}
+
+                                      {!contact.id ? (
+                                        <Badge className='me-2' bg='secondary'>
+                                          Unsaved
+                                        </Badge>
+                                      ) : (
+                                        <Badge className='me-2' bg='info'>
+                                          Saved
+                                        </Badge>
+                                      )}
+                                    </h6>
+                                    {!contact.isDefault && (
+                                      <Button
+                                        variant='link'
+                                        className='text-danger p-0'
+                                        onClick={() => handleRemmovedContact(index, contact.id)}
+                                      >
+                                        <X size={20} />
+                                      </Button>
+                                    )}
+                                  </Card.Header>
+                                  <Card.Body>
+                                    <Row>
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <RequiredFieldWithTooltip label='First Name' />
+                                          <Form.Control
+                                            type='text'
+                                            value={contact.firstName}
+                                            onChange={(e) =>
+                                              handleContactChange(
+                                                index,
+                                                'firstName',
+                                                e.target.value
+                                              )
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <RequiredFieldWithTooltip label='Last Name' />
+                                          <Form.Control
+                                            type='text'
+                                            value={contact.lastName}
+                                            onChange={(e) =>
+                                              handleContactChange(index, 'lastName', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <RequiredFieldWithTooltip label='Phone' />
+                                          <Form.Control
+                                            type='tel'
+                                            value={contact.phone}
+                                            onChange={(e) =>
+                                              handleContactChange(index, 'phone', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <RequiredFieldWithTooltip label='Email' />
+                                          <Form.Control
+                                            type='email'
+                                            value={contact.email}
+                                            onChange={(e) =>
+                                              handleContactChange(index, 'email', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+                                    </Row>
+                                  </Card.Body>
+                                </Card>
+                              ))
+                            ) : (
+                              <div className='text-center mt-5 h-100'>
+                                <h5 className='mb-1'>No contact added yet.</h5>
+                                <p className='text-muted'>Click "Add Contact" to begin.</p>
+                              </div>
+                            )}
                           </Card.Body>
                         </Card>
                       </Tab.Pane>

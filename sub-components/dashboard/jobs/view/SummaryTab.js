@@ -33,9 +33,9 @@ import {
 const SummaryTab = ({ job }) => {
   const router = useRouter();
 
-  const [customer, setCustomer] = useState({ data: [], isLoading: true, isError: false });
+  const [customer, setCustomer] = useState({ data: {}, isLoading: true, isError: false });
   const [contact, setContact] = useState();
-  const [location, setLocation] = useState({ data: [], isLoading: true, isError: false });
+  const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
   const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
 
   const columnHelper = createColumnHelper();
@@ -123,34 +123,39 @@ const SummaryTab = ({ job }) => {
 
   //* query customer
   useEffect(() => {
-    if (!job?.location?.id) return;
+    if (!job?.customer?.id) return;
 
-    getDoc(doc(db, 'customers', job?.customer?.id))
-      .then((doc) => {
-        const data = doc.data();
+    Promise.all([
+      getDoc(doc(db, 'customers', job?.customer?.id)),
+      getDoc(doc(db, 'contacts', job?.contact?.id || '')),
+    ])
+      .then(([customerSnapshot, contactSnapshot]) => {
+        const customerData = customerSnapshot.data();
 
-        if (doc.exists()) {
+        if (customerSnapshot.exists) {
           setCustomer({
             data: {
-              id: doc.id,
-              ...doc.data(),
+              id: customerSnapshot.id,
+              ...customerData,
             },
             isLoading: false,
             isError: false,
           });
-        }
+        } else setCustomer({ data: {}, isLoading: false, isError: false });
 
         if (
           job?.contact &&
-          Array.isArray(data.customerContact) &&
-          data.customerContact.length > 0
+          Array.isArray(customerData.contacts) &&
+          customerData.contacts.length > 0 &&
+          contactSnapshot.exists
         ) {
-          setContact(data.customerContact.find((contact) => contact.id === job.contact.id));
+          const contactData = contactSnapshot.data();
+          setContact(contactData);
         }
       })
       .catch((err) => {
         console.error(err.message);
-        setCustomer({ data: [], isLoading: false, isError: true });
+        setCustomer({ data: {}, isLoading: false, isError: true });
       });
   }, []);
 

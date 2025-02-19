@@ -38,7 +38,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
 
   //* query workers
   useEffect(() => {
-    const constraints = [orderBy('workerId', 'asc'), where('role', '==', 'Worker')];
+    const constraints = [where('role', '==', 'Worker')];
 
     if (!isProd) {
       const devQueryConstraint = [limit(10)];
@@ -502,7 +502,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
         </Row>
       </Form>
 
-      <div className='d-flex justify-content-end align-items-center'>
+      <div className='mt-2 d-flex justify-content-end align-items-center'>
         <Button type='button' className='mt-2' onClick={handleNext}>
           {isLoading ? (
             <>

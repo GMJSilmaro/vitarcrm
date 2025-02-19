@@ -11,25 +11,26 @@ export const customerDataFetchers = {
     if (!customerListeners.has(CUSTOMER_CACHE_KEYS.LIST)) {
       const customersRef = collection(db, 'customers');
       const unsubscribe = onSnapshot(customersRef, (snapshot) => {
-        const customersList = snapshot.docs.map(doc => ({
+        const customersList = snapshot.docs.map((doc) => ({
           id: doc.id,
           customerId: doc.data().customerId,
           customerName: doc.data().customerName,
-          locations: doc.data().locations?.map(location => ({
-            siteName: location.siteName,
-            mainAddress: location.mainAddress,
-            isDefault: location.isDefault,
-            siteId: location.siteId
-          })) || [],
-          customerContact: doc.data().customerContact,
-          contract: doc.data().contract
+          locations:
+            doc.data().locations?.map((location) => ({
+              siteName: location.siteName,
+              mainAddress: location.mainAddress,
+              isDefault: location.isDefault,
+              siteId: location.siteId,
+            })) || [],
+          contract: doc.data().contract,
+          contacts: doc.data().contacts,
         }));
-        
+
         // Update cache with new data
         customerCacheHelpers.set(CUSTOMER_CACHE_KEYS.LIST, customersList);
-      //  console.log('Customers list cache updated from real-time listener');
+        //  console.log('Customers list cache updated from real-time listener');
       });
-      
+
       customerListeners.set(CUSTOMER_CACHE_KEYS.LIST, unsubscribe);
     }
   },
@@ -51,19 +52,20 @@ export const customerDataFetchers = {
       // If no cache, fetch from Firebase
       const customersRef = collection(db, 'customers');
       const snapshot = await getDocs(customersRef);
-      const customersList = snapshot.docs.map(doc => ({
+      const customersList = snapshot.docs.map((doc) => ({
         id: doc.id,
         customerId: doc.data().customerId,
         customerName: doc.data().customerName,
         type: doc.data().type || 'Standard',
-        locations: doc.data().locations?.map(location => ({
-          siteName: location.siteName,
-          mainAddress: location.mainAddress,
-          isDefault: location.isDefault,
-          siteId: location.siteId
-        })) || [],
-        customerContact: doc.data().customerContact,
-        contract: doc.data().contract
+        locations:
+          doc.data().locations?.map((location) => ({
+            siteName: location.siteName,
+            mainAddress: location.mainAddress,
+            isDefault: location.isDefault,
+            siteId: location.siteId,
+          })) || [],
+        // customerContact: doc.data().customerContact,
+        contract: doc.data().contract,
       }));
 
       // Update cache
@@ -81,9 +83,9 @@ export const customerDataFetchers = {
       const snapshot = await getDocs(
         query(customersRef, where('customerId', '>=', 'C'), where('customerId', '<=', 'C\uf8ff'))
       );
-      
+
       let maxId = 0;
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         const currentId = parseInt(doc.data().customerId.substring(1));
         if (!isNaN(currentId) && currentId > maxId) {
           maxId = currentId;
@@ -101,12 +103,12 @@ export const customerDataFetchers = {
     try {
       // Clear existing cache
       customerCacheHelpers.clear(CUSTOMER_CACHE_KEYS.LIST);
-      
+
       // Fetch fresh data
       return await customerDataFetchers.fetchCustomers();
     } catch (error) {
       console.error('Error refreshing customers cache:', error);
       throw error;
     }
-  }
-}; 
+  },
+};

@@ -1,5 +1,5 @@
 import { Button, Form, OverlayTrigger, Row, Table, Tooltip } from 'react-bootstrap';
-import { Trash } from 'react-bootstrap-icons';
+import { Plus, Trash } from 'react-bootstrap-icons';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 
 const TaskForm = ({ isLoading, handleNext }) => {
@@ -43,20 +43,22 @@ const TaskForm = ({ isLoading, handleNext }) => {
       <Form>
         {/* <div className='mb-4'> {JSON.stringify(form.watch(), null, 2)}</div> */}
 
-        <div className='d-flex flex-column align-items-start gap-2'>
-          <RequiredLabel label='Task Name' id='taskName' />
+        <div className='d-flex justify-content-between align-items-center gap-2'>
+          <div className='d-flex flex-column align-items-start gap-1'>
+            <RequiredLabel label='Task Name' id='taskName' />
 
-          {formErrors && formErrors.tasks?.message && (
-            <Form.Text className='text-danger mt-0'>{formErrors.tasks?.message}</Form.Text>
-          )}
+            {formErrors && formErrors.tasks?.message && (
+              <Form.Text className='text-danger mt-0'>{formErrors.tasks?.message}</Form.Text>
+            )}
+          </div>
 
           <Button variant='primary' onClick={handleAddTask}>
-            Add Task
+            <Plus size={14} className='me-2' /> Add Task
           </Button>
         </div>
 
         {fields.length === 0 ? (
-          <div className='text-center'>
+          <div className='text-center mt-3'>
             <h5 className='mb-1'>No task added yet.</h5>
             <p className='text-muted'>Click "Add Task" to begin.</p>
           </div>
@@ -171,7 +173,7 @@ const TaskForm = ({ isLoading, handleNext }) => {
         )}
       </Form>
 
-      <div className='d-flex justify-content-end align-items-center'>
+      <div className='mt-2 d-flex justify-content-end align-items-center'>
         <Button disabled={isLoading} type='button' className='mt-2' onClick={handleNext}>
           Next
         </Button>

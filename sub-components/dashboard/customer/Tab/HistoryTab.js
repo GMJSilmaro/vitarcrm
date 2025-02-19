@@ -430,7 +430,7 @@ export const HistoryTab = () => {
             <DataTableSearch table={table} />
 
             <div className='d-flex align-items-center gap-2'>
-              <DataTableFilter table={table} filterFields={filterFields} />
+              <DataTableFilter table={table} filterFields={filterFields}></DataTableFilter>
               <DataTableViewOptions table={table} />
             </div>
           </div>

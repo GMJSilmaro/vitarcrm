@@ -7,7 +7,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { equipmentSchema } from '@/schema/job';
 import JobEquipmentList from '../JobEquipmentList';
 import { db } from '@/firebase';
-import { collection, doc, getDoc, limit, onSnapshot, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  onSnapshot,
+  query,
+  where,
+} from 'firebase/firestore';
 import { orderBy } from 'lodash';
 import Select from 'react-select';
 import { isProd } from '@/constants/environment';
@@ -39,46 +48,43 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
 
   //* query customers
   useEffect(() => {
-    const constraints = [orderBy('customerId', 'asc')];
+    const constraints = [];
 
     if (!isProd) {
-      const devQueryConstraint = [limit(100)];
+      const devQueryConstraint = [limit(20), where('customerId', '==', 'C003769')];
       devQueryConstraint.forEach((constraint) => constraints.push(constraint));
     }
 
-    const q = query(collection(db, 'customers'), ...constraints);
+    Promise.all([
+      getDocs(query(collection(db, 'customers'), ...constraints)),
+      getDocs(query(collection(db, 'contacts'))),
+    ])
+      .then(([customerSnapshot, contactsSnapshot]) => {
+        const customerData = !customerSnapshot.empty ? customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
+        const contactsData = !contactsSnapshot.empty ? contactsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        if (!snapshot.empty) {
-          setCustomersOptions({
-            data: snapshot.docs.map((doc) => {
-              const data = doc.data();
+        setCustomersOptions({
+          data: customerData.map((customer) => {
+            const contacts =
+              customer?.contacts &&
+              Array.isArray(customer?.contacts) &&
+              contactsData.filter((contact) => customer?.contacts.includes(contact.id));
 
-              return {
-                id: doc.id,
-                name: data.customerName,
-                value: doc.id,
-                label: `${data.customerId} - ${data.customerName}`,
-                locations: data?.locations && Array.isArray(data.locations) ? data.locations : [],
-                contacts: data?.customerContact &&  Array.isArray(data.customerContact) ? data.customerContact : [], //prettier-ignore
-              };
-            }),
-            isLoading: false,
-            isError: false,
-          });
-        } else {
-          setCustomersOptions({ data: [], isLoading: false, isError: false });
-        }
-      },
-      (err) => {
+            return {
+              id: customer.id,
+              name: customer.customerName,
+              value: customer.id,
+              label: `${customer.customerId} - ${customer.customerName}`,
+              locations: customer?.locations && Array.isArray(customer.locations) ? customer.locations : [], // prettier-ignore
+              contacts,
+            };
+          }),
+        });
+      })
+      .catch((err) => {
         console.error(err.message);
         setCustomersOptions({ data: [], isLoading: false, isError: true });
-      }
-    );
-
-    return () => unsubscribe();
+      });
   }, []);
 
   //* query locations
@@ -270,7 +276,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
         }));
 
         //* selected contact
-        const contact = cOptions.find((contact) => contact.value === data.contact.id);
+        const contact = cOptions.find((contact) => contact.value === data?.contact?.id);
 
         //* set options
         setContactsOpions(cOptions);
@@ -359,6 +365,10 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                     customersOptions.isLoading ? 'Loading...' : 'No customers found'
                   }
                 />
+
+                {formErrors && formErrors.customer?.message && (
+                  <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
+                )}
               </>
             )}
           />
@@ -704,7 +714,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
         </>
       )}
 
-      <div className='d-flex justify-content-end align-items-center'>
+      <div className='mt-2 d-flex justify-content-end align-items-center'>
         <Button disabled={isLoading} type='button' className='mt-2' onClick={handleNext}>
           Next
         </Button>

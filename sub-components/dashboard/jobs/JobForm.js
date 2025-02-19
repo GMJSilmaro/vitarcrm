@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 import JobSummaryForm from './tabs-form/JobSummaryForm';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
-import { areIntervalsOverlapping, format, isAfter, isBefore } from 'date-fns';
+import { areIntervalsOverlapping, format, isAfter, isBefore, startOfDay } from 'date-fns';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
@@ -123,7 +123,11 @@ const JobForm = ({ data }) => {
         const endDate = new Date(`${jobHeaders.endDate}T${jobHeaders.endTime}:00`);
 
         //* not allowed to create jobs in the past, only allowed when doing edit
-        if (!data && (isBefore(startDate, new Date()) || isBefore(endDate, new Date()))) {
+        if (
+          !data &&
+          (isBefore(startOfDay(jobHeaders.startDate), startOfDay(new Date())) ||
+            isBefore(startOfDay(jobHeaders.endDate), startOfDay(new Date())))
+        ) {
           Swal.fire({
             title: 'Job Creation Not Allowed',
             text: `You are not allowed to create a job in the past. Please select a date in the present or the future.`,
@@ -205,8 +209,6 @@ const JobForm = ({ data }) => {
               ...jobHeaders,
               jobId,
               contact: jobHeaders?.contact ?? null,
-              ...(!data && { createdAt: serverTimestamp() }),
-              updatedAt: serverTimestamp(),
               ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
               updatedAt: serverTimestamp(),
               updatedBy: auth.currentUser,
