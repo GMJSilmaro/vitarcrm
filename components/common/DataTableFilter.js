@@ -91,7 +91,7 @@ const DataTableFilter = ({ table, filterFields, children }) => {
         )}
       </Button>
 
-      <Modal size='lg' centered show={show} onHide={handleClose} backdropClassName='bg-transparent'>
+      <Modal size='xl' centered show={show} onHide={handleClose} backdropClassName='bg-transparent'>
         <Modal.Header closeButton>
           <div>
             <h4 className='mb-0'>Advanced Filters</h4>

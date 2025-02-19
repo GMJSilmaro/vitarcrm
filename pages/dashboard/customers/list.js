@@ -767,7 +767,7 @@ const ViewCustomers = () => {
   const handleRemoveCustomer = useCallback(async (row) => {
     const confirmDelete = await Swal.fire({
       title: 'Are you sure?',
-      text: 'This action cannot be undone.',
+      text: 'All data associated with this customer will be unlinked/removed.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#1e40a6',
@@ -779,6 +779,8 @@ const ViewCustomers = () => {
     if (confirmDelete.isConfirmed) {
       try {
         const customerRef = doc(db, 'customers', row.id);
+
+        // TODO  not only delete customer as well as data related to it e.g contacts
         await deleteDoc(customerRef);
 
         toast.success('Customer removed successfully', { position: 'top-right' });

@@ -72,7 +72,19 @@ const nextConfig = {
       // SITES
       {
         source: '/sites',
-        destination: '/dashboard/locations/list',
+        destination: '/dashboard/sites/list',
+      },
+      {
+        source: '/sites/view/:siteId',
+        destination: '/dashboard/sites/view/:siteId',
+      },
+      {
+        source: '/sites/create',
+        destination: '/dashboard/sites/create',
+      },
+      {
+        source: '/sites/edit-site/:siteId',
+        destination: '/dashboard/sites/edit-site/:siteId',
       },
 
       // WORKERS
