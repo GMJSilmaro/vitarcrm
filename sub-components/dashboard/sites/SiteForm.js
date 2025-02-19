@@ -79,112 +79,61 @@ const SiteForm = ({ data }) => {
         let currentId = latestContactId;
         const contacts = [];
 
-        // //* contact promises
-        // const contactsPromises = [];
-        // for (const contact of formData.contacts) {
-        //   if (!contact.id || contact.id === 'create') {
-        //     contact.id = generateNextContactId(currentId);
-        //     currentId = contact.contactId;
-
-        //     const { id, ...contactData } = contact;
-
-        //     console.log({ contactData });
-
-        //     contactsPromises.push(
-        //       setDoc(
-        //         doc(db, 'contacts', id),
-        //         {
-        //           ...contactData,
-        //           customerId: formData.customer.id,
-        //           customerName: formData.customer.name,
-        //           status: 'active',
-        //           ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-        //           updatedAt: serverTimestamp(),
-        //           updatedBy: auth.currentUser,
-        //         },
-        //         { merge: true }
-        //       )
-        //     );
-        //   }
-
-        //   contacts.push(contact.id);
-        // }
-
-        // //TODO update also the contact of customer
-        // await Promise.all([
-        //   setDoc(
-        //     doc(db, 'locations', formData.siteId),
-        //     {
-        //       siteId: formData.siteId,
-        //       siteName: formData.siteName,
-        //       customerId: formData.customer.id,
-        //       customerName: formData.customer.name,
-        //       contacts,
-        //       addresses: formData.addresses,
-        //       status: formData.status,
-        //       ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-        //       updatedAt: serverTimestamp(),
-        //       updatedBy: auth.currentUser,
-        //     },
-        //     { merge: true }
-        //   ),
-        //   ...contactsPromises,
-        //   updateDoc(doc(db, 'customer'), { contacts: arrayUnion(contacts) }),
-        // ]);
-
         await runTransaction(db, async (transaction) => {
-          //* write contacts
-          for (const contact of formData.contacts) {
-            if (!contact.id || contact.id === 'create') {
-              contact.id = generateNextContactId(currentId);
-              currentId = contact.contactId;
+          try {
+            //* write contacts
+            for (const contact of formData.contacts) {
+              if (!contact.id || contact.id === 'create') {
+                contact.id = generateNextContactId(currentId);
+                currentId = contact.contactId;
 
-              const { id, ...contactData } = contact;
+                const { id, ...contactData } = contact;
 
-              transaction.set(
-                doc(db, 'contacts', id),
-                {
-                  ...contactData,
-                  customerId: formData.customer.id,
-                  customerName: formData.customer.name,
-                  status: 'active',
-                  ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-                  updatedAt: serverTimestamp(),
-                  updatedBy: auth.currentUser,
-                },
-                { merge: true }
-              );
+                transaction.set(
+                  doc(db, 'contacts', id),
+                  {
+                    ...contactData,
+                    customerId: formData.customer.id,
+                    customerName: formData.customer.name,
+                    status: 'active',
+                    ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+                    updatedAt: serverTimestamp(),
+                    updatedBy: auth.currentUser,
+                  },
+                  { merge: true }
+                );
+              }
+
+              contacts.push(contact.id);
             }
 
-            contacts.push(contact.id);
+            //* write location
+            transaction.set(
+              doc(db, 'locations', formData.siteId),
+              {
+                siteId: formData.siteId,
+                siteName: formData.siteName,
+                customerId: formData.customer.id,
+                customerName: formData.customer.name,
+                contacts,
+                addresses: formData.addresses,
+                status: formData.status,
+                ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              },
+              { merge: true }
+            );
+
+            if (contacts.length > 0) {
+              //* update customer contacts
+              transaction.update(doc(db, 'customers', formData.customer.id), {
+                contacts: arrayUnion(...contacts),
+              });
+            }
+          } catch (error) {
+            throw error;
           }
-
-          //* write location
-          transaction.set(
-            doc(db, 'locations', formData.siteId),
-            {
-              siteId: formData.siteId,
-              siteName: formData.siteName,
-              customerId: formData.customer.id,
-              customerName: formData.customer.name,
-              contacts,
-              addresses: formData.addresses,
-              status: formData.status,
-              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-              updatedAt: serverTimestamp(),
-              updatedBy: auth.currentUser,
-            },
-            { merge: true }
-          );
-
-          if (contacts.length > 0) {
-            //* update customer contacts
-            transaction.update(doc(db, 'customers', formData.customer.id), {
-              contacts: arrayUnion(...contacts),
-            });
-          }
-
-          console.log({ contacts });
         });
 
         router.push(`/sites/edit-site/${formData.siteId}`);
@@ -214,26 +163,6 @@ const SiteForm = ({ data }) => {
     }
 
     setActiveKey(key);
-  };
-
-  const FormDebug = () => {
-    if (process.env.NODE_ENV === 'development') {
-      return (
-        <div className='d-flex gap-3 mt-4'>
-          <div className='w-50'>
-            <h6 className='mb-3'>Form Data</h6>
-            <pre>{JSON.stringify(form.watch(), null, 2)}</pre>
-          </div>
-
-          <div className='w-50'>
-            <h6 className='mb-3'>Form Errors</h6>
-            <pre>{JSON.stringify(form.formState.errors, null, 2)}</pre>
-          </div>
-        </div>
-      );
-    }
-
-    return null;
   };
 
   //* query latest contactId
