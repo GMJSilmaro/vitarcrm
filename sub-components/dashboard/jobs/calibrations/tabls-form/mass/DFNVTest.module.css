@@ -1,0 +1,46 @@
+.columnDataContainer {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.columnData {
+  display: inline !important;
+  position: relative;
+  padding: 8px 14px;
+  position: relative;
+  padding-left: 12px;
+  color: #1e40a6;
+  border: solid 1px #1e40a6;
+  border-radius: 8px;
+  min-width: 46px;
+  outline: none !important ;
+}
+
+.columnData.error {
+  border: solid 1px #dc2626;
+  color: #dc2626;
+}
+
+.columnDataValue:focus-visible {
+  outline: none !important;
+}
+
+.columnDataClose {
+  position: absolute;
+  color: white;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  position: 'absolute';
+  top: -6px;
+  right: -6px;
+  z-index: 100;
+  border-radius: 50%;
+  background-color: #dc2626;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
