@@ -1,4 +1,4 @@
-const FormDebug = () => {
+const FormDebug = ({ form }) => {
   if (process.env.NODE_ENV === 'production') return null;
 
   return (

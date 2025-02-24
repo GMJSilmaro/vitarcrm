@@ -125,11 +125,6 @@ const SiteBasicInfoForm = ({ data, isLoading, handleNext }) => {
     }
   }, [data, customersOptions]);
 
-  //* only in dev environment, set site id
-  // useEffect(() => {
-  //   form.setValue('siteId', 'S004401');
-  // }, []);
-
   return (
     <>
       <Form>

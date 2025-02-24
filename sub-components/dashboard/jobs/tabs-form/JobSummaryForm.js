@@ -48,15 +48,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
 
   //* query customers
   useEffect(() => {
-    const constraints = [];
-
-    // if (!isProd) {
-    //   const devQueryConstraint = [limit(20), where('customerId', '==', 'C003769')];
-    //   devQueryConstraint.forEach((constraint) => constraints.push(constraint));
-    // }
-
     Promise.all([
-      getDocs(query(collection(db, 'customers'), ...constraints)),
+      getDocs(query(collection(db, 'customers'))),
       getDocs(query(collection(db, 'contacts'))),
     ])
       .then(([customerSnapshot, contactsSnapshot]) => {
@@ -106,14 +99,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
 
   //* query equipments
   useEffect(() => {
-    const constraints = [orderBy('inventoryId', 'asc')];
-
-    if (!isProd) {
-      const devQueryConstraint = [limit(10)];
-      devQueryConstraint.forEach((constraint) => constraints.push(constraint));
-    }
-
-    const q = query(collection(db, 'equipments'), ...constraints);
+    const q = query(collection(db, 'equipments'));
 
     const unsubscribe = onSnapshot(
       q,
@@ -261,8 +247,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     if (data && customersOptions.data.length > 0) {
       //* selected customer
       const customer = customersOptions.data.find((option) => option.value === data.customer.id);
-
-      console.log('ZZzzzz', customer);
 
       //* set customer
       if (customer) form.setValue('customer', customer);

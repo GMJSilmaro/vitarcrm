@@ -17,6 +17,8 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
   const pageCount = table.getPageCount() || 0;
   const totalRows = rowModel?.rows.length || 0;
 
+  if (totalRows === 0) return null;
+
   return (
     <div className='d-flex justify-content-between align-items-center column-gap-3'>
       <div className='d-flex align-items-center column-gap-3'>

@@ -12,8 +12,8 @@ const ExcelUploader = ({ dataKey, prefix }) => {
   const [canResume, setCanResume] = useState(false);
 
   useEffect(() => {
-    const lastCustomer = localStorage.getItem(`lastProcessed${dataKey}`);
-    setCanResume(!!lastCustomer);
+    const lastDataId = localStorage.getItem(`lastProcessed${dataKey}`);
+    setCanResume(!!lastDataId);
   }, []);
 
   const handleFileUpload = async (event) => {
@@ -54,7 +54,14 @@ const ExcelUploader = ({ dataKey, prefix }) => {
       setLoading(true);
       setError(null);
       const data = await parseExcelFile(file);
-      await resumeUpload(data, setProgress, setStats, dataKey);
+
+      await resumeUpload(
+        prefix,
+        dataKey,
+        data,
+        (progress) => setProgress(progress),
+        (stats) => setStats(stats)
+      );
     } catch (error) {
       setError(`Resume error: ${error.message}`);
     } finally {
@@ -103,8 +110,17 @@ const ExcelUploader = ({ dataKey, prefix }) => {
               <div className='mt-2 small'>
                 <p className='mb-1'>Processing: {stats.currentItem}</p>
                 <div className='d-flex gap-2'>
-                  <Badge bg='success'>Customers Added: {stats.customersSuccess}</Badge>
-                  <Badge bg='success'>Locations Added: {stats.locationsSuccess}</Badge>
+                  {stats.customersSuccess > 0 && (
+                    <Badge bg='success'>Customers Added: {stats.customersSuccess}</Badge>
+                  )}
+                  {stats.locationsSuccess > 0 && (
+                    <Badge bg='success'>Locations Added: {stats.locationsSuccess}</Badge>
+                  )}
+                  {stats.customerEquipmentsSuccess > 0 && (
+                    <Badge bg='success'>
+                      Customer Equipments Added: {stats.customerEquipmentsSuccess}
+                    </Badge>
+                  )}
                   {stats.errors > 0 && <Badge bg='danger'>Errors: {stats.errors}</Badge>}
                   <Badge bg='info'>Total Processed: {stats.processed}</Badge>
                 </div>
