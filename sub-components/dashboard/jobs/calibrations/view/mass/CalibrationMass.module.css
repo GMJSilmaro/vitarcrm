@@ -1,0 +1,9 @@
+.dataColumn {
+  width: 78px !important;
+  border-bottom: solid 1px transparent !important;
+}
+
+.dataColumnHeader {
+  width: 78px !important;
+  border-top: none !important;
+}

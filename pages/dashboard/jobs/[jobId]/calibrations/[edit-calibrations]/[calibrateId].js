@@ -3,6 +3,7 @@ import { db } from '@/firebase';
 import CalibrationForm from '@/sub-components/dashboard/jobs/calibrations/CalibrationForm';
 import { GeeksSEO } from '@/widgets';
 import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
@@ -10,7 +11,6 @@ import {
   ArrowLeftShort,
   BriefcaseFill,
   HouseDoorFill,
-  Link,
   PencilFill,
   Speedometer,
 } from 'react-bootstrap-icons';

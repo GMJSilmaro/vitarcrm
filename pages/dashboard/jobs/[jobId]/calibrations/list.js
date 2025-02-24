@@ -181,10 +181,6 @@ const JobCalibration = () => {
                     Delete Calibration
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => {}}>
-                    <CardChecklist className='me-2' size={16} />
-                    View Result
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => {}}>
                     <FileEarmarkArrowDown className='me-2' size={16} />
                     Generate Certificate
                   </Dropdown.Item>

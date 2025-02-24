@@ -187,7 +187,7 @@ const CalibrationForm = ({ data }) => {
               />
             </Tab>
 
-            <Tab eventKey='1' title='Measurement'>
+            <Tab eventKey='1' title='Measurements'>
               <CalibrationMeasures
                 data={data}
                 isLoading={isLoading}
@@ -196,7 +196,7 @@ const CalibrationForm = ({ data }) => {
               />
             </Tab>
 
-            <Tab eventKey='2' title='Reference Instrument'>
+            <Tab eventKey='2' title='Reference Instruments'>
               <CalibrationReferenceInstrumentsForm
                 job={job}
                 data={data}
