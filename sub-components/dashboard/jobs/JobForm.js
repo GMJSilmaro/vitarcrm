@@ -153,7 +153,7 @@ const JobForm = ({ data }) => {
           setIsLoading(false);
 
           await withReactContent(Swal).fire({
-            title: 'Overlap Error',
+            title: 'Conflict Error',
             icon: 'error',
             showConfirmButton: false,
             showCloseButton: true,

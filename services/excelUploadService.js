@@ -216,7 +216,7 @@ export const processExcelUploadEquipment = async (
     // Find starting index
     let startIndex = 0;
     if (startFromTemperature) {
-      startIndex = data.findIndex((row) => `${row.Inventory_ID}` === startFromTemperature);
+      startIndex = data.findIndex((row) => `${row.Tag_ID}` === startFromTemperature);
       if (startIndex === -1) startIndex = 0;
     }
 
@@ -315,11 +315,147 @@ export const processExcelUploadEquipment = async (
   }
 };
 
+export const processExcelUploadCustomerEquipments = async (
+  prefix,
+  dataKey,
+  data,
+  onProgress,
+  onStats,
+  lastDataId
+) => {
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+
+  let stats = {
+    total: data.length,
+    [`${dataKey}Success`]: 0,
+    processed: 0,
+    errors: 0,
+    currentItem: '',
+    status: 'processing',
+  };
+
+  if (!currentUser) return;
+
+  try {
+    onStats(stats);
+
+    const BATCH_SIZE = 20; //* Reduced batch size
+    const DELAY_BETWEEN_BATCHES = 3000; //* 3 seconds delay
+
+    let batch = writeBatch(db);
+    let operationsInBatch = 0; //* Tracks number of operations in batch
+
+    //* Find starting index
+    let startIndex = 0;
+    if (lastDataId) {
+      startIndex = data.findIndex((row) => `${row.ID}-${row.Equipment_Name}` === lastDataId);
+      if (startIndex === -1) startIndex = 0;
+    }
+
+    //* Get existing records
+    const existingCustomerEquipments = new Map();
+
+    const customerEquipmentsSnapshot = await getDocs(collection(db, dataKey));
+    if (!customerEquipmentsSnapshot.empty) {
+      customerEquipmentsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        existingCustomerEquipments.set(`${data.customerId}-${data.description}`, data);
+      });
+    }
+
+    for (let i = startIndex; i < data.length; i++) {
+      const row = data[i];
+
+      try {
+        if (!row.ID || !row.Customer_Name || !row.Equipment_Name || !row.Make || !row.Model) {
+          console.log('Skipping row due to missing required data:', row);
+          stats.errors++;
+          continue;
+        }
+
+        //* if id exist dont add otherwise add
+        let customerEquipmentId = existingCustomerEquipments.get(`${row.ID}-${row.Equipment_Name}`);
+        if (!customerEquipmentId) {
+          customerEquipmentId = `${prefix}${String(existingCustomerEquipments.size + 1).padStart(
+            6,
+            '0'
+          )}`;
+
+          const customerEquipmentData = {
+            equipmentId: customerEquipmentId,
+            customerId: row.ID,
+            customerName: row.Customer_Name || '',
+            description: row.Equipment_Name || '',
+            make: row.Make || '',
+            model: row.Model || '',
+            serialNumber: row.Serial_Number || '',
+            rangeMin: row.Range_Min || '',
+            rangeMax: row.Range_Max || '',
+            uom: row.UOM || '',
+            notes: row.Notes || '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+
+          batch.set(doc(db, dataKey, customerEquipmentId), customerEquipmentData);
+          existingCustomerEquipments.set(`${row.ID}-${row.Equipment_Name}`, customerEquipmentId);
+          stats[`${dataKey}Success`]++;
+          operationsInBatch++;
+        }
+
+        stats.processed++;
+
+        //* Update progress
+        onProgress(Math.round(((i + 1 - startIndex) / (data.length - startIndex)) * 100));
+        onStats({
+          ...stats,
+          currentItem: `Processing ${row.ID}-${row.Equipment_Name}`,
+        });
+
+        //* Commit batch when limit reached
+        if (operationsInBatch === BATCH_SIZE) {
+          await batch.commit();
+
+          //* log
+          console.log(`Batch committed at row ${i + 1}. Waiting...`);
+
+          //* Delay
+          await delay(DELAY_BETWEEN_BATCHES);
+
+          //* Reset batch
+          batch = writeBatch(db);
+          operationsInBatch = 0;
+        }
+      } catch (error) {
+        console.error(`Error processing row ${i + 1}:`, error);
+        localStorage.setItem(`lastProcessed${dataKey}`, `${row.ID}-${row.Equipment_Name}`);
+        stats.errors++;
+        await delay(DELAY_BETWEEN_BATCHES * 2);
+      }
+    }
+
+    //* Commit final batch
+    if (stats.processed > 0) {
+      console.log(`Committing final batch with No of operation: ${operationsInBatch}`);
+      await batch.commit();
+    }
+
+    localStorage.removeItem(`lastProcessed${dataKey}`);
+    stats.status = 'completed';
+    onStats(stats);
+    return stats;
+  } catch (error) {
+    console.error('FATAL ERROR  IN PROCESS_EXCEL_UPLOADER_CUSTOMER_EQUIPMENTS:', error);
+    throw error;
+  }
+};
+
 // Add resume function
-export const resumeUpload = async (data, onProgress, onStats, key) => {
+export const resumeUpload = async (prefix, dataKey, data, onProgress, onStats) => {
   const lastData = localStorage.getItem(`lastProcessed${dataKey}`);
   if (!lastData) {
     throw new Error('No upload data available to resume');
   }
-  return dataProcessExcelUploader[key](data, onProgress, onStats, lastData);
+  return dataProcessExcelUploader[dataKey](prefix, dataKey, data, onProgress, onStats, lastData);
 };

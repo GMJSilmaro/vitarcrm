@@ -137,6 +137,20 @@ const nextConfig = {
         destination: '/dashboard/jobs/create-jobs?',
       },
 
+      //* Calibration
+      {
+        source: '/jobs/:jobId/calibrations',
+        destination: '/dashboard/jobs/:jobId/calibrations/list',
+      },
+      {
+        source: '/jobs/:jobId/calibrations/create',
+        destination: '/dashboard/jobs/:jobId/calibrations/create',
+      },
+      {
+        source: '/jobs/:jobId/calibrations/edit-calibrations/:calibrateId',
+        destination: '/dashboard/jobs/:jobId/calibrations/edit-calibrations/:calibrateId',
+      },
+
       // AUTHENTICATION
       {
         source: '/sign-in',

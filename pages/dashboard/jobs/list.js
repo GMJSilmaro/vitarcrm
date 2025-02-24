@@ -17,6 +17,7 @@ import {
   PencilSquare,
   PersonFill,
   PersonLinesFill,
+  Plus,
   ThreeDotsVertical,
   Trash,
 } from 'react-bootstrap-icons';
@@ -273,7 +274,11 @@ const JobList = () => {
                     <Trash className='me-2' size={16} />
                     Delete Job
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => {}}>
+                  <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations`)}>
+                    <Eye className='me-2' size={16} />
+                    View Calibrations
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
                     <CardList className='me-2' size={16} />
                     Create Calibrate
                   </Dropdown.Item>
@@ -428,6 +433,7 @@ const JobList = () => {
   return (
     <>
       <GeeksSEO title='Jobs- VITAR Group | Portal' />
+
       <ContentHeader
         title='Job List'
         description='Create, manage and tract all your jobs assignments in once centralize dashboard'
@@ -449,7 +455,7 @@ const JobList = () => {
         actionButtons={[
           {
             text: 'Create Job',
-            icon: <FaPlus size={16} />,
+            icon: <Plus size={16} />,
             variant: 'light',
             onClick: () => router.push('/jobs/create'),
           },
