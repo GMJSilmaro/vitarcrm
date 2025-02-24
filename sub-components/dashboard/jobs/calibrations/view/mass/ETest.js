@@ -1,15 +1,12 @@
 import { abs } from 'mathjs';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Col, Row, Table } from 'react-bootstrap';
-import { useFormContext } from 'react-hook-form';
 
-const ETest = ({ data }) => {
-  const form = useFormContext();
-
+const ETest = ({ calibration }) => {
   const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(form.getValues('rangeMaxCalibration'));
-    return isNaN(value) ? 0 : form.getValues('rangeMaxCalibration');
-  }, [form.watch('rangeMaxCalibration')]);
+    const value = parseFloat(calibration.rangeMaxCalibration);
+    return isNaN(value) ? undefined : value;
+  }, [calibration]);
 
   const testLoadFormatted = useMemo(() => {
     const value = rangeMaxCalibration / 3;
@@ -65,25 +62,25 @@ const ETest = ({ data }) => {
 
       {/* ///TODO: add d1 and d2 input  */}
       {/* <Col className='px-5'>
-            <Table responsive bordered>
-              <tbody>
-                <tr>
-                  <td className='text-center fw-bold'>
-                    d<sub>1</sub>
-                  </td>
-                  <td className='text-center'>{Number(0).toFixed(4)}</td>
-                  <td className='text-center'>mm</td>
-                </tr>
-                <tr>
-                  <td className='text-center fw-bold'>
-                    d<sub>2</sub>
-                  </td>
-                  <td className='text-center'>{Number(0).toFixed(4)}</td>
-                  <td className='text-center'>mm</td>
-                </tr>
-              </tbody>
-            </Table>
-          </Col> */}
+        <Table responsive bordered>
+          <tbody>
+            <tr>
+              <td className='text-center fw-bold'>
+                d<sub>1</sub>
+              </td>
+              <td className='text-center'>{Number(0).toFixed(4)}</td>
+              <td className='text-center'>mm</td>
+            </tr>
+            <tr>
+              <td className='text-center fw-bold'>
+                d<sub>2</sub>
+              </td>
+              <td className='text-center'>{Number(0).toFixed(4)}</td>
+              <td className='text-center'>mm</td>
+            </tr>
+          </tbody>
+        </Table>
+      </Col> */}
     </Row>
   );
 };

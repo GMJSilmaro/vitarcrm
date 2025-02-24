@@ -143,6 +143,10 @@ const nextConfig = {
         destination: '/dashboard/jobs/:jobId/calibrations/list',
       },
       {
+        source: '/jobs/:jobId/calibrations/view/:calibrateId',
+        destination: '/dashboard/jobs/:jobId/calibrations/view/:calibrateId',
+      },
+      {
         source: '/jobs/:jobId/calibrations/create',
         destination: '/dashboard/jobs/:jobId/calibrations/create',
       },

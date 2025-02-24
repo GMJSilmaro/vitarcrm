@@ -53,6 +53,21 @@ export const NOMINAL_VALUE = [
   10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000,
 ];
 
+export const EXPANDED_UNCERTAINTY = [
+  '± 8.25387',
+  '± 8.27607',
+  '± 8.55097',
+  '± 9.11629',
+  '± 10.48890',
+  '± 11.50768',
+  '± 13.40877',
+  '± 14.65014',
+  '± 16.80634',
+  '± 18.15783',
+  '± 20.44483',
+  '± 21.85559',
+];
+
 export const dueDateRequested = z.enum(DUE_DATE_REQUESTED, {
   message: 'Please select due date requested',
 });

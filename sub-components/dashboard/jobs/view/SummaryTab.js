@@ -127,7 +127,7 @@ const SummaryTab = ({ job }) => {
 
     Promise.all([
       getDoc(doc(db, 'customers', job?.customer?.id)),
-      getDoc(doc(db, 'contacts', job?.contact?.id || '')),
+      job?.contact?.id ? getDoc(doc(db, 'contacts', job?.contact?.id)) : undefined,
     ])
       .then(([customerSnapshot, contactSnapshot]) => {
         const customerData = customerSnapshot.data();
@@ -147,7 +147,7 @@ const SummaryTab = ({ job }) => {
           job?.contact &&
           Array.isArray(customerData.contacts) &&
           customerData.contacts.length > 0 &&
-          contactSnapshot.exists
+          contactSnapshot.exists()
         ) {
           const contactData = contactSnapshot.data();
           setContact(contactData);
