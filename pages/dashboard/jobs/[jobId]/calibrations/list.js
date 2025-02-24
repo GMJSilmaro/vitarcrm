@@ -15,7 +15,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, CardText, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
@@ -168,7 +168,7 @@ const JobCalibration = () => {
               placement='left-start'
               overlay={
                 <Dropdown.Menu show style={{ zIndex: 999 }}>
-                  <Dropdown.Item onClick={() => {}}>
+                  <Dropdown.Item onClick={() => handleViewCalibration(id)}>
                     <Eye className='me-2' size={16} />
                     View Calibration
                   </Dropdown.Item>
@@ -258,7 +258,7 @@ const JobCalibration = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'jobCalibrations'));
+    const q = query(collection(db, 'jobCalibrations'), where('jobId', '==', jobId));
 
     const unsubscribe = onSnapshot(
       q,
