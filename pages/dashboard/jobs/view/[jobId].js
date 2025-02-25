@@ -1,5 +1,6 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
+import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
@@ -133,11 +134,17 @@ const JobDetails = () => {
             <Tab eventKey='0' title='Summary'>
               <SummaryTab job={job} />
             </Tab>
+
             <Tab eventKey='1' title='Job Task'>
               <TaskTab job={job} />
             </Tab>
+
             <Tab eventKey='2' title='Schedule'>
               <SchedulingTab job={job} />
+            </Tab>
+
+            <Tab eventKey='3' title='Calibrations'>
+              <CalibrationTab job={job} />
             </Tab>
           </Tabs>
         </Card.Body>

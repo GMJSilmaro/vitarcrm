@@ -10,7 +10,7 @@ export const CATEGORY = [
   'MASS',
 ];
 
-export const RANGE_TYPE = ['single', 'multiple'];
+export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
 export const TRACEABILITY_TYPE = ['1', '2', '3'];
 export const RESOLUTION = [
   '0.000001',
