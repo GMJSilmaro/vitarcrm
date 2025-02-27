@@ -1,6 +1,7 @@
 import { flexRender } from '@tanstack/react-table';
 import { Spinner, Table } from 'react-bootstrap';
 import DataTablePagination from './DataTablePagination';
+import { getCommonPinningStyles } from '@/utils/datatable';
 
 const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }) => {
   return (
@@ -11,7 +12,13 @@ const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th key={header.id} colSpan={header.colSpan} style={{ width: header.getSize() }}>
+                <th
+                  key={header.id}
+                  colSpan={header.colSpan}
+                  style={{
+                    ...getCommonPinningStyles({ column: header.column }),
+                  }}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
@@ -20,21 +27,7 @@ const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }
             </tr>
           ))}
         </thead>
-        {isShowFooter && (
-          <tfoot>
-            {table.getFooterGroups().map((footerGroup) => (
-              <tr key={footerGroup.id}>
-                {footerGroup.headers.map((footer) => (
-                  <th key={footer.id} colSpan={footer.colSpan} style={{ width: footer.getSize() }}>
-                    {footer.isPlaceholder
-                      ? null
-                      : flexRender(footer.column.columnDef.header, footer.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </tfoot>
-        )}
+
         <tbody>
           {table.getRowModel()?.rows?.length === 0 && !isLoading && (
             <tr>
@@ -81,13 +74,33 @@ const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id}>
               {row.getVisibleCells().map((cell) => (
-                <td className='fs-6' key={cell.id} style={{ width: cell.column.getSize() }}>
+                <td
+                  className='fs-6'
+                  key={cell.id}
+                  style={{ ...getCommonPinningStyles({ column: cell.column }) }}
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
             </tr>
           ))}
         </tbody>
+
+        {isShowFooter && (
+          <tfoot>
+            {table.getFooterGroups().map((footerGroup) => (
+              <tr key={footerGroup.id}>
+                {footerGroup.headers.map((footer) => (
+                  <th key={footer.id} colSpan={footer.colSpan} style={{ width: footer.getSize() }}>
+                    {footer.isPlaceholder
+                      ? null
+                      : flexRender(footer.column.columnDef.header, footer.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </tfoot>
+        )}
       </Table>
       <DataTablePagination table={table} />
     </div>

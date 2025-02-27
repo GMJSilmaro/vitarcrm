@@ -57,6 +57,10 @@ const nextConfig = {
         destination: '/dashboard/customers/list',
       },
       {
+        source: '/customers/create',
+        destination: '/dashboard/customers/create',
+      },
+      {
         source: '/customers/view/:id',
         destination: '/dashboard/customers/view/:id',
       },
@@ -130,11 +134,11 @@ const nextConfig = {
       },
       {
         source: '/jobs/create',
-        destination: '/dashboard/jobs/create-jobs',
+        destination: '/dashboard/jobs/create',
       },
       {
-        source: '/jobs/create-jobs',
-        destination: '/dashboard/jobs/create-jobs?',
+        source: '/jobs/create',
+        destination: '/dashboard/jobs/create?',
       },
 
       //* Calibration
