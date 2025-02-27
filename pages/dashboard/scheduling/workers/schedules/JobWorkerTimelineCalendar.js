@@ -618,7 +618,7 @@ const JobWorkerTimelineCalendar = () => {
       </ResourcesDirective>
       <ViewsDirective>
         <ViewDirective option='TimelineDay' allowVirtualScrolling={true} />
-        <ViewDirective option='TimelineWorkWeek' allowVirtualScrolling={true} />
+        <ViewDirective option='TimelineWeek' allowVirtualScrolling={true} />
         <ViewDirective option='TimelineMonth' allowVirtualScrolling={true} />
       </ViewsDirective>
       <Inject services={[TimelineViews, TimelineMonth]} />

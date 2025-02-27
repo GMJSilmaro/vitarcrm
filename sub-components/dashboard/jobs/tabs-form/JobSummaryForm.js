@@ -41,8 +41,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
   //* query customers
   useEffect(() => {
     Promise.all([
-      getDocs(query(collection(db, 'customers'), where('customerId', '==', 'C003769'))),
-      // getDocs(query(collection(db, 'customers'))),
+      getDocs(query(collection(db, 'customers'))),
       getDocs(query(collection(db, 'contacts'))),
     ])
       .then(([customerSnapshot, contactsSnapshot]) => {

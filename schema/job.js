@@ -2,7 +2,14 @@ import { z } from 'zod';
 
 export const PRIORITY_LEVELS = ['normal', 'urgent'];
 export const SCOPE_TYPE = ['lab', 'onsite'];
-export const STATUS = ['created', 'confirmed', 'in progress', 'completed', 'cancelled'];
+export const STATUS = [
+  'created',
+  'confirmed',
+  'in progress',
+  'completed',
+  'cancelled',
+  'validated',
+];
 
 const priorityEnum = z.enum(PRIORITY_LEVELS, {
   message: 'Please select a job priority level.',
