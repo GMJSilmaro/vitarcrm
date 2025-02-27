@@ -1,7 +1,7 @@
 import DataTable from '@/components/common/DataTable';
 import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
 import DataTableSearch from '@/components/common/DataTableSearch';
-import { fuzzyFilter } from '@/utils/datatable';
+import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -51,8 +51,8 @@ const ReferenceInstruments = ({ instruments }) => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { fuzzy: fuzzyFilter },
-    globalFilterFn: 'fuzzy',
+    filterFns: { globalSearch: globalSearchFilter },
+    globalFilterFn: 'globalSearch',
   });
 
   return (

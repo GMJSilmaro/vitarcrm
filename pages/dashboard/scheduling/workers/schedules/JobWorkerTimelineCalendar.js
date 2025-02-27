@@ -26,11 +26,12 @@ import { collection, deleteDoc, doc, limit, onSnapshot, query, where } from 'fir
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
 import { format, isBefore, startOfDay, subDays } from 'date-fns';
-import { Badge, Button, Image, Spinner } from 'react-bootstrap';
+import { Badge, Button, Image, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import { BsCircleFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
+import { TooltipContent } from '@/components/common/ToolTipContent';
 
 const JobWorkerTimelineCalendar = () => {
   const router = useRouter();
@@ -45,100 +46,6 @@ const JobWorkerTimelineCalendar = () => {
     isLoading: true,
     isError: false,
   });
-
-  //* query jobs
-  useEffect(() => {
-    const constraints = [];
-
-    if (!isProd) {
-      const devQueryConstraint = [limit(10)];
-      devQueryConstraint.forEach((constraint) => constraints.push(constraint));
-    }
-
-    const q = query(collection(db, 'jobHeaders'), ...constraints);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        if (!snapshot.empty) {
-          setJobs({
-            data: snapshot.docs.map((doc) => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                ...data,
-              };
-            }),
-            isLoading: false,
-            isError: false,
-          });
-        } else {
-          setJobs({ data: [], isLoading: false, isError: false });
-        }
-      },
-      (err) => {
-        console.error(err.message);
-        setJobs({ data: [], isLoading: false, isError: true });
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  //* query workers
-  useEffect(() => {
-    const constraints = [orderBy('workerId', 'asc'), where('role', '==', 'Worker')];
-
-    if (!isProd) {
-      const devQueryConstraint = [limit(10)];
-      devQueryConstraint.forEach((constraint) => constraints.push(constraint));
-    }
-
-    const q = query(collection(db, 'users'), ...constraints);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        if (!snapshot.empty) {
-          setWorkers({
-            data: snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            })),
-            isLoading: false,
-            isError: false,
-          });
-
-          setResourceWorkers({
-            data: snapshot.docs.map((doc) => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                workerId: data.workerId,
-                text: data.fullName.trim(),
-                worker: {
-                  ...data,
-                  jobs: jobs.data.filter((job) => job.worker.id === data.workerId),
-                },
-              };
-            }),
-            isLoading: false,
-            isError: false,
-          });
-        } else {
-          setWorkers({ data: [], isLoading: false, isError: false });
-          setResourceWorkers({ data: [], isLoading: false, isError: false });
-        }
-      },
-      (err) => {
-        console.error(err.message);
-        setWorkers({ data: [], isLoading: false, isError: true });
-        setResourceWorkers({ data: [], isLoading: false, isError: true });
-      }
-    );
-
-    return () => unsubscribe();
-  }, [jobs]);
 
   const handleViewJob = (id) => {
     router.push(`/jobs/view/${id}`);
@@ -254,31 +161,62 @@ const JobWorkerTimelineCalendar = () => {
       <div className='fs-5 mt-2'>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Job Description:</span>
-          <strong className='text-capitalize'>{job?.worker?.name}</strong>
+          <strong className='text-capitalize'>{job?.description || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
-          <span className='pe-1 fs-6'>Assigned Worker:</span>
-          <strong className='text-capitalize'>{job?.worker?.name}</strong>
+          <span className='pe-1 fs-6'>Assigned Worker/s:</span>
+          <strong className='text-capitalize'>
+            {job.workers?.length > 0 ? (
+              <>
+                {/* //* show the first 3 workers */}
+                <span className='me-1'>
+                  {job?.workers
+                    ?.slice(0, 3)
+                    .map((worker) => worker?.name)
+                    .join(', ')}
+                </span>
+
+                {/* //* show the rest workers */}
+                {job?.workers?.length > 3 && (
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent
+                          title='Assigned workers'
+                          info={job?.workers
+                            ?.slice(3, job?.workers?.length)
+                            .map((worker) => worker?.name || '')}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <Badge pill style={{ fontSize: '10px' }}>
+                      + {job?.workers?.slice(3, job?.workers?.length).length}
+                    </Badge>
+                  </OverlayTrigger>
+                )}
+              </>
+            ) : (
+              'N/A'
+            )}
+          </strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Customer:</span>
-          <strong>{job?.customer?.name}</strong>
+          <strong>{job?.customer?.name || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Location:</span>
-          <strong>{job?.location?.name}</strong>
+          <strong>{job?.location?.name || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Scope:</span>
-          <strong className='text-capitalize'>{job?.scope}</strong>
+          <strong className='text-capitalize'>{job?.scope || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Tasks:</span>
           <strong className='text-capitalize'>{job?.tasks ? job?.tasks.length : 'N/A'}</strong>
-        </p>
-        <p className='mb-1'>
-          <span className='pe-1 fs-6'>Team:</span>
-          <strong className='text-capitalize'>{job?.team}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Status:</span>
@@ -289,14 +227,14 @@ const JobWorkerTimelineCalendar = () => {
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Created:</span>
           <strong className='text-capitalize'>
-            {format(job?.createdAt.toDate(), 'yyyy-MM-dd')}{' '}
+            {format(job?.createdAt.toDate(), 'dd-MM-yyyy')}{' '}
           </strong>
           by <strong>{job?.createdBy?.displayName || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Updated:</span>
           <strong className='text-capitalize'>
-            {format(job?.updatedAt.toDate(), 'yyyy-MM-dd')}{' '}
+            {format(job?.updatedAt.toDate(), 'dd-MM-yyyy')}{' '}
           </strong>
           by <strong>{job?.updatedBy?.displayName || 'N/A'}</strong>
         </p>
@@ -339,7 +277,7 @@ const JobWorkerTimelineCalendar = () => {
   const resourceHeaderTemplate = (props) => {
     const worker = props.resourceData.worker;
     const resourceData = props.resourceData;
-    const hasJob = worker?.jobs?.length > 0;
+    const jobs = worker?.jobs?.length || 0;
 
     return (
       <div className='d-flex flex-column ps-2 row-gap-2'>
@@ -373,8 +311,8 @@ const JobWorkerTimelineCalendar = () => {
           </Badge>
 
           <Badge style={{ fontSize: '12px' }} bg='warning'>
-            {worker?.jobs?.length || 0} Task
-            {hasJob ? 's' : ''}
+            {worker?.jobs?.length || 0} Job
+            {jobs > 1 ? 's' : ''}
           </Badge>
         </div>
       </div>
@@ -517,18 +455,113 @@ const JobWorkerTimelineCalendar = () => {
   );
 
   const eventSettings = useMemo(() => {
-    const jobsEvents = jobs.data.map((job) => ({
-      Id: job.id,
-      Subject: job.id,
-      Description: job.description,
-      Location: job.location.name,
-      StartTime: new Date(`${job.startDate}T${job.startTime}:00`),
-      EndTime: new Date(`${job.endDate}T${job.endTime}:00`),
-      WorkerId: job.worker.id,
-      Job: job,
-    }));
+    const jobsEvents = jobs.data.map((job) => {
+      if (!job?.workers || job?.workers?.length < 1) return [];
 
-    return { dataSource: jobsEvents, template: timelineEventTemnplate };
+      return job.workers.map((worker) => ({
+        Id: job.id,
+        Subject: job.id,
+        Description: job.description,
+        Location: job.location.name,
+        StartTime: new Date(`${job.startDate}T${job.startTime}:00`),
+        EndTime: new Date(`${job.endDate}T${job.endTime}:00`),
+        WorkerId: worker.id,
+        Job: job,
+      }));
+    });
+
+    const jobsEventsFlat = jobsEvents.flat();
+
+    return { dataSource: jobsEventsFlat, template: timelineEventTemnplate };
+  }, [jobs]);
+
+  //* query jobs
+  useEffect(() => {
+    const q = query(collection(db, 'jobHeaders'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setJobs({
+            data: snapshot.docs.map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+              };
+            }),
+            isLoading: false,
+            isError: false,
+          });
+        } else {
+          setJobs({ data: [], isLoading: false, isError: false });
+        }
+      },
+      (err) => {
+        console.error(err.message);
+        setJobs({ data: [], isLoading: false, isError: true });
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  //* query workers
+  useEffect(() => {
+    const constraints = [orderBy('workerId', 'asc'), where('role', '==', 'Worker')];
+
+    if (!isProd) {
+      const devQueryConstraint = [limit(10)];
+      devQueryConstraint.forEach((constraint) => constraints.push(constraint));
+    }
+
+    const q = query(collection(db, 'users'), ...constraints);
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setWorkers({
+            data: snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })),
+            isLoading: false,
+            isError: false,
+          });
+
+          setResourceWorkers({
+            data: snapshot.docs.map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                workerId: data.workerId,
+                text: data.fullName.trim(),
+                worker: {
+                  ...data,
+                  jobs: jobs.data.filter((job) =>
+                    job?.workers?.some((worker) => worker?.id === data.workerId)
+                  ),
+                },
+              };
+            }),
+            isLoading: false,
+            isError: false,
+          });
+        } else {
+          setWorkers({ data: [], isLoading: false, isError: false });
+          setResourceWorkers({ data: [], isLoading: false, isError: false });
+        }
+      },
+      (err) => {
+        console.error(err.message);
+        setWorkers({ data: [], isLoading: false, isError: true });
+        setResourceWorkers({ data: [], isLoading: false, isError: true });
+      }
+    );
+
+    return () => unsubscribe();
   }, [jobs]);
 
   if (isLoading || jobs.isLoading || workers.isLoading || resourceWorkers.isLoading) {
@@ -585,7 +618,6 @@ const JobWorkerTimelineCalendar = () => {
       </ResourcesDirective>
       <ViewsDirective>
         <ViewDirective option='TimelineDay' allowVirtualScrolling={true} />
-        <ViewDirective option='TimelineWeek' allowVirtualScrolling={true} />
         <ViewDirective option='TimelineWorkWeek' allowVirtualScrolling={true} />
         <ViewDirective option='TimelineMonth' allowVirtualScrolling={true} />
       </ViewsDirective>

@@ -1,7 +1,7 @@
 import { FormProvider, useForm } from 'react-hook-form';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Accordion, Button, Form, Tab, Table, Tabs } from 'react-bootstrap';
+import { Accordion, Button, Card, Form, Tab, Table, Tabs } from 'react-bootstrap';
 import { jobSchema, scheduleSchema, summarySchema, tasksSchema } from '@/schema/job';
 import { getFormDefaultValues } from '@/utils/zod';
 import {
@@ -24,6 +24,7 @@ import { areIntervalsOverlapping, format, isAfter, isBefore, startOfDay } from '
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
+import FormDebug from '@/components/Form/FormDebug';
 
 const JobForm = ({ data }) => {
   const auth = useAuth();
@@ -42,7 +43,7 @@ const JobForm = ({ data }) => {
 
   const form = useForm({
     mode: 'onChange',
-    defaultValues: { ...getFormDefaultValues(schema), ...data },
+    defaultValues: { ...getFormDefaultValues(schema), ...data, workers: [] },
     resolver: zodResolver(schema),
   });
 
@@ -64,61 +65,74 @@ const JobForm = ({ data }) => {
     }
   }, [activeKey]);
 
+  const handlePrevious = useCallback(() => {
+    if (Number(activeKey) > 0) handleOnSelect(activeKey - 1);
+  }, [activeKey]);
+
   const handleCheckOverlap = useCallback(
     async (workerId, workerName, newJob) => {
+      if (!workerId || !workerName || !newJob) return [];
+
+      const conflict = [];
       const constraints = [
-        where('worker.id', '==', workerId),
+        where('workers', 'array-contains', { id: workerId, name: workerName }),
         where('status', 'in', ['created', 'confirmed', 'in progress']),
       ];
 
-      if (data) constraints.unshift(where('jobId', '!=', data.id));
+      try {
+        if (data) constraints.unshift(where('jobId', '!=', data.id));
 
-      const workerJobs = await getDocs(query(collection(db, 'jobHeaders'), ...constraints));
+        const workerJobs = await getDocs(query(collection(db, 'jobHeaders'), ...constraints));
+        const jobs = workerJobs.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
-      const conflict = [];
-      const jobs = workerJobs.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        jobs.forEach((existingJob) => {
+          const existingJobStart = new Date(`${existingJob.startDate}T${existingJob.startTime}:00`);
+          const existingJobEnd = new Date(`${existingJob.endDate}T${existingJob.endTime}:00`);
+          const newJobStart = newJob.startDate;
+          const newJobEnd = newJob.endDate;
 
-      jobs.forEach((existingJob) => {
-        const existingJobStart = new Date(`${existingJob.startDate}T${existingJob.startTime}:00`);
-        const existingJobEnd = new Date(`${existingJob.endDate}T${existingJob.endTime}:00`);
-        const newJobStart = newJob.startDate;
-        const newJobEnd = newJob.endDate;
+          const isOverlap = areIntervalsOverlapping(
+            { start: newJobStart, end: newJobEnd },
+            { start: existingJobStart, end: existingJobEnd }
+          );
 
-        const isOverlap = areIntervalsOverlapping(
-          { start: newJobStart, end: newJobEnd },
-          { start: existingJobStart, end: existingJobEnd }
-        );
+          if (isOverlap) {
+            conflict.push({
+              workerId,
+              workerName,
+              jobId: existingJob.id,
+              jobDate: `${format(existingJobStart, 'dd/MM/yyyy, p')} - ${format(
+                existingJobEnd,
+                'dd/MM/yyyy, p'
+              )}`,
+              message: `Technician ${workerName} has a scheduling conflict with job #${
+                existingJob.id
+              } on ${format(existingJobStart, 'dd/MM/yyyy, p')} - ${format(
+                existingJobEnd,
+                'dd/MM/yyyy, p'
+              )}`,
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error checking conflicts:', error);
+        return [];
+      }
 
-        if (isOverlap) {
-          conflict.push({
-            workerId,
-            workerName,
-            jobId: existingJob.id,
-            jobDate: `${format(existingJobStart, 'dd/MM/yyyy, p')} - ${format(
-              existingJobEnd,
-              'dd/MM/yyyy, p'
-            )}`,
-            message: `Technician ${workerName} has a scheduling conflict with job #${
-              existingJob.id
-            } on ${format(existingJobStart, 'dd/MM/yyyy, p')} - ${format(
-              existingJobEnd,
-              'dd/MM/yyyy, p'
-            )}`,
-          });
-        }
-      });
-
-      return conflict.length > 0 ? conflict : undefined;
+      return conflict.length > 0 ? conflict : [];
     },
     [data]
   );
 
   const handleSubmit = useCallback(
     async (formData) => {
+      console.log({ formData });
+
       try {
         setIsLoading(true);
         const { jobId, equipments, ...jobHeaders } = formData;
 
+        //* new job date
         const startDate = new Date(`${jobHeaders.startDate}T${jobHeaders.startTime}:00`);
         const endDate = new Date(`${jobHeaders.endDate}T${jobHeaders.endTime}:00`);
 
@@ -142,15 +156,33 @@ const JobForm = ({ data }) => {
           return;
         }
 
-        //* check overlap intervals
-        const conflicts = await handleCheckOverlap(jobHeaders.worker.id, jobHeaders.worker.name, {
-          startDate,
-          endDate,
-        });
+        let workerConflicts = [];
 
-        if (conflicts && conflicts.length > 0) {
+        //* check overlap intervals per worker
+        if (jobHeaders?.workers?.length > 0) {
+          for (const worker of jobHeaders.workers) {
+            const workerId = worker?.id;
+            const workerName = worker?.name;
+
+            workerConflicts.push({
+              workerId,
+              workerName,
+              conflicts: await handleCheckOverlap(worker?.id, worker?.name, {
+                startDate,
+                endDate,
+              }),
+            });
+          }
+        }
+
+        if (
+          workerConflicts &&
+          workerConflicts.filter((worker) => worker.conflicts.length > 0).length > 0
+        ) {
           setActiveKey((prev) => prev - 1);
           setIsLoading(false);
+
+          const filteredConflicts = workerConflicts.filter((worker) => worker.conflicts.length > 0);
 
           await withReactContent(Swal).fire({
             title: 'Conflict Error',
@@ -162,38 +194,38 @@ const JobForm = ({ data }) => {
             html: (
               <div className=''>
                 <div>
-                  Technician{' '}
-                  <strong>
-                    {jobHeaders.worker.name} (#{jobHeaders.worker.id})
-                  </strong>{' '}
-                  is already assigned to another job during this time.
+                  The following technicians are already assigned to another job during this time.
+                  Check the conflict details below.
                 </div>
 
                 <Accordion className='mt-4'>
-                  <Accordion.Item eventKey='0'>
-                    <Accordion.Header className='text-danger'>
-                      <ExclamationTriangleFill className='me-2' size={17} />
-                      Conflict Details
-                    </Accordion.Header>
-                    <Accordion.Body>
-                      <Table className='fs-5 mb-0' striped bordered hover>
-                        <thead>
-                          <tr>
-                            <th>Job ID</th>
-                            <th>Start Date - End Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {conflicts.map((conflict) => (
+                  {filteredConflicts.map((worker, i) => (
+                    <Accordion.Item eventKey={`${i}-${worker.workerId}`}>
+                      <Accordion.Header className='text-danger'>
+                        <ExclamationTriangleFill className='me-3' size={17} />
+                        Conflict Details #{i + 1} - {worker.workerName} (#
+                        {worker.workerId})
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        <Table className='fs-5 mb-0' striped bordered hover>
+                          <thead>
                             <tr>
-                              <td>{conflict.jobId}</td>
-                              <td>{conflict.jobDate}</td>
+                              <th>Job ID</th>
+                              <th>Start Date - End Date</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </Accordion.Body>
-                  </Accordion.Item>
+                          </thead>
+                          <tbody>
+                            {worker.conflicts.map((conflict) => (
+                              <tr>
+                                <td>{conflict.jobId}</td>
+                                <td>{conflict.jobDate}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  ))}
                 </Accordion>
               </div>
             ),
@@ -251,21 +283,14 @@ const JobForm = ({ data }) => {
     setActiveKey(key);
   };
 
-  // console.log({ errors: form.formState.errors });
-
   return (
     <>
-      {/* <div className='mb-4'> {JSON.stringify(contactsOptions, null, 2)}</div> */}
-      {/* <div className='mb-4'> {JSON.stringify(equipmentForm.watch(), null, 2)}</div> */}
-      {/* <div className='mb-4'> {JSON.stringify({ equipments }, null, 2)}</div> */}
-      {/* <div className='mb-4'> {JSON.stringify({ activeKey }, null, 2)}</div> */}
-      {/* <div>{JSON.stringify(form.watch('location'))}</div> */}
+      {/* <FormDebug form={form} /> */}
 
       <FormProvider {...form}>
         <Form>
           <Tabs
             id='job-tab'
-            className='mb-4'
             activeKey={activeKey > tabsLength ? tabsLength : activeKey}
             onSelect={handleOnSelect}
           >
@@ -274,11 +299,20 @@ const JobForm = ({ data }) => {
             </Tab>
 
             <Tab eventKey='1' title='Job Task'>
-              <TaskForm isLoading={isLoading} handleNext={handleNext} />
+              <TaskForm
+                isLoading={isLoading}
+                handleNext={handleNext}
+                handlePrevious={handlePrevious}
+              />
             </Tab>
 
             <Tab eventKey='2' title='Job Scheduling'>
-              <JobSchedulingForm data={data} isLoading={isLoading} handleNext={handleNext} />
+              <JobSchedulingForm
+                data={data}
+                isLoading={isLoading}
+                handleNext={handleNext}
+                handlePrevious={handlePrevious}
+              />
             </Tab>
           </Tabs>
         </Form>

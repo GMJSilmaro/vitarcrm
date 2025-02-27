@@ -5,6 +5,13 @@ import { GeeksSEO } from 'widgets';
 import ContentHeader from 'components/dashboard/ContentHeader';
 import JobForm from '@/sub-components/dashboard/jobs/JobForm';
 import { useRouter } from 'next/router';
+import {
+  BriefcaseFill,
+  House,
+  HouseDoorFill,
+  PlusCircle,
+  PlusCircleFill,
+} from 'react-bootstrap-icons';
 
 const CreateJobs = () => {
   const router = useRouter();
@@ -23,16 +30,16 @@ const CreateJobs = () => {
           {
             text: 'Dashboard',
             link: '/',
-            icon: <i className='fe fe-home' style={{ marginRight: '8px' }} />,
+            icon: <HouseDoorFill className='me-2' size={14} />,
           },
           {
             text: 'Jobs',
             link: '/jobs',
-            icon: <i className='fe fe-briefcase' style={{ marginRight: '8px' }} />,
+            icon: <BriefcaseFill className='me-2' size={14} />,
           },
           {
             text: 'Create Job',
-            icon: <i className='fe fe-plus-circle' style={{ marginRight: '8px' }} />,
+            icon: <PlusCircleFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
@@ -44,9 +51,6 @@ const CreateJobs = () => {
             onClick: () => router.push('/jobs'),
           },
         ]}
-        customStyles={{
-          background: 'linear-gradient(90deg, #305cde 0%, #1e40a6 100%)',
-        }}
       />
 
       <Card className='shadow-sm'>

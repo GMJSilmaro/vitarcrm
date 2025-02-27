@@ -2,13 +2,7 @@ import { z } from 'zod';
 
 export const PRIORITY_LEVELS = ['normal', 'urgent'];
 export const SCOPE_TYPE = ['lab', 'onsite'];
-export const STATUS = [
-  'created',
-  'confirmed',
-  'in progress',
-  'completed',
-  'cancelled',
-];
+export const STATUS = ['created', 'confirmed', 'in progress', 'completed', 'cancelled'];
 
 const priorityEnum = z.enum(PRIORITY_LEVELS, {
   message: 'Please select a job priority level.',
@@ -66,8 +60,7 @@ export const summarySchema = z.object({
       required_error: 'Please select location',
     })
     .transform((formData) => {
-      if (typeof formData === 'object')
-        return { id: formData.siteId, name: formData.siteName };
+      if (typeof formData === 'object') return { id: formData.siteId, name: formData.siteName };
       return null;
     }),
   equipments: z
@@ -94,50 +87,35 @@ export const taskSchema = z.object({
 });
 
 export const tasksSchema = z.object({
-  tasks: z
-    .array(taskSchema)
-    .min(1, { message: 'Please add at least one task.' }),
+  tasks: z.array(taskSchema).default([]),
 });
 
 export const scheduleSchema = z
   .object({
     jobId: z.string().min(1, { message: 'Job No. is required.' }),
-    status: z
-      .union([z.enum(STATUS), z.record(z.string(), z.any())])
-      .transform((formData) => {
-        if (typeof formData === 'object') return formData.value;
-        return formData;
-      }),
-    worker: z
-      .record(z.string(), z.any(), {
-        message: 'Please select worker',
-        required_error: 'Please select worker',
-      })
+    status: z.union([z.enum(STATUS), z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
+    workers: z
+      .array(z.record(z.string(), z.any()))
+      .min(1, { message: 'Please select at least 1 technician' })
       .transform((formData) => {
         if (typeof formData === 'object') {
-          return { id: formData.id, name: formData.name };
+          if (formData.length < 1) return [];
+          return formData.map((el) => ({ id: el.id, name: el.name }));
         }
         return null;
       }),
-    scope: z
-      .union([scopeEnum, z.record(z.string(), z.any())])
-      .transform((formData) => {
-        if (typeof formData === 'object') return formData.value;
-        return formData;
-      }),
-    priority: z
-      .union([priorityEnum, z.record(z.string(), z.any())])
-      .transform((formData) => {
-        if (typeof formData === 'object') return formData.value;
-        return formData;
-      }),
-    description: z
-      .string({
-        message: 'Description is required.',
-        required_error: 'Description is required.',
-        invalid_type_error: 'Description is required.',
-      })
-      .min(1, { message: 'Description is required.' }),
+    scope: z.union([scopeEnum, z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
+    priority: z.union([priorityEnum, z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
+    description: z.string().default(''),
     remarks: z.string().default(''),
     startDate: z
       .string({
@@ -165,10 +143,12 @@ export const scheduleSchema = z
       .min(1, { message: 'End time is required.' }),
     team: z
       .union([
-        z.string({
-          message: 'Please select team',
-          required_error: 'Please select team',
-        }),
+        z
+          .string({
+            message: 'Please select team',
+            required_error: 'Please select team',
+          })
+          .default(''),
         z.record(z.string(), z.any()),
       ])
       .transform((formData) => {
@@ -198,18 +178,13 @@ export const scheduleSchema = z
       const startDate = new Date(formObj.startDate);
       const endDate = new Date(formObj.endDate);
 
-      const [startHours, startMinutes] = formObj.startTime
-        .split(':')
-        .map(Number);
+      const [startHours, startMinutes] = formObj.startTime.split(':').map(Number);
       const [endHours, endMinutes] = formObj.endTime.split(':').map(Number);
 
       if (startDate < endDate) return true; // If end date is greater, time check is unnecessary
 
       if (startDate.getTime() === endDate.getTime()) {
-        if (
-          endHours > startHours ||
-          (endHours === startHours && endMinutes > startMinutes)
-        ) {
+        if (endHours > startHours || (endHours === startHours && endMinutes > startMinutes)) {
           return true;
         }
         return false;
@@ -218,8 +193,7 @@ export const scheduleSchema = z
       return true;
     },
     {
-      message:
-        'End time must be greater than start time when dates are the same.',
+      message: 'End time must be greater than start time when dates are the same.',
       path: ['endTime'],
     }
   );

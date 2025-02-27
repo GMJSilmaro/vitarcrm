@@ -7,7 +7,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
+import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap';
 import {
   CardList,
   Eye,
@@ -21,13 +21,16 @@ import DataTableViewOptions from '../../../../components/common/DataTableViewOpt
 import DataTable from '../../../../components/common/DataTable';
 import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
 import { useRouter } from 'next/router';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { dateFilter, dateSort, fuzzyFilter } from '@/utils/datatable';
+import { dateFilter, dateSort, fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import DataTableSearch from '@/components/common/DataTableSearch';
 
 import { format, formatDistanceStrict } from 'date-fns';
 import DataTableFilter from '@/components/common/DataTableFilter';
+import { TooltipContent } from '@/components/common/ToolTipContent';
+import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 
 export const HistoryTab = () => {
   const router = useRouter();
@@ -133,22 +136,57 @@ export const HistoryTab = () => {
           );
         },
       }),
-      columnHelper.accessor((row) => `${row.worker.name}`, {
-        id: 'worker',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Technician' />,
-        cell: ({ row }) => {
-          const { worker } = row.original;
-
-          if (!worker) return 'N/A';
-
-          return (
-            <div>
-              <PersonLinesFill size={14} className='text-primary me-2' />
-              <span>{worker.name}</span>
-            </div>
-          );
+      columnHelper.accessor(
+        (row) => {
+          return row?.workers?.length > 0
+            ? row.workers.map((worker) => worker.name).join(', ')
+            : 'N/A';
         },
-      }),
+        {
+          id: 'workers',
+          header: ({ column }) => <DataTableColumnHeader column={column} title='Technician/s' />,
+          cell: ({ row }) => {
+            const { workers } = row.original;
+
+            if (!workers || workers.length < 1) return 'N/A';
+
+            return (
+              <div>
+                <PersonLinesFill size={14} className='text-primary me-2' />
+
+                {/* //* show the first 3 workers */}
+                <span className='me-1'>
+                  {workers
+                    ?.slice(0, 3)
+                    .map((worker) => worker?.name)
+                    .join(', ')}
+                </span>
+
+                {/* //* show the rest workers */}
+                {workers?.length > 3 && (
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent
+                          title='Assigned workers'
+                          info={workers
+                            ?.slice(3, workers?.length)
+                            .map((worker) => worker?.name || '')}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <Badge pill style={{ fontSize: '10px' }}>
+                      + {workers?.slice(3, workers?.length).length}
+                    </Badge>
+                  </OverlayTrigger>
+                )}
+              </div>
+            );
+          },
+        }
+      ),
       columnHelper.accessor(
         (row) => {
           const { startDate, endDate, startTime, endTime } = row;
@@ -199,8 +237,8 @@ export const HistoryTab = () => {
       }),
       columnHelper.accessor('actions', {
         id: 'actions',
-        size: 100,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
         enableSorting: false,
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
@@ -317,7 +355,7 @@ export const HistoryTab = () => {
       },
       {
         label: 'Technician',
-        columnId: 'worker',
+        columnId: 'workers',
         type: 'text',
         placeholder: 'Search by technician...',
       },
@@ -388,8 +426,11 @@ export const HistoryTab = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { fuzzy: fuzzyFilter },
-    globalFilterFn: 'fuzzy',
+    filterFns: { globalSearch: globalSearchFilter },
+    globalFilterFn: 'globalSearch',
+    initialState: {
+      columnPinning: { right: ['actions'] },
+    },
   });
 
   useEffect(() => {

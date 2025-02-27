@@ -29,6 +29,13 @@ export const fuzzySort = (rowA, rowB, columnId) => {
   return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
 };
 
+//* Global search filter
+export const globalSearchFilter = (row, columnId, filterValue) => {
+  const searchTerm = String(filterValue).toLowerCase();
+  const rowValue = row.getValue(columnId);
+  return rowValue !== undefined ? String(rowValue).toLowerCase().includes(searchTerm) : false;
+};
+
 export const dateFilter = (rowDateValue, filterDateValue) => {
   if (!isValid(rowDateValue) || !isValid(filterDateValue)) return false;
   return isSameDay(rowDateValue, filterDateValue);
@@ -40,3 +47,18 @@ export const dateSort = (rowDateValue, filterDateValue) => {
   if (!isValid(rowDateValue) || !isValid(filterDateValue)) return 1;
   return compareAsc(rowDateValue, filterDateValue);
 };
+
+export function getCommonPinningStyles({ column }) {
+  const isPinned = column.getIsPinned();
+
+  return {
+    left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
+    right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
+    opacity: isPinned ? 0.97 : 1,
+    position: isPinned ? 'sticky' : 'relative',
+    background: isPinned ? 'hsl(var(--background))' : 'hsl(var(--background))',
+    width: column.getSize(),
+    background: 'white',
+    zIndex: isPinned ? 1 : 0,
+  };
+}

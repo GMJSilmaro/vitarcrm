@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
+import { Badge, Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
 import { useForm, useFormContext, Controller } from 'react-hook-form';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
@@ -7,22 +7,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { equipmentSchema } from '@/schema/job';
 import JobEquipmentList from '../JobEquipmentList';
 import { db } from '@/firebase';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  onSnapshot,
-  query,
-  where,
-} from 'firebase/firestore';
-import { orderBy } from 'lodash';
-import Select from 'react-select';
-import { isProd } from '@/constants/environment';
+import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import toast from 'react-hot-toast';
+import Select from '@/components/Form/Select';
+import { useRouter } from 'next/router';
 
 const JobSummaryForm = ({ data, isLoading, handleNext }) => {
+  const router = useRouter();
+
   const form = useFormContext();
 
   const formErrors = form.formState.errors;
@@ -49,7 +41,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
   //* query customers
   useEffect(() => {
     Promise.all([
-      getDocs(query(collection(db, 'customers'))),
+      getDocs(query(collection(db, 'customers'), where('customerId', '==', 'C003769'))),
+      // getDocs(query(collection(db, 'customers'))),
       getDocs(query(collection(db, 'contacts'))),
     ])
       .then(([customerSnapshot, contactsSnapshot]) => {
@@ -111,7 +104,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
 
               return {
                 value: doc.id,
-                label: `${data.inventoryId} - ${data.tagId} - ${data.description}`,
+                label:  `${data?.inventoryId || ''} - ${data?.tagId || ''} - ${data?.description || '' } - ${data?.category || ''} - ${data?.certificateNo || ''}`, //prettier-ignore
                 ...data,
               };
             }),
@@ -128,119 +121,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
 
     return () => unsubscribe();
   }, []);
-
-  const formatCustomerOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{data.label}</span>
-        <span className='d-flex column-gap-2'>
-          <Badge bg='primary'>{data.contacts?.length ?? 0} Contact</Badge>
-          <Badge bg='warning'>{data.locations?.length ?? 0} Location</Badge>
-        </span>
-      </div>
-    );
-  };
-
-  const formatContactOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        {data.label}
-        <span className='d-flex column-gap-2'>
-          {data?.isDefault && <Badge bg='primary'>Default</Badge>}
-          <Badge bg='warning'>{data.role}</Badge>
-        </span>
-      </div>
-    );
-  };
-
-  const formatLocationOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{data.label}</span>
-        {data?.isDefault && <Badge bg='primary'>Default</Badge>}
-      </div>
-    );
-  };
-
-  const formatEquipmentOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{data.label}</span>
-        <span className='d-flex column-gap-2'>
-          <Badge bg='primary'>{data.category}</Badge>
-          <Badge bg='warning'>{data.certificateNo}</Badge>
-        </span>
-      </div>
-    );
-  };
-
-  const handleCustomerChange = (option, field) => {
-    field.onChange(option);
-
-    //* contact options
-    const cOptions = option.contacts.map((contact) => ({
-      value: contact.id,
-      label: `${contact.firstName} ${contact.lastName}`,
-      ...contact,
-    }));
-
-    //* location options
-    const lOptions = option.locations.map((location) => ({
-      value: location.siteId,
-      label: `${location.siteId} - ${location.siteName}`,
-      ...location,
-    }));
-
-    if (cOptions.length > 0) {
-      setContactsOpions(cOptions);
-      const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
-      if (defaultContact) {
-        form.setValue('contact', defaultContact);
-        form.clearErrors('contact');
-      }
-    } else {
-      form.setValue('contact', null);
-    }
-
-    if (lOptions.length > 0) {
-      setLocationsOptions(lOptions);
-      const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
-      if (defaultLocation) {
-        form.setValue('location', defaultLocation);
-        form.clearErrors('location');
-      }
-    } else {
-      form.setValue('location', null);
-    }
-  };
-
-  const handleAddEquipment = () => {
-    equipmentForm.trigger('equipment');
-    const data = equipmentForm.getValues('equipment');
-    if (!data) return;
-
-    const currentEquipments = form.getValues('equipments');
-
-    const isExist = currentEquipments.find(
-      (equipment) => equipment.inventoryId === data.inventoryId
-    );
-
-    if (isExist) {
-      toast.error('Equipment already selected');
-      return;
-    }
-
-    form.setValue('equipments', [...equipments, data]);
-    form.clearErrors('equipments');
-    equipmentForm.setValue('equipment', null);
-  };
-
-  const handleRemoveEquipment = (id) => {
-    form.setValue(
-      'equipments',
-      equipments.filter((equipment) => equipment.inventoryId !== id)
-    );
-  };
 
   //* set customer, contact & location if data exist
   useEffect(() => {
@@ -304,157 +184,153 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     }
   }, [data, equipmentsOptions]);
 
+  const formatCustomerOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        <span>{data.label}</span>
+        <span className='d-flex column-gap-2'>
+          <Badge bg='primary'>{data.contacts?.length ?? 0} Contact</Badge>
+          <Badge bg='warning'>{data.locations?.length ?? 0} Location</Badge>
+        </span>
+      </div>
+    );
+  };
+
+  const formatContactOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        {data.label}
+        <span className='d-flex column-gap-2'>
+          {data?.isDefault && <Badge bg='primary'>Default</Badge>}
+          <Badge bg='warning'>{data.role}</Badge>
+        </span>
+      </div>
+    );
+  };
+
+  const formatLocationOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        <span>{data.label}</span>
+        {data?.isDefault && <Badge bg='primary'>Default</Badge>}
+      </div>
+    );
+  };
+
+  const formatEquipmentOptionLabel = (data) => {
+    const getLabel = (data) => {
+      if (!data) return '';
+
+      let label = '';
+      if (data?.inventoryId) label += `${data.inventoryId} - `;
+      if (data?.tagId) label += `${data.tagId} - `;
+      if (data?.description) label += `${data.description}`;
+
+      return label;
+    };
+
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        <span>{getLabel(data)}</span>
+        <span className='d-flex column-gap-2'>
+          <Badge bg='primary'>{data.category}</Badge>
+          <Badge bg='warning'>{data.certificateNo}</Badge>
+        </span>
+      </div>
+    );
+  };
+
+  const handleCustomerChange = (option, field) => {
+    field.onChange(option);
+
+    //* contact options
+    const cOptions = option.contacts.map((contact) => ({
+      value: contact.id,
+      label: `${contact.firstName} ${contact.lastName}`,
+      ...contact,
+    }));
+
+    //* location options
+    const lOptions = option.locations.map((location) => ({
+      value: location.siteId,
+      label: `${location.siteId} - ${location.siteName}`,
+      ...location,
+    }));
+
+    if (cOptions.length > 0) {
+      setContactsOpions(cOptions);
+      const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
+      if (defaultContact) {
+        form.setValue('contact', defaultContact);
+        form.clearErrors('contact');
+      }
+    } else {
+      form.setValue('contact', null);
+      form.setValue('contact.firstName', '');
+      form.setValue('contact.lastName', '');
+      form.setValue('contact.phone', '');
+      form.setValue('contact.email', '');
+    }
+
+    if (lOptions.length > 0) {
+      setLocationsOptions(lOptions);
+      const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
+      if (defaultLocation) {
+        form.setValue('location', defaultLocation);
+        form.clearErrors('location');
+      }
+    } else {
+      form.setValue('location', null);
+    }
+  };
+
+  const handleAddEquipment = () => {
+    equipmentForm.trigger('equipment');
+    const data = equipmentForm.getValues('equipment');
+    if (!data) return;
+
+    const currentEquipments = form.getValues('equipments');
+
+    const isExist = currentEquipments.find(
+      (equipment) => equipment.inventoryId === data.inventoryId
+    );
+
+    if (isExist) {
+      toast.error('Equipment already selected');
+      return;
+    }
+
+    form.setValue('equipments', [...equipments, data]);
+    form.clearErrors('equipments');
+    equipmentForm.setValue('equipment', null);
+  };
+
+  const handleRemoveEquipment = (id) => {
+    form.setValue(
+      'equipments',
+      equipments.filter((equipment) => equipment.inventoryId !== id)
+    );
+  };
+
   return (
     <>
-      <Row>
-        <Form.Group as={Col} md='6'>
-          <RequiredLabel label='Customer' id='customer' />
-          <OverlayTrigger
-            placement='right'
-            overlay={
-              <Tooltip>
-                <TooltipContent
-                  title='Customer Search'
-                  info={[
-                    "Search by customer's code or name",
-                    'Selection will load related contacts and locations',
-                    'Required to proceed with job creation',
-                  ]}
-                />
-              </Tooltip>
-            }
-          >
-            <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-          </OverlayTrigger>
+      <Card className='shadow-none'>
+        <Card.Body className='pb-0'>
+          <h4 className='mb-0'>Customer</h4>
+          <p className='text-muted fs-6'>Basic customer details</p>
 
-          <Controller
-            name='customer'
-            control={form.control}
-            render={({ field }) => (
-              <>
-                <Select
-                  {...field}
-                  inputId='customer'
-                  instanceId='customer'
-                  onChange={(option) => handleCustomerChange(option, field)}
-                  formatOptionLabel={formatCustomerOptionLabel}
-                  options={customersOptions.data}
-                  placeholder={
-                    customersOptions.isLoading
-                      ? 'Loading customers...'
-                      : "Search by customer's code or name"
-                  }
-                  isDisabled={customersOptions.isLoading}
-                  noOptionsMessage={() =>
-                    customersOptions.isLoading ? 'Loading...' : 'No customers found'
-                  }
-                />
-
-                {formErrors && formErrors.customer?.message && (
-                  <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
-                )}
-              </>
-            )}
-          />
-        </Form.Group>
-      </Row>
-      <hr className='my-4' />
-      <h5 className='mb-1'>Primary Contact</h5>
-      <p className='text-muted'>Details about the customer contact.</p>
-      <Row className='mb-3'>
-        <Form.Group as={Col} md='6'>
-          <Form.Label id='contact'>Contact</Form.Label>
-
-          <Controller
-            name='contact'
-            control={form.control}
-            render={({ field }) => (
-              <>
-                <Select
-                  {...field}
-                  inputId='contact'
-                  instanceId='contact'
-                  onChange={(option) => field.onChange(option)}
-                  formatOptionLabel={formatContactOptionLabel}
-                  options={contactsOptions}
-                  isDisabled={customersOptions.isLoading || contactsOptions.length < 1}
-                  placeholder="Search by contact's name"
-                  noOptionsMessage={() => 'No contacts found'}
-                />
-
-                {formErrors && formErrors.contact?.message && (
-                  <Form.Text className='text-danger'>{formErrors.contact?.message}</Form.Text>
-                )}
-              </>
-            )}
-          />
-        </Form.Group>
-      </Row>
-      <Row className='mb-3'>
-        <Form.Group as={Col} md='3'>
-          <Form.Label>First name</Form.Label>
-          <Form.Control
-            required
-            type='text'
-            value={form.watch('contact.firstName')}
-            readOnly
-            disabled
-          />
-        </Form.Group>
-        <Form.Group as={Col} md='3'>
-          <Form.Label>Last name</Form.Label>
-          <Form.Control
-            required
-            type='text'
-            value={form.watch('contact.lastName')}
-            readOnly
-            disabled
-          />
-        </Form.Group>
-        <Form.Group as={Col} md='3'>
-          <Form.Label>Phone</Form.Label>
-          <Form.Control
-            required
-            type='text'
-            value={form.watch('contact.phone')}
-            readOnly
-            disabled
-          />
-        </Form.Group>
-        <Form.Group as={Col} md='3'>
-          <Form.Label>Phone</Form.Label>
-          <Form.Control
-            required
-            type='text'
-            value={form.watch('contact.email')}
-            readOnly
-            disabled
-          />
-        </Form.Group>
-      </Row>
-      <hr className='my-4' />
-      <h5
-        className='mb-1'
-        style={{ cursor: 'pointer' }}
-        onClick={() => setShowLocationFields((prev) => !prev)}
-      >
-        Job Address {showLocationFields ? '(-)' : '(+)'}
-      </h5>
-      <p className='text-muted'>Details about the location/site.</p>
-
-      {showLocationFields && (
-        <>
-          <Row className='mb-3'>
-            <Form.Group as={Col} md='6'>
-              <RequiredLabel label='Location' id='location' />
+          <Row>
+            <Form.Group as={Col} md={12}>
+              <RequiredLabel label='Customer' id='customer' />
               <OverlayTrigger
                 placement='right'
                 overlay={
                   <Tooltip>
                     <TooltipContent
-                      title='Location Search'
+                      title='Customer Search'
                       info={[
-                        "Search by location's id or name",
+                        "Search by customer's code or name",
+                        'Selection will load related contacts and locations',
                         'Required to proceed with job creation',
                       ]}
                     />
@@ -465,26 +341,64 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               </OverlayTrigger>
 
               <Controller
-                name='location'
+                name='customer'
                 control={form.control}
                 render={({ field }) => (
                   <>
                     <Select
                       {...field}
-                      inputId='location'
-                      instanceId='location'
-                      onChange={(option) => field.onChange(option)}
-                      formatOptionLabel={formatLocationOptionLabel}
-                      options={locationsOptions}
-                      placeholder="Search by location's id or name"
-                      isDisabled={locationIsLoading || locationsOptions.length < 1}
+                      inputId='customer'
+                      instanceId='customer'
+                      onChange={(option) => handleCustomerChange(option, field)}
+                      formatOptionLabel={formatCustomerOptionLabel}
+                      options={customersOptions.data}
+                      placeholder={
+                        customersOptions.isLoading
+                          ? 'Loading customers...'
+                          : "Search by customer's code or name"
+                      }
+                      isDisabled={customersOptions.isLoading}
                       noOptionsMessage={() =>
-                        locationsOptions.isLoading ? 'Loading...' : 'No locations found'
+                        customersOptions.isLoading ? 'Loading...' : 'No customers found'
                       }
                     />
 
-                    {formErrors && formErrors.location?.message && (
-                      <Form.Text className='text-danger'>{formErrors.location?.message}</Form.Text>
+                    {formErrors && formErrors.customer?.message && (
+                      <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
+                    )}
+                  </>
+                )}
+              />
+            </Form.Group>
+          </Row>
+
+          <hr className='my-4' />
+          <h5 className='mb-0'>Primary Contact</h5>
+          <p className='text-muted fs-6'>Details about the customer contact.</p>
+
+          <Row className='mb-3'>
+            <Form.Group as={Col} md={12}>
+              <Form.Label id='contact'>Contact</Form.Label>
+
+              <Controller
+                name='contact'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Select
+                      {...field}
+                      inputId='contact'
+                      instanceId='contact'
+                      onChange={(option) => field.onChange(option)}
+                      formatOptionLabel={formatContactOptionLabel}
+                      options={contactsOptions}
+                      isDisabled={customersOptions.isLoading || contactsOptions.length < 1}
+                      placeholder="Search by contact's name"
+                      noOptionsMessage={() => 'No contacts found'}
+                    />
+
+                    {formErrors && formErrors.contact?.message && (
+                      <Form.Text className='text-danger'>{formErrors.contact?.message}</Form.Text>
                     )}
                   </>
                 )}
@@ -493,224 +407,345 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
           </Row>
 
           <Row className='mb-3'>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Name</Form.Label>
+            <Form.Group as={Col} md='3'>
+              <Form.Label>First name</Form.Label>
               <Form.Control
                 required
                 type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.siteName')}
+                value={form.watch('contact.firstName')}
                 readOnly
                 disabled
               />
             </Form.Group>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Latitude</Form.Label>
+            <Form.Group as={Col} md='3'>
+              <Form.Label>Last name</Form.Label>
               <Form.Control
                 required
                 type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.latitude')
-                }
+                value={form.watch('contact.lastName')}
                 readOnly
                 disabled
               />
             </Form.Group>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Longitude</Form.Label>
+            <Form.Group as={Col} md='3'>
+              <Form.Label>Phone</Form.Label>
               <Form.Control
                 required
                 type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.longitude')
-                }
+                value={form.watch('contact.phone')}
                 readOnly
                 disabled
               />
             </Form.Group>
-          </Row>
-
-          <Row className='mb-3'>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Street Address #1</Form.Label>
+            <Form.Group as={Col} md='3'>
+              <Form.Label>Phone</Form.Label>
               <Form.Control
                 required
                 type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street1')
-                }
-                readOnly
-                disabled
-              />
-            </Form.Group>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Street Address #2</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street2')
-                }
-                readOnly
-                disabled
-              />
-            </Form.Group>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Street Address #3</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street3')
-                }
+                value={form.watch('contact.email')}
                 readOnly
                 disabled
               />
             </Form.Group>
           </Row>
 
-          <Row className='mb-3'>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>City</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.city')}
-                readOnly
-                disabled
+          <hr className='my-4' />
+          <h4
+            className='mb-0'
+            style={{ cursor: 'pointer' }}
+            onClick={() => setShowLocationFields((prev) => !prev)}
+          >
+            Job Address {showLocationFields ? '(-)' : '(+)'}
+          </h4>
+          <p className='text-muted fs-6'>Details about the location/site.</p>
+
+          {showLocationFields && (
+            <>
+              <Row className='mb-3'>
+                <Form.Group as={Col} md={12}>
+                  <RequiredLabel label='Location' id='location' />
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent
+                          title='Location Search'
+                          info={[
+                            "Search by location's id or name",
+                            'Required to proceed with job creation',
+                          ]}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                  </OverlayTrigger>
+
+                  <Controller
+                    name='location'
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <Select
+                          {...field}
+                          inputId='location'
+                          instanceId='location'
+                          onChange={(option) => field.onChange(option)}
+                          formatOptionLabel={formatLocationOptionLabel}
+                          options={locationsOptions}
+                          placeholder="Search by location's id or name"
+                          isDisabled={locationIsLoading || locationsOptions.length < 1}
+                          noOptionsMessage={() =>
+                            locationsOptions.isLoading ? 'Loading...' : 'No locations found'
+                          }
+                        />
+
+                        {formErrors && formErrors.location?.message && (
+                          <Form.Text className='text-danger'>
+                            {formErrors.location?.message}
+                          </Form.Text>
+                        )}
+                      </>
+                    )}
+                  />
+                </Form.Group>
+              </Row>
+
+              <Row className='mb-3'>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Name</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={locationIsLoading ? 'Loading...' : form.watch('location.siteName')}
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Latitude</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.latitude')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Longitude</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading
+                        ? 'Loading...'
+                        : form.watch('location.addresses.0.longitude')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+              </Row>
+
+              <Row className='mb-3'>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Street Address #1</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street1')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Street Address #2</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street2')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Street Address #3</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street3')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+              </Row>
+
+              <Row className='mb-3'>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>City</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.city')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Postal Code</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading
+                        ? 'Loading...'
+                        : form.watch('location.addresses.0.postalCode')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Province</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.province')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+              </Row>
+
+              <Row className='mb-3'>
+                <Form.Group as={Col} md='4'>
+                  <Form.Label>Country</Form.Label>
+                  <Form.Control
+                    required
+                    type='text'
+                    value={
+                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.country')
+                    }
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+              </Row>
+            </>
+          )}
+
+          <hr className='my-4' />
+          <h4
+            className='mb-0'
+            style={{ cursor: 'pointer' }}
+            onClick={() => setShowEquipmentFields((prev) => !prev)}
+          >
+            Job Equipments {showEquipmentFields ? '(-)' : '(+)'}
+          </h4>
+          <p className='text-muted fs-6'>Details about the equipment needed for the job.</p>
+
+          {showEquipmentFields && (
+            <>
+              <Row className='mb-3 gap-0 align-items-center'>
+                <Form.Group as={Col} md='12'>
+                  <RequiredLabel label='Equipments' id='equipment' />
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent
+                          title='Equipments Search'
+                          info={[
+                            "Search by equipment's tag id, inventory id or description, category or certificate no.",
+                            'Required to proceed with job creation',
+                          ]}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                  </OverlayTrigger>
+
+                  <Controller
+                    name='equipment'
+                    control={equipmentForm.control}
+                    render={({ field }) => (
+                      <>
+                        <div className='d-flex gap-2 w-100 align-items-center'>
+                          <Select
+                            className='w-100'
+                            {...field}
+                            inputId='equipment'
+                            instanceId='equipment'
+                            onChange={(option) => {
+                              field.onChange(option);
+                              form.clearErrors('equipments');
+
+                              handleAddEquipment();
+                            }}
+                            formatOptionLabel={formatEquipmentOptionLabel}
+                            options={equipmentsOptions.data}
+                            isDisabled={equipmentsOptions.isLoading || equipmentsOptions.length < 1}
+                            placeholder="Search by equipment's tag id, inventory id or description, category or certificate no."
+                            noOptionsMessage={() => 'No equipments found'}
+                          />
+                        </div>
+
+                        {equipmentForm.formState.errors &&
+                          equipmentForm.formState.errors.equipment?.message && (
+                            <Form.Text className='text-danger'>
+                              {equipmentForm.formState.errors.equipment?.message}
+                            </Form.Text>
+                          )}
+                      </>
+                    )}
+                  />
+                </Form.Group>
+              </Row>
+
+              <JobEquipmentList
+                height={426}
+                data={form.watch('equipments')}
+                handleRemoveEquipment={handleRemoveEquipment}
               />
-            </Form.Group>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Postal Code</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.postalCode')
-                }
-                readOnly
-                disabled
-              />
-            </Form.Group>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Province</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.province')
-                }
-                readOnly
-                disabled
-              />
-            </Form.Group>
-          </Row>
 
-          <Row className='mb-3'>
-            <Form.Group as={Col} md='4'>
-              <Form.Label>Country</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={
-                  locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.country')
-                }
-                readOnly
-                disabled
-              />
-            </Form.Group>
-          </Row>
-        </>
-      )}
-      <hr className='my-4' />
-      <h5
-        className='mb-1'
-        style={{ cursor: 'pointer' }}
-        onClick={() => setShowEquipmentFields((prev) => !prev)}
-      >
-        Job Equipments {showEquipmentFields ? '(-)' : '(+)'}
-      </h5>
-      <p className='text-muted'>Details about the equipment needed for the job.</p>
-
-      {showEquipmentFields && (
-        <>
-          <Row className='mb-3 gap-0 align-items-center'>
-            <Form.Group as={Col} md='12'>
-              <RequiredLabel label='Equipments' id='equipment' />
-              <OverlayTrigger
-                placement='right'
-                overlay={
-                  <Tooltip>
-                    <TooltipContent
-                      title='Equipments Search'
-                      info={[
-                        "Search by equipment's tag id, inventory id or description",
-                        'Required to proceed with job creation',
-                      ]}
-                    />
-                  </Tooltip>
-                }
-              >
-                <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-              </OverlayTrigger>
-
-              <Controller
-                name='equipment'
-                control={equipmentForm.control}
-                render={({ field }) => (
-                  <>
-                    <div className='d-flex gap-2 w-100 align-items-center'>
-                      <Select
-                        className='w-100'
-                        {...field}
-                        inputId='equipment'
-                        instanceId='equipment'
-                        onChange={(option) => {
-                          field.onChange(option);
-                          form.clearErrors('equipments');
-                        }}
-                        formatOptionLabel={formatEquipmentOptionLabel}
-                        options={equipmentsOptions.data}
-                        isDisabled={equipmentsOptions.isLoading || equipmentsOptions.length < 1}
-                        placeholder="Search by equipment's tag id, inventory id or description"
-                        noOptionsMessage={() => 'No equipments found'}
-                      />
-
-                      <Button size='sm' onClick={() => handleAddEquipment()}>
-                        Add
-                      </Button>
-                    </div>
-
-                    {equipmentForm.formState.errors &&
-                      equipmentForm.formState.errors.equipment?.message && (
-                        <Form.Text className='text-danger'>
-                          {equipmentForm.formState.errors.equipment?.message}
-                        </Form.Text>
-                      )}
-                  </>
+              <Row>
+                {formErrors && formErrors.equipments?.message && (
+                  <Form.Text className='text-danger'>{formErrors.equipments?.message}</Form.Text>
                 )}
-              />
-            </Form.Group>
-          </Row>
+              </Row>
+            </>
+          )}
 
-          <JobEquipmentList
-            height={426}
-            data={form.watch('equipments')}
-            handleRemoveEquipment={handleRemoveEquipment}
-          />
+          <div className='mt-4 d-flex justify-content-between align-items-center'>
+            <Button
+              disabled={isLoading}
+              type='button'
+              variant='outline-danger'
+              onClick={() => router.push('/jobs')}
+            >
+              Cancel
+            </Button>
 
-          <Row>
-            {formErrors && formErrors.equipments?.message && (
-              <Form.Text className='text-danger'>{formErrors.equipments?.message}</Form.Text>
-            )}
-          </Row>
-        </>
-      )}
-
-      <div className='mt-2 d-flex justify-content-end align-items-center'>
-        <Button disabled={isLoading} type='button' className='mt-2' onClick={handleNext}>
-          Next
-        </Button>
-      </div>
+            <Button disabled={isLoading} type='button' onClick={handleNext}>
+              Next
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
     </>
   );
 };
