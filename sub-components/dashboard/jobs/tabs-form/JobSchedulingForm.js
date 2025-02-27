@@ -1,28 +1,21 @@
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
+import Select from '@/components/Form/Select';
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
 import { PRIORITY_LEVELS, SCOPE_TYPE, STATUS } from '@/schema/job';
 import { format } from 'date-fns';
-import {
-  collection,
-  documentId,
-  getDocs,
-  limit,
-  onSnapshot,
-  query,
-  where,
-} from 'firebase/firestore';
-import _, { orderBy } from 'lodash';
+import { collection, limit, onSnapshot, query, where } from 'firebase/firestore';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { Button, Col, Form, OverlayTrigger, Row, Spinner, Tooltip } from 'react-bootstrap';
+import { useCallback, useEffect, useState } from 'react';
+import { Button, Card, Col, Form, OverlayTrigger, Row, Spinner, Tooltip } from 'react-bootstrap';
 import { Save } from 'react-bootstrap-icons';
 import { Controller, useFormContext } from 'react-hook-form';
-import Select from 'react-select';
+
 import { toast } from 'react-toastify';
 
-const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
+const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
   const router = useRouter();
 
   const { startDate, startTime, endDate, endTime, workerId } = router.query;
@@ -102,15 +95,13 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   }, [data]);
 
   const formatWorkerOptionLabel = (data) => {
-    return <div className='text-capitalize'>{data.label}</div>;
-  };
+    if (!data) return null;
 
-  const selectCustomStyles = {
-    control: (base) => ({
-      ...base,
-      paddingTop: '6px',
-      paddingBottom: '6px',
-    }),
+    if (data?.length > 1) {
+      return data.map((option) => option?.name || '');
+    }
+
+    return <div className='text-capitalize'>{data.label}</div>;
   };
 
   //* set startDate and startTime from router query
@@ -125,16 +116,13 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   useEffect(() => {
     if (workerId && workersOptions.data.length > 0) {
       console.log({ workersOptions, workerId });
-      form.setValue(
-        'worker',
-        workersOptions.data.find((w) => w.id === workerId)
-      );
+      form.setValue('workers', [workersOptions.data.find((w) => w.id === workerId)]);
     }
   }, [workerId, workersOptions]);
 
   //* set default value
   useEffect(() => {
-    form.setValue('team', teamOptions[0]);
+    // form.setValue('team', teamOptions[0]);
     form.setValue('status', statusesOptions[0]);
   }, []);
 
@@ -146,8 +134,12 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
   //* set worker if data exist
   useEffect(() => {
     if (data && workersOptions.data.length > 0) {
-      const worker = workersOptions.data.find((option) => option.value === data.worker.id);
-      form.setValue('worker', worker);
+      const workers = workersOptions.data.filter((option) =>
+        data?.workers?.some((worker) => worker?.id === option.value)
+      );
+
+      console.log({ workers });
+      form.setValue('workers', workers);
     }
   }, [data, workersOptions]);
 
@@ -169,161 +161,218 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
 
   return (
     <>
-      <Form>
-        {/* <div className='mb-4'> {JSON.stringify(form.watch(), null, 2)}</div> */}
+      <Card className='shadow-none'>
+        <Card.Body className='pb-0'>
+          <Form>
+            <h4 className='mb-0'>Job</h4>
+            <p className='text-muted fs-6'>Details about the job.</p>
 
-        <h5 className='mb-1'>Job</h5>
-        <p className='text-muted'>Details about the job.</p>
+            <Row className='mb-3 row-gap-3'>
+              <Form.Group as={Col} md={6}>
+                <Form.Label>ID</Form.Label>
+                <Form.Control required type='text' value={form.watch('jobId')} readOnly disabled />
+              </Form.Group>
 
-        <Row className='mb-3'>
-          <Form.Group as={Col} md='3'>
-            <Form.Label>ID</Form.Label>
-            <Form.Control required type='text' value={form.watch('jobId')} readOnly disabled />
-          </Form.Group>
+              <Form.Group as={Col} md={6}>
+                <RequiredLabel label='Assigned Technician' id='workers' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent
+                        title='Technician Search'
+                        info={[
+                          "Search by technician's id or name",
+                          'Select at one or more technician',
+                          'Required to proceed with job creation',
+                        ]}
+                      />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
 
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Priority' id='priority' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Job Priority Level Search'
-                    info={['Search by priority level']}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
+                <Controller
+                  name='workers'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        id='workers'
+                        inputId='workers'
+                        instanceId='workers'
+                        isMulti
+                        onChange={(option) => field.onChange(option)}
+                        formatOptionLabel={formatWorkerOptionLabel}
+                        options={workersOptions.data}
+                        placeholder={
+                          workersOptions.isLoading
+                            ? 'Loading technician...'
+                            : "Search by technician's id or name"
+                        }
+                        isDisabled={workersOptions.isLoading}
+                        noOptionsMessage={() =>
+                          workersOptions.isLoading ? 'Loading...' : 'No technician found'
+                        }
+                      />
 
-            <Controller
-              name='priority'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    styles={selectCustomStyles}
-                    inputId='priority'
-                    instanceId='priority'
-                    onChange={(option) => field.onChange(option)}
-                    options={prioritiesOptions}
-                    placeholder='Search by job priority level'
-                    noOptionsMessage={() => 'No job priority levels found'}
-                  />
-
-                  {formErrors && formErrors.priority?.message && (
-                    <Form.Text className='text-danger'>{formErrors.priority?.message}</Form.Text>
+                      {formErrors && formErrors.workers?.message && (
+                        <Form.Text className='text-danger'>{formErrors.workers?.message}</Form.Text>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            />
-          </Form.Group>
+                />
+              </Form.Group>
 
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Scope' id='scope' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent title='Job Scope Search' info={["Search by job's scope type"]} />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
+              <Form.Group as={Col} md={4}>
+                <RequiredLabel label='Priority' id='priority' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent
+                        title='Job Priority Level Search'
+                        info={['Search by priority level']}
+                      />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
 
-            <Controller
-              name='scope'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    styles={selectCustomStyles}
-                    inputId='scope'
-                    instanceId='scope'
-                    onChange={(option) => field.onChange(option)}
-                    options={scopesOptions}
-                    placeholder='Search by job scope type'
-                    noOptionsMessage={() => 'No job scopes found'}
-                  />
+                <Controller
+                  name='priority'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        inputId='priority'
+                        instanceId='priority'
+                        onChange={(option) => field.onChange(option)}
+                        options={prioritiesOptions}
+                        placeholder='Search by job priority level'
+                        noOptionsMessage={() => 'No job priority levels found'}
+                      />
 
-                  {formErrors && formErrors.scope?.message && (
-                    <Form.Text className='text-danger'>{formErrors.scope?.message}</Form.Text>
+                      {formErrors && formErrors.priority?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.priority?.message}
+                        </Form.Text>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            />
-          </Form.Group>
+                />
+              </Form.Group>
 
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Status' id='status' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Job Status Search'
-                    info={["Search by job's status type"]}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
+              <Form.Group as={Col} md={4}>
+                <RequiredLabel label='Scope' id='scope' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent
+                        title='Job Scope Search'
+                        info={["Search by job's scope type"]}
+                      />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
 
-            <Controller
-              name='status'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    styles={selectCustomStyles}
-                    inputId='status'
-                    instanceId='status'
-                    onChange={(option) => field.onChange(option)}
-                    options={statusesOptions}
-                    placeholder='Search by job status type'
-                    noOptionsMessage={() => 'No job statuses found'}
-                  />
+                <Controller
+                  name='scope'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        inputId='scope'
+                        instanceId='scope'
+                        onChange={(option) => field.onChange(option)}
+                        options={scopesOptions}
+                        placeholder='Search by job scope type'
+                        noOptionsMessage={() => 'No job scopes found'}
+                      />
 
-                  {formErrors && formErrors.status?.message && (
-                    <Form.Text className='text-danger'>{formErrors.status?.message}</Form.Text>
+                      {formErrors && formErrors.scope?.message && (
+                        <Form.Text className='text-danger'>{formErrors.scope?.message}</Form.Text>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            />
-          </Form.Group>
-        </Row>
+                />
+              </Form.Group>
 
-        <Row>
-          <Form.Group as={Col} md='6'>
-            <RequiredLabel label='Description' id='description' />
+              <Form.Group as={Col} md={4}>
+                <RequiredLabel label='Status' id='status' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent
+                        title='Job Status Search'
+                        info={["Search by job's status type"]}
+                      />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
 
-            <Controller
-              name='description'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Form.Control
-                    {...field}
-                    as='textarea'
-                    rows={3}
-                    placeholder='Enter job description'
-                  />
+                <Controller
+                  name='status'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        inputId='status'
+                        instanceId='status'
+                        onChange={(option) => field.onChange(option)}
+                        options={statusesOptions}
+                        placeholder='Search by job status type'
+                        noOptionsMessage={() => 'No job statuses found'}
+                      />
 
-                  {formErrors && formErrors.description?.message && (
-                    <Form.Text className='text-danger'>{formErrors.description?.message}</Form.Text>
+                      {formErrors && formErrors.status?.message && (
+                        <Form.Text className='text-danger'>{formErrors.status?.message}</Form.Text>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            />
-          </Form.Group>
+                />
+              </Form.Group>
+            </Row>
 
-          <Form.Group as={Col} md='6'>
+            <Row>
+              <Form.Group as={Col} md={12}>
+                <Form.Label htmlFor='description'>Description</Form.Label>
+
+                <Controller
+                  name='description'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Form.Control
+                        {...field}
+                        as='textarea'
+                        rows={1}
+                        placeholder='Enter job description'
+                      />
+
+                      {formErrors && formErrors.description?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.description?.message}
+                        </Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+
+              {/* <Form.Group as={Col} md='6'>
             <Form.Label>Remarsk/Note</Form.Label>
 
             <Controller
@@ -338,66 +387,15 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
                 />
               )}
             />
-          </Form.Group>
-        </Row>
+          </Form.Group> */}
+            </Row>
 
-        <hr className='my-4' />
-        <h5 className='mb-1'>Schedule</h5>
-        <p className='text-muted'>Details about the job schedule.</p>
+            <hr className='my-4' />
+            <h4 className='mb-0'>Schedule</h4>
+            <p className='text-muted fs-6'>Details about the job schedule.</p>
 
-        <Row className='mb-3'>
-          <Form.Group as={Col} md='4'>
-            <RequiredLabel label='Assigned Technician' id='worker' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Technician Search'
-                    info={[
-                      "Search by technician's id or name",
-                      'Required to proceed with job creation',
-                    ]}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='worker'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    styles={selectCustomStyles}
-                    inputId='worker'
-                    instanceId='worker'
-                    onChange={(option) => field.onChange(option)}
-                    formatOptionLabel={formatWorkerOptionLabel}
-                    options={workersOptions.data}
-                    placeholder={
-                      workersOptions.isLoading
-                        ? 'Loading technician...'
-                        : "Search by technician's id or name"
-                    }
-                    isDisabled={workersOptions.isLoading}
-                    noOptionsMessage={() =>
-                      workersOptions.isLoading ? 'Loading...' : 'No technician found'
-                    }
-                  />
-
-                  {formErrors && formErrors.worker?.message && (
-                    <Form.Text className='text-danger'>{formErrors.worker?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='4'>
+            <Row className='mb-3'>
+              {/* <Form.Group as={Col} md='4'>
             <Form.Label>Team</Form.Label>
 
             <Controller
@@ -424,106 +422,121 @@ const JobSchedulingForm = ({ isLoading, handleNext, data }) => {
                 </>
               )}
             />
-          </Form.Group>
-        </Row>
+          </Form.Group> */}
+            </Row>
 
-        <Row>
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Start Date' id='startDate' />
+            <Row>
+              <Form.Group as={Col} md='3'>
+                <RequiredLabel label='Start Date' id='startDate' />
 
-            <Controller
-              name='startDate'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
+                <Controller
+                  name='startDate'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
 
-                  {formErrors && formErrors.startDate?.message && (
-                    <Form.Text className='text-danger'>{formErrors.startDate?.message}</Form.Text>
+                      {formErrors && formErrors.startDate?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.startDate?.message}
+                        </Form.Text>
+                      )}
+                    </>
                   )}
+                />
+              </Form.Group>
+
+              <Form.Group as={Col} md='3'>
+                <RequiredLabel label='Start Time' id='startTime' />
+
+                <Controller
+                  name='startTime'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Form.Control {...field} type='time' />
+
+                      {formErrors && formErrors.startTime?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.startTime?.message}
+                        </Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+
+              <Form.Group as={Col} md='3'>
+                <RequiredLabel label='End Date' id='endDate' />
+
+                <Controller
+                  name='endDate'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
+
+                      {formErrors && formErrors.endDate?.message && (
+                        <Form.Text className='text-danger'>{formErrors.endDate?.message}</Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+
+              <Form.Group as={Col} md='3'>
+                <RequiredLabel label='End Time' id='endTime' />
+
+                <Controller
+                  name='endTime'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Form.Control {...field} type='time' />
+
+                      {formErrors && formErrors.endTime?.message && (
+                        <Form.Text className='text-danger'>{formErrors.endTime?.message}</Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+            </Row>
+          </Form>
+
+          <div className='mt-4 d-flex justify-content-between align-items-center'>
+            <Button
+              disabled={isLoading}
+              type='button'
+              variant='outline-primary'
+              onClick={handlePrevious}
+            >
+              Previous
+            </Button>
+
+            <Button type='button' onClick={handleNext}>
+              {isLoading ? (
+                <>
+                  <Spinner
+                    as='span'
+                    animation='border'
+                    size='sm'
+                    role='status'
+                    aria-hidden='true'
+                    className='me-2'
+                  />
+                  {data ? 'Updating' : 'Creating'}...
+                </>
+              ) : (
+                <>
+                  <Save size={14} className='me-2' />
+                  {data ? 'Update' : 'Create'} {' Job'}
                 </>
               )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Start Time' id='startTime' />
-
-            <Controller
-              name='startTime'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Form.Control {...field} type='time' />
-
-                  {formErrors && formErrors.startTime?.message && (
-                    <Form.Text className='text-danger'>{formErrors.startTime?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='End Date' id='endDate' />
-
-            <Controller
-              name='endDate'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
-
-                  {formErrors && formErrors.endDate?.message && (
-                    <Form.Text className='text-danger'>{formErrors.endDate?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='End Time' id='endTime' />
-
-            <Controller
-              name='endTime'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Form.Control {...field} type='time' />
-
-                  {formErrors && formErrors.endTime?.message && (
-                    <Form.Text className='text-danger'>{formErrors.endTime?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-        </Row>
-      </Form>
-
-      <div className='mt-2 d-flex justify-content-end align-items-center'>
-        <Button type='button' className='mt-2' onClick={handleNext}>
-          {isLoading ? (
-            <>
-              <Spinner
-                as='span'
-                animation='border'
-                size='sm'
-                role='status'
-                aria-hidden='true'
-                className='me-2'
-              />
-              {data ? 'Updating' : 'Creating'}...
-            </>
-          ) : (
-            <>
-              <Save size={14} className='me-2' />
-              {data ? 'Update' : 'Create'} {' Job'}
-            </>
-          )}
-        </Button>
-      </div>
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
     </>
   );
 };

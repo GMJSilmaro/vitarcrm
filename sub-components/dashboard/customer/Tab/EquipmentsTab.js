@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-table';
 import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
 import { useEffect, useMemo, useState } from 'react';
-import { fuzzyFilter } from '@/utils/datatable';
+import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import { useRouter } from 'next/router';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -63,8 +63,8 @@ const EquipmentsTab = () => {
       }),
       columnHelper.accessor('actions', {
         id: 'actions',
-        size: 100,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
         enableSorting: false,
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
@@ -163,8 +163,11 @@ const EquipmentsTab = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { fuzzy: fuzzyFilter },
-    globalFilterFn: 'fuzzy',
+    filterFns: { globalSearch: globalSearchFilter },
+    globalFilterFn: 'globalSearch',
+    initialState: {
+      columnPinning: { right: ['actions'] },
+    },
   });
 
   //* query customer equipments

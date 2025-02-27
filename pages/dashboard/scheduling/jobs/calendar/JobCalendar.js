@@ -24,12 +24,13 @@ import { collection, deleteDoc, doc, limit, onSnapshot, query } from 'firebase/f
 import _ from 'lodash';
 import { db } from '@/firebase';
 import { format, isBefore, startOfDay, subDays } from 'date-fns';
-import { Badge, Button, Spinner } from 'react-bootstrap';
+import { Badge, Button, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
 import { useRouter } from 'next/router';
 import Swal from 'sweetalert2';
 import { isProd } from '@/constants/environment';
 import toast from 'react-hot-toast';
+import { TooltipContent } from '@/components/common/ToolTipContent';
 
 const JobCalendar = () => {
   const router = useRouter();
@@ -37,45 +38,6 @@ const JobCalendar = () => {
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
   const [isLoading, setIsLoading] = useState(false);
-
-  //* query jobs
-  useEffect(() => {
-    const constraints = [];
-
-    if (!isProd) {
-      const devQueryConstraint = [limit(10)];
-      devQueryConstraint.forEach((constraint) => constraints.push(constraint));
-    }
-
-    const q = query(collection(db, 'jobHeaders'), ...constraints);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        if (!snapshot.empty) {
-          setJobs({
-            data: snapshot.docs.map((doc) => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                ...data,
-              };
-            }),
-            isLoading: false,
-            isError: false,
-          });
-        } else {
-          setJobs({ data: [], isLoading: false, isError: false });
-        }
-      },
-      (err) => {
-        console.error(err.message);
-        setJobs({ data: [], isLoading: false, isError: true });
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
 
   const handleViewJob = (id) => {
     router.push(`/jobs/view/${id}`);
@@ -191,31 +153,62 @@ const JobCalendar = () => {
       <div className='fs-5 mt-2'>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Job Description:</span>
-          <strong className='text-capitalize'>{job?.worker?.name}</strong>
+          <strong className='text-capitalize'>{job?.description || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
-          <span className='pe-1 fs-6'>Assigned Worker:</span>
-          <strong className='text-capitalize'>{job?.worker?.name}</strong>
+          <span className='pe-1 fs-6'>Assigned Worker/s:</span>
+          <strong className='text-capitalize'>
+            {job.workers?.length > 0 ? (
+              <>
+                {/* //* show the first 3 workers */}
+                <span className='me-1'>
+                  {job?.workers
+                    ?.slice(0, 3)
+                    .map((worker) => worker?.name)
+                    .join(', ')}
+                </span>
+
+                {/* //* show the rest workers */}
+                {job?.workers?.length > 3 && (
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent
+                          title='Assigned workers'
+                          info={job?.workers
+                            ?.slice(3, job?.workers?.length)
+                            .map((worker) => worker?.name || '')}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <Badge pill style={{ fontSize: '10px' }}>
+                      + {job?.workers?.slice(3, job?.workers?.length).length}
+                    </Badge>
+                  </OverlayTrigger>
+                )}
+              </>
+            ) : (
+              'N/A'
+            )}
+          </strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Customer:</span>
-          <strong>{job?.customer?.name}</strong>
+          <strong>{job?.customer?.name || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Location:</span>
-          <strong>{job?.location?.name}</strong>
+          <strong>{job?.location?.name || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Scope:</span>
-          <strong className='text-capitalize'>{job?.scope}</strong>
+          <strong className='text-capitalize'>{job?.scope || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Tasks:</span>
           <strong className='text-capitalize'>{job?.tasks ? job?.tasks.length : 'N/A'}</strong>
-        </p>
-        <p className='mb-1'>
-          <span className='pe-1 fs-6'>Team:</span>
-          <strong className='text-capitalize'>{job?.team}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Status:</span>
@@ -226,14 +219,14 @@ const JobCalendar = () => {
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Created:</span>
           <strong className='text-capitalize'>
-            {format(job?.createdAt.toDate(), 'yyyy-MM-dd')}{' '}
+            {format(job?.createdAt.toDate(), 'dd-MM-yyyy')}{' '}
           </strong>
           by <strong>{job?.createdBy?.displayName || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Updated:</span>
           <strong className='text-capitalize'>
-            {format(job?.updatedAt.toDate(), 'yyyy-MM-dd')}{' '}
+            {format(job?.updatedAt.toDate(), 'dd-MM-yyyy')}{' '}
           </strong>
           by <strong>{job?.updatedBy?.displayName || 'N/A'}</strong>
         </p>
@@ -372,18 +365,66 @@ const JobCalendar = () => {
   );
 
   const eventSettings = useMemo(() => {
-    const jobsEvents = jobs.data.map((job) => ({
-      Id: job.id,
-      Subject: job.id,
-      Description: job.description,
-      Location: job.location.name,
-      StartTime: new Date(`${job.startDate}T${job.startTime}:00`),
-      EndTime: new Date(`${job.endDate}T${job.endTime}:00`),
-      Job: job,
-    }));
+    const jobsEvents = jobs.data.map((job) => {
+      if (!job?.workers || job?.workers?.length < 1) return [];
 
-    return { dataSource: jobsEvents };
+      return job.workers.map((worker) => ({
+        Id: job.id,
+        Subject: job.id,
+        Description: job.description,
+        Location: job.location.name,
+        StartTime: new Date(`${job.startDate}T${job.startTime}:00`),
+        EndTime: new Date(`${job.endDate}T${job.endTime}:00`),
+        WorkerId: worker.id,
+        Job: job,
+      }));
+    });
+
+    const jobsEventsFlat = jobsEvents.flat();
+
+    //* remove duplicate events
+    const uniqueEventIds = new Set();
+
+    const uniqueEvents = jobsEventsFlat.filter((event) => {
+      const duplicate = uniqueEventIds.has(event.Id);
+      uniqueEventIds.add(event.Id);
+      return !duplicate;
+    });
+
+    return { dataSource: uniqueEvents };
   }, [jobs]);
+
+  //* query jobs
+  useEffect(() => {
+    const q = query(collection(db, 'jobHeaders'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setJobs({
+            data: snapshot.docs.map((doc) => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                ...data,
+              };
+            }),
+            isLoading: false,
+            isError: false,
+          });
+        } else {
+          setJobs({ data: [], isLoading: false, isError: false });
+        }
+      },
+      (err) => {
+        console.error(err.message);
+        setJobs({ data: [], isLoading: false, isError: true });
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   if (isLoading || jobs.isLoading) {
     return (

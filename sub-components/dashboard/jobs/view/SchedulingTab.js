@@ -140,7 +140,9 @@ const SchedulingTab = ({ job }) => {
                   </div>
                   <div>
                     <div className='text-secondary fs-6'>Assigned Technician:</div>
-                    <div className='text-primary-label fw-semibold'>{job?.worker.name}</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {job?.workers?.map((worker) => worker?.name).join(', ') || 'N/A'}
+                    </div>
                   </div>
                 </div>
               </Col>

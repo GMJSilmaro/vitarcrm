@@ -27,7 +27,7 @@ import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import DataTable from '@/components/common/DataTable';
-import { fuzzyFilter } from '@/utils/datatable';
+import { globalSearchFilter } from '@/utils/datatable';
 import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -178,8 +178,8 @@ const SiteList = () => {
       ),
       columnHelper.accessor('actions', {
         id: 'actions',
-        size: 100,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
         enableSorting: false,
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
@@ -306,8 +306,11 @@ const SiteList = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { fuzzy: fuzzyFilter },
-    globalFilterFn: 'fuzzy',
+    filterFns: { globalSearch: globalSearchFilter },
+    globalFilterFn: 'globalSearch',
+    initialState: {
+      columnPinning: { right: ['actions'] },
+    },
   });
 
   useEffect(() => {

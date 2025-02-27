@@ -5,7 +5,7 @@ import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
-import { fuzzyFilter } from '@/utils/datatable';
+import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
 import {
   createColumnHelper,
@@ -18,11 +18,10 @@ import {
 import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, CardText, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
+import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   BriefcaseFill,
   BuildingFill,
-  CardChecklist,
   CardList,
   Eye,
   FileEarmarkArrowDown,
@@ -114,8 +113,8 @@ const JobCalibration = () => {
       }),
       columnHelper.accessor('actions', {
         id: 'actions',
-        size: 100,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
         enableSorting: false,
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
@@ -249,8 +248,11 @@ const JobCalibration = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { fuzzy: fuzzyFilter },
-    globalFilterFn: 'fuzzy',
+    filterFns: { globalSearch: globalSearchFilter },
+    globalFilterFn: 'globalSearch',
+    initialState: {
+      columnPinning: { right: ['actions'] },
+    },
   });
 
   useEffect(() => {

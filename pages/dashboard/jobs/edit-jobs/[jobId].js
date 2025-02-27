@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Col, Container, Row, Spinner } from 'react-bootstrap';
-import { House, PencilFill, People } from 'react-bootstrap-icons';
+import { BriefcaseFill, House, PencilFill, People } from 'react-bootstrap-icons';
 
 const EditJob = () => {
   const router = useRouter();
@@ -45,10 +45,7 @@ const EditJob = () => {
 
   if (isLoading) {
     return (
-      <div
-        className='d-flex justify-content-center align-items-center'
-        style={{ height: '100vh' }}
-      >
+      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
         <Spinner animation='border' variant='primary' />
         <span className='ms-3'>Loading Job...</span>
       </div>
@@ -64,10 +61,7 @@ const EditJob = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <button
-            className='btn btn-primary'
-            onClick={() => router.push('/jobs')}
-          >
+          <button className='btn btn-primary' onClick={() => router.push('/jobs')}>
             Back to Jobs List
           </button>
         </div>
@@ -104,18 +98,18 @@ const EditJob = () => {
         badgeText2='Edit Job'
         breadcrumbItems={[
           {
-            icon: <House className='me-2' size={14} />,
             text: 'Dashboard',
             link: '/dashboard',
+            icon: <House className='me-2' size={14} />,
           },
           {
-            icon: <People className='me-2' size={14} />,
             text: 'Jobs',
-            link: '/dashboard/jobs',
+            link: '/jobs',
+            icon: <BriefcaseFill className='me-2' size={14} />,
           },
           {
-            icon: <PencilFill className='me-2' size={14} />,
             text: job ? job.id : 'Create',
+            icon: <PencilFill className='me-2' size={14} />,
           },
         ]}
       />
