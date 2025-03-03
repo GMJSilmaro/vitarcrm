@@ -24,8 +24,6 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  setDoc,
-  updateDoc,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 
@@ -67,6 +65,10 @@ const SiteForm = ({ data }) => {
         } else toast.error('Failed to parse data. Please try again later.');
       }
     }
+  }, [activeKey]);
+
+  const handlePrevious = useCallback(() => {
+    if (Number(activeKey) > 0) handleOnSelect(activeKey - 1);
   }, [activeKey]);
 
   const handleSubmit = useCallback(
@@ -139,6 +141,7 @@ const SiteForm = ({ data }) => {
         router.push(`/sites/edit-site/${formData.siteId}`);
         toast.success(`Site ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
         setIsLoading(false);
+        setActiveKey((prev) => prev - 1);
       } catch (error) {
         console.error('Error submitting site:', error);
         toast.error('Something went wrong. Please try again later.');
@@ -193,7 +196,6 @@ const SiteForm = ({ data }) => {
       <FormProvider {...form}>
         <Tabs
           id='site-tab'
-          className='mb-4'
           activeKey={activeKey > tabsLength ? tabsLength : activeKey}
           onSelect={handleOnSelect}
         >
@@ -202,11 +204,21 @@ const SiteForm = ({ data }) => {
           </Tab>
 
           <Tab eventKey='1' title='Address Details'>
-            <SiteAddressForm data={data} isLoading={isLoading} handleNext={handleNext} />
+            <SiteAddressForm
+              data={data}
+              isLoading={isLoading}
+              handleNext={handleNext}
+              handlePrevious={handlePrevious}
+            />
           </Tab>
 
           <Tab eventKey='2' title='Site Contacts'>
-            <SiteContactForm data={data} isLoading={isLoading} handleNext={handleNext} />
+            <SiteContactForm
+              data={data}
+              isLoading={isLoading}
+              handleNext={handleNext}
+              handlePrevious={handlePrevious}
+            />
           </Tab>
         </Tabs>
       </FormProvider>

@@ -18,7 +18,7 @@ const BasicInfoTab = ({ site }) => {
       <Card.Body>
         <Row>
           <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
@@ -33,7 +33,7 @@ const BasicInfoTab = ({ site }) => {
           </Col>
 
           <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
@@ -48,7 +48,7 @@ const BasicInfoTab = ({ site }) => {
           </Col>
 
           <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
@@ -65,7 +65,7 @@ const BasicInfoTab = ({ site }) => {
           </Col>
 
           <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}

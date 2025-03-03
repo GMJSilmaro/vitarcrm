@@ -7,7 +7,7 @@ import axios from 'axios';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
 
-const SiteAddressForm = ({ data, isLoading, handleNext }) => {
+const SiteAddressForm = ({ data, isLoading, handleNext, handlePrevious }) => {
   const router = useRouter();
 
   const [countriesOptions, setCountriesOptions] = React.useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
@@ -80,317 +80,330 @@ const SiteAddressForm = ({ data, isLoading, handleNext }) => {
 
   return (
     <>
-      <Form>
-        <div className='d-flex justify-content-between align-items-center mb-3'>
-          <div>
-            <h5 className='mb-1'>
-              Address Details
-              <span className='text-danger' style={{ marginLeft: '4px', cursor: 'help' }}>
-                *
-              </span>
-            </h5>
-            <p className='text-muted m-0'>
-              Add 1 or more addresses for the site. Note first address will be the default/main
-              address.
-            </p>
+      <Card className='shadow-none'>
+        <Card.Body className='pb-0'>
+          <Form>
+            <div className='d-flex justify-content-between align-items-center mb-3'>
+              <div>
+                <h5 className='mb-1'>
+                  Address Details
+                  <span className='text-danger' style={{ marginLeft: '4px', cursor: 'help' }}>
+                    *
+                  </span>
+                </h5>
+                <p className='text-muted m-0'>
+                  Add 1 or more addresses for the site. Note first address will be the default/main
+                  address.
+                </p>
 
-            {formErrors && formErrors.addresses?.message && (
-              <Form.Text className='text-danger mt-0'>{formErrors.addresses?.message}</Form.Text>
-            )}
-          </div>
-
-          <Button variant='primary' size='sm' className='ms-2' onClick={handleAddAddress}>
-            <Plus size={14} className='me-2' />
-            Add Address
-          </Button>
-        </div>
-      </Form>
-
-      {fields.length === 0 && (
-        <div className='text-center py-5'>
-          <h5 className='mb-1'>No address added yet.</h5>
-          <p className='text-muted'>Click "Add Address" to begin.</p>
-        </div>
-      )}
-
-      {fields.length > 0 &&
-        fields.map((_field, i) => (
-          <Card key={_field.id} className='border mb-4'>
-            <Card.Header className='d-flex justify-content-between align-items-center bg-light'>
-              <div className='d-flex gap-2 align-items-end'>
-                <h6 className='mb-0'>Address #{i + 1}</h6>
-
-                {_field.isDefault && (
-                  <Badge className='me-2' bg='primary'>
-                    Default
-                  </Badge>
+                {formErrors && formErrors.addresses?.message && (
+                  <Form.Text className='text-danger mt-0'>
+                    {formErrors.addresses?.message}
+                  </Form.Text>
                 )}
               </div>
 
-              {!_field.isDefault && (
-                <Button variant='link' className='p-0' onClick={() => handleRemoveAddress(i)}>
-                  <X size={20} className='text-danger' />
-                </Button>
-              )}
-            </Card.Header>
+              <Button variant='primary' size='sm' className='ms-2' onClick={handleAddAddress}>
+                <Plus size={14} className='me-2' />
+                Add Address
+              </Button>
+            </div>
+          </Form>
 
-            <Card.Body>
-              <Row>
-                <Col md={12}>
-                  <Form.Group className='mb-3'>
-                    <RequiredLabel label='Street 1' id='street1' />
+          {fields.length === 0 && (
+            <div className='text-center py-5'>
+              <h5 className='mb-1'>No address added yet.</h5>
+              <p className='text-muted'>Click "Add Address" to begin.</p>
+            </div>
+          )}
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.street1`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <>
-                          <Form.Control
-                            {...field}
-                            id='street1'
-                            type='text'
-                            placeholder='Enter street 1'
-                          />
+          {fields.length > 0 &&
+            fields.map((_field, i) => (
+              <Card key={_field.id} className='border mb-4'>
+                <Card.Header className='d-flex justify-content-between align-items-center bg-light'>
+                  <div className='d-flex gap-2 align-items-end'>
+                    <h6 className='mb-0'>Address #{i + 1}</h6>
 
-                          {formErrors && formErrors.addresses?.[i]?.street1?.message && (
-                            <Form.Text className='text-danger'>
-                              {formErrors.addresses?.[i]?.street1?.message}
-                            </Form.Text>
+                    {_field.isDefault && (
+                      <Badge className='me-2' bg='primary'>
+                        Default
+                      </Badge>
+                    )}
+                  </div>
+
+                  {!_field.isDefault && (
+                    <Button variant='link' className='p-0' onClick={() => handleRemoveAddress(i)}>
+                      <X size={20} className='text-danger' />
+                    </Button>
+                  )}
+                </Card.Header>
+
+                <Card.Body>
+                  <Row>
+                    <Col md={12}>
+                      <Form.Group className='mb-3'>
+                        <RequiredLabel label='Street 1' id='street1' />
+
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.street1`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Form.Control
+                                {...field}
+                                id='street1'
+                                type='text'
+                                placeholder='Enter street 1'
+                              />
+
+                              {formErrors && formErrors.addresses?.[i]?.street1?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.addresses?.[i]?.street1?.message}
+                                </Form.Text>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
-
-                <Col md={12}>
-                  <Form.Group className='mb-3'>
-                    <Form.Label htmlFor='street2'>Street 2</Form.Label>
-
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.street2`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <Form.Control
-                          {...field}
-                          id='street2'
-                          type='text'
-                          placeholder='Enter street 2'
                         />
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
+                      </Form.Group>
+                    </Col>
 
-                <Col md={12}>
-                  <Form.Group className='mb-3'>
-                    <Form.Label htmlFor='street3'>Street 3</Form.Label>
+                    <Col md={12}>
+                      <Form.Group className='mb-3'>
+                        <Form.Label htmlFor='street2'>Street 2</Form.Label>
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.street3`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <Form.Control
-                          {...field}
-                          id='street3'
-                          type='text'
-                          placeholder='Enter street 2'
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.street2`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <Form.Control
+                              {...field}
+                              id='street2'
+                              type='text'
+                              placeholder='Enter street 2'
+                            />
+                          )}
                         />
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
+                      </Form.Group>
+                    </Col>
 
-                <Col md={4}>
-                  <Form.Group className='mb-3'>
-                    <RequiredLabel label='Province' id='province' />
+                    <Col md={12}>
+                      <Form.Group className='mb-3'>
+                        <Form.Label htmlFor='street3'>Street 3</Form.Label>
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.province`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <>
-                          <Form.Control
-                            {...field}
-                            id='province'
-                            type='text'
-                            placeholder='Enter province'
-                          />
-
-                          {formErrors && formErrors.addresses?.[i]?.province?.message && (
-                            <Form.Text className='text-danger'>
-                              {formErrors.addresses?.[i]?.province?.message}
-                            </Form.Text>
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.street3`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <Form.Control
+                              {...field}
+                              id='street3'
+                              type='text'
+                              placeholder='Enter street 2'
+                            />
                           )}
-                        </>
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
+                        />
+                      </Form.Group>
+                    </Col>
 
-                <Col md={4}>
-                  <Form.Group className='mb-3'>
-                    <RequiredLabel label='City' id='City' />
+                    <Col md={4}>
+                      <Form.Group className='mb-3'>
+                        <RequiredLabel label='Province' id='province' />
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.city`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <>
-                          <Form.Control {...field} id='City' type='text' placeholder='Enter city' />
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.province`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Form.Control
+                                {...field}
+                                id='province'
+                                type='text'
+                                placeholder='Enter province'
+                              />
 
-                          {formErrors && formErrors.addresses?.[i]?.city?.message && (
-                            <Form.Text className='text-danger'>
-                              {formErrors.addresses?.[i]?.city?.message}
-                            </Form.Text>
+                              {formErrors && formErrors.addresses?.[i]?.province?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.addresses?.[i]?.province?.message}
+                                </Form.Text>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
+                        />
+                      </Form.Group>
+                    </Col>
 
-                <Col md={4}>
-                  <Form.Group className='mb-3'>
-                    <RequiredLabel label='Postal Code' id='postalCode' />
+                    <Col md={4}>
+                      <Form.Group className='mb-3'>
+                        <RequiredLabel label='City' id='City' />
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.postalCode`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <>
-                          <Form.Control
-                            {...field}
-                            id='postalCode'
-                            type='text'
-                            placeholder='Enter postal code'
-                          />
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.city`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Form.Control
+                                {...field}
+                                id='City'
+                                type='text'
+                                placeholder='Enter city'
+                              />
 
-                          {formErrors && formErrors.addresses?.[i]?.postalCode?.message && (
-                            <Form.Text className='text-danger'>
-                              {formErrors.addresses?.[i]?.postalCode?.message}
-                            </Form.Text>
+                              {formErrors && formErrors.addresses?.[i]?.city?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.addresses?.[i]?.city?.message}
+                                </Form.Text>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
+                        />
+                      </Form.Group>
+                    </Col>
 
-                <Col md={4}>
-                  <Form.Group className='mb-3'>
-                    <RequiredLabel label='Country' id='country' />
+                    <Col md={4}>
+                      <Form.Group className='mb-3'>
+                        <RequiredLabel label='Postal Code' id='postalCode' />
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.country`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <>
-                          <Select
-                            {...field}
-                            inputId='country'
-                            instanceId='country'
-                            onChange={(option) => field.onChange(option)}
-                            options={countriesOptions.data}
-                            placeholder='Search by coutry'
-                            isDisabled={countriesOptions.isLoading || countriesOptions.length < 1}
-                            noOptionsMessage={() =>
-                              countriesOptions.isLoading ? 'Loading...' : 'No countries found'
-                            }
-                          />
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.postalCode`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Form.Control
+                                {...field}
+                                id='postalCode'
+                                type='text'
+                                placeholder='Enter postal code'
+                              />
 
-                          {formErrors && formErrors.addresses?.[i]?.country?.message && (
-                            <Form.Text className='text-danger'>
-                              {formErrors.addresses?.[i]?.country?.message}
-                            </Form.Text>
+                              {formErrors && formErrors.addresses?.[i]?.postalCode?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.addresses?.[i]?.postalCode?.message}
+                                </Form.Text>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
+                        />
+                      </Form.Group>
+                    </Col>
 
-                <Col md={4}>
-                  <Form.Group className='mb-3'>
-                    <Form.Label htmlFor='longitude'>Longitude</Form.Label>
+                    <Col md={4}>
+                      <Form.Group className='mb-3'>
+                        <RequiredLabel label='Country' id='country' />
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.longitude`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <>
-                          <Form.Control
-                            {...field}
-                            id='longitude'
-                            type='text'
-                            placeholder='Enter longitude'
-                          />
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.country`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Select
+                                {...field}
+                                inputId='country'
+                                instanceId='country'
+                                onChange={(option) => field.onChange(option)}
+                                options={countriesOptions.data}
+                                placeholder='Search by coutry'
+                                isDisabled={
+                                  countriesOptions.isLoading || countriesOptions.length < 1
+                                }
+                                noOptionsMessage={() =>
+                                  countriesOptions.isLoading ? 'Loading...' : 'No countries found'
+                                }
+                              />
 
-                          {formErrors && formErrors.addresses?.[i]?.longitude?.message && (
-                            <Form.Text className='text-danger'>
-                              {formErrors.addresses?.[i]?.longitude?.message}
-                            </Form.Text>
+                              {formErrors && formErrors.addresses?.[i]?.country?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.addresses?.[i]?.country?.message}
+                                </Form.Text>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
+                        />
+                      </Form.Group>
+                    </Col>
 
-                <Col md={4}>
-                  <Form.Group className='mb-3'>
-                    <Form.Label htmlFor='latitude'>Latitude</Form.Label>
+                    <Col md={4}>
+                      <Form.Group className='mb-3'>
+                        <Form.Label htmlFor='longitude'>Longitude</Form.Label>
 
-                    <Controller
-                      key={_field.id}
-                      name={`addresses.${i}.latitude`}
-                      control={form.control}
-                      render={({ field }) => (
-                        <>
-                          <Form.Control
-                            {...field}
-                            id='latitude'
-                            type='text'
-                            placeholder='Enter latitude'
-                          />
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.longitude`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Form.Control
+                                {...field}
+                                id='longitude'
+                                type='text'
+                                placeholder='Enter longitude'
+                              />
 
-                          {formErrors && formErrors.addresses?.[i]?.latitude?.message && (
-                            <Form.Text className='text-danger'>
-                              {formErrors.addresses?.[i]?.latitude?.message}
-                            </Form.Text>
+                              {formErrors && formErrors.addresses?.[i]?.longitude?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.addresses?.[i]?.longitude?.message}
+                                </Form.Text>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        ))}
+                        />
+                      </Form.Group>
+                    </Col>
 
-      <div className='mt-4 d-flex justify-content-between align-items-center'>
-        <Button
-          disabled={isLoading}
-          type='button'
-          variant='outline-danger'
-          onClick={() => router.push('/sites')}
-        >
-          Cancel
-        </Button>
+                    <Col md={4}>
+                      <Form.Group className='mb-3'>
+                        <Form.Label htmlFor='latitude'>Latitude</Form.Label>
 
-        <Button disabled={isLoading} type='button' onClick={handleNext}>
-          Next
-        </Button>
-      </div>
+                        <Controller
+                          key={_field.id}
+                          name={`addresses.${i}.latitude`}
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Form.Control
+                                {...field}
+                                id='latitude'
+                                type='text'
+                                placeholder='Enter latitude'
+                              />
+
+                              {formErrors && formErrors.addresses?.[i]?.latitude?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.addresses?.[i]?.latitude?.message}
+                                </Form.Text>
+                              )}
+                            </>
+                          )}
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            ))}
+
+          <div className='mt-4 d-flex justify-content-between align-items-center'>
+            <Button
+              disabled={isLoading}
+              type='button'
+              variant='outline-primary'
+              onClick={handlePrevious}
+            >
+              Previous
+            </Button>
+
+            <Button disabled={isLoading} type='button' onClick={handleNext}>
+              Next
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
     </>
   );
 };

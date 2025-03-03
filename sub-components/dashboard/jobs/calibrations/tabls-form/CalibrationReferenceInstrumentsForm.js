@@ -139,8 +139,8 @@ const CalibrationReferenceInstrumentsForm = ({
     <Card className='shadow-none'>
       <Card.Body>
         <Row>
-          <h5 className='mb-1'>Instruments</h5>
-          <p className='text-muted'>
+          <h4 className='mb-0'>Instruments</h4>
+          <p className='text-muted fs-6'>
             The instruments/equipments listed below are based on the selected equipments in the job
             but filtered out based on the selected category.
           </p>

@@ -24,7 +24,7 @@ import CalibrationHistory from '@/components/dashboard/calibration/CalibrationHi
 import CalibrationGraph from '@/components/dashboard/calibration/CalibrationGraph';
 import CalibrationSchedule from '@/components/dashboard/calibration/CalibrationSchedule';
 import { CategoryDetails } from '@/components/dashboard/calibration/sections';
-import CalibrationDetailsLayout from '../layouts/CalibrationDetailsLayout';
+import CalibrationDetailsLayout from '../../layouts/CalibrationDetailsLayout';
 import CertificatePreview from '@/components/dashboard/calibration/CertificatePreview';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { orderBy } from 'lodash';
@@ -41,7 +41,7 @@ const CATEGORY_DATA_MAP = {
 
 const CalibrationDetails = () => {
   const router = useRouter();
-  const { id, category } = router.query;
+  const { inventoryId, category } = router.query;
   const [loading, setLoading] = useState(true);
   const [equipment, setEquipment] = useState(null);
   const [showCertificate, setShowCertificate] = useState(false);
@@ -49,11 +49,11 @@ const CalibrationDetails = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (category && id) {
+    if (category && inventoryId) {
       const q = query(
         collection(db, 'equipments'),
         where('category', '==', category.toUpperCase()),
-        where('inventoryId', '==', id)
+        where('inventoryId', '==', inventoryId)
       );
 
       const unsubscribe = onSnapshot(
@@ -71,7 +71,7 @@ const CalibrationDetails = () => {
       );
       return () => unsubscribe();
     }
-  }, [category, id]);
+  }, [category, inventoryId]);
 
   console.log('equipment:', equipment);
 

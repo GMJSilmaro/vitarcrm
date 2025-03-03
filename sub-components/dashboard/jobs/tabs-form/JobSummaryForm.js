@@ -217,6 +217,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
   };
 
   const formatEquipmentOptionLabel = (data) => {
+    const currentEquipments = form.getValues('equipments') || [];
+    const isAvailable = data?.qty > 0;
+
     const getLabel = (data) => {
       if (!data) return '';
 
@@ -232,6 +235,10 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
       <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
         <span>{getLabel(data)}</span>
         <span className='d-flex column-gap-2'>
+          <Badge bg={isAvailable ? 'success' : 'danger'}>
+            {isAvailable ? 'Available' : 'Unavailable'}{' '}
+          </Badge>
+
           <Badge bg='primary'>{data.category}</Badge>
           <Badge bg='warning'>{data.certificateNo}</Badge>
         </span>
@@ -294,8 +301,15 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
       (equipment) => equipment.inventoryId === data.inventoryId
     );
 
+    const isAvailable = data?.qty > 0;
+
     if (isExist) {
       toast.error('Equipment already selected');
+      return;
+    }
+
+    if (!isAvailable) {
+      toast.error('Equipment is not available');
       return;
     }
 

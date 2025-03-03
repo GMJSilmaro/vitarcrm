@@ -8,7 +8,9 @@ import {
   collection,
   doc,
   getDocs,
+  increment,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   where,
@@ -16,7 +18,7 @@ import {
 import { db } from '@/firebase';
 import TaskForm from './tabs-form/JobTaskForm';
 import JobSchedulingForm from './tabs-form/JobSchedulingForm';
-import toast from 'react-hot-toast';
+
 import JobSummaryForm from './tabs-form/JobSummaryForm';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +27,7 @@ import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
 import FormDebug from '@/components/Form/FormDebug';
+import toast from 'react-hot-toast';
 
 const JobForm = ({ data }) => {
   const auth = useAuth();
@@ -234,35 +237,71 @@ const JobForm = ({ data }) => {
           return;
         }
 
-        const promises = [
-          setDoc(
-            doc(db, 'jobHeaders', jobId),
-            {
-              ...jobHeaders,
-              jobId,
-              contact: jobHeaders?.contact ?? null,
-              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-              updatedAt: serverTimestamp(),
-              updatedBy: auth.currentUser,
-            },
-            { merge: true }
-          ),
-          setDoc(
-            doc(db, 'jobDetails', jobId),
-            {
-              jobId,
-              equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
-              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-              updatedAt: serverTimestamp(),
-              updatedBy: auth.currentUser,
-            },
-            { merge: true }
-          ),
-        ];
-        await Promise.all(promises);
+        await runTransaction(db, async (transaction) => {
+          try {
+            //* create job header
+            transaction.set(
+              doc(db, 'jobHeaders', jobId),
+              {
+                ...jobHeaders,
+                jobId,
+
+                contact: jobHeaders?.contact ?? null,
+                ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              },
+              { merge: true }
+            );
+
+            //* create job details
+            // TODO: if implement returning per equipment
+            // TODO: add isReturned field - means all equipments are returned to jobDetails
+            // TODO: add isReturend field per equipment element - means equipment is returned
+            transaction.set(
+              doc(db, 'jobDetails', jobId),
+              {
+                jobId,
+                isReturnedEquipment: false,
+                equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
+                ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              },
+              { merge: true }
+            );
+
+            //* decrement equipment qty - means equipment is in use if create
+            if (!data) {
+              equipments.map((eq) =>
+                transaction.update(doc(db, 'equipments', eq.id), { qty: increment(-1) })
+              );
+            } else {
+              //* when edit find the differece between old and new equipments
+              const oldEquipments = data.equipments.map((eq) => eq.id);
+              const newEquipments = equipments.map((eq) => eq.id);
+
+              const removedEquipments = oldEquipments.filter((eq) => !newEquipments.includes(eq));
+              const addedEquipments = newEquipments.filter((eq) => !oldEquipments.includes(eq));
+
+              //* update equipment qty
+              removedEquipments.map((eq) =>
+                transaction.update(doc(db, 'equipments', eq), { qty: increment(1) })
+              );
+
+              addedEquipments.map((eq) =>
+                transaction.update(doc(db, 'equipments', eq), { qty: increment(-1) })
+              );
+            }
+          } catch (error) {
+            return error;
+          }
+        });
+
         router.push(`/jobs/edit-jobs/${jobId}`);
         toast.success(`Job ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
         setIsLoading(false);
+        setActiveKey((prev) => prev - 1);
       } catch (error) {
         console.error('Error submitting job:', error);
         toast.error('Something went wrong. Please try again later.');

@@ -159,6 +159,16 @@ const nextConfig = {
         destination: '/dashboard/jobs/:jobId/calibrations/edit-calibrations/:calibrateId',
       },
 
+      //* equipments
+      {
+        source: '/reference-equipment/:category',
+        destination: '/dashboard/reference-equipment/:category',
+      },
+      {
+        source: '/reference-equipment/:category/view/:inventoryId',
+        destination: '/dashboard/reference-equipment/:category/view/:inventoryId',
+      },
+
       // AUTHENTICATION
       {
         source: '/sign-in',

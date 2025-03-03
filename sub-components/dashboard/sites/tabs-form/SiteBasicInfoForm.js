@@ -8,7 +8,7 @@ import { collection, getDocs, limit, onSnapshot, query, where } from 'firebase/f
 import _ from 'lodash';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
-import { Badge, Button, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
+import { Badge, Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
 import { Controller, useFormContext } from 'react-hook-form';
 import { toast } from 'react-toastify';
 
@@ -127,146 +127,154 @@ const SiteBasicInfoForm = ({ data, isLoading, handleNext }) => {
 
   return (
     <>
-      <Form>
-        <h5 className='mb-1'>Basic Information</h5>
-        <p className='text-muted'>Basic details about the site</p>
+      <Card className='shadow-none'>
+        <Card.Body className='pb-0'>
+          <Form>
+            <h4 className='mb-0'>Basic Information</h4>
+            <p className='text-muted fs-6'>Basic details about the site</p>
 
-        <Row className='mb-3'>
-          <Form.Group as={Col} md='6'>
-            <Form.Label>ID</Form.Label>
-            <Form.Control
-              required
-              type='text'
-              value={form.watch('siteId')}
-              readOnly
-              disabled
-              placeholder={lastSiteIdLoading ? 'Loading ID...' : ''}
-            />
-          </Form.Group>
+            <Row className='mb-3'>
+              <Form.Group as={Col} md='6'>
+                <Form.Label>ID</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={form.watch('siteId')}
+                  readOnly
+                  disabled
+                  placeholder={lastSiteIdLoading ? 'Loading ID...' : ''}
+                />
+              </Form.Group>
 
-          <Form.Group as={Col} md='6'>
-            <RequiredLabel label='Name' id='siteName' />
+              <Form.Group as={Col} md='6'>
+                <RequiredLabel label='Name' id='siteName' />
 
-            <Controller
-              name='siteName'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Form.Control {...field} type='text' placeholder='Enter site name' />
+                <Controller
+                  name='siteName'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Form.Control {...field} type='text' placeholder='Enter site name' />
 
-                  {formErrors && formErrors.siteName?.message && (
-                    <Form.Text className='text-danger'>{formErrors.siteName?.message}</Form.Text>
+                      {formErrors && formErrors.siteName?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.siteName?.message}
+                        </Form.Text>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            />
-          </Form.Group>
-        </Row>
+                />
+              </Form.Group>
+            </Row>
 
-        <Row>
-          <Form.Group as={Col} md='6'>
-            <RequiredLabel label='Customer' id='customer' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Customer Search'
-                    info={[
-                      "Search by customer's code or name",
-                      'Selection will load related contacts',
-                      'Required to proceed with location creation',
-                    ]}
-                  />
-                </Tooltip>
-              }
+            <Row>
+              <Form.Group as={Col} md='6'>
+                <RequiredLabel label='Customer' id='customer' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent
+                        title='Customer Search'
+                        info={[
+                          "Search by customer's code or name",
+                          'Selection will load related contacts',
+                          'Required to proceed with location creation',
+                        ]}
+                      />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
+
+                <Controller
+                  name='customer'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        inputId='customer'
+                        instanceId='customer'
+                        onChange={(option) => handleCustomerChange(option, field)}
+                        formatOptionLabel={formatCustomerOptionLabel}
+                        options={customersOptions.data}
+                        placeholder={
+                          customersOptions.isLoading
+                            ? 'Loading customers...'
+                            : "Search by customer's code or name"
+                        }
+                        isDisabled={customersOptions.isLoading}
+                        noOptionsMessage={() =>
+                          customersOptions.isLoading ? 'Loading...' : 'No customers found'
+                        }
+                      />
+
+                      {formErrors && formErrors.customer?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.customer?.message}
+                        </Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+
+              <Form.Group as={Col} md='6'>
+                <RequiredLabel label='Status' id='status' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent title='Site Status Search' info={['Search by site type']} />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
+
+                <Controller
+                  name='status'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        inputId='status'
+                        instanceId='status'
+                        onChange={(option) => field.onChange(option)}
+                        options={statusesOptions}
+                        placeholder='Search by site status type'
+                        noOptionsMessage={() => 'No site statuses found'}
+                      />
+
+                      {formErrors && formErrors.status?.message && (
+                        <Form.Text className='text-danger'>{formErrors.status?.message}</Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+            </Row>
+          </Form>
+
+          <div className='mt-4 d-flex justify-content-between align-items-center'>
+            <Button
+              disabled={isLoading}
+              type='button'
+              variant='outline-danger'
+              onClick={() => router.push('/sites')}
             >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
+              Cancel
+            </Button>
 
-            <Controller
-              name='customer'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    inputId='customer'
-                    instanceId='customer'
-                    onChange={(option) => handleCustomerChange(option, field)}
-                    formatOptionLabel={formatCustomerOptionLabel}
-                    options={customersOptions.data}
-                    placeholder={
-                      customersOptions.isLoading
-                        ? 'Loading customers...'
-                        : "Search by customer's code or name"
-                    }
-                    isDisabled={customersOptions.isLoading}
-                    noOptionsMessage={() =>
-                      customersOptions.isLoading ? 'Loading...' : 'No customers found'
-                    }
-                  />
-
-                  {formErrors && formErrors.customer?.message && (
-                    <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='6'>
-            <RequiredLabel label='Status' id='status' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent title='Site Status Search' info={['Search by site type']} />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='status'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    inputId='status'
-                    instanceId='status'
-                    onChange={(option) => field.onChange(option)}
-                    options={statusesOptions}
-                    placeholder='Search by site status type'
-                    noOptionsMessage={() => 'No site statuses found'}
-                  />
-
-                  {formErrors && formErrors.status?.message && (
-                    <Form.Text className='text-danger'>{formErrors.status?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-        </Row>
-      </Form>
-
-      <div className='mt-4 d-flex justify-content-between align-items-center'>
-        <Button
-          disabled={isLoading}
-          type='button'
-          variant='outline-danger'
-          onClick={() => router.push('/sites')}
-        >
-          Cancel
-        </Button>
-
-        <Button disabled={isLoading} type='button' onClick={handleNext}>
-          Next
-        </Button>
-      </div>
+            <Button disabled={isLoading} type='button' onClick={handleNext}>
+              Next
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
     </>
   );
 };
