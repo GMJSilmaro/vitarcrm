@@ -294,7 +294,7 @@ const JobForm = ({ data }) => {
               );
             }
           } catch (error) {
-            return error;
+            throw error;
           }
         });
 
