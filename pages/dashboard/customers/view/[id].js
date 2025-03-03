@@ -155,7 +155,7 @@ const CustomerDetails = () => {
                       <div className='d-flex flex-column gap-4'>
                         <Row className='row-gap-3'>
                           <Col md={4}>
-                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                               <div
                                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                                 style={{ width: '40px', height: '40px' }}
@@ -172,7 +172,7 @@ const CustomerDetails = () => {
                           </Col>
 
                           <Col md={4}>
-                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                               <div
                                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                                 style={{ width: '40px', height: '40px' }}
@@ -187,7 +187,7 @@ const CustomerDetails = () => {
                           </Col>
 
                           <Col md={4}>
-                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                               <div
                                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                                 style={{ width: '40px', height: '40px' }}
@@ -204,7 +204,7 @@ const CustomerDetails = () => {
                           </Col>
 
                           <Col md={4}>
-                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                               <div
                                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                                 style={{ width: '40px', height: '40px' }}
@@ -221,7 +221,7 @@ const CustomerDetails = () => {
                           </Col>
 
                           <Col md={4}>
-                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                               <div
                                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                                 style={{ width: '40px', height: '40px' }}
@@ -317,7 +317,7 @@ const CustomerDetails = () => {
                             <div>
                               <h5 className='text-primary-label mb-2 fs-5'>Contact #{i + 1}</h5>
 
-                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                                 <div
                                   className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                                   style={{ width: '40px', height: '40px' }}
@@ -416,7 +416,7 @@ const CustomerDetails = () => {
                               <div>
                                 <h5 className='text-primary-label mb-2 fs-5'>Location #{i + 1}</h5>
 
-                                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                                   <div
                                     className='d-none d-lg-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                                     style={{ width: '40px', height: '40px' }}

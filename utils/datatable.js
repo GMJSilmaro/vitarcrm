@@ -55,10 +55,9 @@ export function getCommonPinningStyles({ column }) {
     left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
     right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
     opacity: isPinned ? 0.97 : 1,
-    position: isPinned ? 'sticky' : 'relative',
-    background: isPinned ? 'hsl(var(--background))' : 'hsl(var(--background))',
+    position: isPinned ? 'sticky' : undefined,
     width: column.getSize(),
-    background: 'white',
+    background: isPinned ? 'white' : 'transparent',
     zIndex: isPinned ? 1 : 0,
   };
 }

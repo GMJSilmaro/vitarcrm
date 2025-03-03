@@ -12,10 +12,9 @@ const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
   const paginationSizeOptions = pageSize.map((size) => ({ value: size, label: size }));
   const [selectedPageSize, setSelectedPageSize] = useState(paginationSizeOptions[0]);
 
-  const rowModel = table.getRowModel();
   const page = table.getState().pagination.pageIndex + 1;
   const pageCount = table.getPageCount() || 0;
-  const totalRows = rowModel?.rows.length || 0;
+  const totalRows = table.getPrePaginationRowModel()?.rows?.length || 0;
 
   if (totalRows === 0) return null;
 

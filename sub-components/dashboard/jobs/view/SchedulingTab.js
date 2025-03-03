@@ -18,7 +18,7 @@ const SchedulingTab = ({ job }) => {
           <Card.Body className='pt-4'>
             <Row className='row-gap-3'>
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -33,7 +33,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -50,7 +50,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -67,7 +67,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -84,7 +84,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={6} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -101,7 +101,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={6} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -131,7 +131,7 @@ const SchedulingTab = ({ job }) => {
           <Card.Body className='pt-4'>
             <Row className='row-gap-3'>
               <Col md={6} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -148,7 +148,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={6} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -165,7 +165,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -182,7 +182,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -199,7 +199,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -216,7 +216,7 @@ const SchedulingTab = ({ job }) => {
               </Col>
 
               <Col md={3} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}

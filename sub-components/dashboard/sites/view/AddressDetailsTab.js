@@ -25,7 +25,7 @@ const AddressDetailsTab = ({ site }) => {
                     <div>
                       <h5 className='text-primary-label mb-2 fs-5'>Address #{i + 1}</h5>
 
-                      <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                      <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                         <div
                           className='d-none d-lg-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                           style={{ width: '40px', height: '40px' }}

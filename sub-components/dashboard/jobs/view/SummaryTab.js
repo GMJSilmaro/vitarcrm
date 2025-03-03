@@ -252,7 +252,7 @@ const SummaryTab = ({ job }) => {
               <Card.Body className='pt-4'>
                 <Row className='row-gap-3'>
                   <Col className='d-flex flex-column gap-3'>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -282,7 +282,7 @@ const SummaryTab = ({ job }) => {
               <Card.Body>
                 <Row>
                   <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -298,7 +298,7 @@ const SummaryTab = ({ job }) => {
                     </div>
                   </Col>
                   <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -314,7 +314,7 @@ const SummaryTab = ({ job }) => {
                     </div>
                   </Col>
                   <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -330,7 +330,7 @@ const SummaryTab = ({ job }) => {
                     </div>
                   </Col>
                   <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -374,7 +374,7 @@ const SummaryTab = ({ job }) => {
               <Card.Body>
                 <Row className='row-gap-3'>
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -391,7 +391,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -408,7 +408,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -425,7 +425,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -442,7 +442,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -459,7 +459,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -476,7 +476,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -493,7 +493,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -510,7 +510,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -527,7 +527,7 @@ const SummaryTab = ({ job }) => {
                   </Col>
 
                   <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                       <div
                         className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                         style={{ width: '40px', height: '40px' }}
@@ -561,7 +561,7 @@ const SummaryTab = ({ job }) => {
           <Card.Body>
             <Row className='row-gap-3'>
               <Col md={3}>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -577,7 +577,7 @@ const SummaryTab = ({ job }) => {
                 </div>
               </Col>
               <Col md={3}>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -593,7 +593,7 @@ const SummaryTab = ({ job }) => {
                 </div>
               </Col>
               <Col md={3}>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
@@ -609,7 +609,7 @@ const SummaryTab = ({ job }) => {
                 </div>
               </Col>
               <Col md={3}>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100'>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
