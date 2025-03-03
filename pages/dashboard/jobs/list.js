@@ -10,20 +10,38 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap';
 import {
+  ArrowRepeat,
+  ArrowReturnLeft,
   BriefcaseFill,
+  Building,
   CardList,
+  Check2Circle,
+  CheckCircle,
   Eye,
+  Hourglass,
   HouseDoorFill,
   PencilSquare,
   PersonFill,
   PersonLinesFill,
   Plus,
+  ShieldCheck,
   ThreeDotsVertical,
+  Tools,
   Trash,
+  XCircle,
 } from 'react-bootstrap-icons';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
-import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  increment,
+  onSnapshot,
+  query,
+  runTransaction,
+} from 'firebase/firestore';
 import { db } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import DataTable from '@/components/common/DataTable';
@@ -51,6 +69,19 @@ const JobList = () => {
 
   const columns = useMemo(() => {
     return [
+      columnHelper.accessor('index', {
+        id: 'index',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='#' />,
+        enableSorting: false,
+        size: 50,
+        cell: (info) => {
+          const rowIndex = info.row.index;
+          const pageIndex = table.getState().pagination.pageIndex;
+          const pageSize = table.getState().pagination.pageSize;
+          const displayIndex = rowIndex + pageIndex * pageSize + 1;
+          return <div>{displayIndex}</div>;
+        },
+      }),
       columnHelper.accessor('id', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
@@ -106,17 +137,19 @@ const JobList = () => {
           );
         },
       }),
-      columnHelper.accessor((row) => `${row.customer.name}`, {
+      columnHelper.accessor((row) => `${row.customer.name} - ${row.location.name}`, {
         id: 'customer',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Customer' />,
-        cell: ({ row }) => <span>{row.original.customer.name}</span>,
-      }),
-      columnHelper.accessor((row) => `${row.location.name}`, {
-        id: 'location',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Location' />,
-        cell: ({ row }) => {
-          return <div>{row.original.location.name}</div>;
-        },
+        cell: ({ row }) => (
+          <div className='d-flex flex-column justify-content-center row-gap-1'>
+            <div>
+              <PersonFill size={14} className='text-primary me-2' /> {row.original.customer.name}
+            </div>
+            <div>
+              <Building size={14} className='text-primary me-2' /> {row.original.location.name}
+            </div>
+          </div>
+        ),
       }),
       columnHelper.accessor('description', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
@@ -206,13 +239,32 @@ const JobList = () => {
           },
         }
       ),
+      columnHelper.accessor('isReturnedEquipment', {
+        id: 'equipment status',
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment Status' />,
+        cell: ({ row }) => {
+          const status = row.original?.details?.isReturnedEquipment;
+
+          return (
+            <Badge className='text-capitalize' bg={status ? 'success' : 'danger'}>
+              {status ? 'Returned' : 'Unreturned'}
+            </Badge>
+          );
+        },
+      }),
       columnHelper.accessor((row) => format(row.updatedAt.toDate(), 'dd-MM-yyyy'), {
         id: 'last updated',
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Last Updated' />,
         cell: ({ row }) => {
           const updatedAt = row.original.updatedAt.toDate();
-          return <div>{format(updatedAt, 'dd-MM-yyyy, p')}</div>;
+          return (
+            <div className='d-flex flex-column justify-content-center row-gap-1'>
+              <div>{format(updatedAt, 'dd-MM-yyyy')}</div>
+              <div>{format(updatedAt, 'p')}</div>
+            </div>
+          );
         },
         filterFn: (row, columnId, filterValue, addMeta) => {
           const updatedAt = row.original.updatedAt.toDate();
@@ -246,7 +298,7 @@ const JobList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id } = row.original;
+          const { id, details } = row.original;
 
           const handleViewJob = (id) => {
             router.push(`/jobs/view/${id}`);
@@ -262,10 +314,12 @@ const JobList = () => {
               text: 'This action cannot be undone.',
               icon: 'warning',
               showCancelButton: true,
-              confirmButtonColor: '#1e40a6',
-              cancelButtonColor: '#6c757d',
               confirmButtonText: 'Confirm',
               cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
             }).then(async (data) => {
               if (data.isConfirmed) {
                 try {
@@ -290,11 +344,60 @@ const JobList = () => {
             });
           };
 
+          const handleReturnEquipment = (id, details) => {
+            if (!details || !details.equipments) {
+              toast.error('Job details not found');
+              return;
+            }
+
+            Swal.fire({
+              title: 'Are you sure?',
+              text: 'Are you sure you want to return all the equipment related to this job?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#1e40a6',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  await runTransaction(db, async (transaction) => {
+                    try {
+                      //* update equipment qty
+                      details.equipments.map((eq) => {
+                        transaction.update(doc(db, 'equipments', eq.id), { qty: increment(1) });
+                      });
+
+                      //* update job header
+                      const jobDetails = doc(db, 'jobDetails', id);
+                      transaction.update(jobDetails, { isReturnedEquipment: true });
+                    } catch (error) {
+                      throw error;
+                    }
+                  });
+
+                  toast.success('Equipment returned successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error returning equipment:', error);
+                  toast.error('Error returning equipment: ' + error.message, {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
+
           return (
             <OverlayTrigger
               rootClose
               trigger='click'
-              placement='left-start'
+              placement='left'
+              offset={[0, 20]}
               overlay={
                 <Dropdown.Menu show style={{ zIndex: 999 }}>
                   <Dropdown.Item onClick={() => handleViewJob(id)}>
@@ -309,6 +412,43 @@ const JobList = () => {
                     <Trash className='me-2' size={16} />
                     Delete Job
                   </Dropdown.Item>
+
+                  <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
+                    <ArrowReturnLeft className='me-2' size={16} />
+                    Return Equipment
+                  </Dropdown.Item>
+
+                  <OverlayTrigger
+                    rootClose
+                    trigger='click'
+                    placement='right-end'
+                    overlay={
+                      <Dropdown.Menu show style={{ zIndex: 999 }}>
+                        <Dropdown.Item>
+                          <Hourglass className='me-2' size={16} />
+                          In Progress
+                        </Dropdown.Item>
+                        <Dropdown.Item>
+                          <CheckCircle className='me-2' size={16} />
+                          Completed
+                        </Dropdown.Item>
+                        <Dropdown.Item>
+                          <XCircle className='me-2' size={16} />
+                          Cancelled
+                        </Dropdown.Item>
+                        <Dropdown.Item>
+                          <ShieldCheck className='me-2' size={16} />
+                          Validated
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    }
+                  >
+                    <Dropdown.Item>
+                      <ArrowRepeat className='me-2' size={16} />
+                      Update Status
+                    </Dropdown.Item>
+                  </OverlayTrigger>
+
                   <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations`)}>
                     <Eye className='me-2' size={16} />
                     View Calibrations
@@ -337,7 +477,7 @@ const JobList = () => {
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'Job ID',
+        label: 'ID',
         columnId: 'id',
         type: 'text',
         placeholder: 'Search by job id...',
@@ -347,12 +487,6 @@ const JobList = () => {
         columnId: 'customer',
         type: 'text',
         placeholder: 'Search by customer...',
-      },
-      {
-        label: 'Location',
-        columnId: 'location',
-        type: 'text',
-        placeholder: 'Search by location...',
       },
       {
         label: 'Description',
@@ -445,19 +579,28 @@ const JobList = () => {
 
     const unsubscribe = onSnapshot(
       q,
-      (snapshop) => {
+      async (snapshop) => {
         if (!snapshop.empty) {
-          setJobs({
-            data: snapshop.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            })),
-            isLoading: false,
-            isError: false,
-          });
-        } else {
-          setJobs({ data: [], isLoading: false, isError: false });
+          let rows = [];
+          for (const jobDoc of snapshop.docs) {
+            const id = jobDoc.id;
+            const data = jobDoc.data();
+
+            const jobDetailsDoc = await getDoc(doc(db, 'jobDetails', id));
+            const jobDetailsData = jobDetailsDoc.exists() ? jobDetailsDoc.data() : null;
+
+            rows.push({
+              id,
+              ...data,
+              details: jobDetailsData,
+            });
+          }
+
+          setJobs({ data: rows, isLoading: false, isError: false });
+          return;
         }
+
+        setJobs({ data: [], isLoading: false, isError: false });
       },
       (err) => {
         console.error(err.message);
@@ -474,7 +617,7 @@ const JobList = () => {
 
       <ContentHeader
         title='Job List'
-        description='Create, manage and tract all your jobs assignments in once centralize dashboard'
+        description='Create, manage and tract all your jobs assignments in one centralize dashboard'
         infoText='Manage job assignment and track progress updates'
         badgeText='Job Management'
         badgeText2='Scheduling'

@@ -117,6 +117,7 @@ const CalibrationForm = ({ data }) => {
       router.push(`/jobs/${jobId}/calibrations//edit-calibrations/${formData.calibrateId}`);
       toast.success(`Calibration ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
       setIsLoading(false);
+      setActiveKey((prev) => prev - 1);
     } catch (error) {
       console.error('Error submitting calibraiton:', error);
       toast.error('Something went wrong. Please try again later.');
