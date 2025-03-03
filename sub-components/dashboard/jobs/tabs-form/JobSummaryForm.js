@@ -53,7 +53,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
             const contacts =
               customer?.contacts &&
               Array.isArray(customer?.contacts) &&
-              contactsData.filter((contact) => customer?.contacts.includes(contact.id));
+              customer?.contacts?.length > 0
+                ? contactsData.filter((contact) => customer?.contacts?.includes(contact.id))
+                : null;
 
             return {
               id: customer.id,
@@ -250,18 +252,24 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     field.onChange(option);
 
     //* contact options
-    const cOptions = option.contacts.map((contact) => ({
-      value: contact.id,
-      label: `${contact.firstName} ${contact.lastName}`,
-      ...contact,
-    }));
+    const cOptions =
+      option?.contacts?.length > 0
+        ? option.contacts.map((contact) => ({
+            value: contact.id,
+            label: `${contact.firstName} ${contact.lastName}`,
+            ...contact,
+          }))
+        : [];
 
     //* location options
-    const lOptions = option.locations.map((location) => ({
-      value: location.siteId,
-      label: `${location.siteId} - ${location.siteName}`,
-      ...location,
-    }));
+    const lOptions =
+      option?.locations?.length > 0
+        ? option.locations.map((location) => ({
+            value: location.siteId,
+            label: `${location.siteId} - ${location.siteName}`,
+            ...location,
+          }))
+        : [];
 
     if (cOptions.length > 0) {
       setContactsOpions(cOptions);
@@ -272,10 +280,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
       }
     } else {
       form.setValue('contact', null);
-      form.setValue('contact.firstName', '');
-      form.setValue('contact.lastName', '');
-      form.setValue('contact.phone', '');
-      form.setValue('contact.email', '');
     }
 
     if (lOptions.length > 0) {
@@ -425,7 +429,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={form.watch('contact.firstName')}
+                value={form.watch('contact') ? form.watch('contact.firstName') : ''}
                 readOnly
                 disabled
               />
@@ -435,7 +439,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={form.watch('contact.lastName')}
+                value={form.watch('contact') ? form.watch('contact.lastName') : ''}
                 readOnly
                 disabled
               />
@@ -445,7 +449,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={form.watch('contact.phone')}
+                value={form.watch('contact') ? form.watch('contact.phone') : ''}
                 readOnly
                 disabled
               />
@@ -455,7 +459,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Control
                 required
                 type='text'
-                value={form.watch('contact.email')}
+                value={form.watch('contact') ? form.watch('contact.email') : ''}
                 readOnly
                 disabled
               />

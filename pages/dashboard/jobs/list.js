@@ -41,6 +41,7 @@ import {
   onSnapshot,
   query,
   runTransaction,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
@@ -53,9 +54,11 @@ import { dateFilter, dateSort, fuzzyFilter, globalSearchFilter } from '@/utils/d
 import DataTableFilter from '@/components/common/DataTableFilter';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobList = () => {
   const router = useRouter();
+  const auth = useAuth();
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
 
@@ -373,7 +376,18 @@ const JobList = () => {
 
                       //* update job header
                       const jobDetails = doc(db, 'jobDetails', id);
-                      transaction.update(jobDetails, { isReturnedEquipment: true });
+                      transaction.update(jobDetails, {
+                        isReturnedEquipment: true,
+                        updatedAt: serverTimestamp(),
+                        updatedBy: auth.currentUser,
+                      });
+
+                      //* update job header
+                      const jobHeader = doc(db, 'jobHeaders', id);
+                      transaction.update(jobHeader, {
+                        updatedAt: serverTimestamp(),
+                        updatedBy: auth.currentUser,
+                      });
                     } catch (error) {
                       throw error;
                     }
