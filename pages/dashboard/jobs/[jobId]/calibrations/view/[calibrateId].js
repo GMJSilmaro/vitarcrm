@@ -51,32 +51,25 @@ const CalibrationDetails = () => {
           ) {
             const calibrationData = calibrationSnapshot.data();
             const certificateData = certificateSnapshot?.docs[0]?.data();
-            const jobHeaderData = jobHeaderSnapshot.data();
+            const jobHeaderData = { jobId: jobHeaderSnapshot.id, ...jobHeaderSnapshot.data() };
 
-            const locationSnapshot = calibrationData.location.id
-              ? await getDoc(doc(db, 'locations', calibrationData.location.id))
+            const locationSnapshot = jobHeaderData.location.id
+              ? await getDoc(doc(db, 'locations', jobHeaderData.location.id))
               : undefined;
 
-            const dfnvWithResovedData = calibrationData?.dfnv
-              ? calibrationData.dfnv.map((entry) => {
-                  return {
-                    ...entry,
-                    calibrationPoints: entry.calibrationPoints.map((point) => {
-                      return {
-                        ...point,
-                        data: point.data.map((data) => JSON.parse(data)),
-                      };
-                    }),
-                  };
-                })
-              : [];
+            const customerEquipmentSnapshot = calibrationData.description.id
+              ? await getDoc(doc(db, 'customerEquipments', calibrationData.description.id))
+              : undefined;
+
+            const resolvedData = calibrationData?.data ? JSON.parse(calibrationData.data) : null;
 
             setCalibration({
               id: calibrationSnapshot.id,
               ...calibrationData,
-              dfnv: dfnvWithResovedData,
+              data: resolvedData,
               ...certificateData,
               location: locationSnapshot?.exists() ? {id: locationSnapshot.id, ...locationSnapshot.data()} : undefined, //prettier-ignore
+              description: customerEquipmentSnapshot?.exists() ? { id: customerEquipmentSnapshot.id, ...customerEquipmentSnapshot.data()} : undefined, //prettier-ignore
               job: { id: jobHeaderSnapshot.id, ...jobHeaderData }, //prettier-ignore
             });
             setIsLoading(false);
@@ -86,6 +79,7 @@ const CalibrationDetails = () => {
           }
         })
         .catch((err) => {
+          console.log(err);
           setError(err.message || 'Error fetching calibration');
           setIsLoading(false);
         });
@@ -145,9 +139,9 @@ const CalibrationDetails = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <button className='btn btn-primary' onClick={() => router.push('/jobs')}>
+          <Button className='btn btn-primary' onClick={() => router.push('/jobs')}>
             Back to Job Calibration List
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -214,7 +208,7 @@ const CalibrationDetails = () => {
       <Card>
         <Card.Body>
           <Tabs activeKey={activeTab} onSelect={setActiveTab}>
-            <Tab eventKey='0' title='Info'>
+            <Tab eventKey='0' title='Summary'>
               <InfoTab calibration={calibration} />
             </Tab>
 

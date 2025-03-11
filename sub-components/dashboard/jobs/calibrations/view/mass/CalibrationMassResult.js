@@ -1,4 +1,5 @@
 import { EXPANDED_UNCERTAINTY, NOMINAL_VALUE } from '@/schema/calibration';
+import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
 import { format } from 'date-fns';
 import React, { useMemo } from 'react';
 import { Card, Table } from 'react-bootstrap';
@@ -7,6 +8,22 @@ const CalibrationMassResult = ({ calibration }) => {
   const calibrationPointNo = useMemo(() => {
     const value = parseFloat(calibration.calibrationPointNo);
     return isNaN(value) ? undefined : value;
+  }, [calibration]);
+
+  const results = useMemo(() => {
+    const value = calibration?.results;
+
+    return value
+      ? value
+      : {
+          corrections: [],
+          expandedUncertainties: [],
+          measuredValuesM: [],
+          nominalValues: [],
+          rangeType: '',
+          resolution: 0,
+          rtestMaxError: 0,
+        };
   }, [calibration]);
 
   // TODO: Add Calibration Mass result
@@ -40,17 +57,17 @@ const CalibrationMassResult = ({ calibration }) => {
           <div className='mt-3 d-flex align-items-center gap-3'>
             <div className='fs-5'>
               <span className='pe-2'>Type of Range:</span>
-              <span className='fw-bold text-capitalize'>{calibration.rangeType}</span>
+              <span className='fw-bold text-capitalize'>{results?.rangeType || ''}</span>
             </div>
 
             <div className='fs-5'>
               <span className='pe-2'>d:</span>
-              <span className='fw-bold'>10 g</span>
+              <span className='fw-bold'>{results?.resolution || 0} g</span>
             </div>
 
             <div className='fs-5'>
-              <span className='pe-2'>Repeatability =</span>
-              <span className='fw-bold'>{Number(0).toFixed(4)} g</span>
+              <span className='pe-2'>Repeatability: </span>
+              <span className='fw-bold'>{formatToDicimalString(results?.rtestMaxError, 4)} g</span>
             </div>
           </div>
         </div>
@@ -73,10 +90,13 @@ const CalibrationMassResult = ({ calibration }) => {
               {Array.from({ length: calibrationPointNo }).map((_, i) => (
                 <tr key={i}>
                   <td>A{i + 1}</td>
-                  <td>{NOMINAL_VALUE[i].toFixed(4)}</td>
-                  <td>{NOMINAL_VALUE[i].toFixed(4)}</td>
-                  <td>{Number(0).toFixed(4)}</td>
-                  <td>{EXPANDED_UNCERTAINTY[i]}</td>
+                  <td>{results?.nominalValues?.[i] || ''}</td>
+                  <td>{formatToDicimalString(results?.measuredValuesM?.[i])}</td>
+                  <td>{formatToDicimalString(results?.corrections?.[i])}</td>
+                  <td>
+                    <span className='me-2'>±</span>{' '}
+                    {formatToDicimalString(results?.expandedUncertainties?.[i], 5)}
+                  </td>
                 </tr>
               ))}
             </tbody>

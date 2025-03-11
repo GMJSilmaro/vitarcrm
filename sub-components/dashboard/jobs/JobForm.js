@@ -337,7 +337,7 @@ const JobForm = ({ data }) => {
               <JobSummaryForm data={data} isLoading={isLoading} handleNext={handleNext} />
             </Tab>
 
-            <Tab eventKey='1' title='Job Task'>
+            <Tab eventKey='1' title='Additional Instructions'>
               <TaskForm
                 isLoading={isLoading}
                 handleNext={handleNext}

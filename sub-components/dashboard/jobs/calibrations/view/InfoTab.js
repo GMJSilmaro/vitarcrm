@@ -44,137 +44,15 @@ const InfoTab = ({ calibration }) => {
     return 'N/A';
   }, [calibration]);
 
+  console.log({ calibration });
+
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
         <div className='d-flex justify-content-between align-items-center'>
           <div>
-            <h5 className='mb-0'>Customer Info</h5>
-            <small className='text-muted'>Basic customer details</small>
-          </div>
-        </div>
-      </Card.Header>
-
-      <Card.Body>
-        <Row>
-          <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <Person size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Customer:</div>
-                <div className='text-primary-label fw-semibold'>
-                  {calibration?.job?.customer?.name || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={9}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <Building size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Location:</div>
-                <div className='text-primary-label fw-semibold'>{handleGetLocationValue()}</div>
-              </div>
-            </div>
-          </Col>
-        </Row>
-      </Card.Body>
-
-      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-        <div className='d-flex justify-content-between align-items-center'>
-          <div>
-            <h5 className='mb-0'>Customer Equipment</h5>
-            <small className='text-muted'>Details about the customer equipment being tested.</small>
-          </div>
-        </div>
-      </Card.Header>
-
-      <Card.Body>
-        <Row className='row-gap-3'>
-          <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <WrenchAdjustableCircle size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Description:</div>
-                <div className='text-primary-label fw-semibold'>
-                  {calibration?.description?.name || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <CardHeading size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Make:</div>
-                <div className='text-primary-label fw-semibold'>{calibration?.make || 'N/A'}</div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <CardHeading size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Model:</div>
-                <div className='text-primary-label fw-semibold'>{calibration?.model || 'N/A'}</div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <CardHeading size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Serial No:</div>
-                <div className='text-primary-label fw-semibold'>
-                  {calibration?.serialNumber || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-        </Row>
-      </Card.Body>
-
-      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-        <div className='d-flex justify-content-between align-items-center'>
-          <div>
-            <h5 className='mb-0'>Calibration Info</h5>
-            <small className='text-muted'>
-              Calibration Info, including calibration ID, category, date issued, date received, etc.
-            </small>
+            <h4 className='mb-0'>Job</h4>
+            <p className='text-muted fs-6 mb-0'>Details about the job.</p>
           </div>
         </div>
       </Card.Header>
@@ -196,7 +74,52 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={9}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Person size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Customer:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {calibration?.job?.customer?.name || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={12}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Building size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Location:</div>
+                <div className='text-primary-label fw-semibold'>{handleGetLocationValue()}</div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+
+      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h4 className='mb-0'>Calibration Info</h4>
+            <p className='text-muted fs-6 mb-0'>Details about the calibration.</p>
+          </div>
+        </div>
+      </Card.Header>
+
+      <Card.Body>
+        <Row className='row-gap-3'>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -213,24 +136,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <Hash size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Certificate No:</div>
-                <div className='text-primary-label fw-semibold'>
-                  {calibration?.certificateNumber || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -247,7 +153,24 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Hash size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Certificate No:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {calibration?.certificateNumber || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={6}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -258,13 +181,13 @@ const InfoTab = ({ calibration }) => {
               <div>
                 <div className='text-secondary fs-6'>Submitted By:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.submittedBy?.name || 'N/A'}
+                  {calibration?.job?.customer?.name || 'N/A'}
                 </div>
               </div>
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={6}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -281,7 +204,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={6}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -292,13 +215,13 @@ const InfoTab = ({ calibration }) => {
               <div>
                 <div className='text-secondary fs-6'>Calibrated At:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.calibratedAt || 'N/A'}
+                  {calibration?.job?.scope || 'N/A'}
                 </div>
               </div>
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={6}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -314,8 +237,102 @@ const InfoTab = ({ calibration }) => {
               </div>
             </div>
           </Col>
+        </Row>
+      </Card.Body>
+
+      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h4 className='mb-0'>Equipment to Calibrate</h4>
+            <p className='text-muted fs-6'>Details about the customer's equipment to calibrate.</p>
+          </div>
+        </div>
+      </Card.Header>
+
+      <Card.Body>
+        <Row className='row-gap-3'>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <WrenchAdjustableCircle size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Description:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {calibration?.description?.description || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
 
           <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <CardHeading size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Make:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {calibration?.description?.make || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <CardHeading size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Model:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {calibration?.description?.model || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <CardHeading size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Serial No:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {calibration?.description?.serialNumber || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+
+      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h4 className='mb-0'>Date Tracking</h4>
+            <p className='text-muted fs-6 mb-0'>Date details related to the calibration.</p>
+          </div>
+        </div>
+      </Card.Header>
+
+      <Card.Body>
+        <Row className='row-gap-3'>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -332,7 +349,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -349,7 +366,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -366,7 +383,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -383,7 +400,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -400,7 +417,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -422,10 +439,10 @@ const InfoTab = ({ calibration }) => {
       <Card.Header className='bg-transparent border-0 pb-0'>
         <div className='d-flex justify-content-between align-items-center'>
           <div>
-            <h5 className='mb-0'>Record Details</h5>
-            <small className='text-muted'>
+            <h4 className='mb-0'>Record Details</h4>
+            <p className='text-muted fs-6 mb-0'>
               Details about who created or updated the record and when it was modified.
-            </small>
+            </p>
           </div>
         </div>
       </Card.Header>

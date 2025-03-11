@@ -71,8 +71,13 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
   return (
     <Card className='shadow-none'>
       <Card.Body>
+        <h4 className='mb-0'>Criteria</h4>
+        <p className='text-muted fs-6'>
+          Measurements criteria to be used as a basis for the calibration.
+        </p>
+
         <Row className='mb-3 row-gap-3'>
-          <Form.Group as={Col} md='3'>
+          <Form.Group as={Col} md={3}>
             <RequiredLabel label='Type of Range' id='rangeType' />
             <OverlayTrigger
               placement='right'
@@ -102,47 +107,6 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
 
                   {formErrors && formErrors.rangeType?.message && (
                     <Form.Text className='text-danger'>{formErrors.rangeType?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Traceability Type' id='traceabilityType' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Traceability Type Search'
-                    info={['Search by traceability type']}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='traceabilityType'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    inputId='traceabilityType'
-                    instanceId='traceabilityType'
-                    onChange={(option) => field.onChange(option)}
-                    options={traceabilityTypeOptions}
-                    placeholder='Search by traceability type'
-                    noOptionsMessage={() => 'No traceability type found'}
-                  />
-
-                  {formErrors && formErrors.traceabilityType?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.traceabilityType?.message}
-                    </Form.Text>
                   )}
                 </>
               )}
@@ -206,7 +170,176 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
               )}
             />
           </Form.Group>
+
+          <Form.Group as={Col} md={3}>
+            <RequiredLabel label='Traceability Type' id='traceabilityType' />
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Traceability Type Search'
+                    info={['Search by traceability type']}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
+
+            <Controller
+              name='traceabilityType'
+              control={form.control}
+              render={({ field }) => (
+                <>
+                  <Select
+                    {...field}
+                    inputId='traceabilityType'
+                    instanceId='traceabilityType'
+                    onChange={(option) => field.onChange(option)}
+                    options={traceabilityTypeOptions}
+                    placeholder='Search by traceability type'
+                    noOptionsMessage={() => 'No traceability type found'}
+                  />
+
+                  {formErrors && formErrors.traceabilityType?.message && (
+                    <Form.Text className='text-danger'>
+                      {formErrors.traceabilityType?.message}
+                    </Form.Text>
+                  )}
+                </>
+              )}
+            />
+          </Form.Group>
+
+          <Form.Group as={Col} md={3}>
+            <RequiredLabel label='Resolution' id='resolution' />
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent title='Resolution Search' info={['Search by resolution']} />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
+
+            <Controller
+              name='resolution'
+              control={form.control}
+              render={({ field }) => (
+                <>
+                  <div className='d-flex'>
+                    <Select
+                      {...field}
+                      className='flex-1 flex-grow-1'
+                      inputId='resolution'
+                      instanceId='resolution'
+                      onChange={(option) => field.onChange(option)}
+                      options={resolutionOptions}
+                      placeholder='Search by resolution'
+                      noOptionsMessage={() => 'No resolution found'}
+                    />
+
+                    <InputGroup.Text className='rounded-start-0'>gram</InputGroup.Text>
+                  </div>
+
+                  {formErrors && formErrors.resolution?.message && (
+                    <Form.Text className='text-danger'>{formErrors.resolution?.message}</Form.Text>
+                  )}
+                </>
+              )}
+            />
+          </Form.Group>
+
+          <Form.Group as={Col} md={3}>
+            <RequiredLabel label='Unit Used For COC' id='unitUsedForCOC' />
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Unit Used For COC Search'
+                    info={['Search by unit used for COC']}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
+
+            <Controller
+              name='unitUsedForCOC'
+              control={form.control}
+              render={({ field }) => (
+                <>
+                  <Select
+                    {...field}
+                    inputId='unitUsedForCOC'
+                    instanceId='unitUsedForCOC'
+                    onChange={(option) => field.onChange(option)}
+                    options={unitUsedForCOCOptions}
+                    placeholder='Search by unit used for COC'
+                    noOptionsMessage={() => 'No unit used for COC found'}
+                  />
+
+                  {formErrors && formErrors.unitUsedForCOC?.message && (
+                    <Form.Text className='text-danger'>
+                      {formErrors.unitUsedForCOC?.message}
+                    </Form.Text>
+                  )}
+                </>
+              )}
+            />
+          </Form.Group>
+
+          <Form.Group as={Col} md={3}>
+            <RequiredLabel label='No. of Calibration Point' id='calibrationPointNo' />
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Calibration Point No. Search'
+                    info={['Search by calibration point no.']}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
+
+            <Controller
+              name='calibrationPointNo'
+              control={form.control}
+              render={({ field }) => (
+                <>
+                  <Select
+                    {...field}
+                    isDisabled={!form.watch('resolution')}
+                    inputId='calibrationPointNo'
+                    instanceId='calibrationPointNo'
+                    onChange={(option) => field.onChange(option)}
+                    options={calibrationPointNoOptions}
+                    placeholder='Search by calibration point no. for COC'
+                    noOptionsMessage={() => 'No calibration point no. found'}
+                  />
+
+                  {formErrors && formErrors.calibrationPointNo?.message && (
+                    <Form.Text className='text-danger'>
+                      {formErrors.calibrationPointNo?.message}
+                    </Form.Text>
+                  )}
+                </>
+              )}
+            />
+          </Form.Group>
         </Row>
+
+        <hr className='my-4' />
+        <h4 className='mb-0'>Other measurements</h4>
+        <p className='text-muted fs-6'>Details about the other measurements.</p>
 
         <Row className='mb-3 row-gap-3'>
           <Form.Group as={Col} md={3}>
@@ -322,131 +455,6 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
                   {formErrors && formErrors.rangeMaxRHumidity?.message && (
                     <Form.Text className='text-danger'>
                       {formErrors.rangeMaxRHumidity?.message}
-                    </Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-        </Row>
-
-        <Row className='mb-3 row-gap-3'>
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Resolution' id='resolution' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent title='Resolution Search' info={['Search by resolution']} />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='resolution'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <div className='d-flex'>
-                    <Select
-                      {...field}
-                      className='flex-1 flex-grow-1'
-                      inputId='resolution'
-                      instanceId='resolution'
-                      onChange={(option) => field.onChange(option)}
-                      options={resolutionOptions}
-                      placeholder='Search by resolution'
-                      noOptionsMessage={() => 'No resolution found'}
-                    />
-
-                    <InputGroup.Text className='rounded-start-0'>gram</InputGroup.Text>
-                  </div>
-
-                  {formErrors && formErrors.resolution?.message && (
-                    <Form.Text className='text-danger'>{formErrors.resolution?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='Unit Used For COC' id='unitUsedForCOC' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Unit Used For COC Search'
-                    info={['Search by unit used for COC']}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='unitUsedForCOC'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    inputId='unitUsedForCOC'
-                    instanceId='unitUsedForCOC'
-                    onChange={(option) => field.onChange(option)}
-                    options={unitUsedForCOCOptions}
-                    placeholder='Search by unit used for COC'
-                    noOptionsMessage={() => 'No unit used for COC found'}
-                  />
-
-                  {formErrors && formErrors.unitUsedForCOC?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.unitUsedForCOC?.message}
-                    </Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md='3'>
-            <RequiredLabel label='No. of Calibration Point' id='calibrationPointNo' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Calibration Point No. Search'
-                    info={['Search by calibration point no.']}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='calibrationPointNo'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    inputId='calibrationPointNo'
-                    instanceId='calibrationPointNo'
-                    onChange={(option) => field.onChange(option)}
-                    options={calibrationPointNoOptions}
-                    placeholder='Search by calibration point no. for COC'
-                    noOptionsMessage={() => 'No calibration point no. found'}
-                  />
-
-                  {formErrors && formErrors.calibrationPointNo?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.calibrationPointNo?.message}
                     </Form.Text>
                   )}
                 </>
