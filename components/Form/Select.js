@@ -9,7 +9,7 @@ const Select = forwardRef((props, ref) => {
       paddingTop: '6px',
       paddingBottom: '6px',
       borderColor: state.isFocused ? '#1e40a6' : '#e2e8f0',
-      backgroundColor: state.isFocused ? 'white' : '#f8fafc',
+      backgroundColor: state.isFocused ? 'white' : state.isDisabled ? '#ebebeb' : '#f8fafc',
       boxShadow: state.isFocused ? '0 0 0 3px rgba(53, 150, 220, 0.1)' : 'none',
       transform: 'translateY(-1px)',
       ':hover': {

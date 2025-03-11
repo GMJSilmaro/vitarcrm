@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Accordion, Button, Card, Row, Spinner } from 'react-bootstrap';
 import { Save, Table } from 'react-bootstrap-icons';
 import DFNTest from './mass/DFNVTest';
 import RTest from './mass/RTest';
 import ETest from './mass/ETest';
 import { useFormContext } from 'react-hook-form';
+import CalculationTable from './mass/CalculationTable';
 
 const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) => {
   const form = useFormContext();
@@ -18,6 +19,22 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
     const value = parseFloat(form.getValues('calibrationPointNo')?.value);
     return isNaN(value) ? 6 : value;
   }, [form.watch('calibrationPointNo')]);
+
+  //* set test data if data exist
+  useEffect(() => {
+    if (data && calibrationPointNo) {
+      const resolvedData = JSON.parse(data.data);
+
+      form.setValue('data.dfnv', resolvedData.dfnv);
+      form.setValue('data.nominalValues', resolvedData.nominalValues);
+      form.setValue('data.rtest.half', resolvedData.rtest.half);
+      form.setValue('data.rtest.max', resolvedData.rtest.max);
+      form.setValue('data.etest.values', resolvedData.etest.values);
+      form.setValue('data.measuredValues', resolvedData.measuredValues);
+      form.setValue('data.d1', resolvedData.d1);
+      form.setValue('data.d2', resolvedData.d2);
+    }
+  }, [data, calibrationPointNo]);
 
   //* temporary check
   if (
@@ -90,6 +107,17 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
 
               <Accordion.Body>
                 <ETest data={data} />
+              </Accordion.Body>
+            </Accordion.Item>
+
+            <Accordion.Item eventKey='3'>
+              <Accordion.Header>
+                <Table className='me-2' size={17} />
+                Uncertainty Calculation (Electronic Balance) - A1 - A{calibrationPointNo}
+              </Accordion.Header>
+
+              <Accordion.Body>
+                <CalculationTable data={data} />
               </Accordion.Body>
             </Accordion.Item>
           </Accordion>

@@ -329,6 +329,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
                     <>
                       <Select
                         {...field}
+                        isDisabled
                         inputId='status'
                         instanceId='status'
                         onChange={(option) => field.onChange(option)}

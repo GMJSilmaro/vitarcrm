@@ -43,15 +43,15 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
           <Form>
             <div className='d-flex justify-content-between align-items-center gap-2'>
               <div className='d-flex flex-column align-items-start gap-1'>
-                <h4 className='mb-0'>Task</h4>
+                <h4 className='mb-0'>Additional Instructions</h4>
                 <p className='text-muted fs-6'>
-                  List all the tasks needed for the job to guide the individual/team during
-                  calibration.
+                  List all the additional instructions needed for the job to guide the
+                  individual/team during calibration.
                 </p>
               </div>
 
               <Button variant='primary' onClick={handleAddTask}>
-                <Plus size={14} className='me-2' /> Add Task
+                <Plus size={14} className='me-2' /> Add Additional Instructions
               </Button>
             </div>
 
@@ -61,8 +61,8 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
                 style={{ height: '200px' }}
               >
                 <div className='text-center d-inline'>
-                  <h4 className='mb-0'>No task added yet.</h4>
-                  <p className='text-muted'>Click "Add Task" to begin.</p>
+                  <h4 className='mb-0'>No Additional Instructions added yet.</h4>
+                  <p className='text-muted'>Click "Add Additional Instructions" to begin.</p>
                 </div>
               </div>
             ) : (
@@ -76,8 +76,8 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
                     <th className='text-center'>
                       <RequiredLabel label='Description' />
                     </th>
-                    <th className='text-center'>Task Complete</th>
-                    <th className='text-center'>Priority Task</th>
+                    <th className='text-center'>Completed</th>
+                    <th className='text-center'>Priority</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -104,7 +104,7 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
                                 className='d-flex align-items-center justify-content-center'
                                 {...field}
                                 type='text'
-                                placeholder='Enter task name'
+                                placeholder="Enter instruction's name"
                               />
 
                               {formErrors && formErrors.tasks?.[i]?.name?.message && (
@@ -127,7 +127,7 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
                                 className='d-flex align-items-center justify-content-center'
                                 {...field}
                                 as='textarea'
-                                placeholder='Enter task description'
+                                placeholder="Enter instruction's description"
                               />
 
                               {formErrors && formErrors.tasks?.[i]?.description?.message && (

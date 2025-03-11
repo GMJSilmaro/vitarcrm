@@ -16,7 +16,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import FormDebug from '@/components/Form/FormDebug';
 
 import CalibrationMeasures from './tabls-form/CalibrationMeasuresForm';
-import CalibrateInfoForm from './tabls-form/CalibrateInfoForm';
+import CalibrateSummaryForm from './tabls-form/CalibrateSummaryForm';
 import CalibrationReferenceInstrumentsForm from './tabls-form/CalibrationReferenceInstrumentsForm';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -46,9 +46,11 @@ const CalibrationForm = ({ data }) => {
 
   const form = useForm({
     mode: 'onChange',
-    defaultValues: { ...getFormDefaultValues(schema), ...data, dfnv: [] },
+    defaultValues: { ...getFormDefaultValues(schema), ...data, data: { content: [] } },
     resolver: zodResolver(schema),
   });
+
+  const formErrors = form.formState.errors;
 
   const handleNext = useCallback(async () => {
     const isValid = await form.trigger();
@@ -75,24 +77,25 @@ const CalibrationForm = ({ data }) => {
   const handleSubmit = useCallback(async (formData) => {
     console.log({ formData });
 
-    //* stringified the test calibration points's test data
-    const adjustedDFNV = formData.dfnv.map((entry) => ({
-      ...entry,
-      calibrationPoints: entry.calibrationPoints.map((point) => ({
-        ...point,
-        data: point.data.map((data) => JSON.stringify(data)),
-      })),
-    }));
-
     try {
       setIsLoading(true);
+
+      const results = {
+        nominalValues: formData?.data?.nominalValues || [],
+        measuredValuesM: formData?.data?.measuredValuesM || [],
+        corrections: formData?.data?.corrections || [],
+        expandedUncertainties: formData?.data?.expandedUncertainties || [],
+        rangeType: formData?.rangeType || 'single',
+        resolution: !isNaN(parseFloat(formData?.resolution)) ? parseFloat(formData?.resolution) : 0,
+        rtestMaxError: formData?.data?.rtest?.maxError || 0,
+      };
 
       const promises = [
         setDoc(
           doc(db, 'jobCalibrations', formData.calibrateId),
           {
             ...formData,
-            dfnv: adjustedDFNV,
+            data: JSON.stringify(formData.data),
             ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
             updatedAt: serverTimestamp(),
             updatedBy: auth.currentUser,
@@ -102,9 +105,10 @@ const CalibrationForm = ({ data }) => {
         setDoc(
           doc(db, 'jobCertificates', formData.certificateNumber),
           {
-            results: {},
+            results,
             jobId: formData.jobId,
             calibrateId: formData.calibrateId,
+            certificateNumber: formData.certificateNumber,
             ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
             updatedAt: serverTimestamp(),
             updatedBy: auth.currentUser,
@@ -114,7 +118,9 @@ const CalibrationForm = ({ data }) => {
       ];
 
       await Promise.all(promises);
-      router.push(`/jobs/${jobId}/calibrations//edit-calibrations/${formData.calibrateId}`);
+      router.push(
+        `/jobs/${formData.jobId}/calibrations//edit-calibrations/${formData.calibrateId}`
+      );
       toast.success(`Calibration ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
       setIsLoading(false);
       setActiveKey((prev) => prev - 1);
@@ -168,6 +174,8 @@ const CalibrationForm = ({ data }) => {
     }
   }, [jobId]);
 
+  console.log('Calibration From Errors', formErrors);
+
   return (
     <>
       {/* <FormDebug form={form} /> */}
@@ -179,8 +187,8 @@ const CalibrationForm = ({ data }) => {
             activeKey={activeKey > tabsLength ? tabsLength : activeKey}
             onSelect={handleOnSelect}
           >
-            <Tab eventKey='0' title='Info'>
-              <CalibrateInfoForm
+            <Tab eventKey='0' title='Summary'>
+              <CalibrateSummaryForm
                 job={job}
                 data={data}
                 isLoading={isLoading}

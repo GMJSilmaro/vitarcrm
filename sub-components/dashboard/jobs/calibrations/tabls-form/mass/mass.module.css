@@ -6,21 +6,14 @@
 }
 
 .columnData {
-  display: inline !important;
   position: relative;
   padding: 8px 14px;
-  position: relative;
   padding-left: 12px;
   color: #1e40a6;
   border: solid 1px #1e40a6;
-  border-radius: 8px;
+  border-radius: 6px;
   min-width: 46px;
-  outline: none !important ;
-}
-
-.columnData.error {
-  border: solid 1px #dc2626;
-  color: #dc2626;
+  outline: none !important;
 }
 
 .columnDataValue:focus-visible {
@@ -43,4 +36,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.columnDataContent {
+  width: 78px !important;
+  border-bottom: solid 1px transparent !important;
+}
+
+.columnEquipment {
+  width: 240px !important;
+}
+
+.dataColumnHeader {
+  width: 78px !important;
+  border-top: none !important;
 }

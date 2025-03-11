@@ -7,11 +7,11 @@ import { format } from 'date-fns';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import _, { add } from 'lodash';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Card, Col, Form, FormLabel, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
 import { Controller, useFormContext } from 'react-hook-form';
 
-const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
+const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
   const router = useRouter();
 
   const [location, setLocation] = useState({ data: undefined, isLoading: true, isError: false });
@@ -19,13 +19,71 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
 
   const [customerEquipmentsOptions, setCustomerEquipmentsOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
   const [usersOptions, setUsersOptions] = useState({ data: [], isLoading: true, isError: false });
+  const [calibratedByOptions, setCalibratedByOptions] = useState([]);
 
   const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: _.capitalize(category) }))); //prettier-ignore
-  const [calibratedAtOptions] = useState(CALIBRATED_AT.map((calibratedAt) => ({ value: calibratedAt, label: _.capitalize(calibratedAt) }))); //prettier-ignore
   const [dueDateRequestedOptions] = useState(DUE_DATE_REQUESTED.map((dueDateRequested) => ({ value: dueDateRequested, label: _.capitalize(dueDateRequested) }))); //prettier-ignore
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
+
+  const handleDueDateRequestedChange = (option, field) => {
+    field.onChange(option);
+    form.clearErrors('dueDateDuration');
+    form.clearErrors('dueDate');
+
+    if (option.value === 'no') {
+      //* clear the fields
+      form.setValue('dueDateDuration', '');
+      form.setValue('dueDate', '');
+
+      //* delay to set null value
+      setTimeout(() => {
+        form.setValue('dueDateDuration', null);
+        form.setValue('dueDate', null);
+      }, 100);
+    }
+  };
+
+  const handleGetLocationValue = useCallback(() => {
+    if (location.isLoading && !location.isError) 'Loading...';
+
+    if (location.data) {
+      const locationData = location.data;
+      let value = locationData.siteName || 'N/A';
+
+      if (locationData?.addresses && locationData?.addresses?.length > 0) {
+        const defaultAddress = locationData.addresses.find((address) => address.isDefault);
+
+        if (defaultAddress) {
+          if (defaultAddress?.street1) value += ` ${defaultAddress.street1}`;
+          else if (defaultAddress?.street2) value += ` ${defaultAddress.street2}`;
+          else if (defaultAddress?.street3) value += ` ${defaultAddress.street3}`;
+
+          if (defaultAddress?.city) value += ` ${defaultAddress.city}`;
+          if (defaultAddress?.province) value += ` ${defaultAddress.province}`;
+          if (defaultAddress?.postalCode) value += ` ${defaultAddress.postalCode}`;
+          if (defaultAddress?.country) value += ` ${defaultAddress.country}`;
+        }
+      }
+
+      return value;
+    }
+
+    return 'N/A';
+  }, [location]);
+
+  const handleCalibratedByValue = useCallback(() => {
+    if (job.isLoading && !job.isError) return 'Loading...';
+
+    if (job.data) {
+      const workers = job?.data?.workers || [];
+
+      return workers.map((worker) => worker?.name || '').join(', ');
+    }
+
+    return '';
+  }, [job]);
 
   //* query location
   useEffect(() => {
@@ -135,16 +193,6 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
       });
   }, []);
 
-  //* set calibratedBy
-  useEffect(() => {
-    if (data) return;
-
-    if (usersOptions.data.length > 0 && job.data) {
-      const worker = usersOptions.data.find((option) => option.id === job.data.worker.id);
-      form.setValue('calibratedBy', { id: job.data.worker.id, name: worker.name || '' });
-    }
-  }, [data, usersOptions, job.data]);
-
   //* query last calibrate id
   useEffect(() => {
     if (data) return;
@@ -172,7 +220,9 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
 
   //* query last certificate no.
   useEffect(() => {
-    if (data) return;
+    const category = !form.getValues('category') ? null : form.getValues('category').value;
+
+    if (data || !category) return;
 
     const q = query(collection(db, 'jobCertificates'));
 
@@ -180,7 +230,8 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
       q,
       (snapshot) => {
         const date = new Date();
-        const calibrationIdPrefix = `STM${format(date, 'yyMM')}-S`;
+        const categoryInitial = category?.split(' ')[0]?.charAt(0)?.toUpperCase() || '';
+        const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-S`;
 
         if (!snapshot.empty) {
           const id = snapshot.docs.pop().id.split('-')[1].replace('S', '');
@@ -196,59 +247,23 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
     );
 
     return () => unsubscribe();
-  }, [data]);
+  }, [data, form.watch('category')]);
 
   //* logger user Effect
   useEffect(() => {
     console.log({ job, customer, customerEquipmentsOptions });
   }, [job.data, customer, customerEquipmentsOptions]);
 
-  const handleCustomerEquipmentsChange = (option, field) => {
-    field.onChange(option);
-
-    form.setValue('make', option?.make || '');
-    form.setValue('model', option?.model || '');
-    form.setValue('serialNumber', String(option?.serialNumber) || '');
-  };
-
-  const handleDueDateRequestedChange = (option, field) => {
-    field.onChange(option);
-    form.clearErrors('dueDateDuration');
-    form.clearErrors('dueDate');
-
-    if (option.value === 'no') {
-      form.setValue('dueDateDuration', null);
-      form.setValue('dueDate', null);
+  //* set calibrated by options
+  useEffect(() => {
+    if (usersOptions.data.length > 0) {
+      const assignedWorkers = job?.data?.workers || [];
+      const assignedWorkerIds = assignedWorkers.map((worker) => worker?.id || '');
+      setCalibratedByOptions(
+        usersOptions.data.filter((user) => assignedWorkerIds?.includes(user.id))
+      );
     }
-  };
-
-  const handleGetLocationValue = useCallback(() => {
-    if (location.isLoading) 'Loading...';
-
-    if (location.data) {
-      const locationData = location.data;
-      let value = locationData.siteName || 'N/A';
-
-      if (locationData?.addresses && locationData?.addresses?.length > 0) {
-        const defaultAddress = locationData.addresses.find((address) => address.isDefault);
-
-        if (defaultAddress) {
-          if (defaultAddress?.street1) value += ` ${defaultAddress.street1}`;
-          else if (defaultAddress?.street2) value += ` ${defaultAddress.street2}`;
-          else if (defaultAddress?.street3) value += ` ${defaultAddress.street3}`;
-
-          if (defaultAddress?.city) value += ` ${defaultAddress.city}`;
-          if (defaultAddress?.province) value += ` ${defaultAddress.province}`;
-          if (defaultAddress?.postalCode) value += ` ${defaultAddress.postalCode}`;
-          if (defaultAddress?.country) value += ` ${defaultAddress.country}`;
-        }
-      }
-
-      return value;
-    }
-
-    return 'N/A';
-  }, [location]);
+  }, [usersOptions, job.data]);
 
   //* set category, if data exist
   useEffect(() => {
@@ -260,19 +275,20 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
 
   //* set approved signatory, if data exist
   useEffect(() => {
+    console.log({ calibratedByOptions });
     if (data && usersOptions.data.length > 0) {
       const signatory = usersOptions.data.find((option) => option.id === data.approvedSignatory.id);
       form.setValue('approvedSignatory', signatory);
     }
   }, [data, usersOptions]);
 
-  //* set calibrated at, if data exist
+  //* set calibrated by, if data exist
   useEffect(() => {
-    if (data && calibratedAtOptions.length > 0) {
-      const calibratedAt = calibratedAtOptions.find((option) => option.value === data.calibratedAt);
-      form.setValue('calibratedAt', calibratedAt);
+    if (data && calibratedByOptions.length > 0) {
+      const calibratedBy = calibratedByOptions.find((option) => option.id === data.calibratedBy.id);
+      form.setValue('calibratedBy', calibratedBy);
     }
-  }, [data, calibratedAtOptions]);
+  }, [data, calibratedByOptions]);
 
   //* set customer equipment, if data exist
   useEffect(() => {
@@ -284,8 +300,9 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
     }
   }, [data, customerEquipmentsOptions]);
 
+  //* set due date request, if data exist
   useEffect(() => {
-    if (data && dueDateRequestedOptions.length > 0) {
+    if (data && dueDateRequestedOptions?.length > 0) {
       const selectedDueDateRequested = dueDateRequestedOptions.find(
         (option) => option.value === data.dueDateRequested
       );
@@ -293,39 +310,65 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
     }
   }, [data, dueDateRequestedOptions]);
 
+  const make = useMemo(() => {
+    return form.getValues('description.make') || '';
+  }, [JSON.stringify(form.watch('description'))]);
+
+  const model = useMemo(() => {
+    return form.getValues('description.model') || '';
+  }, [JSON.stringify(form.watch('description'))]);
+
+  const serialNumber = useMemo(() => {
+    return form.getValues('description.serialNumber') || '';
+  }, [JSON.stringify(form.watch('description'))]);
+
   return (
     <>
       <Card className='shadow-none'>
-        <Card.Body>
+        <Card.Body className='pb-0'>
+          <h4 className='mb-0'>Job</h4>
+          <p className='text-muted fs-6'>Details about the job.</p>
+
           <Row className='mb-3 row-gap-3'>
             <Form.Group as={Col} md={3}>
-              <Form.Label htmlFor='jobId'>Job ID</Form.Label>
-              <Form.Control required type='text' value={form.watch('jobId')} readOnly disabled />
-            </Form.Group>
-
-            <Form.Group as={Col} md={3}>
-              <Form.Label htmlFor='jobId'>Calibrate ID</Form.Label>
+              <Form.Label>Job ID</Form.Label>
               <Form.Control
-                required
                 type='text'
-                value={form.watch('calibrateId')}
+                value={job.isLoading && !job.isError ? 'Loading...' : job?.data?.id || ''}
                 readOnly
                 disabled
               />
             </Form.Group>
 
-            <Form.Group as={Col} md={3}>
-              <Form.Label htmlFor='jobId'>Certificate No.</Form.Label>
+            <Form.Group as={Col} md={9}>
+              <Form.Label>Customer</Form.Label>
               <Form.Control
-                required
                 type='text'
-                value={form.watch('certificateNumber')}
+                value={
+                  job.isLoading && !job.isError ? 'Loading...' : job?.data?.customer?.name || ''
+                }
                 readOnly
                 disabled
               />
             </Form.Group>
 
-            <Form.Group as={Col} md='3'>
+            <Form.Group as={Col} md={12}>
+              <Form.Label>Location</Form.Label>
+              <Form.Control type='text' value={handleGetLocationValue()} readOnly disabled />
+            </Form.Group>
+          </Row>
+
+          <hr className='my-4' />
+          <h4 className='mb-0'>Calibration Info</h4>
+          <p className='text-muted fs-6'>Details about the calibration.</p>
+
+          <Row className='mb-3 row-gap-3'>
+            <Form.Group as={Col} md={4}>
+              <Form.Label>Calibrate ID</Form.Label>
+              <Form.Control type='text' value={form.watch('calibrateId')} readOnly disabled />
+            </Form.Group>
+
+            <Form.Group as={Col} md={4}>
               <RequiredLabel label='Category' id='category' />
               <OverlayTrigger
                 placement='right'
@@ -364,31 +407,24 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
               />
             </Form.Group>
 
-            <Form.Group as={Col} md={12}>
-              <Form.Label htmlFor='siteId'>Location</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={handleGetLocationValue()}
-                readOnly
-                disabled
-              />
+            <Form.Group as={Col} md={4}>
+              <Form.Label>Certificate No.</Form.Label>
+              <Form.Control type='text' value={form.watch('certificateNumber')} readOnly disabled />
             </Form.Group>
-          </Row>
 
-          <Row className='mb-3 row-gap-3'>
-            <Form.Group as={Col} md={3}>
-              <Form.Label htmlFor='submittedBy'>Submitted By</Form.Label>
+            <Form.Group as={Col} md={6}>
+              <Form.Label>Submitted By</Form.Label>
               <Form.Control
-                id='submittedBy'
                 type='text'
-                value={form.watch('submittedBy.name')}
+                value={
+                  job.isLoading && !job.isError ? 'Loading...' : job?.data?.customer?.name || ''
+                }
                 readOnly
                 disabled
               />
             </Form.Group>
 
-            <Form.Group as={Col} md={3}>
+            <Form.Group as={Col} md={6}>
               <RequiredLabel label='Approved Signatory' id='approvedSignatory' />
               <OverlayTrigger
                 placement='right'
@@ -437,15 +473,28 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
               />
             </Form.Group>
 
-            <Form.Group as={Col} md='3'>
-              <RequiredLabel label='Calibrated At' id='calibratedAt' />
+            <Form.Group as={Col} md={6}>
+              <Form.Label>Calibrated At</Form.Label>
+              <Form.Control
+                type='text'
+                value={job.isLoading && !job.isError ? 'Loading...' : job?.data?.scope || ''}
+                readOnly
+                disabled
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md={6}>
+              <RequiredLabel label='Calibrated By' id='calibratedBy' />
               <OverlayTrigger
                 placement='right'
                 overlay={
                   <Tooltip>
                     <TooltipContent
-                      title='Calibrated At types Search'
-                      info={['Search by type calibrated at types']}
+                      title='Assigned Workers Search'
+                      info={[
+                        "Search by assigned worker's name",
+                        'Required to proceed with calibration creation',
+                      ]}
                     />
                   </Tooltip>
                 }
@@ -454,41 +503,41 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
               </OverlayTrigger>
 
               <Controller
-                name='calibratedAt'
+                name='calibratedBy'
                 control={form.control}
                 render={({ field }) => (
                   <>
                     <Select
                       {...field}
-                      inputId='calibratedAt'
-                      instanceId='calibratedAt'
+                      inputId='calibratedBy'
+                      instanceId='calibratedBy'
                       onChange={(option) => field.onChange(option)}
-                      options={calibratedAtOptions}
-                      placeholder='Search by type calibrated at types'
-                      noOptionsMessage={() => 'No calibrated at types found'}
+                      options={calibratedByOptions}
+                      placeholder={
+                        usersOptions.isLoading
+                          ? 'Loading assigned workers...'
+                          : "Search by assigned worker's name"
+                      }
+                      isDisabled={usersOptions.isLoading}
+                      noOptionsMessage={() =>
+                        usersOptions.isLoading ? 'Loading...' : 'No assigned worker found'
+                      }
                     />
 
-                    {formErrors && formErrors.calibratedAt?.message && (
+                    {formErrors && formErrors.calibratedBy?.message && (
                       <Form.Text className='text-danger'>
-                        {formErrors.calibratedAt?.message}
+                        {formErrors.calibratedBy?.message}
                       </Form.Text>
                     )}
                   </>
                 )}
               />
             </Form.Group>
-
-            <Form.Group as={Col} md={3}>
-              <Form.Label htmlFor='calibratedBy'> Calibrated By</Form.Label>
-              <Form.Control
-                required
-                type='text'
-                value={form.watch('calibratedBy.name')}
-                readOnly
-                disabled
-              />
-            </Form.Group>
           </Row>
+
+          <hr className='my-4' />
+          <h4 className='mb-0'>Equipment to Calibrate</h4>
+          <p className='text-muted fs-6'>Details about the customer's equipment to calibrate.</p>
 
           <Row className='mb-3 row-gap-3'>
             <Form.Group as={Col} md={3}>
@@ -519,7 +568,7 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
                       {...field}
                       inputId='description'
                       instanceId='description'
-                      onChange={(option) => handleCustomerEquipmentsChange(option, field)}
+                      onChange={(option) => field.onChange(option)}
                       options={customerEquipmentsOptions.data}
                       placeholder={
                         customerEquipmentsOptions.isLoading
@@ -546,25 +595,23 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
 
             <Form.Group as={Col} md={3}>
               <Form.Label htmlFor='make'>Make</Form.Label>
-              <Form.Control id='make' type='text' value={form.watch('make')} readOnly disabled />
+              <Form.Control id='make' type='text' value={make} readOnly disabled />
             </Form.Group>
 
             <Form.Group as={Col} md={3}>
               <Form.Label htmlFor='model'>Model</Form.Label>
-              <Form.Control id='model' type='text' value={form.watch('model')} readOnly disabled />
+              <Form.Control id='model' type='text' value={model} readOnly disabled />
             </Form.Group>
 
             <Form.Group as={Col} md={3}>
               <Form.Label htmlFor='serialNumber'>Serial No</Form.Label>
-              <Form.Control
-                id='serialNumber'
-                type='text'
-                value={form.watch('serialNumber')}
-                readOnly
-                disabled
-              />
+              <Form.Control id='serialNumber' type='text' value={serialNumber} readOnly disabled />
             </Form.Group>
           </Row>
+
+          <hr className='my-4' />
+          <h4 className='mb-0'>Date Tracking</h4>
+          <p className='text-muted fs-6'>Date details related to the calibration.</p>
 
           <Row className='mb-3 row-gap-3'>
             <Form.Group as={Col} md={4}>
@@ -656,7 +703,7 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
             </Form.Group>
 
             <Form.Group as={Col} md={4}>
-              <Form.Label htmlFor='dueDateDuration'>Due Date Duration</Form.Label>
+              <Form.Label htmlFor='dueDateDuration'>Due Date Duration (No. of Months)</Form.Label>
 
               <Controller
                 name='dueDateDuration'
@@ -725,4 +772,4 @@ const CalibrateInfoForm = ({ job, data, isLoading, handleNext }) => {
   );
 };
 
-export default CalibrateInfoForm;
+export default CalibrateSummaryForm;

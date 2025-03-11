@@ -87,7 +87,7 @@ export const parseExcelFileTemperature = (file) => {
 };
 
 // dynamic
-export const parseExcelFile = (file, header) => {
+export const parseExcelFile = (file, header, raw) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -100,6 +100,7 @@ export const parseExcelFile = (file, header) => {
           header,
           range: 1,
           defval: '',
+          raw,
         });
 
         console.log('Parsed Excel data:', jsonData);

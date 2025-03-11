@@ -1,14 +1,26 @@
-import { abs } from 'mathjs';
-import { useMemo } from 'react';
-import { Col, Row, Table } from 'react-bootstrap';
-import { useFormContext } from 'react-hook-form';
+import { abs, max } from 'mathjs';
+import { useCallback, useEffect, useMemo } from 'react';
+import { Col, Form, Row, Table } from 'react-bootstrap';
+import { Controller, useFormContext } from 'react-hook-form';
+import styles from './mass.module.css';
+import { TEST_LOADS } from '@/schema/calibration';
 
 const ETest = ({ data }) => {
   const form = useFormContext();
+  const formErrors = form.formState.errors;
+
+  const calibrationPointNo = useMemo(() => {
+    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
+    return isNaN(value) ? undefined : value;
+  }, [form.watch('calibrationPointNo.value')]);
+
+  const calibrationData = useMemo(() => {
+    return form.getValues('data');
+  }, [form.watch('data')]);
 
   const rangeMaxCalibration = useMemo(() => {
     const value = parseFloat(form.getValues('rangeMaxCalibration'));
-    return isNaN(value) ? 0 : form.getValues('rangeMaxCalibration');
+    return isNaN(value) ? 0 : value;
   }, [form.watch('rangeMaxCalibration')]);
 
   const testLoadFormatted = useMemo(() => {
@@ -16,75 +28,182 @@ const ETest = ({ data }) => {
     return value.toFixed(4);
   }, [rangeMaxCalibration]);
 
-  const testLoads = ['C1', 'E1', 'E2', 'E3', 'E4', 'C2'];
+  const getErrorValue = useCallback(
+    (index) => {
+      let actualValue;
+      const values = form.getValues('data.etest.values');
+
+      if (values) {
+        if (Array.isArray(values)) actualValue = values.map((value) => (isNaN(value) ? 0 : value));
+        if (actualValue.length < 1) actualValue = Array(TEST_LOADS.length).fill(0);
+      } else actualValue = Array(TEST_LOADS.length).fill(0);
+
+      const firstErrorValue = (actualValue[0] + actualValue[actualValue.length - 1]) / 2;
+
+      if (index < 1) return '';
+      else if (index > 0 && index < actualValue.length - 1) {
+        return abs(actualValue[index] - firstErrorValue);
+      } else return '';
+    },
+    [JSON.stringify(form.watch('data.etest.values')), TEST_LOADS]
+  );
+
+  const maxErrorValue = useMemo(() => {
+    let values = [];
+
+    TEST_LOADS.forEach((_, i) => {
+      if (i > 0 && i < TEST_LOADS.length - 1) {
+        values.push(getErrorValue(i));
+      }
+    });
+
+    //* filter out empty values
+    if (values.length > 0) values = values.filter(Boolean);
+    if (values.length < 1) values = [0];
+
+    const result = max(values);
+
+    //* set temporary value used for view in table
+    form.setValue('data.etest.maxError', result);
+
+    return result;
+  }, [getErrorValue, TEST_LOADS]);
+
+  //* set initial etest value & d1 & d2
+  useEffect(() => {
+    //* if data exist and calibration point no is same as data's dont dont something, else set initial data
+    if (
+      (data && parseFloat(data.calibrationPointNo) === calibrationPointNo) ||
+      calibrationPointNo === undefined
+    )
+      return;
+
+    setTimeout(() => {
+      if (
+        !data ||
+        (data.calibrationPointNo !== calibrationPointNo &&
+          data.data !== JSON.stringify(calibrationData))
+      ) {
+        form.setValue('data.etest.values', Array(TEST_LOADS.length).fill(0));
+        form.setValue('data.d1', 0);
+        form.setValue('data.d2', 0);
+      }
+    }, 1000);
+  }, [data, calibrationPointNo]);
 
   return (
-    <Row className='mx-0 d-flex flex-column border border-primary rounded overflow-hidden'>
-      <Col className='p-0'>
-        <Table responsive>
+    <>
+      <div className='mx-0 border border-primary rounded overflow-hidden'>
+        <Table className='text-center align-middle' responsive bordered>
           <thead>
             <tr>
-              <th className='text-center'>Test Load</th>
-              <th className='text-center'>{testLoadFormatted}</th>
-              <th className='text-center'>Error</th>
+              <th>Test Load</th>
+              <th>{testLoadFormatted}</th>
+              <th>Error</th>
             </tr>
           </thead>
           <tbody>
-            {testLoads.map((testLoad, i) => {
-              let errorValue;
-
-              if (i === 0) {
-                const value = parseFloat(testLoadFormatted);
-                // errorValue = (value + value) / 2; //* it should be like this but in the excel its empty
-                errorValue = '';
-              } else if (i === testLoads.length - 1) errorValue = '';
-              else {
-                const value = parseFloat(testLoadFormatted);
-                const c1ErrorValue = (value + value) / 2;
-                errorValue = abs(value - c1ErrorValue);
-              }
-
+            {TEST_LOADS.map((testLoad, i) => {
               return (
                 <tr key={i}>
-                  <td className='text-center'>{testLoad}</td>
-                  <td className='text-center'>{testLoadFormatted}</td>
-                  <td className='text-center'>{errorValue !== '' ? errorValue.toFixed(4) : ''}</td>
+                  <td>{testLoad}</td>
+                  <td>
+                    <Controller
+                      name={`data.etest.values.${i}`}
+                      control={form.control}
+                      render={({ field }) => (
+                        <Form.Control
+                          onChange={(e) => {
+                            form.setValue(
+                              `data.etest.values.${i}`,
+                              isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
+                            );
+                          }}
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value}
+                          className={`${styles.columnData} text-center`}
+                          type='number'
+                        />
+                      )}
+                    />
+                  </td>
+                  <td>{getErrorValue(i) !== '' ? getErrorValue(i).toFixed(4) : ''}</td>
                 </tr>
               );
             })}
           </tbody>
           <tfoot>
             <tr>
-              <th className='text-center'>{''}</th>
-              <th className='text-center'>Max Error</th>
-              <th className='text-center'>{Number(0).toFixed(4)}</th>
+              <th>&nbsp;</th>
+              <th>Max Error</th>
+              <th>{maxErrorValue ? maxErrorValue.toFixed(4) : ''}</th>
             </tr>
           </tfoot>
         </Table>
-      </Col>
+      </div>
 
-      {/* ///TODO: add d1 and d2 input  */}
-      {/* <Col className='px-5'>
-            <Table responsive bordered>
-              <tbody>
-                <tr>
-                  <td className='text-center fw-bold'>
-                    d<sub>1</sub>
-                  </td>
-                  <td className='text-center'>{Number(0).toFixed(4)}</td>
-                  <td className='text-center'>mm</td>
-                </tr>
-                <tr>
-                  <td className='text-center fw-bold'>
-                    d<sub>2</sub>
-                  </td>
-                  <td className='text-center'>{Number(0).toFixed(4)}</td>
-                  <td className='text-center'>mm</td>
-                </tr>
-              </tbody>
-            </Table>
-          </Col> */}
-    </Row>
+      <hr className='my-4 border border-primary border-3' />
+
+      <Table className='w-50 mx-auto text-center align-middle' responsive bordered>
+        <tbody>
+          <tr>
+            <td className='text-center fw-bold'>
+              d<sub>1</sub>
+            </td>
+            <td>
+              <Controller
+                name={`data.d1`}
+                control={form.control}
+                render={({ field }) => (
+                  <Form.Control
+                    onChange={(e) => {
+                      form.setValue(
+                        `data.d1`,
+                        isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
+                      );
+                    }}
+                    name={field.name}
+                    ref={field.ref}
+                    value={field.value}
+                    className={`${styles.columnData} text-center`}
+                    type='number'
+                  />
+                )}
+              />
+            </td>
+            <th>mm</th>
+          </tr>
+          <tr>
+            <td className='text-center fw-bold'>
+              d<sub>2</sub>
+            </td>
+            <td>
+              <Controller
+                name={`data.d2`}
+                control={form.control}
+                render={({ field }) => (
+                  <Form.Control
+                    onChange={(e) => {
+                      form.setValue(
+                        `data.d2`,
+                        isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
+                      );
+                    }}
+                    name={field.name}
+                    ref={field.ref}
+                    value={field.value}
+                    className={`${styles.columnData} text-center`}
+                    type='number'
+                  />
+                )}
+              />
+            </td>
+            <th>mm</th>
+          </tr>
+        </tbody>
+      </Table>
+    </>
   );
 };
 

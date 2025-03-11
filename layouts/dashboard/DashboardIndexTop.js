@@ -43,6 +43,7 @@ const DashboardIndexTop = (props) => {
   const renderIcon = (iconName) => {
     const Icons = require('react-bootstrap-icons');
     const IconComponent = Icons[iconName];
+
     return IconComponent ? <IconComponent size={16} className='me-2' /> : null;
   };
 
@@ -82,18 +83,7 @@ const DashboardIndexTop = (props) => {
               padding: '8px 0',
             }}
           >
-            {submenu.children.map((child) => (
-              <Link
-                key={child.id}
-                href={child.link || '#'}
-                className='dropdown-item'
-                onClick={() => setExpandedMenu(false)}
-                style={{ paddingBottom: '8px' }}
-              >
-                {child.icon && renderIcon(child.icon)}
-                {child.menuitem}
-              </Link>
-            ))}
+            {submenu.children.map(renderSubmenuItems)}
           </div>
         </div>
       );

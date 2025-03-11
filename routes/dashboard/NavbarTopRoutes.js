@@ -147,6 +147,40 @@ const NavbarDefault = [
           },
         ],
       },
+      {
+        id: uuid(),
+        menuitem: 'Calibration References',
+        link: '/#',
+        icon: 'ListColumns',
+        children: [
+          {
+            id: uuid(),
+            menuitem: 'Mechanical',
+            link: '/#',
+            icon: 'Gear',
+            children: [
+              {
+                id: uuid(),
+                menuitem: 'Correction, Uncertainty of the Standard Weight & Drift',
+                link: '/calibration-references/mechanical/cuswd',
+                icon: 'Table',
+              },
+              {
+                id: uuid(),
+                menuitem: 'MPE',
+                link: '/calibration-references/mechanical/mpe',
+                icon: 'Table',
+              },
+              {
+                id: uuid(),
+                menuitem: 'CK',
+                link: '/calibration-references/mechanical/ck',
+                icon: 'Table',
+              },
+            ],
+          },
+        ],
+      },
     ],
   },
 ];

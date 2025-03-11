@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { coerce, z } from 'zod';
 
 export const CATEGORY = [
   'TEMPERATURE & HUMIDITY',
@@ -48,6 +48,7 @@ export const UNIT_USED_FOR_COC = ['gram', 'kilogram'];
 export const CALIBRATION_POINT_NO = ['6', '7', '8', '9', '10', '11', '12'];
 export const CALIBRATED_AT = ['site'];
 export const DUE_DATE_REQUESTED = ['yes', 'no'];
+export const TEST_LOADS = ['C1', 'E1', 'E2', 'E3', 'E4', 'C2'];
 
 export const NOMINAL_VALUE = [
   10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000,
@@ -105,16 +106,15 @@ export const calibrationInfoSchema = z
     jobId: z.string().min(1, 'Job ID is required'),
     calibrateId: z.string().min(1, 'Calibrate ID is required'),
     certificateNumber: z.string().min(1, 'Certificate No is required'),
-    location: z.object({ id: z.string(), name: z.string() }, { message: 'Location is required' }),
     category: z.union([categoryEnum, z.record(z.string(), z.any())]).transform((formData) => {
       if (typeof formData === 'object') return formData.value;
       return formData;
     }),
-    submittedBy: z
+    approvedSignatory: z
       .record(z.string(), z.any(), {
-        message: 'Submitted By is required',
-        required_error: 'Submitted By is required',
-        invalid_type_error: 'Submitted By is required',
+        message: 'Please select approved signatory',
+        required_error: 'Please select approved signatory',
+        invalid_type_error: 'Please select approved signatory',
       })
       .transform((formData) => {
         if (typeof formData === 'object') {
@@ -122,11 +122,11 @@ export const calibrationInfoSchema = z
         }
         return null;
       }),
-    approvedSignatory: z
+    calibratedBy: z
       .record(z.string(), z.any(), {
-        message: 'Please select approved signatory',
-        required_error: 'Please select approved signatory',
-        invalid_type_error: 'Please select approved signatory',
+        message: 'Please select calibrated by',
+        required_error: 'Please select calibrated by',
+        invalid_type_error: 'Please select calibrated by',
       })
       .transform((formData) => {
         if (typeof formData === 'object') {
@@ -145,38 +145,19 @@ export const calibrationInfoSchema = z
         }
         return null;
       }),
-    make: z.string(),
-    model: z.string().nullish(),
-    serialNumber: z.string().nullish(),
+
     dueDateRequested: z
       .union([dueDateRequested, z.record(z.string(), z.any())])
       .transform((formData) => {
         if (typeof formData === 'object') return formData.value;
         return formData;
       }),
+
     dueDateDuration: z.coerce.number().nullish(),
     dueDate: z.string().nullish(),
     dateIssued: z.string().min(1, { message: 'Date Issued is required' }),
     dateReceived: z.string().min(1, { message: 'Date Received is required' }),
     dateCalibrated: z.string().min(1, { message: 'Date Calibrated is required' }),
-    calibratedAt: z
-      .union([calibratedAtEnum, z.record(z.string(), z.any())])
-      .transform((formData) => {
-        if (typeof formData === 'object') return formData.value;
-        return formData;
-      }),
-    calibratedBy: z
-      .record(z.string(), z.any(), {
-        message: 'Please select calibrated by',
-        required_error: 'Please select calibrated by',
-        invalid_type_error: 'Please select calibrated by',
-      })
-      .transform((formData) => {
-        if (typeof formData === 'object') {
-          return { id: formData.id, name: formData.name };
-        }
-        return null;
-      }),
   })
   .refine(
     (formObj) => {
@@ -227,12 +208,24 @@ export const calibrationMeasurementSchema = z.object({
       if (typeof formData === 'object') return formData.value;
       return formData;
     }),
-  rangeMaxCalibration: z.coerce.number({ message: 'Maximum Range Calibration is required' }),
-  rangeMinCalibration: z.coerce.number({ message: ' Minimum Range Calibration is required' }),
-  rangeMaxRHumidity: z.coerce.number({ message: ' Maximum Range R. Humidity is required' }),
-  rangeMinRHumidity: z.coerce.number({ message: ' Minimum Range R. Humidity is required' }),
-  maxTemperature: z.coerce.number({ message: 'Maximum Temperature is required' }),
-  minTemperature: z.coerce.number({ message: 'Minimum Temperature is required' }),
+  rangeMaxCalibration: z.coerce.number({
+    message: 'Maximum Range Calibration is required',
+  }),
+  rangeMinCalibration: z.coerce.number({
+    message: ' Minimum Range Calibration is required',
+  }),
+  rangeMaxRHumidity: z.coerce.number({
+    message: ' Maximum Range R. Humidity is required',
+  }),
+  rangeMinRHumidity: z.coerce.number({
+    message: ' Minimum Range R. Humidity is required',
+  }),
+  maxTemperature: z.coerce.number({
+    message: 'Maximum Temperature is required',
+  }),
+  minTemperature: z.coerce.number({
+    message: 'Minimum Temperature is required',
+  }),
 });
 
 export const calibrationReferenceInstrumentsSchema = z.object({
@@ -250,26 +243,41 @@ export const calibrationReferenceInstrumentsSchema = z.object({
     }),
 });
 
-export const testInputDataSchema = z.object({
-  data: z.coerce.number({ message: 'Please enter a value' }).refine((value) => value > 0, {
-    message: 'Please enter a value',
-  }),
-});
-
-export const calibrationMassPointSchema = z.object({
-  nominalValue: z.coerce.number(),
+export const dfnvCalibrationPointSchema = z.object({
   data: z.array(z.array(z.coerce.number()).default([])).default([]),
 });
 
-export const calibrationMassEntrySchema = z.object({
+export const dfnvSchema = z.object({
   equipmentId: z.string(),
   tagId: z.string(),
   description: z.string(),
-  calibrationPoints: z.array(calibrationMassPointSchema),
+  calibrationPoints: z.array(dfnvCalibrationPointSchema),
+  ids: z.array(z.string()).default([]),
+});
+
+export const rTestSchema = z.object({
+  half: z.array(z.coerce.number()).default([]),
+  max: z.array(z.coerce.number()).default([]),
+  maxError: z.coerce.number().default(0),
+});
+
+export const eTestSchema = z.object({
+  values: z.array(z.coerce.number()).default([]),
 });
 
 export const calibrationMassSchema = z.object({
-  dfnv: z.array(calibrationMassEntrySchema),
+  data: z.object({
+    nominalValues: z.array(z.coerce.number()).default([]),
+    measuredValuesM: z.array(z.coerce.number()).default([]),
+    corrections: z.array(z.coerce.number()).default([]),
+    expandedUncertainties: z.array(z.coerce.number()).default([]),
+    measuredValues: z.array(z.array(z.coerce.number())).default([]),
+    dfnv: z.array(dfnvSchema).default([]),
+    rtest: rTestSchema,
+    etest: eTestSchema,
+    d1: z.coerce.number().default(0),
+    d2: z.coerce.number().default(0),
+  }),
 });
 
 export const calibrationSchema = z
