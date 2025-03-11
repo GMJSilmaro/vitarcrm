@@ -1,7 +1,7 @@
 import { max } from 'mathjs';
 import React, { useMemo } from 'react';
 import { Table } from 'react-bootstrap';
-import styles from './CalibrationMass.module.css';
+import styles from '../../mass.module.css';
 import { NOMINAL_VALUE } from '@/schema/calibration';
 
 const DFNVTest = ({ calibration }) => {

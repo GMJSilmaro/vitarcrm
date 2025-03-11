@@ -18,6 +18,7 @@ import {
   InfoSquareFill,
   Speedometer,
 } from 'react-bootstrap-icons';
+import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -226,6 +227,10 @@ const CalibrationDetails = () => {
 
             <Tab eventKey='4' title='Result'>
               <Result calibration={calibration} />
+            </Tab>
+
+            <Tab eventKey='6' title='COC'>
+              <CertificateOfCalibration calibration={calibration} instruments={instruments} />
             </Tab>
           </Tabs>
         </Card.Body>

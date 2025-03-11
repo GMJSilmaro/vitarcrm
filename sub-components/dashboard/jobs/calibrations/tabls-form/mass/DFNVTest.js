@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { max } from 'mathjs';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
-import styles from './mass.module.css';
+import styles from '../../mass.module.css';
 import { NOMINAL_VALUE } from '@/schema/calibration';
 import { Form, Tab, Table } from 'react-bootstrap';
 import { useDebouncedCallback } from 'use-debounce';

@@ -117,7 +117,7 @@ const RTest = ({ calibration }) => {
               <tr>
                 <th className='text-center'>Std Dvtn</th>
                 <th className='text-center'>{halfResults?.formatted.std ?? ''}</th>
-                <th className='text-center'>{halfResults?.formatted.std ?? ''}</th>
+                <th className='text-center'>{maxResults?.formatted.std ?? ''}</th>
               </tr>
               <tr>
                 <th className='text-center' colSpan={1}>

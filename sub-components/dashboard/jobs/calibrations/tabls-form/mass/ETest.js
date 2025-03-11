@@ -2,7 +2,7 @@ import { abs, max } from 'mathjs';
 import { useCallback, useEffect, useMemo } from 'react';
 import { Col, Form, Row, Table } from 'react-bootstrap';
 import { Controller, useFormContext } from 'react-hook-form';
-import styles from './mass.module.css';
+import styles from '../../mass.module.css';
 import { TEST_LOADS } from '@/schema/calibration';
 
 const ETest = ({ data }) => {
