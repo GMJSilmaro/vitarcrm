@@ -169,6 +169,20 @@ const nextConfig = {
         destination: '/dashboard/reference-equipment/:category/view/:inventoryId',
       },
 
+      //* calibration references
+      {
+        source: '/calibration-references/mechanical/cuswd',
+        destination: '/dashboard/calibration-references/mechanical/cuswd/list',
+      },
+      {
+        source: '/calibration-references/mechanical/mpe',
+        destination: '/dashboard/calibration-references/mechanical/mpe/list',
+      },
+      {
+        source: '/calibration-references/mechanical/ck',
+        destination: '/dashboard/calibration-references/mechanical/ck/list',
+      },
+
       // AUTHENTICATION
       {
         source: '/sign-in',

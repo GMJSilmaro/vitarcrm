@@ -4,6 +4,19 @@ import { Alert, Button, ProgressBar, Card, Badge } from 'react-bootstrap';
 import { resumeUpload } from '@/services/excelUploadService';
 import { dataExcelParser, dataProcessExcelUploader } from './Uploader';
 
+//* routes
+//* - data/upload/locations/S
+//* - data/upload/equipments/D
+//* - data/upload/equipments/E
+//* - data/upload/equipments/M
+//* - data/upload/equipments/P
+//* - data/upload/equipments/T
+//* - data/upload/equipments/V
+//* - data/upload/customerEquipments/CE
+//* - data/upload/jobCalibrationReferences_CR000001_data/CR
+//* - data/upload/jobCalibrationReferences_CR000002_data/CR
+//* - data/upload/jobCalibrationReferences_CR000003_data/CR
+
 const ExcelUploader = ({ dataKey, prefix }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -33,13 +46,13 @@ const ExcelUploader = ({ dataKey, prefix }) => {
 
       const data = await dataExcelParser[dataKey](file);
 
-      await dataProcessExcelUploader[dataKey](
+      await dataProcessExcelUploader[dataKey]({
         prefix,
         dataKey,
         data,
-        (progress) => setProgress(progress),
-        (stats) => setStats(stats)
-      );
+        onProgress: (progress) => setProgress(progress),
+        onStats: (stats) => setStats(stats),
+      });
     } catch (error) {
       console.error('Upload error:', error);
       setError(`Upload error: ${error.message}`);
@@ -78,7 +91,7 @@ const ExcelUploader = ({ dataKey, prefix }) => {
           {dataKey} Master List Upload | Prefix: {prefix}
         </h5>
         <p className='text-muted mb-0' style={{ fontSize: '11px' }}>
-          Linear data uplaod only
+          Linear data upload only
         </p>
       </Card.Header>
       <Card.Body>
