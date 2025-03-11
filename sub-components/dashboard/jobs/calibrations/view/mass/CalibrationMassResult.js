@@ -1,6 +1,7 @@
 import { EXPANDED_UNCERTAINTY, NOMINAL_VALUE } from '@/schema/calibration';
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
 import { format } from 'date-fns';
+import { multiply } from 'mathjs';
 import React, { useMemo } from 'react';
 import { Card, Table } from 'react-bootstrap';
 
@@ -9,6 +10,23 @@ const CalibrationMassResult = ({ calibration }) => {
     const value = parseFloat(calibration.calibrationPointNo);
     return isNaN(value) ? undefined : value;
   }, [calibration]);
+
+  const unitUsedForCOC = useMemo(() => {
+    const value = calibration?.unitUsedForCOC;
+    return value ? value : 'gram';
+  }, [calibration]);
+
+  const cocReadability = useMemo(() => {
+    const resolution = isNaN(parseFloat(calibration?.resolution)) ? 0 : parseFloat(calibration.resolution); //prettier-ignore
+
+    let value = resolution;
+
+    if (unitUsedForCOC) {
+      value = multiply(value, 0.001);
+    }
+
+    return value;
+  }, [calibration, unitUsedForCOC]);
 
   const results = useMemo(() => {
     const value = calibration?.results;
@@ -26,8 +44,7 @@ const CalibrationMassResult = ({ calibration }) => {
         };
   }, [calibration]);
 
-  // TODO: Add Calibration Mass result
-  //* Static Calibration Mass result for now
+  // console.log({ calibration });
 
   return (
     <Card className='shadow-none'>
@@ -54,7 +71,7 @@ const CalibrationMassResult = ({ calibration }) => {
             <span className='fw-bold'>Version no. d&msd 13.2, rev. 126</span>
           </div>
 
-          <div className='mt-3 d-flex align-items-center gap-3'>
+          <div className='mt-3 d-flex align-items-center gap-4'>
             <div className='fs-5'>
               <span className='pe-2'>Type of Range:</span>
               <span className='fw-bold text-capitalize'>{results?.rangeType || ''}</span>
@@ -68,6 +85,16 @@ const CalibrationMassResult = ({ calibration }) => {
             <div className='fs-5'>
               <span className='pe-2'>Repeatability: </span>
               <span className='fw-bold'>{formatToDicimalString(results?.rtestMaxError, 4)} g</span>
+            </div>
+
+            <div className='fs-5'>
+              <span className='pe-2'>No. of Calibration Point:</span>
+              <span className='fw-bold'>{calibration?.calibrationPointNo}</span>
+            </div>
+
+            <div className='fs-5'>
+              <span className='pe-2'>COC Readability:</span>
+              <span className='fw-bold'>{cocReadability}</span>
             </div>
           </div>
         </div>

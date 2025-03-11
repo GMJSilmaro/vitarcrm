@@ -1,8 +1,9 @@
 import { TEST_LOADS } from '@/schema/calibration';
-import { use, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Database, Eye, EyeSlash } from 'react-bootstrap-icons';
 import { useFormContext } from 'react-hook-form';
 import styles from '../../mass.module.css';
+
 import {
   formatScientific,
   formatToDicimalString,
@@ -28,14 +29,15 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/firebase';
 
 const CalculationTable = () => {
+  //? just edit the fields that thas (.value) in form because its not using fields from schema
   const form = useFormContext();
 
   const [showCalculationTables, setShowCalculationTables] = useState(false);
   const [showUncertaintyBudget, setShowUncertaintyBudget] = useState(false);
 
   const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
-    return isNaN(value) ? undefined : value;
+    const value = parseFloat(form.getValues('calibrationPointNo'));
+    return isNaN(value) ? undefined : parseFloat(value);
   }, [form.watch('calibrationPointNo')]);
 
   const dfnv = useMemo(() => {
@@ -49,7 +51,7 @@ const CalculationTable = () => {
   }, [form.watch('data.nominalValues')]);
 
   const resolution = useMemo(() => {
-    const value = form.getValues('resolution')?.value;
+    const value = form.getValues('resolution');
     return value ? value : 0;
   }, [form.watch('resolution')]);
 
@@ -508,7 +510,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     setFlattenedData(dfnvDataCurrentPoint);
 
     // console.log('trigger....');
-  }, [JSON.stringify(form.watch('data')), form.watch('calibrationPointNo.value')]);
+  }, [JSON.stringify(form.watch('data')), form.watch('calibrationPointNo')]);
 
   //* query Correction, Uncertainty of the Standard Weight & Drift (CUSWD)
   useEffect(() => {
@@ -595,12 +597,12 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
   }, [cuswd.data, mpe.data, JSON.stringify(flattenedData)]);
 
   const resolution = useMemo(() => {
-    const value = form.getValues('resolution')?.value;
+    const value = form.getValues('resolution');
     return value ? value : 0;
   }, [form.watch('resolution')]);
 
   const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
+    const value = parseFloat(form.getValues('calibrationPointNo'));
     return isNaN(value) ? 0 : value;
   }, [form.watch('calibrationPointNo')]);
 
@@ -1475,11 +1477,8 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
 
     const cf = isNaN(parseFloat(result.value)) ? 0 : parseFloat(result.value);
 
-    //* set temporary value used for view in table
-    form.setValue(`data.coverageFactors.${pointIndex}`, cf);
-
     return { value: cf, data: result };
-  }, [effectiveNumberDegressOfFreedom, ck.data, pointIndex]);
+  }, [effectiveNumberDegressOfFreedom, ck.data]);
 
   const expandedUncertainty = useMemo(() => {
     const x = combineUncertainty;

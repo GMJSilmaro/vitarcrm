@@ -11,7 +11,14 @@ export const CATEGORY = [
 ];
 
 export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
+
 export const TRACEABILITY_TYPE = ['1', '2', '3'];
+export const TRACEABILITY_MAP = {
+  1: 'The measurement results included in this document are traceable to Malaysian national measurement standards maintained by the National Metrology Institute of Malaysia ( NMIM ). NMIM is a signatory to the CIPM MRA.',
+  2: 'The measurement results included in this document are traceable to the SI system of units and/or to units of measurement realised at the National Metrology Institute of Malaysia ( NMIM ) and other recognised national metrology institutes.',
+  3: "The measurement results included in this document are traceable to Malaysia's national standards through SAMM 109, 011 and 088 via calibration	Certificate No. as indicated below. Standards Malaysia is a signatory to the ILAC MRA.",
+};
+
 export const RESOLUTION = [
   '0.000001',
   '0.00001',
@@ -259,10 +266,13 @@ export const rTestSchema = z.object({
   half: z.array(z.coerce.number()).default([]),
   max: z.array(z.coerce.number()).default([]),
   maxError: z.coerce.number().default(0),
+  std: z.array(z.coerce.number()).default([]),
+  maxDiffBetweenReadings: z.array(z.coerce.number()).default([]),
 });
 
 export const eTestSchema = z.object({
   values: z.array(z.coerce.number()).default([]),
+  maxError: z.coerce.number().default(0),
 });
 
 export const calibrationMassSchema = z.object({
@@ -272,6 +282,7 @@ export const calibrationMassSchema = z.object({
     corrections: z.array(z.coerce.number()).default([]),
     expandedUncertainties: z.array(z.coerce.number()).default([]),
     measuredValues: z.array(z.array(z.coerce.number())).default([]),
+    coverageFactors: z.array(z.coerce.number()).default([]),
     dfnv: z.array(dfnvSchema).default([]),
     rtest: rTestSchema,
     etest: eTestSchema,

@@ -1,17 +1,21 @@
 import { Accordion, Card } from 'react-bootstrap';
-import DFNVTest from './DFNTest';
+import DFNVTest from './DFNVTest';
 import { Gear, GearFill, Table } from 'react-bootstrap-icons';
 import RTest from './RTest';
 import ETest from './ETest';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import CalculationTable from './CalculationTable';
+import { FormProvider, useForm } from 'react-hook-form';
 
 const CalibrationMass = ({ calibration, category }) => {
+  const form = useForm({
+    values: calibration,
+  });
+
   const calibrationPointNo = useMemo(() => {
     const value = parseFloat(calibration.calibrationPointNo);
     return isNaN(value) ? 6 : value;
   }, [calibration]);
-
-  console.log({ calibration });
 
   return (
     <Card className='border-0 shadow-none'>
@@ -81,17 +85,9 @@ const CalibrationMass = ({ calibration, category }) => {
             </Accordion.Header>
 
             <Accordion.Body>
-              <div
-                className='d-flex flex-column align-items-center justify-content-center gap-2'
-                style={{ height: 300 }}
-              >
-                <GearFill size={40} className='d-block' />
-
-                <div className='d-flex flex-column text-center'>
-                  <h4 className='mb-0'>Currently in Development</h4>
-                  <p className='text-muted fs-6'>This component/module is still being developed.</p>
-                </div>
-              </div>
+              <FormProvider {...form}>
+                <CalculationTable calibration={calibration} />
+              </FormProvider>
             </Accordion.Body>
           </Accordion.Item>
         </Accordion>

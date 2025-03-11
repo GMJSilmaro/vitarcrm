@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Col, Form, Row, Table } from 'react-bootstrap';
 import { std, max, min, abs, sum } from 'mathjs';
 import { Controller, useFormContext } from 'react-hook-form';
-import styles from './mass.module.css';
+import styles from '../../mass.module.css';
 
 const RTest = ({ data }) => {
   const form = useFormContext();
@@ -31,7 +31,7 @@ const RTest = ({ data }) => {
       if (actualValues.length < 1) actualValues = [0];
     } else actualValues = [0];
 
-    return {
+    const result = {
       raw: {
         total: std(actualValues),
         error: max(actualValues) - min(actualValues),
@@ -43,6 +43,12 @@ const RTest = ({ data }) => {
         std: std(actualValues, 'uncorrected').toFixed(4),
       },
     };
+
+    //* set temporary value used for view in table
+    form.setValue(`data.rtest.std.${0}`, result.raw.std || 0);
+    form.setValue(`data.rtest.maxDiffBetweenReadings.${0}`, result.raw.error || 0);
+
+    return result;
   }, [JSON.stringify(form.watch('data.rtest.half'))]);
 
   const maxResults = useMemo(() => {
@@ -54,7 +60,7 @@ const RTest = ({ data }) => {
       if (actualValues.length < 1) actualValues = [0];
     } else actualValues = [0];
 
-    return {
+    const result = {
       raw: {
         total: std(actualValues),
         error: max(actualValues) - min(actualValues),
@@ -66,6 +72,12 @@ const RTest = ({ data }) => {
         std: std(actualValues, 'uncorrected').toFixed(4),
       },
     };
+
+    //* set temporary value used for view in table
+    form.setValue(`data.rtest.std.${1}`, result.raw.std || 0);
+    form.setValue(`data.rtest.maxDiffBetweenReadings.${1}`, result.raw.error || 0);
+
+    return result;
   }, [JSON.stringify(form.watch('data.rtest.max'))]);
 
   const maxRepetabilityError = useMemo(() => {
@@ -191,7 +203,7 @@ const RTest = ({ data }) => {
               <tr>
                 <th className='text-center'>Std Dvtn</th>
                 <th className='text-center'>{halfResults?.formatted.std ?? ''}</th>
-                <th className='text-center'>{halfResults?.formatted.std ?? ''}</th>
+                <th className='text-center'>{maxResults?.formatted.std ?? ''}</th>
               </tr>
               <tr>
                 <th className='text-center' colSpan={1}>

@@ -1,23 +1,36 @@
 import * as math from 'mathjs';
 
 export const formatToDicimalString = (value, dicimalPlaces = 4) => {
-  if (typeof value === 'string') return '';
-  if (value === undefined || value === null) return '';
-  if (isNaN(value)) return '';
-  return value.toFixed(dicimalPlaces);
+  try {
+    if (typeof value === 'string') return '';
+    if (value === undefined || value === null) return '';
+    if (isNaN(value)) return '';
+    return value.toFixed(dicimalPlaces);
+  } catch (error) {
+    console.error(err);
+    console.error('Error formatting decimal value:', value);
+    return '';
+  }
 };
 
 export function formatScientific(value, precision = 4) {
-  if (value === undefined || value === null) return '';
-  if (isNaN(value)) return '';
+  try {
+    if (typeof value === 'string') return '';
+    if (value === undefined || value === null) return '';
+    if (isNaN(value)) return '';
 
-  let formatted = math.format(math.bignumber(value), { notation: 'exponential', precision });
-  formatted = formatted.replace('e', 'E'); //* Convert 'e' to 'E'
+    let formatted = math.format(math.bignumber(value), { notation: 'exponential', precision });
+    formatted = formatted.replace('e', 'E'); //* Convert 'e' to 'E'
 
-  //* Ensure exponent always has at least two digits (E-02, E+03, etc.)
-  formatted = formatted.replace(/E([+-]?)(\d)$/, (match, sign, exp) => `E${sign}${exp.padStart(2, '0')}`); // prettier-ignore
+    //* Ensure exponent always has at least two digits (E-02, E+03, etc.)
+    formatted = formatted.replace(/E([+-]?)(\d)$/, (match, sign, exp) => `E${sign}${exp.padStart(2, '0')}`); // prettier-ignore
 
-  return formatted;
+    return formatted;
+  } catch (err) {
+    console.error(err);
+    console.error('Error formatting scientific value:', value);
+    return '';
+  }
 }
 
 export const getArrayActualValues = (values) => {
