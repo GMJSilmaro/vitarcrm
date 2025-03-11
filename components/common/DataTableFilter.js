@@ -20,7 +20,12 @@ const DataTableFilter = ({ table, filterFields, children }) => {
 
   const getFilterFields = (field, table) => {
     const column = table.getColumn(field.columnId);
-    const columnFilterValue = column.getFilterValue();
+    const columnFilterValue = column?.getFilterValue();
+
+    if (!column) {
+      console.error(`Column with id of ${field.columnId} not found`);
+      return null;
+    }
 
     //* add filters type component here...
     switch (field.type) {

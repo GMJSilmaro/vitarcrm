@@ -7,12 +7,13 @@ const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }
   return (
     <div className='w-w-100'>
       <div className='mb-3'>{children}</div>
-      <Table responsive>
+      <Table responsive className='text-center align-middle'>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <th
+                  className='text-center'
                   key={header.id}
                   colSpan={header.colSpan}
                   style={{
@@ -29,11 +30,11 @@ const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }
         </thead>
 
         <tbody>
-          {table.getRowModel()?.rows?.length === 0 && !isLoading && (
+          {table.getRowModel()?.rows?.length === 0 && !isLoading && !isError && (
             <tr>
               <td colSpan={table.getAllColumns().length}>
                 <div
-                  className='d-flex justify-content-center align-items-center'
+                  className='d-flex justify-content-center align-items-center fs-6'
                   style={{ height: '100px' }}
                 >
                   No data available

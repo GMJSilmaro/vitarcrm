@@ -54,7 +54,6 @@ export function getCommonPinningStyles({ column }) {
   return {
     left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
     right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
-    opacity: isPinned ? 0.97 : 1,
     position: isPinned ? 'sticky' : undefined,
     width: column.getSize(),
     background: isPinned ? 'white' : 'transparent',

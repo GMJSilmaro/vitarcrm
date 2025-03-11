@@ -1,15 +1,15 @@
 import { Dropdown } from 'react-bootstrap';
 import { ArrowDownShort, ArrowUpShort, ChevronExpand, EyeSlash, X } from 'react-bootstrap-icons';
 
-const DataTableColumnHeader = ({ column, title, className }) => {
+const DataTableColumnHeader = ({ column, title, className, children }) => {
   return (
-    <Dropdown className='w-100'>
+    <Dropdown className='w-100 d-flex justify-content-center align-content-center'>
       <Dropdown.Toggle
         className='custom-dropdown p-0 d-flex align-items-center bg-transparent border-0'
         size='sm'
         variant='light'
       >
-        <span className='fs-6 fw-semibold'>{title}</span>
+        <span className='fs-6 fw-semibold'>{title ?? children}</span>
         {column.getCanSort() && column.getIsSorted() === 'desc' ? (
           <ArrowDownShort className='ms-2' size={17} />
         ) : column.getCanSort() && column.getIsSorted() === 'asc' ? (
