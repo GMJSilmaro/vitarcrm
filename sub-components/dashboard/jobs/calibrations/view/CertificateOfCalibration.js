@@ -1,7 +1,7 @@
 import { TEST_LOADS, TRACEABILITY_MAP } from '@/schema/calibration';
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
 import { format } from 'date-fns';
-import { ceil, divide, multiply } from 'mathjs';
+import { ceil, divide, multiply, round } from 'mathjs';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Button, Card, Spinner, Table } from 'react-bootstrap';
 import { Download, Printer } from 'react-bootstrap-icons';
@@ -90,9 +90,9 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     (value) => {
       const unit = unitUsedForCOC;
 
-      if (typeof value === 'string') return '';
-      if (value === undefined || value === null) return '';
-      if (isNaN(value)) return '';
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+        return '';
+      }
 
       switch (unit) {
         case 'gram':
@@ -104,6 +104,22 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       }
     },
     [unitUsedForCOC]
+  );
+
+  const convertExpandedUncertaintyBasedOnUnit = useCallback(
+    (value) => {
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+        return '';
+      }
+
+      const unit = unitUsedForCOC;
+
+      const factor = unit === 'gram' ? 1 : 0.001;
+      const scaledResolution = resolution * factor;
+
+      return ceil((value * factor) / scaledResolution) * scaledResolution;
+    },
+    [resolution]
   );
 
   return (
@@ -421,7 +437,9 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                     <tr key={i}>
                       <td>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</td>
                       <td>{convertValueBasedOnUnit(corrections?.[i] ?? 0)}</td>
-                      <td>{convertValueBasedOnUnit(expandedUncertainties?.[i] ?? 0)}</td>
+                      <td>
+                        {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
+                      </td>
                       <td>{coverageFactors?.[i] || 0}</td>
                     </tr>
                   ))}
