@@ -53,10 +53,12 @@ const JobCalendar = () => {
       text: 'This action cannot be undone.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#1e40a6',
-      cancelButtonColor: '#6c757d',
       confirmButtonText: 'Yes, remove',
       cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
     }).then(async (data) => {
       if (data.isConfirmed) {
         try {
@@ -308,10 +310,12 @@ const JobCalendar = () => {
             title: 'Job Creation Not Allowed',
             text: `You are not allowed to create a job in the past. Please select a date in the present or the future.`,
             icon: 'error',
-            showCancelButton: true,
             showCancelButton: false,
             confirmButtonColor: '#3085d6',
             confirmButtonText: 'OK',
+            customClass: {
+              confirmButton: 'btn btn-primary rounded',
+            },
           });
           return;
         }
@@ -334,9 +338,11 @@ const JobCalendar = () => {
             text: `Are you sure you want to create a new job starting on ${startDateToDisplay}${!isMonthView ? ' at ' + startTimeToDisplay : ''} and ending on ${endDateToDisplay}${!isMonthView ? ' at ' + endTimeToDisplay : ''}?`, // prettier-ignore
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
             confirmButtonText: 'Yes, create job',
+            customClass: {
+              confirmButton: 'btn btn-primary rounded',
+              cancelButton: 'btn btn-secondary rounded',
+            },
           }).then((result) => {
             if (result.isConfirmed) {
               router.push({
