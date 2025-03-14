@@ -26,6 +26,7 @@ import {
   GeoAltFill,
   House,
   PencilSquare,
+  People,
   Plus,
   ThreeDotsVertical,
   Trash,
@@ -324,7 +325,7 @@ const CustomerList = () => {
             link: '/dashboard',
           },
           {
-            icon: <Building className='me-2' size={14} />,
+            icon: <People className='me-2' size={14} />,
             text: 'Customers',
           },
         ]}

@@ -1,5 +1,5 @@
 import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
-import { CardList, Eye, PencilSquare, ThreeDotsVertical, Trash } from 'react-bootstrap-icons';
+import { CardList, Eye, PencilSquare, Plus, ThreeDotsVertical, Trash } from 'react-bootstrap-icons';
 
 import DataTable from '../../../../components/common/DataTable';
 import DataTableViewOptions from '../../../../components/common/DataTableViewOptions';
@@ -16,13 +16,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import { useRouter } from 'next/router';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/firebase';
 import DataTableFilter from '@/components/common/DataTableFilter';
+import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 
 const EquipmentsTab = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { customerId } = router.query;
 
   const columnHelper = createColumnHelper();
 
@@ -69,6 +71,50 @@ const EquipmentsTab = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
+          const { id } = row.original;
+
+          const handleViewEquipment = (id) => {
+            router.push(`/customers/${customerId}/equipment/view/${id}`);
+          };
+
+          const handleEditEquipment = (id) => {
+            router.push(`/customers/${customerId}/equipment/edit-customer-equipment/${id}`);
+          };
+
+          const handleDeleteEquipment = (id) => {
+            Swal.fire({
+              title: 'Are you sure?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  const equipmentRef = doc(db, 'customerEquipments', id);
+
+                  await deleteDoc(equipmentRef);
+
+                  toast.success('Equipment removed successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error removing equipment:', error);
+                  toast.error('Error removing equipment: ' + error.message, {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
+
           return (
             <OverlayTrigger
               rootClose
@@ -76,9 +122,17 @@ const EquipmentsTab = () => {
               placement='left-start'
               overlay={
                 <Dropdown.Menu show style={{ zIndex: 999 }}>
-                  <Dropdown.Item onClick={() => {}}>
+                  {/* <Dropdown.Item onClick={() => {}}>
                     <Eye className='me-2' size={16} />
                     View Equipment
+                  </Dropdown.Item> */}
+                  <Dropdown.Item onClick={() => handleEditEquipment(id)}>
+                    <PencilSquare className='me-2' size={16} />
+                    Edit Equipment
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => handleDeleteEquipment(id)}>
+                    <Trash className='me-2' size={16} />
+                    Delete Equipment
                   </Dropdown.Item>
                 </Dropdown.Menu>
               }
@@ -172,9 +226,9 @@ const EquipmentsTab = () => {
 
   //* query customer equipments
   useEffect(() => {
-    if (!id) return;
+    if (!customerId) return;
 
-    const q = query(collection(db, 'customerEquipments'), where('customerId', '==', id));
+    const q = query(collection(db, 'customerEquipments'), where('customerId', '==', customerId));
 
     const unsubscribe = onSnapshot(
       q,
@@ -215,6 +269,15 @@ const EquipmentsTab = () => {
             <DataTableSearch table={table} />
 
             <div className='d-flex align-items-center gap-2'>
+              <Button
+                variant='primary'
+                size='sm'
+                onClick={() => router.push(`/customers/${customerId}/equipment/create`)}
+              >
+                <Plus size={18} className='me-1' />
+                Add Equipment
+              </Button>
+
               <DataTableFilter table={table} filterFields={filterFields} />
               <DataTableViewOptions table={table} />
             </div>

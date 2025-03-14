@@ -76,12 +76,7 @@ const DataTableFilter = ({ table, filterFields, children }) => {
 
   return (
     <>
-      <Button
-        variant='light'
-        className='position-relative p-2 h-100'
-        size='sm'
-        onClick={handleShow}
-      >
+      <Button variant='light' className='position-relative h-100' size='sm' onClick={handleShow}>
         <Funnel className='me-2' size={18} />
         Filter
         {filterCount > 0 && (
