@@ -3,7 +3,7 @@ import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import { getFormDefaultValues } from '@/utils/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { Button, Card, Col, Form, OverlayTrigger, Row, Spinner, Tooltip } from 'react-bootstrap';
 import { Save } from 'react-bootstrap-icons';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { db } from '@/firebase';
@@ -11,9 +11,12 @@ import { collection, doc, onSnapshot, query, serverTimestamp, setDoc } from 'fir
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
 
-import { customerEquipmentSchema } from '@/schema/customerEquipment';
+import { CATEGORY, customerEquipmentSchema } from '@/schema/customerEquipment';
 import FormDebug from '@/components/Form/FormDebug';
 import toast from 'react-hot-toast';
+import { TooltipContent } from '@/components/common/ToolTipContent';
+import Select from '@/components/Form/Select';
+import _ from 'lodash';
 
 const CustomerEquipmentForm = ({ data }) => {
   const router = useRouter();
@@ -22,6 +25,8 @@ const CustomerEquipmentForm = ({ data }) => {
 
   const [isLoading, setIsLoading] = useState();
   const [isSavedNew, setIsSavedNew] = useState(false);
+
+  const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: category.split(' ').map(str => _.capitalize(str)).join(' ') }))); //prettier-ignore
 
   const form = useForm({
     mode: 'onChange',
@@ -93,6 +98,14 @@ const CustomerEquipmentForm = ({ data }) => {
     return () => unsubscribe();
   }, []);
 
+  //* set category, if data exist
+  useEffect(() => {
+    if (data && categoryOptions.length > 0) {
+      const category = categoryOptions.find((option) => option.value === data.category);
+      form.setValue('category', category);
+    }
+  }, [data, categoryOptions]);
+
   return (
     <FormProvider {...form}>
       <Form onSubmit={form.handleSubmit(handleSubmit)}>
@@ -120,6 +133,47 @@ const CustomerEquipmentForm = ({ data }) => {
                       {formErrors && formErrors.description?.message && (
                         <Form.Text className='text-danger'>
                           {formErrors.description?.message}
+                        </Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+
+              <Form.Group as={Col} md={3}>
+                <RequiredLabel label='Category' id='category' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent
+                        title='Calibration Category Search'
+                        info={['Search by category']}
+                      />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
+
+                <Controller
+                  name='category'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        inputId='category'
+                        instanceId='category'
+                        onChange={(option) => field.onChange(option)}
+                        options={categoryOptions}
+                        placeholder='Search by calibration category'
+                        noOptionsMessage={() => 'No calibration category found'}
+                      />
+
+                      {formErrors && formErrors.category?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.category?.message}
                         </Form.Text>
                       )}
                     </>
@@ -255,7 +309,7 @@ const CustomerEquipmentForm = ({ data }) => {
                 />
               </Form.Group>
 
-              <Form.Group as={Col} md={12}>
+              <Form.Group as={Col} md={9}>
                 <Form.Label htmlFor='uom'>Notes</Form.Label>
 
                 <Controller
@@ -267,7 +321,7 @@ const CustomerEquipmentForm = ({ data }) => {
                         {...field}
                         id='notes'
                         as='textarea'
-                        rows={2}
+                        rows={1}
                         placeholder='Enter notes'
                       />
 
