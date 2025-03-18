@@ -1,4 +1,4 @@
-import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
+import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import { CardList, Eye, PencilSquare, Plus, ThreeDotsVertical, Trash } from 'react-bootstrap-icons';
 
 import DataTable from '../../../../components/common/DataTable';
@@ -21,6 +21,7 @@ import { db } from '@/firebase';
 import DataTableFilter from '@/components/common/DataTableFilter';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import _ from 'lodash';
 
 const EquipmentsTab = () => {
   const router = useRouter();
@@ -38,6 +39,23 @@ const EquipmentsTab = () => {
       }),
       columnHelper.accessor('description', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
+      }),
+      columnHelper.accessor('category', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Category' />,
+        cell: ({ row }) => {
+          const category = row.original.category;
+
+          return (
+            <Badge bg='light' className='text-dark'>
+              {category
+                ? category
+                    ?.split(' ')
+                    ?.map((str) => _.capitalize(str))
+                    ?.join(' ')
+                : 'N/A'}
+            </Badge>
+          );
+        },
       }),
       columnHelper.accessor('make', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
@@ -206,6 +224,21 @@ const EquipmentsTab = () => {
         columnId: 'notes',
         type: 'text',
         placeholder: 'Search by notes...',
+      },
+      {
+        label: 'Category',
+        columnId: 'category',
+        type: 'select',
+        options: [
+          { label: 'All Category', value: '' },
+          { label: 'Temperature & Humidity', value: 'TEMPERATURE & HUMIDITY' },
+          { label: 'Pressure', value: 'PRESSURE' },
+          { label: 'Electrical', value: 'ELECTRICAL' },
+          { label: 'Dimensional', value: 'DIMENSIONAL' },
+          { label: 'Volumetric', value: 'VOLUMETRIC' },
+          { label: 'Mechanical', value: 'MECHANICAL' },
+        ],
+        placeholder: 'Search by category...',
       },
     ];
   }, []);

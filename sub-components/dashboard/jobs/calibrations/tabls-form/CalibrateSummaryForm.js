@@ -3,11 +3,11 @@ import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
 import { db } from '@/firebase';
 import { CALIBRATED_AT, CATEGORY, DUE_DATE_REQUESTED } from '@/schema/calibration';
-import { format } from 'date-fns';
+import { add, format } from 'date-fns';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
-import _, { add } from 'lodash';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Card, Col, Form, FormLabel, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -17,7 +17,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
   const [location, setLocation] = useState({ data: undefined, isLoading: true, isError: false });
   const [customer, setCustomer] = useState({ data: undefined, isLoading: true, isError: false });
 
-  const [customerEquipmentsOptions, setCustomerEquipmentsOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
+  const [customerEquipmentsOptions, setCustomerEquipmentsOptions] = useState({ data: [], isLoading: false, isError: false }); //prettier-ignore
   const [usersOptions, setUsersOptions] = useState({ data: [], isLoading: true, isError: false });
   const [calibratedByOptions, setCalibratedByOptions] = useState([]);
 
@@ -40,7 +40,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
       //* delay to set null value
       setTimeout(() => {
         form.setValue('dueDateDuration', null);
-        form.setValue('dueDate', null);
+        form.setValue('dueDate', 'N/A');
       }, 100);
     }
   };
@@ -119,34 +119,17 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
     if (!job.data) return;
 
     const customerRef = doc(db, 'customers', job.data.customer.id);
-    const customerEquipmentsRef = query(
-      collection(db, 'customerEquipments'),
-      where('customerId', '==', job.data.customer.id)
-    );
 
-    Promise.all([getDoc(customerRef), getDocs(customerEquipmentsRef)])
-      .then(([customerSnapshot, customerEquipmentsSnaphot]) => {
+    getDoc(customerRef)
+      .then((customerSnapshot) => {
         if (customerSnapshot.exists()) {
           const customerData = customerSnapshot.data();
-          const equipments = !customerEquipmentsSnaphot.empty ? customerEquipmentsSnaphot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
 
           setCustomer({
             data: { id: customerSnapshot.id, ...customerData },
             isLoading: false,
             isError: false,
           });
-
-          if (equipments.length > 0) {
-            setCustomerEquipmentsOptions({
-              data: equipments.map((equipment) => ({
-                value: equipment.id,
-                label: equipment.description,
-                ...equipment,
-              })),
-              isLoading: false,
-              isError: false,
-            });
-          }
 
           form.setValue('submittedBy', {
             id: customerSnapshot.id,
@@ -156,13 +139,11 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
           return;
         }
 
-        setCustomerEquipmentsOptions({ data: [], isLoading: false, isError: false });
         setCustomer({ data: null, isLoading: false, isError: false });
       })
       .catch((err) => {
         console.error(err.message);
         setCustomer({ data: null, isLoading: false, isError: true });
-        setCustomerEquipmentsOptions({ data: [], isLoading: false, isError: false });
       });
   }, [job.data]);
 
@@ -222,7 +203,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
   useEffect(() => {
     const category = !form.getValues('category') ? null : form.getValues('category').value;
 
-    if (data || !category) return;
+    if (data || !category | job.data) return;
 
     const q = query(collection(db, 'jobCertificates'));
 
@@ -231,7 +212,9 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
       (snapshot) => {
         const date = new Date();
         const categoryInitial = category?.split(' ')[0]?.charAt(0)?.toUpperCase() || '';
-        const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-S`;
+        const scopeInitial = job.data.scope?.charAt(0)?.toUpperCase() || '';
+
+        const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-${scopeInitial}`;
 
         if (!snapshot.empty) {
           const id = snapshot.docs.pop().id.split('-')[1].replace('S', '');
@@ -247,7 +230,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
     );
 
     return () => unsubscribe();
-  }, [data, form.watch('category')]);
+  }, [job, data, form.watch('category')]);
 
   //* logger user Effect
   useEffect(() => {
@@ -306,9 +289,69 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
       const selectedDueDateRequested = dueDateRequestedOptions.find(
         (option) => option.value === data.dueDateRequested
       );
+      form.setValue('dueDate', data.dueDate);
       form.setValue('dueDateRequested', selectedDueDateRequested);
     }
   }, [data, dueDateRequestedOptions]);
+
+  //* set customer equipments, filtered out based on selected category
+  useEffect(() => {
+    if (!job || job?.data?.customerEquipments?.length < 1) return;
+    if (!form.getValues('category.value')) return;
+
+    const selectedCategory = form.getValues('category.value')?.toLowerCase();
+    const filteredCustomerEquipments = job?.data?.customerEquipments?.filter((eq) => {
+      return eq.category?.toLowerCase() === selectedCategory;
+    });
+
+    setCustomerEquipmentsOptions({
+      data:
+        filteredCustomerEquipments?.length > 0
+          ? filteredCustomerEquipments.map((equipment) => ({
+              value: equipment.id,
+              label: equipment.description,
+              ...equipment,
+            }))
+          : [],
+      isLoading: false,
+      isError: false,
+    });
+
+    form.setValue('description', '');
+  }, [job, form.watch('category.value')]);
+
+  //* set default value for due due date requested, date duration,
+  useEffect(() => {
+    if (!data && dueDateRequestedOptions.length > 0) {
+      console.log('trigeer 1');
+      //* set default value to "no"
+      form.setValue('dueDateRequested', dueDateRequestedOptions[1]);
+
+      setTimeout(() => {
+        form.setValue('dueDate', 'N/A');
+        form.setValue('dueDateDuration', null);
+      }, 100);
+    }
+  }, [data, dueDateRequestedOptions]);
+
+  //* set due date based on no. of months in Due Date Duration and date calibrated
+  useEffect(() => {
+    const dueDateDuration = form.getValues('dueDateDuration');
+    const dateCalibrated = form.getValues('dateCalibrated');
+    const dueDateRequested = form.getValues('dueDateRequested');
+
+    const value = isNaN(parseInt(dueDateDuration)) ? 1 : parseInt(dueDateDuration);
+
+    if (dueDateRequested?.value === 'yes') {
+      if (dueDateDuration && dateCalibrated && value >= 1 && value <= 999) {
+        const dueDate = add(new Date(dateCalibrated), {
+          months: value,
+        });
+
+        form.setValue('dueDate', format(dueDate, 'yyyy-MM-dd'));
+      } else form.setValue('dueDate', 'N/A');
+    }
+  }, [form.watch('dueDateDuration'), form.watch('dateCalibrated'), form.watch('dueDateRequested')]);
 
   const make = useMemo(() => {
     return form.getValues('description.make') || '';
@@ -325,7 +368,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
   return (
     <>
       <Card className='shadow-none'>
-        <Card.Body className='pb-0'>
+        <Card.Body>
           <h4 className='mb-0'>Job</h4>
           <p className='text-muted fs-6'>Details about the job.</p>
 
@@ -477,7 +520,13 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
               <Form.Label>Calibrated At</Form.Label>
               <Form.Control
                 type='text'
-                value={job.isLoading && !job.isError ? 'Loading...' : job?.data?.scope || ''}
+                value={
+                  job.isLoading && !job.isError
+                    ? 'Loading...'
+                    : job?.data?.scope
+                    ? _.capitalize(job?.data?.scope)
+                    : ''
+                }
                 readOnly
                 disabled
               />
@@ -575,7 +624,9 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
                           ? 'Loading equipments...'
                           : "Search by customer equipment's name"
                       }
-                      isDisabled={customerEquipmentsOptions.isLoading}
+                      isDisabled={
+                        customerEquipmentsOptions.isLoading || !form.watch('category.value')
+                      }
                       noOptionsMessage={() =>
                         customerEquipmentsOptions.isLoading
                           ? 'Loading...'
@@ -614,7 +665,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
           <p className='text-muted fs-6'>Date details related to the calibration.</p>
 
           <Row className='mb-3 row-gap-3'>
-            <Form.Group as={Col} md={4}>
+            {/* <Form.Group as={Col} md={4}>
               <RequiredLabel label='Date Issued' id='dateIssued' />
 
               <Controller
@@ -632,9 +683,9 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
                   </>
                 )}
               />
-            </Form.Group>
+            </Form.Group> */}
 
-            <Form.Group as={Col} md={4}>
+            <Form.Group as={Col} md={6}>
               <RequiredLabel label='Date Received' id='dateReceived' />
 
               <Controller
@@ -654,7 +705,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
               />
             </Form.Group>
 
-            <Form.Group as={Col} md={4}>
+            <Form.Group as={Col} md={6}>
               <RequiredLabel label='Date Calibrated' id='dateCalibrated' />
 
               <Controller
@@ -712,9 +763,15 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
                   <>
                     <Form.Control
                       {...field}
-                      disabled={form.watch('dueDateRequested.value') === 'no'}
+                      disabled={
+                        !form.watch('dueDateRequested') ||
+                        form.watch('dueDateRequested.value') === 'no' ||
+                        !form.watch('dateCalibrated')
+                      }
                       id='dueDateDuration'
                       type='number'
+                      min='1'
+                      onKeyDown={(e) => e.key === '.' && e.preventDefault()}
                       placeholder='Enter due date duration'
                     />
 
@@ -736,12 +793,12 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
                 control={form.control}
                 render={({ field }) => (
                   <>
-                    <Form.Control
-                      {...field}
-                      disabled={form.watch('dueDateRequested.value') === 'no'}
-                      id='dueDate'
-                      type='date'
-                    />
+                    {!form.watch('dueDateRequested') ||
+                    form.watch('dueDateRequested.value') === 'no' ? (
+                      <Form.Control {...field} id='dueDate' type='text' />
+                    ) : (
+                      <Form.Control {...field} disabled id='dueDate' type='date' />
+                    )}
 
                     {formErrors && formErrors.dueDate?.message && (
                       <Form.Text className='text-danger'>{formErrors.dueDate?.message}</Form.Text>

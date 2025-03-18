@@ -7,7 +7,6 @@ export const CATEGORY = [
   'DIMENSIONAL',
   'VOLUMETRIC',
   'MECHANICAL',
-  'MASS',
 ];
 
 export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
@@ -58,7 +57,8 @@ export const DUE_DATE_REQUESTED = ['yes', 'no'];
 export const TEST_LOADS = ['C1', 'E1', 'E2', 'E3', 'E4', 'C2'];
 
 export const NOMINAL_VALUE = [
-  10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000,
+  10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000,
+  270000, 300000,
 ];
 
 export const EXPANDED_UNCERTAINTY = [
@@ -113,10 +113,12 @@ export const calibrationInfoSchema = z
     jobId: z.string().min(1, 'Job ID is required'),
     calibrateId: z.string().min(1, 'Calibrate ID is required'),
     certificateNumber: z.string().min(1, 'Certificate No is required'),
-    category: z.union([categoryEnum, z.record(z.string(), z.any())]).transform((formData) => {
-      if (typeof formData === 'object') return formData.value;
-      return formData;
-    }),
+    category: z
+      .union([categoryEnum, z.record(z.string(), z.any())])
+      .transform((formData) => {
+        if (typeof formData === 'object') return formData.value;
+        return formData;
+      }),
     approvedSignatory: z
       .record(z.string(), z.any(), {
         message: 'Please select approved signatory',
@@ -160,14 +162,21 @@ export const calibrationInfoSchema = z
         return formData;
       }),
 
-    dueDateDuration: z.coerce.number().nullish(),
+    dueDateDuration: z.coerce
+      .number()
+      .max(999, { message: 'Please enter a duration of at most 999 months' })
+      .nullish(),
     dueDate: z.string().nullish(),
-    dateIssued: z.string().min(1, { message: 'Date Issued is required' }),
+    dateIssued: z.string().default(''),
     dateReceived: z.string().min(1, { message: 'Date Received is required' }),
-    dateCalibrated: z.string().min(1, { message: 'Date Calibrated is required' }),
+    dateCalibrated: z
+      .string()
+      .min(1, { message: 'Date Calibrated is required' }),
   })
   .refine(
     (formObj) => {
+      console.log({ formObj });
+
       if (formObj.dueDateRequested === 'no') return true;
 
       //** value is yes
@@ -189,20 +198,24 @@ export const calibrationInfoSchema = z
   );
 
 export const calibrationMeasurementSchema = z.object({
-  rangeType: z.union([rangeTypeEnum, z.record(z.string(), z.any())]).transform((formData) => {
-    if (typeof formData === 'object') return formData.value;
-    return formData;
-  }),
+  rangeType: z
+    .union([rangeTypeEnum, z.record(z.string(), z.any())])
+    .transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
   traceabilityType: z
     .union([traceabilityTypeEnum, z.record(z.string(), z.any())])
     .transform((formData) => {
       if (typeof formData === 'object') return formData.value;
       return formData;
     }),
-  resolution: z.union([resolutionEnum, z.record(z.string(), z.any())]).transform((formData) => {
-    if (typeof formData === 'object') return formData.value;
-    return formData;
-  }),
+  resolution: z
+    .union([resolutionEnum, z.record(z.string(), z.any())])
+    .transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
   unitUsedForCOC: z
     .union([unitUsedForCOCEnum, z.record(z.string(), z.any())])
     .transform((formData) => {
@@ -245,7 +258,8 @@ export const calibrationReferenceInstrumentsSchema = z.object({
       z.array(z.record(z.string(), z.any())),
     ])
     .transform((formData) => {
-      if (typeof formData === 'object') return formData.map((instrument) => instrument.id);
+      if (typeof formData === 'object')
+        return formData.map((instrument) => instrument.id);
       return formData;
     }),
 });

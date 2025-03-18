@@ -77,7 +77,7 @@ export const HistoryTab = () => {
         cell: ({ row }) => {
           const colors = {
             lab: 'info',
-            onsite: 'warning',
+            site: 'warning',
           };
 
           return (
@@ -374,7 +374,7 @@ export const HistoryTab = () => {
         options: [
           { label: 'All Scope', value: '' },
           { label: 'Lab', value: 'lab' },
-          { label: 'Onsite', value: 'onsite' },
+          { label: 'Site', value: 'site' },
         ],
         placeholder: 'Search by Scope...',
       },

@@ -1,6 +1,6 @@
 import { TEST_LOADS, TRACEABILITY_MAP } from '@/schema/calibration';
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
-import { format } from 'date-fns';
+import { add, format } from 'date-fns';
 import { ceil, divide, multiply, round } from 'mathjs';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Button, Card, Spinner, Table } from 'react-bootstrap';
@@ -122,6 +122,23 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     [resolution]
   );
 
+  const dueDate = useMemo(() => {
+    if (!calibration?.dueDateRequested || !calibration?.dateCalibrated) {
+      return 'N/A';
+    }
+
+    if (calibration?.dueDateRequested === 'no') {
+      if (calibration?.dueDate) return calibration.dueDate;
+      else return 'N/A';
+    }
+
+    const dueDate = add(new Date(calibration.dateCalibrated), {
+      months: calibration?.dueDateDuration || 0,
+    });
+
+    return format(dueDate, 'dd MMMM yyyy');
+  }, [calibration]);
+
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
@@ -164,11 +181,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             </tr>
             <tr>
               <th>Date Issued</th>
-              <td colSpan={5}>
-                {calibration?.dateIssued
-                  ? format(new Date(calibration.dateIssued), 'dd MMMM yyyy')
-                  : ''}
-              </td>
+              <td colSpan={5}>{format(new Date(), 'dd MMMM yyyy')}</td>
             </tr>
             <tr>
               <th>Date Received</th>
@@ -183,6 +196,21 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <td colSpan={5}>
                 {calibration?.dateCalibrated
                   ? format(new Date(calibration.dateCalibrated), 'dd MMMM yyyy')
+                  : ''}
+              </td>
+            </tr>
+            <tr>
+              <th>
+                Recalibration Date <br />
+                Specified By Client
+              </th>
+              <td colSpan={5}>{dueDate}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td colSpan={5}>
+                {calibration?.dateReceived
+                  ? 'The User should be aware that any number of factors may cause this instrument to drift out of calibration before the specified calibration interval has expired.'
                   : ''}
               </td>
             </tr>
