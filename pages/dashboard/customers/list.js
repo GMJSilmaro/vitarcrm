@@ -6,7 +6,6 @@ import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 
 import { db } from '@/firebase';
-import { globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
 import {
   createColumnHelper,
@@ -72,6 +71,7 @@ const CustomerList = () => {
       }),
       columnHelper.accessor('customerName', {
         id: 'name',
+        filterFn: 'includesString',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
       }),
       columnHelper.accessor(
@@ -239,12 +239,6 @@ const CustomerList = () => {
         placeholder: 'Search by customer id...',
       },
       {
-        label: 'Name',
-        columnId: 'name',
-        type: 'text',
-        placeholder: 'Search by customer name...',
-      },
-      {
         label: 'Sites',
         columnId: 'sites',
         type: 'text',
@@ -271,8 +265,6 @@ const CustomerList = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { globalSearch: globalSearchFilter },
-    globalFilterFn: 'globalSearch',
     initialState: {
       columnPinning: { right: ['actions'] },
     },
@@ -344,7 +336,7 @@ const CustomerList = () => {
         <Card.Body className='p-4'>
           <DataTable table={table} isLoading={customers.isLoading} isError={customers.isError}>
             <div className='d-flex justify-content-between'>
-              <DataTableSearch table={table} />
+              <DataTableSearch table={table} isGlobalSearch={false} columnId='name' />
 
               <div className='d-flex align-items-center gap-2'>
                 <DataTableFilter table={table} filterFields={filterFields} />
