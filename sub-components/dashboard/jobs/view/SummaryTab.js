@@ -30,13 +30,8 @@ import {
   Signpost,
 } from 'react-bootstrap-icons';
 
-const SummaryTab = ({ job }) => {
+const SummaryTab = ({ job, customer, contact, location, equipments }) => {
   const router = useRouter();
-
-  const [customer, setCustomer] = useState({ data: {}, isLoading: true, isError: false });
-  const [contact, setContact] = useState();
-  const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
-  const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
 
   const columnHelper = createColumnHelper();
 
@@ -101,7 +96,7 @@ const SummaryTab = ({ job }) => {
               size='sm'
               className='d-flex align-items-center gap-1'
               onClick={() => {
-                router.push(`/dashboard/calibration/${category}/${inventoryId}`);
+                router.push(`/reference-equipment/${category}/view/${inventoryId}`);
               }}
             >
               <Eye className='me-1' size={14} />
@@ -121,97 +116,6 @@ const SummaryTab = ({ job }) => {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  //* query customer
-  useEffect(() => {
-    if (!job?.customer?.id) return;
-
-    Promise.all([
-      getDoc(doc(db, 'customers', job?.customer?.id)),
-      job?.contact?.id ? getDoc(doc(db, 'contacts', job?.contact?.id)) : undefined,
-    ])
-      .then(([customerSnapshot, contactSnapshot]) => {
-        const customerData = customerSnapshot.data();
-
-        if (customerSnapshot.exists) {
-          setCustomer({
-            data: {
-              id: customerSnapshot.id,
-              ...customerData,
-            },
-            isLoading: false,
-            isError: false,
-          });
-        } else setCustomer({ data: {}, isLoading: false, isError: false });
-
-        if (
-          job?.contact &&
-          Array.isArray(customerData.contacts) &&
-          customerData.contacts.length > 0 &&
-          contactSnapshot.exists()
-        ) {
-          const contactData = contactSnapshot.data();
-          setContact(contactData);
-        }
-      })
-      .catch((err) => {
-        console.error(err.message);
-        setCustomer({ data: {}, isLoading: false, isError: true });
-      });
-  }, []);
-
-  //* query location
-  useEffect(() => {
-    if (!job?.location?.id) return;
-
-    getDoc(doc(db, 'locations', job?.location?.id))
-      .then((doc) => {
-        const data = doc.data();
-
-        if (doc.exists()) {
-          setLocation({
-            data: {
-              id: doc.id,
-              ...data,
-            },
-            isLoading: false,
-            isError: false,
-          });
-        }
-      })
-      .catch((err) => {
-        console.error(err.message);
-        setLocation({ data: [], isLoading: false, isError: true });
-      });
-  }, []);
-
-  //* query equipments
-  useEffect(() => {
-    if (job?.equipments.length < 1) return;
-
-    const equipmentsIds = job.equipments.map((equipment) => equipment.id);
-
-    const q = query(
-      collection(db, 'equipments'),
-      orderBy('inventoryId', 'asc'),
-      where('inventoryId', 'in', equipmentsIds)
-    );
-
-    getDocs(q)
-      .then((snapshot) => {
-        if (!snapshot.empty) {
-          setEquipments({
-            data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-            isLoading: false,
-            isError: false,
-          });
-        }
-      })
-      .catch((err) => {
-        console.error(err.message);
-        setEquipments({ data: [], isLoading: false, isError: true });
-      });
-  }, []);
-
   const renderError = () => {
     return (
       <div
@@ -224,402 +128,56 @@ const SummaryTab = ({ job }) => {
     );
   };
 
+  const defaultLocation = useMemo(() => {
+    if (location.data) {
+      const locationData = location.data;
+
+      if (locationData?.addresses && locationData?.addresses?.length > 0) {
+        const defaultAddress = locationData?.addresses?.find((address) => address?.isDefault);
+        return defaultAddress;
+      }
+    }
+
+    return undefined;
+  }, [location.data]);
+
   console.log({ job, customer, location, equipments });
 
   return (
-    <Row>
-      <Col>
-        <Card className='border-0 shadow-none'>
-          <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-            <div className='d-flex justify-content-between align-items-center'>
-              <div>
-                <h5 className='mb-0'>Customer Details</h5>
-                <small className='text-muted'>Basic customer details</small>
-              </div>
-            </div>
-          </Card.Header>
+    <Card className='border-0 shadow-none'>
+      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h5 className='mb-0'>Customer Details</h5>
+            <small className='text-muted'>Basic customer details</small>
+          </div>
+        </div>
+      </Card.Header>
 
-          {customer.isLoading ? (
-            <div
-              className='d-flex justify-content-center align-items-center fs-6 py-2'
-              style={{ height: '200px' }}
-            >
-              <Spinner size='sm' className='me-2' animation='border' variant='primary' /> Loading
-              Customer Details...
-            </div>
-          ) : (
-            <>
-              <Card.Body className='pt-4'>
-                <Row className='row-gap-3'>
-                  <Col className='d-flex flex-column gap-3'>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Person size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Customer:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {customer?.data?.customerName}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-
-              <Card.Header className='bg-transparent border-0 pb-0'>
-                <div className='d-flex justify-content-between align-items-center'>
-                  <div>
-                    <h5 className='mb-0'>Contact Details</h5>
-                    <small className='text-muted'>Basic contact details</small>
-                  </div>
-                </div>
-              </Card.Header>
-
-              <Card.Body>
-                <Row>
-                  <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <PersonVcard size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>First Name:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {contact?.firstName || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <PersonVcard size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Last Name:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {contact?.lastName || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Envelope size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Email:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {contact?.email || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Phone size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Phone:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {contact?.phone || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </>
-          )}
-
-          {customer.isError && renderError()}
-
-          {location.isLoading ? (
-            <div
-              className='d-flex justify-content-center align-items-center fs-6 py-2'
-              style={{ height: '200px' }}
-            >
-              <Spinner size='sm' className='me-2' animation='border' variant='primary' /> Loading
-              Location Details...
-            </div>
-          ) : (
-            <>
-              <Card.Header className='bg-transparent border-0 pb-0'>
-                <div className='d-flex justify-content-between align-items-center'>
-                  <div>
-                    <h5 className='mb-0'>Location Details</h5>
-                    <small className='text-muted'>Basic location details.</small>
-                  </div>
-                </div>
-              </Card.Header>
-
-              <Card.Body>
-                <Row className='row-gap-3'>
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Building size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Location:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.siteName || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Geo size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Longitude:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data?.additionalInformation?.longitude || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Geo size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Latitude:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data?.additionalInformation?.latitude || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Signpost size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Street Address #1:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.streetAddress1 || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Signpost size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Street Address #2:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.streetAddress2 || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Signpost size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Street Address #3:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.streetAddress3 || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Map size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>City:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.city || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Map size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Posttal Code:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.postalCode || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Map size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Province:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.province || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-
-                  <Col md={4}>
-                    <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                      <div
-                        className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                        style={{ width: '40px', height: '40px' }}
-                      >
-                        <Map size={20} />
-                      </div>
-                      <div>
-                        <div className='text-secondary fs-6'>Country:</div>
-                        <div className='text-primary-label fw-semibold'>
-                          {location.data.country || 'N/A'}
-                        </div>
-                      </div>
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </>
-          )}
-
-          <Card.Header className='bg-transparent border-0 pb-0'>
-            <div className='d-flex justify-content-between align-items-center'>
-              <div>
-                <h5 className='mb-0'>Record Details</h5>
-                <small className='text-muted'>
-                  Details about who created or updated the record and when it was modified.
-                </small>
-              </div>
-            </div>
-          </Card.Header>
-
-          <Card.Body>
+      {customer.isLoading ? (
+        <div
+          className='d-flex justify-content-center align-items-center fs-6 py-2'
+          style={{ height: '200px' }}
+        >
+          <Spinner size='sm' className='me-2' animation='border' variant='primary' /> Loading
+          Customer Details...
+        </div>
+      ) : (
+        <>
+          <Card.Body className='pt-4'>
             <Row className='row-gap-3'>
-              <Col md={3}>
+              <Col className='d-flex flex-column gap-3'>
                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                     style={{ width: '40px', height: '40px' }}
                   >
-                    <Clock size={20} />
+                    <Person size={20} />
                   </div>
                   <div>
-                    <div className='text-secondary fs-6'>Date:</div>
+                    <div className='text-secondary fs-6'>Customer:</div>
                     <div className='text-primary-label fw-semibold'>
-                      {job?.createdAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </Col>
-              <Col md={3}>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                  <div
-                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                    style={{ width: '40px', height: '40px' }}
-                  >
-                    <PersonFill size={20} />
-                  </div>
-                  <div>
-                    <div className='text-secondary fs-6'>Created By:</div>
-                    <div className='text-primary-label fw-semibold'>
-                      {job?.createdBy?.displayName || 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </Col>
-              <Col md={3}>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                  <div
-                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                    style={{ width: '40px', height: '40px' }}
-                  >
-                    <Clock size={20} />
-                  </div>
-                  <div>
-                    <div className='text-secondary fs-6'>Last Updated:</div>
-                    <div className='text-primary-label fw-semibold'>
-                      {job?.updatedAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </Col>
-              <Col md={3}>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                  <div
-                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                    style={{ width: '40px', height: '40px' }}
-                  >
-                    <PersonFill size={20} />
-                  </div>
-                  <div>
-                    <div className='text-secondary fs-6'>Updated By:</div>
-                    <div className='text-primary-label fw-semibold'>
-                      {job?.updatedBy?.displayName || 'N/A'}
+                      {customer?.data?.customerName}
                     </div>
                   </div>
                 </div>
@@ -627,43 +185,394 @@ const SummaryTab = ({ job }) => {
             </Row>
           </Card.Body>
 
-          {location.isError && renderError()}
-
-          {equipments.isLoading ? (
-            <div
-              className='d-flex justify-content-center align-items-center fs-6 py-2'
-              style={{ height: '200px' }}
-            >
-              <Spinner size='sm' className='me-2' animation='border' variant='primary' /> Loading
-              Equipments...
+          <Card.Header className='bg-transparent border-0 pb-0'>
+            <div className='d-flex justify-content-between align-items-center'>
+              <div>
+                <h5 className='mb-0'>Contact Details</h5>
+                <small className='text-muted'>Basic contact details</small>
+              </div>
             </div>
-          ) : (
-            <>
-              <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-                <div className='d-flex justify-content-between align-items-center'>
+          </Card.Header>
+
+          <Card.Body>
+            <Row>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <PersonVcard size={20} />
+                  </div>
                   <div>
-                    <h5 className='mb-0'>Equipments</h5>
-                    <small className='text-muted'>
-                      Details about the equipment needed for the job.
-                    </small>
+                    <div className='text-secondary fs-6'>First Name:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {contact?.firstName || 'N/A'}
+                    </div>
                   </div>
                 </div>
-              </Card.Header>
-
-              <Card.Body>
-                <DataTable table={table}>
-                  <div className='d-flex justify-content-end'>
-                    <DataTableViewOptions table={table} />
+              </Col>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <PersonVcard size={20} />
                   </div>
-                </DataTable>
-              </Card.Body>
-            </>
-          )}
+                  <div>
+                    <div className='text-secondary fs-6'>Last Name:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {contact?.lastName || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Envelope size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Email:</div>
+                    <div className='text-primary-label fw-semibold'>{contact?.email || 'N/A'}</div>
+                  </div>
+                </div>
+              </Col>
+              <Col md={3}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Phone size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Phone:</div>
+                    <div className='text-primary-label fw-semibold'>{contact?.phone || 'N/A'}</div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Card.Body>
+        </>
+      )}
 
-          {equipments.isError.isError && renderError()}
-        </Card>
-      </Col>
-    </Row>
+      {customer.isError && renderError()}
+
+      {location.isLoading ? (
+        <div
+          className='d-flex justify-content-center align-items-center fs-6 py-2'
+          style={{ height: '200px' }}
+        >
+          <Spinner size='sm' className='me-2' animation='border' variant='primary' /> Loading
+          Location Details...
+        </div>
+      ) : (
+        <>
+          <Card.Header className='bg-transparent border-0 pb-0'>
+            <div className='d-flex justify-content-between align-items-center'>
+              <div>
+                <h5 className='mb-0'>Location Details</h5>
+                <small className='text-muted'>Basic location details.</small>
+              </div>
+            </div>
+          </Card.Header>
+
+          <Card.Body>
+            <Row className='row-gap-3'>
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Building size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Location:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {location.data.siteName || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Geo size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Longitude:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.longitude || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Geo size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Latitude:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.latitude || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Signpost size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Street Address #1:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.street1 || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Signpost size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Street Address #2:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.street2 || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Signpost size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Street Address #3:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.street3 || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Map size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>City:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.city || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Map size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Posttal Code:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.postalCode || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Map size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Province:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.province || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+
+              <Col md={4}>
+                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                  <div
+                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                    style={{ width: '40px', height: '40px' }}
+                  >
+                    <Map size={20} />
+                  </div>
+                  <div>
+                    <div className='text-secondary fs-6'>Country:</div>
+                    <div className='text-primary-label fw-semibold'>
+                      {defaultLocation?.country || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Card.Body>
+        </>
+      )}
+
+      <Card.Header className='bg-transparent border-0 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h5 className='mb-0'>Record Details</h5>
+            <small className='text-muted'>
+              Details about who created or updated the record and when it was modified.
+            </small>
+          </div>
+        </div>
+      </Card.Header>
+
+      <Card.Body>
+        <Row className='row-gap-3'>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Clock size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Date:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {job?.createdAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <PersonFill size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Created By:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {job?.createdBy?.displayName || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Clock size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Last Updated:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {job?.updatedAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <PersonFill size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Updated By:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {job?.updatedBy?.displayName || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+
+      {location.isError && renderError()}
+
+      {equipments.isLoading ? (
+        <div
+          className='d-flex justify-content-center align-items-center fs-6 py-2'
+          style={{ height: '200px' }}
+        >
+          <Spinner size='sm' className='me-2' animation='border' variant='primary' /> Loading
+          Equipments...
+        </div>
+      ) : (
+        <>
+          <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+            <div className='d-flex justify-content-between align-items-center'>
+              <div>
+                <h5 className='mb-0'>Equipments</h5>
+                <small className='text-muted'>
+                  Details about the equipment needed for the job.
+                </small>
+              </div>
+            </div>
+          </Card.Header>
+
+          <Card.Body>
+            <DataTable table={table}>
+              <div className='d-flex justify-content-end'>
+                <DataTableViewOptions table={table} />
+              </div>
+            </DataTable>
+          </Card.Body>
+        </>
+      )}
+
+      {equipments.isError.isError && renderError()}
+    </Card>
   );
 };
 

@@ -7,7 +7,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { equipmentSchema } from '@/schema/job';
 import JobEquipmentList from '../JobEquipmentList';
 import { db } from '@/firebase';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getCountFromServer,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+} from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import Select from '@/components/Form/Select';
 import { useRouter } from 'next/router';
@@ -43,10 +52,15 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     Promise.all([
       getDocs(query(collection(db, 'customers'))),
       getDocs(query(collection(db, 'contacts'))),
+      getDocs(query(collection(db, 'customerEquipments'))),
     ])
-      .then(([customerSnapshot, contactsSnapshot]) => {
+      .then(async ([customerSnapshot, contactsSnapshot, customerEquipmentsSnapshot]) => {
         const customerData = !customerSnapshot.empty ? customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
         const contactsData = !contactsSnapshot.empty ? contactsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
+        const customerEquipmentsData = !customerEquipmentsSnapshot.empty ? customerEquipmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
+
+        //* set tempform data for customer equipments
+        form.setValue('allCustomerEquipments', customerEquipmentsData);
 
         setCustomersOptions({
           data: customerData.map((customer) => {
@@ -57,6 +71,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                 ? contactsData.filter((contact) => customer?.contacts?.includes(contact.id))
                 : null;
 
+            const equipments = customerEquipmentsData.filter((eq) => customer.id === eq.customerId);
+
             return {
               id: customer.id,
               name: customer.customerName,
@@ -64,8 +80,11 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
               label: `${customer.customerId} - ${customer.customerName}`,
               locations: customer?.locations && Array.isArray(customer.locations) ? customer.locations : [], // prettier-ignore
               contacts,
+              equipments,
             };
           }),
+          isLoading: false,
+          isError: false,
         });
       })
       .catch((err) => {
@@ -190,6 +209,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
       <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
         <span>{data.label}</span>
         <span className='d-flex column-gap-2'>
+          <Badge bg='info'>{data.equipments?.length ?? 0} Equipment</Badge>
           <Badge bg='primary'>{data.contacts?.length ?? 0} Contact</Badge>
           <Badge bg='warning'>{data.locations?.length ?? 0} Location</Badge>
         </span>
@@ -369,6 +389,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                       onChange={(option) => handleCustomerChange(option, field)}
                       formatOptionLabel={formatCustomerOptionLabel}
                       options={customersOptions.data}
+                      isLoading={customersOptions.isLoading}
                       placeholder={
                         customersOptions.isLoading
                           ? 'Loading customers...'

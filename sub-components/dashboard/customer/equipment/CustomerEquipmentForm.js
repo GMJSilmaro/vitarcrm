@@ -299,7 +299,7 @@ const CustomerEquipmentForm = ({ data }) => {
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} id='uom' placeholder='Enter uon' />
+                      <Form.Control {...field} id='uom' placeholder='Enter Unit of Measure' />
 
                       {formErrors && formErrors.uom?.message && (
                         <Form.Text className='text-danger'>{formErrors.uom?.message}</Form.Text>

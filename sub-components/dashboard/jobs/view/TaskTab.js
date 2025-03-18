@@ -57,28 +57,27 @@ const TaskTab = ({ job }) => {
   });
 
   return (
-    <Row>
-      <Col>
-        <Card className='border-0 shadow-none'>
-          <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-            <div className='d-flex justify-content-between align-items-center'>
-              <div>
-                <h5 className='mb-0'>Tasks</h5>
-                <small className='text-muted'>List of task needed to be fulfilled for job</small>
-              </div>
-            </div>
-          </Card.Header>
+    <Card className='border-0 shadow-none'>
+      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h5 className='mb-0'>Additional Instructions</h5>
+            <small className='text-muted'>
+              List all the additional instructions needed for the job to guide the individual/team
+              during calibration.
+            </small>
+          </div>
+        </div>
+      </Card.Header>
 
-          <Card.Body>
-            <DataTable table={table}>
-              <div className='d-flex justify-content-end'>
-                <DataTableViewOptions table={table} />
-              </div>
-            </DataTable>
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+      <Card.Body>
+        <DataTable table={table}>
+          <div className='d-flex justify-content-end'>
+            <DataTableViewOptions table={table} />
+          </div>
+        </DataTable>
+      </Card.Body>
+    </Card>
   );
 };
 
