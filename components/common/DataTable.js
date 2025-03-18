@@ -5,7 +5,7 @@ import { getCommonPinningStyles } from '@/utils/datatable';
 
 const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }) => {
   return (
-    <div className='w-w-100'>
+    <div className='w-100 h-100'>
       <div className='mb-3'>{children}</div>
       <Table responsive className='text-center align-middle'>
         <thead>
