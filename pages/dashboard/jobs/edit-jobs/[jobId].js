@@ -61,9 +61,7 @@ const EditJob = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <button className='btn btn-primary' onClick={() => router.push('/jobs')}>
-            Back to Jobs List
-          </button>
+          <Button onClick={() => router.push('/jobs')}>Back to Jobs List</Button>
         </div>
       </div>
     );

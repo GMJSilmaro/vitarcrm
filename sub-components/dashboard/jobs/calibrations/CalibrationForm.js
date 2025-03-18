@@ -174,8 +174,6 @@ const CalibrationForm = ({ data }) => {
     }
   }, [jobId]);
 
-  console.log('Calibration From Errors', formErrors);
-
   return (
     <>
       {/* <FormDebug form={form} /> */}

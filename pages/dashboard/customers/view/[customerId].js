@@ -13,7 +13,7 @@ import { FaArrowLeft } from 'react-icons/fa';
 
 const CustomerDetails = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { customerId } = router.query;
 
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -21,14 +21,14 @@ const CustomerDetails = () => {
 
   useEffect(() => {
     const fetchCustomerDetails = async () => {
-      if (!id) return;
+      if (!customerId) return;
 
       try {
         // const customerDoc = await getDoc(doc(db, 'customers', id));
 
         const [customerDoc, contactDocs] = await Promise.all([
-          getDoc(doc(db, 'customers', id)),
-          getDocs(query(collection(db, 'contacts'), where('customerId', '==', id))),
+          getDoc(doc(db, 'customers', customerId)),
+          getDocs(query(collection(db, 'contacts'), where('customerId', '==', customerId))),
         ]);
 
         if (customerDoc.exists()) {
@@ -53,7 +53,7 @@ const CustomerDetails = () => {
     };
 
     fetchCustomerDetails();
-  }, [id]);
+  }, [customerId]);
 
   if (loading) {
     return (

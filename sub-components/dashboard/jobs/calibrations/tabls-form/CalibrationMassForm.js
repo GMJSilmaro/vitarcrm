@@ -33,15 +33,21 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
       form.setValue('data.measuredValues', resolvedData.measuredValues);
       form.setValue('data.d1', resolvedData.d1);
       form.setValue('data.d2', resolvedData.d2);
+
+      //TODO: populate also the other values used in results, and COC
+      //? 1. measuredValuesM
+      //? 2. corrections
+      //? 3. expandedUncertainties
+      //? 4. coverageFactors
+      //? 5. rtest.maxError
+      //? 6. rtest.std
+      //? 7. rtest.maxDiffBetweenReadings
+      //? 8. etest.maxError
     }
   }, [data, calibrationPointNo]);
 
   //* temporary check
-  if (
-    !category ||
-    (category?.toLowerCase() !== 'mass' && category?.toLowerCase() !== 'mechanical') ||
-    !calibrationPointNo
-  ) {
+  if (!category || category?.toLowerCase() !== 'mechanical' || !calibrationPointNo) {
     return (
       <Card className='shadow-none'>
         <Card.Body className='text-center mt-5'>

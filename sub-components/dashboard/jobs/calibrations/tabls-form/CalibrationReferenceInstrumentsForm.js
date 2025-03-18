@@ -127,7 +127,7 @@ const CalibrationReferenceInstrumentsForm = ({
         const selectedCategory = form.getValues('category.value')?.toLowerCase();
 
         if (!selectedCategory) return false;
-        if (instrument.category === 'mechanical' && selectedCategory === 'mass') return true;
+        if (instrument.category === 'mechanical') return true;
         if (instrument.category === selectedCategory) return true;
       });
 
@@ -138,29 +138,27 @@ const CalibrationReferenceInstrumentsForm = ({
   return (
     <Card className='shadow-none'>
       <Card.Body>
-        <Row>
-          <h4 className='mb-0'>Instruments</h4>
-          <p className='text-muted fs-6'>
-            The instruments/equipments listed below are based on the selected equipments in the job
-            but filtered out based on the selected category.
-          </p>
+        <h4 className='mb-0'>Instrument</h4>
+        <p className='text-muted fs-6'>
+          The instruments/equipments listed below are based on the selected equipments in the job
+          but filtered out based on the selected category.
+        </p>
 
-          <div className='mt-2'>
-            <DataTable
-              table={table}
-              isLoading={job.isLoading || instruments.isLoading}
-              isError={job.isError || instruments.isError}
-            >
-              <div className='d-flex justify-content-between'>
-                <DataTableSearch table={table} />
-              </div>
-            </DataTable>
-          </div>
+        <div className='mt-2'>
+          <DataTable
+            table={table}
+            isLoading={job.isLoading || instruments.isLoading}
+            isError={job.isError || instruments.isError}
+          >
+            <div className='d-flex justify-content-between'>
+              <DataTableSearch table={table} />
+            </div>
+          </DataTable>
+        </div>
 
-          {formErrors && formErrors.instruments?.message && (
-            <Form.Text className='text-danger'>{formErrors.instruments?.message}</Form.Text>
-          )}
-        </Row>
+        {formErrors && formErrors.instruments?.message && (
+          <Form.Text className='text-danger'>{formErrors.instruments?.message}</Form.Text>
+        )}
 
         <div className='mt-4 d-flex justify-content-between align-items-center'>
           <Button

@@ -515,7 +515,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
               Previous
             </Button>
 
-            <Button type='button' onClick={handleNext}>
+            <Button type='button' onClick={handleNext} disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Spinner

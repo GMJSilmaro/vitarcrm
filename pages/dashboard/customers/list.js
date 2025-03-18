@@ -6,7 +6,6 @@ import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 
 import { db } from '@/firebase';
-import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
 import {
   createColumnHelper,
@@ -18,7 +17,7 @@ import {
 } from '@tanstack/react-table';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { useRouter } from 'next/router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   Building,
@@ -26,6 +25,7 @@ import {
   GeoAltFill,
   House,
   PencilSquare,
+  People,
   Plus,
   ThreeDotsVertical,
   Trash,
@@ -53,7 +53,7 @@ const CustomerList = () => {
           const pageSize = table.getState().pagination.pageSize;
           const displayIndex = rowIndex + pageIndex * pageSize + 1;
           return (
-            <div className='d-flex align-items-center'>
+            <div className='d-flex justify-content-center align-items-center'>
               <span className='text-primary'>{displayIndex}</span>
             </div>
           );
@@ -63,7 +63,7 @@ const CustomerList = () => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
         cell: ({ row }) => (
-          <div className='d-flex align-items-center'>
+          <div className='d-flex justify-content-center align-items-center'>
             <Building className='me-2' size={14} />
             {row.original.id}
           </div>
@@ -71,6 +71,7 @@ const CustomerList = () => {
       }),
       columnHelper.accessor('customerName', {
         id: 'name',
+        filterFn: 'includesString',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
       }),
       columnHelper.accessor(
@@ -92,33 +93,35 @@ const CustomerList = () => {
             if (!defaultLocation) return 'N/A';
 
             return (
-              <div className='mb-2'>
-                {/* Site Name */}
-                <div className='d-flex align-items-center'>
-                  <Building className='me-2 text-primary' size={14} />
-                  <span className='fw-bold text-primary'>{defaultLocation.siteName}</span>
-                </div>
-
-                {/* Address */}
-                <div className='text-muted small'>
+              <div className='mb-2 d-flex justify-content-center align-items-center'>
+                <div>
+                  {/* Site Name */}
                   <div className='d-flex align-items-center'>
-                    <GeoAltFill className='me-2' size={12} />
-                    <div>{defaultLocation.mainAddress || 'No Address Available'}</div>
+                    <Building className='me-2 text-primary' size={14} />
+                    <span className='fw-bold text-primary'>{defaultLocation.siteName}</span>
                   </div>
-                </div>
 
-                {locations.length > 1 && (
-                  <div className='mt-1'>
-                    <Badge
-                      bg='info'
-                      className='d-flex align-items-center'
-                      style={{ width: 'fit-content' }}
-                    >
-                      <GeoAltFill className='me-1' size={10} />+{locations.length - 1} Location
-                      {locations.length - 1 > 1 ? 's' : ''}
-                    </Badge>
+                  {/* Address */}
+                  <div className='text-muted small'>
+                    <div className='d-flex align-items-center'>
+                      <GeoAltFill className='me-2' size={12} />
+                      <div>{defaultLocation.mainAddress || 'No Address Available'}</div>
+                    </div>
                   </div>
-                )}
+
+                  {locations.length > 1 && (
+                    <div className='mt-1'>
+                      <Badge
+                        bg='info'
+                        className='d-flex align-items-center'
+                        style={{ width: 'fit-content' }}
+                      >
+                        <GeoAltFill className='me-1' size={10} />+{locations.length - 1} Location
+                        {locations.length - 1 > 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           },
@@ -236,12 +239,6 @@ const CustomerList = () => {
         placeholder: 'Search by customer id...',
       },
       {
-        label: 'Name',
-        columnId: 'name',
-        type: 'text',
-        placeholder: 'Search by customer name...',
-      },
-      {
         label: 'Sites',
         columnId: 'sites',
         type: 'text',
@@ -268,8 +265,6 @@ const CustomerList = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { globalSearch: globalSearchFilter },
-    globalFilterFn: 'globalSearch',
     initialState: {
       columnPinning: { right: ['actions'] },
     },
@@ -322,7 +317,7 @@ const CustomerList = () => {
             link: '/dashboard',
           },
           {
-            icon: <Building className='me-2' size={14} />,
+            icon: <People className='me-2' size={14} />,
             text: 'Customers',
           },
         ]}
@@ -341,7 +336,7 @@ const CustomerList = () => {
         <Card.Body className='p-4'>
           <DataTable table={table} isLoading={customers.isLoading} isError={customers.isError}>
             <div className='d-flex justify-content-between'>
-              <DataTableSearch table={table} />
+              <DataTableSearch table={table} isGlobalSearch={false} columnId='name' />
 
               <div className='d-flex align-items-center gap-2'>
                 <DataTableFilter table={table} filterFields={filterFields} />

@@ -51,7 +51,7 @@ const nextConfig = {
         source: '/dashboard',
         destination: '/dashboard/overview',
       },
-      // CUSTOMERS
+      //* Customers
       {
         source: '/customers',
         destination: '/dashboard/customers/list',
@@ -68,6 +68,20 @@ const nextConfig = {
         source: '/customers/edit-customer/:customerId',
         destination: '/dashboard/customers/:customerId',
       },
+      {
+        source: '/customers/:customerId/equipment',
+        destination: '/dashboard/customers/:customerId/equipment',
+      },
+      {
+        source: '/customers/:customerId/equipment/create',
+        destination: '/dashboard/customers/:customerId/equipment/create',
+      },
+      {
+        source: '/customers/:customerId/equipment/edit-customer-equipment/:equipmentId',
+        destination:
+          '/dashboard/customers/:customerId/equipment/edit-customer-equipment/:equipmentId',
+      },
+
       //404
       {
         source: '/404',

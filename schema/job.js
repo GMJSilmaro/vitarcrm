@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const PRIORITY_LEVELS = ['normal', 'urgent'];
-export const SCOPE_TYPE = ['lab', 'onsite'];
+export const SCOPE_TYPE = ['lab', 'site'];
 export const STATUS = [
   'created',
   'confirmed',
@@ -10,6 +10,12 @@ export const STATUS = [
   'cancelled',
   'validated',
 ];
+
+//* Role
+//* - Admin
+//* - Technician
+//* - Sales
+//* - Supervisor
 
 const priorityEnum = z.enum(PRIORITY_LEVELS, {
   message: 'Please select a job priority level.',
@@ -32,6 +38,26 @@ export const equipmentSchema = z.object({
       if (typeof formData === 'object') return formData.value;
       return formData;
     }),
+});
+
+export const customerEquipmentSchema = z.object({
+  customerEquipments: z
+    .array(
+      z.record(z.string(), z.any(), {}).transform((formData) => {
+        if (typeof formData === 'object') {
+          return {
+            id: formData?.id || '',
+            description: formData?.description || '',
+            make: formData?.make || '',
+            model: formData?.model || '',
+            serialNumber: formData?.serialNumber || '',
+            category: formData?.category || '',
+          };
+        }
+        return null;
+      })
+    )
+    .min(1, { message: 'Please select at least one equipment.' }),
 });
 
 export const summarySchema = z.object({
@@ -209,4 +235,5 @@ export const jobSchema = z
   .object({})
   .merge(summarySchema)
   .merge(tasksSchema)
+  .merge(customerEquipmentSchema)
   .merge(scheduleSchema._def.schema._def.schema);

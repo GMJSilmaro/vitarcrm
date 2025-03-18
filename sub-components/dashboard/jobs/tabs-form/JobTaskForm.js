@@ -51,7 +51,7 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
               </div>
 
               <Button variant='primary' onClick={handleAddTask}>
-                <Plus size={14} className='me-2' /> Add Additional Instructions
+                <Plus size={14} className='me-2' /> Add Additional Instruction
               </Button>
             </div>
 

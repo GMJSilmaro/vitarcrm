@@ -626,10 +626,12 @@ const CustomerForm = ({ data }) => {
         text: 'This is a saved contact. Deleting it will permanently remove it from the customer. This action cannot be undone, and all data associated with this contact will be unlinked/removed',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#1e40a6',
-        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Yes, remove',
         cancelButtonText: 'Cancel',
+        customClass: {
+          confirmButton: 'btn btn-primary rounded',
+          cancelButton: 'btn btn-secondary rounded',
+        },
       }).then((data) => {
         if (data.isConfirmed) {
           setToDeleteContact((prev) => [...prev, id]);

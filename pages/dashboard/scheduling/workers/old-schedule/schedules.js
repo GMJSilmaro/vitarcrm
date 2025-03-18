@@ -744,9 +744,11 @@ const FieldServiceSchedules = () => {
             text: `Are you sure you want to create a job for ${workerName}?`,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
             confirmButtonText: 'Yes, create job',
+            customClass: {
+              confirmButton: 'btn btn-primary rounded',
+              cancelButton: 'btn btn-secondary rounded',
+            },
           }).then((result) => {
             if (result.isConfirmed) {
               router.push({

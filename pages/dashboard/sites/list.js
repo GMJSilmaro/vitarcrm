@@ -27,7 +27,6 @@ import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import DataTable from '@/components/common/DataTable';
-import { globalSearchFilter } from '@/utils/datatable';
 import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -68,6 +67,7 @@ const SiteList = () => {
       }),
       columnHelper.accessor((row) => row.siteName, {
         id: 'name',
+        filterFn: 'includesString',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
       }),
       columnHelper.accessor(
@@ -215,10 +215,12 @@ const SiteList = () => {
               text: 'This action cannot be undone.',
               icon: 'warning',
               showCancelButton: true,
-              confirmButtonColor: '#1e40a6',
-              cancelButtonColor: '#6c757d',
               confirmButtonText: 'Confirm',
               cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
             }).then(async (data) => {
               if (data.isConfirmed) {
                 try {
@@ -278,7 +280,6 @@ const SiteList = () => {
   const filterFields = useMemo(() => {
     return [
       { label: 'Site ID', columnId: 'id', type: 'text', placeholder: 'Search by site id...' },
-      { label: 'Name', columnId: 'name', type: 'text', placeholder: 'Search by site name...' },
       {
         label: 'Address 1',
         columnId: 'address 1',
@@ -319,8 +320,6 @@ const SiteList = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { globalSearch: globalSearchFilter },
-    globalFilterFn: 'globalSearch',
     initialState: {
       columnPinning: { right: ['actions'] },
     },
@@ -395,7 +394,7 @@ const SiteList = () => {
         <Card.Body className='p-4'>
           <DataTable table={table} isLoading={sites.isLoading} isError={sites.isError}>
             <div className='d-flex justify-content-between'>
-              <DataTableSearch table={table} />
+              <DataTableSearch table={table} isGlobalSearch={false} columnId='name' />
 
               <div className='d-flex align-items-center gap-2'>
                 <DataTableFilter table={table} filterFields={filterFields} />

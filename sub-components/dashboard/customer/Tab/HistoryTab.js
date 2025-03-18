@@ -77,7 +77,7 @@ export const HistoryTab = () => {
         cell: ({ row }) => {
           const colors = {
             lab: 'info',
-            onsite: 'warning',
+            site: 'warning',
           };
 
           return (
@@ -259,10 +259,12 @@ export const HistoryTab = () => {
               text: 'This action cannot be undone.',
               icon: 'warning',
               showCancelButton: true,
-              confirmButtonColor: '#1e40a6',
-              cancelButtonColor: '#6c757d',
               confirmButtonText: 'Confirm',
               cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
             }).then(async (data) => {
               if (data.isConfirmed) {
                 try {
@@ -372,7 +374,7 @@ export const HistoryTab = () => {
         options: [
           { label: 'All Scope', value: '' },
           { label: 'Lab', value: 'lab' },
-          { label: 'Onsite', value: 'onsite' },
+          { label: 'Site', value: 'site' },
         ],
         placeholder: 'Search by Scope...',
       },

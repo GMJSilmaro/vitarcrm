@@ -2,7 +2,13 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Accordion, Button, Card, Form, Tab, Table, Tabs } from 'react-bootstrap';
-import { jobSchema, scheduleSchema, summarySchema, tasksSchema } from '@/schema/job';
+import {
+  customerEquipmentSchema,
+  jobSchema,
+  scheduleSchema,
+  summarySchema,
+  tasksSchema,
+} from '@/schema/job';
 import { getFormDefaultValues } from '@/utils/zod';
 import {
   collection,
@@ -28,6 +34,7 @@ import withReactContent from 'sweetalert2-react-content';
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
 import FormDebug from '@/components/Form/FormDebug';
 import toast from 'react-hot-toast';
+import JobCustomerEquipmentForm from './tabs-form/JobCustomerEquipmentForm';
 
 const JobForm = ({ data }) => {
   const auth = useAuth();
@@ -35,8 +42,8 @@ const JobForm = ({ data }) => {
   const router = useRouter();
   const [activeKey, setActiveKey] = useState('0');
 
-  const tabsLength = 2;
-  const tabSchema = [summarySchema, tasksSchema, scheduleSchema];
+  const tabsLength = 3;
+  const tabSchema = [summarySchema, tasksSchema, customerEquipmentSchema, scheduleSchema];
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,7 +53,12 @@ const JobForm = ({ data }) => {
 
   const form = useForm({
     mode: 'onChange',
-    defaultValues: { ...getFormDefaultValues(schema), ...data, workers: [] },
+    defaultValues: {
+      ...getFormDefaultValues(schema),
+      ...data,
+      workers: [],
+      customerEquipments: [],
+    },
     resolver: zodResolver(schema),
   });
 
@@ -133,7 +145,7 @@ const JobForm = ({ data }) => {
 
       try {
         setIsLoading(true);
-        const { jobId, equipments, ...jobHeaders } = formData;
+        const { jobId, equipments, customerEquipments, ...jobHeaders } = formData;
 
         //* new job date
         const startDate = new Date(`${jobHeaders.startDate}T${jobHeaders.startTime}:00`);
@@ -149,10 +161,12 @@ const JobForm = ({ data }) => {
             title: 'Job Creation Not Allowed',
             text: `You are not allowed to create a job in the past. Please select a date in the present or the future.`,
             icon: 'error',
-            showCancelButton: true,
             showCancelButton: false,
             confirmButtonColor: '#3085d6',
             confirmButtonText: 'OK',
+            customClass: {
+              confirmButton: 'btn btn-primary rounded',
+            },
           });
           setActiveKey((prev) => prev - 1);
           setIsLoading(false);
@@ -245,7 +259,6 @@ const JobForm = ({ data }) => {
               {
                 ...jobHeaders,
                 jobId,
-
                 contact: jobHeaders?.contact ?? null,
                 ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
                 updatedAt: serverTimestamp(),
@@ -264,6 +277,7 @@ const JobForm = ({ data }) => {
                 jobId,
                 isReturnedEquipment: false,
                 equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
+                customerEquipments,
                 ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
@@ -345,7 +359,16 @@ const JobForm = ({ data }) => {
               />
             </Tab>
 
-            <Tab eventKey='2' title='Job Scheduling'>
+            <Tab eventKey='2' title='Customer Equipment'>
+              <JobCustomerEquipmentForm
+                data={data}
+                isLoading={isLoading}
+                handleNext={handleNext}
+                handlePrevious={handlePrevious}
+              />
+            </Tab>
+
+            <Tab eventKey='3' title='Job Scheduling'>
               <JobSchedulingForm
                 data={data}
                 isLoading={isLoading}
