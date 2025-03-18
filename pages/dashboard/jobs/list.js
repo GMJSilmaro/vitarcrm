@@ -15,9 +15,9 @@ import {
   BriefcaseFill,
   Building,
   CardList,
-  Check2Circle,
   CheckCircle,
   Eye,
+  Flag,
   Hourglass,
   HouseDoorFill,
   PencilSquare,
@@ -26,7 +26,6 @@ import {
   Plus,
   ShieldCheck,
   ThreeDotsVertical,
-  Tools,
   Trash,
   XCircle,
 } from 'react-bootstrap-icons';
@@ -42,6 +41,7 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
@@ -50,11 +50,12 @@ import { format, formatDistanceStrict } from 'date-fns';
 import { useRouter } from 'next/router';
 import Swal from 'sweetalert2';
 import DataTableSearch from '@/components/common/DataTableSearch';
-import { dateFilter, dateSort, fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
+import { dateFilter, dateSort } from '@/utils/datatable';
 import DataTableFilter from '@/components/common/DataTableFilter';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import _ from 'lodash';
 
 const JobList = () => {
   const router = useRouter();
@@ -114,7 +115,7 @@ const JobList = () => {
         cell: ({ row }) => {
           const colors = {
             lab: 'info',
-            onsite: 'warning',
+            site: 'warning',
           };
 
           return (
@@ -142,6 +143,7 @@ const JobList = () => {
       }),
       columnHelper.accessor((row) => `${row.customer.name} - ${row.location.name}`, {
         id: 'customer',
+        filterFn: 'includesString',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Customer' />,
         cell: ({ row }) => (
           <div className='d-flex flex-column justify-content-center row-gap-1'>
@@ -167,6 +169,7 @@ const JobList = () => {
             created: 'warning',
             'in progress': 'primary',
             cancelled: 'danger',
+            validated: 'purple',
           };
           return (
             <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
@@ -261,7 +264,10 @@ const JobList = () => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Last Updated' />,
         cell: ({ row }) => {
-          const updatedAt = row.original.updatedAt.toDate();
+          const updatedAt = row.original.updatedAt?.toDate();
+
+          if (!updatedAt) return null;
+
           return (
             <div className='d-flex flex-column justify-content-center row-gap-1'>
               <div>{format(updatedAt, 'dd-MM-yyyy')}</div>
@@ -341,6 +347,42 @@ const JobList = () => {
                 } catch (error) {
                   console.error('Error removing job:', error);
                   toast.error('Error removing job: ' + error.message, { position: 'top-right' });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
+
+          const handleUpdateJobStatus = (id, status) => {
+            Swal.fire({
+              title: `Job Status Update - Job #${id}`,
+              text: `Are you sure you want to update the job status to "${_.startCase(status)}"?`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  const jobHeaderRef = doc(db, 'jobHeaders', id);
+
+                  await updateDoc(jobHeaderRef, {
+                    status,
+                    updatedAt: serverTimestamp(),
+                    updatedBy: auth.currentUser,
+                  });
+
+                  toast.success('Job status updated successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error updating job status:', error);
+                  toast.error('Error updating job status: ' + error.message, { position: 'top-right' }); //prettier-ignore
                   setIsLoading(false);
                 }
               }
@@ -438,19 +480,23 @@ const JobList = () => {
                     placement='right-end'
                     overlay={
                       <Dropdown.Menu show style={{ zIndex: 999 }}>
-                        <Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'in progress')}>
                           <Hourglass className='me-2' size={16} />
                           In Progress
                         </Dropdown.Item>
-                        <Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'confirmed')}>
+                          <Flag className='me-2' size={16} />
+                          Confirmed
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'completed')}>
                           <CheckCircle className='me-2' size={16} />
                           Completed
                         </Dropdown.Item>
-                        <Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'cancelled')}>
                           <XCircle className='me-2' size={16} />
                           Cancelled
                         </Dropdown.Item>
-                        <Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'validated')}>
                           <ShieldCheck className='me-2' size={16} />
                           Validated
                         </Dropdown.Item>
@@ -497,12 +543,6 @@ const JobList = () => {
         placeholder: 'Search by job id...',
       },
       {
-        label: 'Customer',
-        columnId: 'customer',
-        type: 'text',
-        placeholder: 'Search by customer...',
-      },
-      {
         label: 'Description',
         columnId: 'description',
         type: 'text',
@@ -527,7 +567,7 @@ const JobList = () => {
         options: [
           { label: 'All Scope', value: '' },
           { label: 'Lab', value: 'lab' },
-          { label: 'Onsite', value: 'onsite' },
+          { label: 'Site', value: 'site' },
         ],
         placeholder: 'Search by Scope...',
       },
@@ -581,8 +621,6 @@ const JobList = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { globalSearch: globalSearchFilter },
-    globalFilterFn: 'globalSearch',
     initialState: {
       columnPinning: { right: ['actions'] },
     },
@@ -661,7 +699,7 @@ const JobList = () => {
         <Card.Body className='p-4'>
           <DataTable table={table} isLoading={jobs.isLoading} isError={jobs.isError}>
             <div className='d-flex justify-content-between'>
-              <DataTableSearch table={table} />
+              <DataTableSearch table={table} isGlobalSearch={false} columnId='customer' />
 
               <div className='d-flex align-items-center gap-2'>
                 <DataTableFilter table={table} filterFields={filterFields} />
