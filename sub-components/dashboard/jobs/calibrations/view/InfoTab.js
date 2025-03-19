@@ -1,5 +1,5 @@
-import { format } from 'date-fns';
-import { useCallback } from 'react';
+import { add, format, isValid } from 'date-fns';
+import { useCallback, useMemo } from 'react';
 import { Card, Col, Row } from 'react-bootstrap';
 import {
   Building,
@@ -42,6 +42,23 @@ const InfoTab = ({ calibration }) => {
     }
 
     return 'N/A';
+  }, [calibration]);
+
+  const dueDate = useMemo(() => {
+    if (!calibration?.dueDateRequested || !calibration?.dateCalibrated) {
+      return 'N/A';
+    }
+
+    if (calibration?.dueDateRequested === 'no') {
+      if (calibration?.dueDate) return calibration.dueDate;
+      else return 'N/A';
+    }
+
+    const dueDate = add(new Date(calibration.dateCalibrated), {
+      months: calibration?.dueDateDuration || 0,
+    });
+
+    return format(dueDate, 'dd-MM-yyyy');
   }, [calibration]);
 
   console.log({ calibration });
@@ -332,7 +349,7 @@ const InfoTab = ({ calibration }) => {
 
       <Card.Body>
         <Row className='row-gap-3'>
-          <Col md={4}>
+          {/* <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -347,9 +364,9 @@ const InfoTab = ({ calibration }) => {
                 </div>
               </div>
             </div>
-          </Col>
+          </Col> */}
 
-          <Col md={4}>
+          <Col md={6}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -360,13 +377,15 @@ const InfoTab = ({ calibration }) => {
               <div>
                 <div className='text-secondary fs-6'>Date Received:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.dateReceived || 'N/A'}
+                  {isValid(new Date(calibration?.dateReceived))
+                    ? format(new Date(calibration.dateReceived), 'dd-MM-yyyy')
+                    : 'N/A'}
                 </div>
               </div>
             </div>
           </Col>
 
-          <Col md={4}>
+          <Col md={6}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -377,7 +396,9 @@ const InfoTab = ({ calibration }) => {
               <div>
                 <div className='text-secondary fs-6'>Date Calibrated:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.dateCalibrated || 'N/A'}
+                  {isValid(new Date(calibration?.dateCalibrated))
+                    ? format(new Date(calibration.dateCalibrated), 'dd-MM-yyyy')
+                    : 'N/A'}
                 </div>
               </div>
             </div>
@@ -427,9 +448,7 @@ const InfoTab = ({ calibration }) => {
               </div>
               <div>
                 <div className='text-secondary fs-6'>Due Date:</div>
-                <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.dueDate || 'N/A'}
-                </div>
+                <div className='text-primary-label fw-semibold text-capitalize'>{dueDate}</div>
               </div>
             </div>
           </Col>
@@ -461,7 +480,7 @@ const InfoTab = ({ calibration }) => {
                 <div className='text-secondary fs-6'>Date:</div>
                 <div className='text-primary-label fw-semibold'>
                   {calibration?.createdAt
-                    ? format(calibration.createdAt.toDate(), 'dd/MM/yyyy')
+                    ? format(calibration.createdAt.toDate(), 'dd-MM-yyyy')
                     : 'N/A'}
                 </div>
               </div>
@@ -497,7 +516,7 @@ const InfoTab = ({ calibration }) => {
                 <div className='text-secondary fs-6'>Last Updated:</div>
                 <div className='text-primary-label fw-semibold'>
                   {calibration?.updatedAt
-                    ? format(calibration.createdAt.toDate(), 'dd/MM/yyyy')
+                    ? format(calibration.createdAt.toDate(), 'dd-MM-yyyy')
                     : 'N/A'}
                 </div>
               </div>
