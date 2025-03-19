@@ -123,8 +123,12 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
   //* set default value
   useEffect(() => {
     // form.setValue('team', teamOptions[0]);
-    form.setValue('status', statusesOptions[0]);
-  }, []);
+    if (!data) form.setValue('status', statusesOptions[0]);
+    else {
+      const selectedStatus = statusesOptions.find((s) => s.value === data.status);
+      form.setValue('status', selectedStatus);
+    }
+  }, [data]);
 
   //* set job id if data exist
   useEffect(() => {
