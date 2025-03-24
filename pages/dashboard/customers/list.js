@@ -93,7 +93,7 @@ const CustomerList = () => {
             if (!defaultLocation) return 'N/A';
 
             return (
-              <div className='mb-2 d-flex justify-content-center align-items-center'>
+              <div className='mb-2 d-flex  align-items-center'>
                 <div>
                   {/* Site Name */}
                   <div className='d-flex align-items-center'>

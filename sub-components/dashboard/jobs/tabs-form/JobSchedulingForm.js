@@ -80,10 +80,11 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
       q,
       (snapshot) => {
         if (!snapshot.empty) {
-          const lastJobId = parseInt(snapshot.docs.pop().id, 10);
+          const id = snapshot.docs.pop().id.replace('J', '');
+          const lastJobId = parseInt(id, 10);
 
-          form.setValue('jobId', (lastJobId + 1).toString().padStart(6, '0'));
-        } else form.setValue('jobId', '000001');
+          form.setValue('jobId', `J${(lastJobId + 1).toString().padStart(6, '0')}`);
+        } else form.setValue('jobId', 'J000001');
       },
       (err) => {
         console.error(err.message);

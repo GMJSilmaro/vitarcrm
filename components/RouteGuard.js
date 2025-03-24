@@ -12,11 +12,11 @@ export function RouteGuard({ children }) {
     if (!router.isReady) return;
 
     async function checkAuthorization() {
-      console.log('Auth state:', { 
-        currentUser, 
-        isAdmin, 
+      console.log('Auth state:', {
+        currentUser,
+        isAdmin,
         workerId,
-        path: router.pathname 
+        path: router.pathname,
       });
 
       // If no user, redirect to sign-in
@@ -25,7 +25,7 @@ export function RouteGuard({ children }) {
         return;
       }
 
-      const path = router.pathname;
+      const path = router.asPath;
       console.log('Checking authorization for path:', path, { isAdmin, workerId });
 
       // Define admin-only paths
@@ -33,7 +33,7 @@ export function RouteGuard({ children }) {
 
       if (isAdmin) {
         // If admin is trying to access user dashboard, redirect to admin dashboard
-        if (path.startsWith('/dashboard/user/')) {
+        if (path.startsWith('/user/')) {
           router.push('/');
           return;
         }
@@ -45,16 +45,16 @@ export function RouteGuard({ children }) {
       if (!isAdmin) {
         // If trying to access admin paths, redirect to user dashboard
         if (adminPaths.includes(path)) {
-          router.push(`/dashboard/user/${workerId}`);
+          router.push(`/user/${workerId}`);
           return;
         }
 
         // Handle user dashboard access
-        if (path.startsWith('/dashboard/user/')) {
+        if (path.startsWith('/user/')) {
           const targetWorkerId = router.query.workerId;
           // Allow access only to their own dashboard
           if (targetWorkerId && targetWorkerId !== workerId) {
-            router.push(`/dashboard/user/${workerId}`);
+            router.push(`/user/${workerId}`);
             return;
           }
           setAuthorized(true);
@@ -62,7 +62,7 @@ export function RouteGuard({ children }) {
         }
 
         // For any other path, redirect to user's dashboard
-        router.push(`/dashboard/user/${workerId}`);
+        router.push(`/user/${workerId}`);
         return;
       }
 
@@ -78,4 +78,4 @@ export function RouteGuard({ children }) {
   }
 
   return authorized ? children : null;
-} 
+}

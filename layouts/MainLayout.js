@@ -1,12 +1,10 @@
 import React from 'react';
-import FooterWithSocialIcons from "@/layouts/marketing/footers/FooterWithSocialIcons";
+import FooterWithSocialIcons from '@/layouts/marketing/footers/FooterWithSocialIcons';
 
 const MainLayout = ({ children, showFooter = true }) => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-grow flex flex-col">
-        {children}
-      </main>
+    <div className='d-flex flex-column min-vh-100'>
+      <main className='flex-grow-1 d-flex flex-column h-100'>{children}</main>
       {showFooter && <FooterWithSocialIcons />}
     </div>
   );

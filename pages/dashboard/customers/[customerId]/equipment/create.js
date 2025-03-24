@@ -43,7 +43,7 @@ const CreateCalibration = () => {
         ]}
       />
 
-      <Card className='shadow-sm'>
+      <Card className='shadow-none'>
         <Card.Body>
           <CustomerEquipmentForm />
         </Card.Body>

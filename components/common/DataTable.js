@@ -3,10 +3,11 @@ import { Spinner, Table } from 'react-bootstrap';
 import DataTablePagination from './DataTablePagination';
 import { getCommonPinningStyles } from '@/utils/datatable';
 
-const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }) => {
+const DataTable = ({ table, pageSize, isShowFooter = false, children, isLoading, isError }) => {
   return (
     <div className='w-100 h-100'>
       <div className='mb-3'>{children}</div>
+
       <Table responsive className='text-center align-middle'>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -103,7 +104,8 @@ const DataTable = ({ table, isShowFooter = false, children, isLoading, isError }
           </tfoot>
         )}
       </Table>
-      <DataTablePagination table={table} />
+
+      <DataTablePagination table={table} defaultPageSize={pageSize} />
     </div>
   );
 };

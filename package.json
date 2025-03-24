@@ -114,6 +114,7 @@
     "react-slick": "^0.30.2",
     "react-spinners": "^0.14.1",
     "react-table": "^7.8.0",
+    "react-timer-hook": "^4.0.5",
     "react-to-print": "^3.0.1",
     "react-toastify": "^10.0.6",
     "react-windowed-select": "^5.2.0",

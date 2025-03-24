@@ -57,7 +57,7 @@ export const customerEquipmentSchema = z.object({
         return null;
       })
     )
-    .min(1, { message: 'Please select at least one equipment.' }),
+    .default([]),
 });
 
 export const summarySchema = z.object({

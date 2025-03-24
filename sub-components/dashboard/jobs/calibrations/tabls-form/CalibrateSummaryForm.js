@@ -8,11 +8,23 @@ import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'fire
 import _ from 'lodash';
 import { useRouter } from 'next/router';
 import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Card, Col, Form, FormLabel, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Form,
+  FormLabel,
+  OverlayTrigger,
+  Row,
+  Tooltip,
+} from 'react-bootstrap';
+import { Exclamation, ExclamationCircle } from 'react-bootstrap-icons';
 import { Controller, useFormContext } from 'react-hook-form';
 
-const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
+const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => {
   const router = useRouter();
+  const { workerId } = router.query;
 
   const [location, setLocation] = useState({ data: undefined, isLoading: true, isError: false });
   const [customer, setCustomer] = useState({ data: undefined, isLoading: true, isError: false });
@@ -114,7 +126,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
       });
   }, [job.data]);
 
-  //* query customer & customer equipments
+  //* query customer
   useEffect(() => {
     if (!job.data) return;
 
@@ -343,7 +355,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
     const value = isNaN(parseInt(dueDateDuration)) ? 1 : parseInt(dueDateDuration);
 
     if (dueDateRequested?.value === 'yes') {
-      if (dueDateDuration && dateCalibrated && value >= 1 && value <= 999) {
+      if (dueDateDuration && dateCalibrated && value >= 1 && value <= 60) {
         const dueDate = add(new Date(dateCalibrated), {
           months: value,
         });
@@ -352,6 +364,14 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
       } else form.setValue('dueDate', 'N/A');
     }
   }, [form.watch('dueDateDuration'), form.watch('dateCalibrated'), form.watch('dueDateRequested')]);
+
+  //* automatically set the calibrated by based on the workerId
+  useEffect(() => {
+    if (!data && !isAdmin && workerId && calibratedByOptions.length > 0) {
+      const calibratedBy = calibratedByOptions.find((option) => option.id === workerId);
+      form.setValue('calibratedBy', calibratedBy);
+    }
+  }, [workerId, calibratedByOptions]);
 
   const make = useMemo(() => {
     return form.getValues('description.make') || '';
@@ -369,6 +389,14 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
     <>
       <Card className='shadow-none'>
         <Card.Body>
+          {job?.data?.customerEquipments?.length < 1 && (
+            <Alert className='mb-5' style={{ width: 'fit-content' }} variant='danger'>
+              <ExclamationCircle className='me-1' size={20} /> The related job for this calibration
+              does not have any selected customer equipment. Please select customer equipment within
+              the job to proceed.
+            </Alert>
+          )}
+
           <h4 className='mb-0'>Job</h4>
           <p className='text-muted fs-6'>Details about the job.</p>
 
@@ -567,7 +595,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext }) => {
                           ? 'Loading assigned workers...'
                           : "Search by assigned worker's name"
                       }
-                      isDisabled={usersOptions.isLoading}
+                      isDisabled={usersOptions.isLoading || !isAdmin}
                       noOptionsMessage={() =>
                         usersOptions.isLoading ? 'Loading...' : 'No assigned worker found'
                       }

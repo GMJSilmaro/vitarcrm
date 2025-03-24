@@ -91,7 +91,7 @@ export function AuthProvider({ children }) {
       if (data.user.isAdmin) {
         router.push('/');
       } else {
-        router.push(`/dashboard/user/${data.user.workerId}`);
+        router.push(`/user/${data.user.workerId}`);
       }
 
       return true;

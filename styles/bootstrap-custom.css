@@ -28,3 +28,7 @@
   border-bottom: 2px solid #305cde !important;
   background-color: transparent !important;
 }
+
+.hover-item:hover {
+  border: solid 1px #1e40a6 !important;
+}

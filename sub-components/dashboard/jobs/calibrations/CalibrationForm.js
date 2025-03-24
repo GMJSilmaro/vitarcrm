@@ -22,11 +22,11 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import CalibrationMassForm from './tabls-form/CalibrationMassForm';
 
-const CalibrationForm = ({ data }) => {
+const CalibrationForm = ({ data, isAdmin = true }) => {
   const auth = useAuth();
 
   const router = useRouter();
-  const { jobId } = router.query;
+  const { jobId, workerId } = router.query;
 
   const tabsLength = 3;
   const tabSchema = [
@@ -118,9 +118,16 @@ const CalibrationForm = ({ data }) => {
       ];
 
       await Promise.all(promises);
-      router.push(
-        `/jobs/${formData.jobId}/calibrations//edit-calibrations/${formData.calibrateId}`
-      );
+
+      if (isAdmin) {
+        window.location.assign(
+          `/jobs/${formData.jobId}/calibrations//edit-calibrations/${formData.calibrateId}`
+        );
+      } else {
+        window.location.assign(
+          `/user/${workerId}/jobs/${formData.jobId}/calibrations/${formData.calibrateId}`
+        );
+      }
       toast.success(`Calibration ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
       setIsLoading(false);
       setActiveKey((prev) => prev - 1);
@@ -191,6 +198,7 @@ const CalibrationForm = ({ data }) => {
                 data={data}
                 isLoading={isLoading}
                 handleNext={handleNext}
+                isAdmin={isAdmin}
               />
             </Tab>
 

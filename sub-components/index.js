@@ -3,9 +3,9 @@
  * so here you will find folder names which are listed in root pages.
  */
 
-/** 
-* MARKETING SUB COMPONENTS
-*/
+/**
+ * MARKETING SUB COMPONENTS
+ */
 
 // sub components for marketing/compare-plan.js page
 import ComparePlansTable from 'sub-components/compare-plan/ComparePlansTable';
@@ -134,12 +134,12 @@ import Education from 'sub-components/jobs/upload-resume/steps/Education';
 import Job from 'sub-components/jobs/upload-resume/steps/Job';
 
 // sub components for jobs -> landing page ( landing-job.js - v2.0.0 )
-import BrowseJobCategories from 'sub-components/jobs/landing-job/BrowseJobCategories'
-import CustomerStories from 'sub-components/jobs/landing-job/CustomerStories'
-import FindYourDreamJob from 'sub-components/jobs/landing-job/FindYourDreamJob'
-import HowItWorks from 'sub-components/jobs/landing-job/Process'
-import LatestJobOpening from 'sub-components/jobs/landing-job/LatestJobOpening'
-import TopCompanies from 'sub-components/jobs/landing-job/TopCompanies'
+import BrowseJobCategories from 'sub-components/jobs/landing-job/BrowseJobCategories';
+import CustomerStories from 'sub-components/jobs/landing-job/CustomerStories';
+import FindYourDreamJob from 'sub-components/jobs/landing-job/FindYourDreamJob';
+import HowItWorks from 'sub-components/jobs/landing-job/Process';
+import LatestJobOpening from 'sub-components/jobs/landing-job/LatestJobOpening';
+import TopCompanies from 'sub-components/jobs/landing-job/TopCompanies';
 
 // sub components for jobs -> post a job ( post-a-job.js - v2.0.0 )
 import JobPosterInfo from 'sub-components/jobs/post-a-job/JobPosterInfo';
@@ -147,13 +147,13 @@ import JobInfo from 'sub-components/jobs/post-a-job/JobInfo';
 import CompanyInfo from 'sub-components/jobs/post-a-job/CompanyInfo';
 
 // sub component for job search for all job pages( v2.0.0 )
-import JobSearchBox from 'sub-components/jobs/JobSearchBox'
+import JobSearchBox from 'sub-components/jobs/JobSearchBox';
 
 // sub component for job filtering for company list page ( v2.0.0 )
-import CompanyFilters from 'sub-components/jobs/company-list/CompanyFilters'
+import CompanyFilters from 'sub-components/jobs/company-list/CompanyFilters';
 
 // sub component for job -> comapny pages header tabs ( v2.0.0 )
-import CompanyCommonHeaderTabs from 'sub-components/jobs/company/CommonHeaderTabs'
+import CompanyCommonHeaderTabs from 'sub-components/jobs/company/CommonHeaderTabs';
 
 // sub components for jobs -> job listing ( grid and list view - v2.0.0 )
 import JobFilters from 'sub-components/jobs/job-listing/JobFilters';
@@ -178,9 +178,9 @@ import EducationFeaturesWithBullets from 'sub-components/landings/education/Feat
 import UpcomingWebinars from 'sub-components/landings/education/UpcomingWebinars';
 import FindRightCourse from 'sub-components/landings/education/FindRightCourse';
 
-/** 
-* DASHBOARD SUB COMPONENTS
-*/
+/**
+ * DASHBOARD SUB COMPONENTS
+ */
 
 // sub components for dashboard/overview.js page
 import PopularInstructor from 'sub-components/dashboard/overview/PopularInstructor';
@@ -198,19 +198,9 @@ import CoursesTable from 'sub-components/dashboard/all-courses/CoursesTable';
 // sub components for dashboard/courses/courses-category.js page
 import AddNewCategoryPopup from 'sub-components/dashboard/courses-category/AddNewCategoryPopup';
 
-// sub components for dashboard/user/instructor.js page
-import InstructorsGridView from 'sub-components/dashboard/user/InstructorsGridCard';
-import InstructorsListItems from 'sub-components/dashboard/user/InstructorsListItems';
-
-
 // sub components for dashboard/workers/worker.js page
 import WorkerGridCard from 'sub-components/dashboard/worker/WorkerGridCard';
 import WorkersListItems from 'sub-components/dashboard/worker/WorkersListItems';
-
-
-// sub components for dashboard/user/students.js page
-import StudentsGridCard from 'sub-components/dashboard/user/StudentsGridCard';
-import StudentsListItems from 'sub-components/dashboard/user/StudentsListItems';
 
 // sub components for /dashboard/cms/all-posts.js page
 import PostsTable from 'sub-components/dashboard/cms/all-posts/PostsTable';
@@ -284,7 +274,6 @@ import MailDetailsHeader from 'sub-components/dashboard/mail-app/mail-details/Ma
 // sub components for datatable page v2.2.0
 import Pagination from 'sub-components/dashboard/data-table/Pagination';
 
-
 // sub components for ecommerce pages v2.2.0
 import ColorOptions from 'sub-components/dashboard/ecommerce/ColorOptions';
 import ProductBriefInfo from 'sub-components/dashboard/ecommerce/ProductBriefInfo';
@@ -303,155 +292,172 @@ import PaymentSelection from 'sub-components/dashboard/ecommerce/checkout/steps/
 import ShippingInformation from 'sub-components/dashboard/ecommerce/checkout/steps/ShippingInformation';
 
 export {
-   AboutTab,
-   Activity,
-   AddNewCategoryPopup,
-   AllFAQsList,
-   AppIntegration,
-   ApplyForm,
-   ArticlesCategoryCard,
-   Assignee,
-   AuthorTab,
-   BasicInformation,
-   BecomeInstructor,
-   BlogCard,
-   BlogCardFullWidth,
-   BrowseCategories,
-   Browsers,
-   BudgetCard,
-   BudgetCategoryCard,
-   BudgetDetailsCard,
-   BudgetSection,
-   CareerAtGeeks,
-   CareerPositions,
-   ChatBox,
-   Collage,
-   CommonHeaderTabs,
-   ComparePlansTable,
-   ContactForm,
-   ContactSupportSection,
-   CourseDescriptionSection,
-   CourseGridView,
-   CourseListView,
-   CoursePathCard,
-   CoursesFeatures4Columns,
-   CoursesMedia,
-   CoursesTab,
-   CoursesTable,
-   CoursesTestimonialSection,
-   CreateProjectForm,
-   CTAButton,
-   Curriculum,
-   CustomersTestimonials,
-   DescriptionTab,
-   DeveloperGeeks,
-   ExpensesChartCard,
-   FAQs,
-   FAQsection,
-   FAQTab,
-   Features2Columns,
-   FeaturesList,
-   FeaturesWithBullets,
-   FilesTable,
-   FilterOptions,
-   GeeksCulture,
-   HeaderBreadcrumb,
-   HelpCenterFAQs,
-   HeroCollage,
-   HeroContent,
-   HeroFormCenter,
-   HeroFormLeft,
-   HeroFormRight,
-   HeroGradient,
-   HeroGradientHeader,
-   HeroLeftImage,
-   HeroRightImage,
-   HeroTyped,
-   InstructorsGridView,
-   InstructorsListItems,
-   WorkerGridCard,
-   WorkersListItems,
-   JustifiedGallery,
-   KanbanColumn,
-   LaunchDate,
-   LeadTestimonialSection,
-   MostViewPages,
-   OffcanvasCreateProjectForm,
-   OverallProgressChart,
-   PopularInstructor,
-   PopularInstructorCard,
-   PostsTable,
-   PricingCard,
-   PricingPlans,
-   ProjectCard,
-   ProjectDescription,
-   ProjectListTable,
-   ProjectProgress,
-   ProjectSchedule,
-   ProjectSummary,
-   RecentActivity,
-   RecentCourses,
-   RequestAccessTestimonialSection,
-   ReviewsTab,
-   SASSFeatures4Columns,
-   Settings,
-   Sidebar,
-   SimplePricingPlans,
-   SocialMediaTraffic,
-   Stat,
-   StudentsGridCard,
-   StudentsListItems,
-   SupportForm,
-   TaskbySectionsChart,
-   TaskCompletionStatusChart,
-   TaskStats,
-   TaskSummaryChart,
-   TeamGrid,
-   TeamGridRoundImages,
-   TeamMemberAtGeeks,
-   TranscriptTab,
-   UpcomingDeadlines,
-   UpcomingTaskList,
-   WorldClassInstructors,
-   YourInstructor,
+  AboutTab,
+  Activity,
+  AddNewCategoryPopup,
+  AllFAQsList,
+  AppIntegration,
+  ApplyForm,
+  ArticlesCategoryCard,
+  Assignee,
+  AuthorTab,
+  BasicInformation,
+  BecomeInstructor,
+  BlogCard,
+  BlogCardFullWidth,
+  BrowseCategories,
+  Browsers,
+  BudgetCard,
+  BudgetCategoryCard,
+  BudgetDetailsCard,
+  BudgetSection,
+  CareerAtGeeks,
+  CareerPositions,
+  ChatBox,
+  Collage,
+  CommonHeaderTabs,
+  ComparePlansTable,
+  ContactForm,
+  ContactSupportSection,
+  CourseDescriptionSection,
+  CourseGridView,
+  CourseListView,
+  CoursePathCard,
+  CoursesFeatures4Columns,
+  CoursesMedia,
+  CoursesTab,
+  CoursesTable,
+  CoursesTestimonialSection,
+  CreateProjectForm,
+  CTAButton,
+  Curriculum,
+  CustomersTestimonials,
+  DescriptionTab,
+  DeveloperGeeks,
+  ExpensesChartCard,
+  FAQs,
+  FAQsection,
+  FAQTab,
+  Features2Columns,
+  FeaturesList,
+  FeaturesWithBullets,
+  FilesTable,
+  FilterOptions,
+  GeeksCulture,
+  HeaderBreadcrumb,
+  HelpCenterFAQs,
+  HeroCollage,
+  HeroContent,
+  HeroFormCenter,
+  HeroFormLeft,
+  HeroFormRight,
+  HeroGradient,
+  HeroGradientHeader,
+  HeroLeftImage,
+  HeroRightImage,
+  HeroTyped,
+  WorkerGridCard,
+  WorkersListItems,
+  JustifiedGallery,
+  KanbanColumn,
+  LaunchDate,
+  LeadTestimonialSection,
+  MostViewPages,
+  OffcanvasCreateProjectForm,
+  OverallProgressChart,
+  PopularInstructor,
+  PopularInstructorCard,
+  PostsTable,
+  PricingCard,
+  PricingPlans,
+  ProjectCard,
+  ProjectDescription,
+  ProjectListTable,
+  ProjectProgress,
+  ProjectSchedule,
+  ProjectSummary,
+  RecentActivity,
+  RecentCourses,
+  RequestAccessTestimonialSection,
+  ReviewsTab,
+  SASSFeatures4Columns,
+  Settings,
+  Sidebar,
+  SimplePricingPlans,
+  SocialMediaTraffic,
+  Stat,
+  SupportForm,
+  TaskbySectionsChart,
+  TaskCompletionStatusChart,
+  TaskStats,
+  TaskSummaryChart,
+  TeamGrid,
+  TeamGridRoundImages,
+  TeamMemberAtGeeks,
+  TranscriptTab,
+  UpcomingDeadlines,
+  UpcomingTaskList,
+  WorldClassInstructors,
+  YourInstructor,
+  BasicDetails,
+  Employment,
+  Education,
+  Job,
+  BrowseJobCategories,
+  CustomerStories,
+  FindYourDreamJob,
+  HowItWorks,
+  LatestJobOpening,
+  TopCompanies,
+  JobSearchBox,
+  CompanyFilters,
+  CompanyCommonHeaderTabs,
+  JobPosterInfo,
+  JobInfo,
+  CompanyInfo,
+  JobFilters,
+  JobsGridView,
+  JobsListView,
+  HeroAcademy,
+  AcademyStats,
+  MostPopularCourses,
+  BecomeAnInstructor,
+  WhatCustomersSay,
+  Question,
+  QuizProgress,
+  QuizPagination,
+  QuizTimer,
+  AddEditEvent,
+  AddEditSchedule,
+  MailSidebar,
+  MailRow,
+  MailDetailsBody,
+  MailDetailsFooter,
+  MailDetailsHeader,
+  PortfolioItem,
 
-   BasicDetails, Employment, Education, Job,
-   BrowseJobCategories, CustomerStories, FindYourDreamJob, HowItWorks, LatestJobOpening, TopCompanies,
-   JobSearchBox, CompanyFilters, CompanyCommonHeaderTabs,
-   JobPosterInfo, JobInfo, CompanyInfo,
-   JobFilters, JobsGridView, JobsListView,
-   HeroAcademy, AcademyStats, MostPopularCourses, BecomeAnInstructor, WhatCustomersSay,
-   Question, QuizProgress, QuizPagination, QuizTimer,
-
-   AddEditEvent,
-   AddEditSchedule,
-   MailSidebar, MailRow, MailDetailsBody, MailDetailsFooter, MailDetailsHeader,
-
-   PortfolioItem,
-
-   // education landing page sub components
-   EducationHeroRightImage,
-   ExploreSkillCourses,
-   BuildingSkills,
-   LearnLatestSkills,
-   EducationFeaturesWithBullets,
-   UpcomingWebinars,
-   FindRightCourse,
-
-   Pagination,
-   ColorOptions,
-   ProductBriefInfo,
-   ProductCard,
-   ProductDetailsAccordion,
-   ProductGallery,
-   ProductGallery2,
-   ProductGridView,
-   RatingsReviews,
-   ProductsTable,
-   ProductCarousel,
-
-   OrdersTable,
-
-   OrderSummary, BillingInformation, PaymentSelection, ShippingInformation
-
-}
+  // education landing page sub components
+  EducationHeroRightImage,
+  ExploreSkillCourses,
+  BuildingSkills,
+  LearnLatestSkills,
+  EducationFeaturesWithBullets,
+  UpcomingWebinars,
+  FindRightCourse,
+  Pagination,
+  ColorOptions,
+  ProductBriefInfo,
+  ProductCard,
+  ProductDetailsAccordion,
+  ProductGallery,
+  ProductGallery2,
+  ProductGridView,
+  RatingsReviews,
+  ProductsTable,
+  ProductCarousel,
+  OrdersTable,
+  OrderSummary,
+  BillingInformation,
+  PaymentSelection,
+  ShippingInformation,
+};

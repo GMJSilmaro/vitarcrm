@@ -14,6 +14,7 @@ import DefaultDashboardLayout from 'layouts/dashboard/DashboardIndexTop';
 import DefaultMarketingLayout from 'layouts/marketing/DefaultLayout';
 import MainLayout from '@/layouts/MainLayout';
 import '../styles/theme.scss';
+import UserLayout from '@/layouts/UserLayout';
 
 registerLicense(process.env.SYNCFUSION_LICENSE_KEY);
 
@@ -36,25 +37,25 @@ function ProtectedLayout({ children, router, isSignInPage }) {
       return;
     }
 
-    const path = router.pathname;
+    const path = router.asPath;
     const adminPaths = ['/', '/dashboard', '/dashboard/overview'];
 
     if (currentUser) {
       if (isAdmin) {
         // Redirect admin away from user dashboard
-        if (path.startsWith('/dashboard/user/')) {
+        if (path.startsWith('/user/')) {
           router.push('/');
         }
       } else {
         // Non-admin users
         if (adminPaths.includes(path)) {
-          router.push(`/dashboard/user/${workerId}`);
+          router.push(`/user/${workerId}`);
         }
         // Check user dashboard access
-        if (path.startsWith('/dashboard/user/')) {
+        if (path.startsWith('/user/')) {
           const targetWorkerId = router.query.workerId;
           if (targetWorkerId && targetWorkerId !== workerId) {
-            router.push(`/dashboard/user/${workerId}`);
+            router.push(`/user/${workerId}`);
           }
         }
       }
@@ -76,18 +77,24 @@ function MyApp({ Component, pageProps }) {
 
   // Determine layout based on path
   const getLayout = () => {
+    const pathname = router.pathname;
+
     if (isSignInPage) {
       return ({ children }) => <>{children}</>;
     }
 
-    if (router.pathname.startsWith('/dashboard') || router.pathname === '/') {
+    if (pathname.includes('/dashboard/user')) {
+      return UserLayout;
+    }
+
+    if (pathname.startsWith('/dashboard') || pathname === '/') {
       return DefaultDashboardLayout;
     }
 
     return DefaultMarketingLayout;
   };
 
-  const Layout = Component.Layout || getLayout();
+  const Layout = getLayout();
 
   return (
     <Fragment>
