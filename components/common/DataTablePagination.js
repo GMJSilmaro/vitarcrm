@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import {
   ChevronDoubleLeft,
@@ -8,13 +8,23 @@ import {
 } from 'react-bootstrap-icons';
 import Select from 'react-select';
 
-const DataTablePagination = ({ table, pageSize = [10, 25, 50, 100] }) => {
+const DataTablePagination = ({ table, defaultPageSize, pageSize = [5, 10, 25, 50, 100] }) => {
   const paginationSizeOptions = pageSize.map((size) => ({ value: size, label: size }));
-  const [selectedPageSize, setSelectedPageSize] = useState(paginationSizeOptions[0]);
+  const [selectedPageSize, setSelectedPageSize] = useState(paginationSizeOptions[1]);
 
   const page = table.getState().pagination.pageIndex + 1;
   const pageCount = table.getPageCount() || 0;
   const totalRows = table.getPrePaginationRowModel()?.rows?.length || 0;
+
+  useEffect(() => {
+    if (defaultPageSize) {
+      const defaultValue = paginationSizeOptions.find((p) => p.value === defaultPageSize);
+      if (defaultValue) {
+        setSelectedPageSize(defaultValue);
+        table.setPageSize(defaultValue.value);
+      }
+    }
+  }, [defaultPageSize]);
 
   if (totalRows === 0) return null;
 

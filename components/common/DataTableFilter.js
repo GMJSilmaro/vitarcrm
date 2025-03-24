@@ -14,7 +14,7 @@ import { Funnel, X } from 'react-bootstrap-icons';
 //* children - optional component to add to the bottom of the filter card, can be custom filter components
 
 // TODO: add date-range & multi select  filter type
-const DataTableFilter = ({ table, filterFields, children }) => {
+const DataTableFilter = ({ table, filterFields, setColumnFilters, children }) => {
   const [show, setShow] = useState(false);
   const filterCount = table.getState().columnFilters?.length || 0;
 
@@ -35,7 +35,11 @@ const DataTableFilter = ({ table, filterFields, children }) => {
             className='fs-5 py-2 px-3'
             size='sm'
             type='text'
-            onChange={(value) => column.setFilterValue(value)}
+            onChange={(value) => {
+              setColumnFilters
+                ? setColumnFilters((prev) => [...prev, { id: field.columnId, value }])
+                : column.setFilterValue(value);
+            }}
             value={columnFilterValue}
             {...field}
           />
@@ -47,7 +51,11 @@ const DataTableFilter = ({ table, filterFields, children }) => {
             className='fs-5 py-2 px-3'
             size='sm'
             type='date'
-            onChange={(value) => column.setFilterValue(value)}
+            onChange={(value) => {
+              setColumnFilters
+                ? setColumnFilters((prev) => [...prev, { id: field.columnId, value }])
+                : column.setFilterValue(value);
+            }}
             value={columnFilterValue}
             {...field}
           />
@@ -58,7 +66,11 @@ const DataTableFilter = ({ table, filterFields, children }) => {
           <FilterSelect
             className='fs-5 py-2 px-3'
             size='sm'
-            onChange={(value) => column.setFilterValue(value)}
+            onChange={(value) => {
+              setColumnFilters
+                ? setColumnFilters((prev) => [...prev, { id: field.columnId, value }])
+                : column.setFilterValue(value);
+            }}
             value={columnFilterValue}
             {...field}
           />
@@ -110,7 +122,11 @@ const DataTableFilter = ({ table, filterFields, children }) => {
           {children}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant='primary' size='sm' onClick={() => table.resetColumnFilters()}>
+          <Button
+            variant='primary'
+            size='sm'
+            onClick={() => (setColumnFilters ? setColumnFilters([]) : table.resetColumnFilters())}
+          >
             <X size={18} className='me-1' /> Clear Filters
           </Button>
         </Modal.Footer>
