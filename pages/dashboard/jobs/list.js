@@ -500,10 +500,10 @@ const JobList = () => {
                     placement='right-end'
                     overlay={
                       <Dropdown.Menu show style={{ zIndex: 999 }}>
-                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'in progress')}>
+                        {/* <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'in progress')}>
                           <Hourglass className='me-2' size={16} />
                           In Progress
-                        </Dropdown.Item>
+                        </Dropdown.Item> */}
                         <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'confirmed')}>
                           <Flag className='me-2' size={16} />
                           Confirmed

@@ -804,12 +804,12 @@ function WorkerDashboard() {
                   {status === 'in progress' && (
                     <>
                       <Dropdown.Item onClick={() => stopJob(id, setIsLoading)}>
-                        <Stop className='me-2' size={18} /> Finish Job
+                        <Stop className='me-2' size={18} /> Complete Job
                       </Dropdown.Item>
-
+                      {/* 
                       <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'cancelled')}>
                         <XCircle className='me-2' size={18} /> Cancel Job
-                      </Dropdown.Item>
+                      </Dropdown.Item> */}
                     </>
                   )}
 
