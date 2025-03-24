@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
 import { useForm, useFormContext, Controller } from 'react-hook-form';
 import { TooltipContent } from '@/components/common/ToolTipContent';
@@ -268,51 +268,63 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     );
   };
 
-  const handleCustomerChange = (option, field) => {
-    field.onChange(option);
+  const handleCustomerChange = useCallback(
+    (option, field) => {
+      field.onChange(option);
 
-    //* contact options
-    const cOptions =
-      option?.contacts?.length > 0
-        ? option.contacts.map((contact) => ({
-            value: contact.id,
-            label: `${contact.firstName} ${contact.lastName}`,
-            ...contact,
-          }))
-        : [];
-
-    //* location options
-    const lOptions =
-      option?.locations?.length > 0
-        ? option.locations.map((location) => ({
-            value: location.siteId,
-            label: `${location.siteId} - ${location.siteName}`,
-            ...location,
-          }))
-        : [];
-
-    if (cOptions.length > 0) {
-      setContactsOpions(cOptions);
-      const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
-      if (defaultContact) {
-        form.setValue('contact', defaultContact);
-        form.clearErrors('contact');
+      if (!data) {
+        //* clear customer equipments
+        form.setValue('customerEquipments', []);
+      } else {
+        if (data?.customer?.id !== option?.id) {
+          form.setValue('customerEquipments', []);
+        } else form.setValue('customerEquipments', data?.customerEquipments);
       }
-    } else {
-      form.setValue('contact', null);
-    }
 
-    if (lOptions.length > 0) {
-      setLocationsOptions(lOptions);
-      const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
-      if (defaultLocation) {
-        form.setValue('location', defaultLocation);
-        form.clearErrors('location');
+      //* contact options
+      const cOptions =
+        option?.contacts?.length > 0
+          ? option.contacts.map((contact) => ({
+              value: contact.id,
+              label: `${contact.firstName} ${contact.lastName}`,
+              ...contact,
+            }))
+          : [];
+
+      //* location options
+      const lOptions =
+        option?.locations?.length > 0
+          ? option.locations.map((location) => ({
+              value: location.siteId,
+              label: `${location.siteId} - ${location.siteName}`,
+              ...location,
+            }))
+          : [];
+
+      if (cOptions.length > 0) {
+        setContactsOpions(cOptions);
+        const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
+        if (defaultContact) {
+          form.setValue('contact', defaultContact);
+          form.clearErrors('contact');
+        }
+      } else {
+        form.setValue('contact', null);
       }
-    } else {
-      form.setValue('location', null);
-    }
-  };
+
+      if (lOptions.length > 0) {
+        setLocationsOptions(lOptions);
+        const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
+        if (defaultLocation) {
+          form.setValue('location', defaultLocation);
+          form.clearErrors('location');
+        }
+      } else {
+        form.setValue('location', null);
+      }
+    },
+    [data]
+  );
 
   const handleAddEquipment = () => {
     equipmentForm.trigger('equipment');

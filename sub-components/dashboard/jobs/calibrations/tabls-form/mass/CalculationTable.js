@@ -855,7 +855,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.measuredValuesM.${pointIndex}`, x);
 
     return result;
-  }, [refTableData, pointIndex, measuredValue, totalWeight]);
+  }, [refTableData, pointIndex, JSON.stringify(measuredValue), totalWeight]);
 
   const calculations = useMemo(() => {
     return {
@@ -1298,9 +1298,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
   const driftU = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
 
-    const x = formatScientific(calculations.totalUints4vG4);
-
-    return multiply(x, '1E10');
+    return calculations.totalUints2g2;
   }, [calculations]);
 
   const driftUi = useMemo(() => {

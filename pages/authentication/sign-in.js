@@ -221,17 +221,17 @@ const SignIn = () => {
               </div>
             `;
 
-            const redirectButton = modal.querySelector('.btn-primary');
-            redirectButton.addEventListener('click', () => {
-              Swal.close();
-              router.push('/');
-            });
+            // const redirectButton = modal.querySelector('.btn-primary');
+            // redirectButton.addEventListener('click', () => {
+            //   Swal.close();
+            //   router.push('/');
+            // });
 
             // Auto redirect after 2 seconds
-            setTimeout(() => {
-              Swal.close();
-              router.push('/');
-            }, 2000);
+            // setTimeout(() => {
+            //   Swal.close();
+            //   router.push('/');
+            // }, 2000);
           } catch (error) {
             console.error('Authentication Error:', error);
             Swal.close();

@@ -83,7 +83,7 @@ const SchedulingTab = ({ job }) => {
                 </div>
               </Col>
 
-              <Col md={6} className='d-flex flex-column gap-3'>
+              <Col md={12} className='d-flex flex-column gap-3'>
                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -100,7 +100,7 @@ const SchedulingTab = ({ job }) => {
                 </div>
               </Col>
 
-              <Col md={6} className='d-flex flex-column gap-3'>
+              {/* <Col md={6} className='d-flex flex-column gap-3'>
                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -115,7 +115,7 @@ const SchedulingTab = ({ job }) => {
                     </div>
                   </div>
                 </div>
-              </Col>
+              </Col> */}
             </Row>
           </Card.Body>
 

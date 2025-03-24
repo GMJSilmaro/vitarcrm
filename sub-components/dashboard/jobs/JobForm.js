@@ -36,10 +36,11 @@ import FormDebug from '@/components/Form/FormDebug';
 import toast from 'react-hot-toast';
 import JobCustomerEquipmentForm from './tabs-form/JobCustomerEquipmentForm';
 
-const JobForm = ({ data }) => {
+const JobForm = ({ data, isAdmin = true }) => {
   const auth = useAuth();
 
   const router = useRouter();
+  const { workerId } = router.query;
   const [activeKey, setActiveKey] = useState('0');
 
   const tabsLength = 3;
@@ -312,7 +313,11 @@ const JobForm = ({ data }) => {
           }
         });
 
-        router.push(`/jobs/edit-jobs/${jobId}`);
+        if (isAdmin) window.location.assign(`/jobs/edit-jobs/${jobId}`);
+        else {
+          window.location.assign(`/user/${workerId}/jobs/${jobId}`);
+        }
+
         toast.success(`Job ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
         setIsLoading(false);
         setActiveKey((prev) => prev - 1);

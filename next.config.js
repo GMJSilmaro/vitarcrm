@@ -220,6 +220,40 @@ const nextConfig = {
         source: '/user/create',
         destination: '/user/create',
       },
+
+      //* technician page
+      {
+        source: '/user/:workerId',
+        destination: '/dashboard/user/:workerId',
+      },
+      {
+        source: '/user/:workerId/schedule',
+        destination: '/dashboard/user/:workerId/schedule',
+      },
+      {
+        source: '/user/:workerId/jobs/:jobId',
+        destination: '/dashboard/user/:workerId/jobs/:jobId',
+      },
+      {
+        source: '/user/:workerId/jobs/view/:jobId',
+        destination: '/dashboard/user/:workerId/jobs/view/:jobId',
+      },
+      {
+        source: '/user/:workerId/jobs/:jobId/calibrations',
+        destination: '/dashboard/user/:workerId/jobs/:jobId/calibrations/list',
+      },
+      {
+        source: '/user/:workerId/jobs/:jobId/calibrations/create',
+        destination: '/dashboard/user/:workerId/jobs/:jobId/calibrations/create',
+      },
+      {
+        source: '/user/:workerId/jobs/:jobId/calibrations/:calibrateId',
+        destination: '/dashboard/user/:workerId/jobs/:jobId/calibrations/:calibrateId',
+      },
+      {
+        source: '/user/:workerId/jobs/:jobId/calibrations/view/:calibrateId',
+        destination: '/dashboard/user/:workerId/jobs/:jobId/calibrations/view/:calibrateId',
+      },
     ];
   },
 
