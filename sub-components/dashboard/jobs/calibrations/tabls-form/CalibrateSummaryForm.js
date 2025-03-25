@@ -229,7 +229,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => 
         const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-${scopeInitial}`;
 
         if (!snapshot.empty) {
-          const id = snapshot.docs.pop().id.split('-')[1].replace(scopeInitial, '');
+          const id = snapshot.docs.pop().id.split('-')[1].replace(/[SL]/, '');
           const lastCertificateNumber = parseInt(id, 10);
 
           form.setValue('certificateNumber',  `${calibrationIdPrefix}${(lastCertificateNumber + 1).toString().padStart(6, '0')}`); //prettier-ignore
