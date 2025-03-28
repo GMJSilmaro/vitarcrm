@@ -1,4 +1,4 @@
-import { abs, max } from 'mathjs';
+import { abs, divide, max } from 'mathjs';
 import { useCallback, useEffect, useMemo } from 'react';
 import { Col, Form, Row, Table } from 'react-bootstrap';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -71,25 +71,23 @@ const ETest = ({ data }) => {
 
   //* set initial etest value & d1 & d2
   useEffect(() => {
-    //* if data exist and calibration point no is same as data's dont dont something, else set initial data
-    if (
-      (data && parseFloat(data.calibrationPointNo) === calibrationPointNo) ||
-      calibrationPointNo === undefined
-    )
+    //* if data exist and rangeMaxCalibration is same as data's dont dont something, else set initial data
+    if (data && parseFloat(data.rangeMaxCalibration) === rangeMaxCalibration) {
       return;
+    }
 
     setTimeout(() => {
-      if (
-        !data ||
-        (data.calibrationPointNo !== calibrationPointNo &&
-          data.data !== JSON.stringify(calibrationData))
-      ) {
-        form.setValue('data.etest.values', Array(TEST_LOADS.length).fill(0));
+      if (!data || parseFloat(data.rangeMaxCalibration) !== rangeMaxCalibration) {
+        form.setValue(
+          'data.etest.values',
+          Array(TEST_LOADS.length).fill(divide(rangeMaxCalibration, 3))
+        );
+        form.setValue('data.etest.testLoad', divide(rangeMaxCalibration, 3));
         form.setValue('data.d1', 0);
         form.setValue('data.d2', 0);
       }
     }, 1000);
-  }, [data, calibrationPointNo]);
+  }, [data, rangeMaxCalibration]);
 
   return (
     <>
@@ -98,7 +96,27 @@ const ETest = ({ data }) => {
           <thead>
             <tr>
               <th>Test Load</th>
-              <th>{testLoadFormatted}</th>
+              <th>
+                <Controller
+                  name={`data.etest.testLoad`}
+                  control={form.control}
+                  render={({ field }) => (
+                    <Form.Control
+                      onChange={(e) => {
+                        form.setValue(
+                          `data.etest.testLoad`,
+                          isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
+                        );
+                      }}
+                      name={field.name}
+                      ref={field.ref}
+                      value={field.value}
+                      className={`${styles.columnData} text-center`}
+                      type='number'
+                    />
+                  )}
+                />
+              </th>
               <th>Error</th>
             </tr>
           </thead>

@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Eye,
   Flag,
+  HandThumbsDown,
   Hourglass,
   HouseDoorFill,
   PencilSquare,
@@ -166,6 +167,7 @@ const JobList = () => {
             created: 'warning',
             'in progress': 'primary',
             cancelled: 'danger',
+            rejected: 'danger',
             validated: 'purple',
           };
           return (
@@ -515,6 +517,10 @@ const JobList = () => {
                         <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'cancelled')}>
                           <XCircle className='me-2' size={16} />
                           Cancelled
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'rejected')}>
+                          <HandThumbsDown className='me-2' size={16} />
+                          Rejected
                         </Dropdown.Item>
                         <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'validated')}>
                           <ShieldCheck className='me-2' size={16} />

@@ -17,7 +17,7 @@ import {
   WrenchAdjustableCircle,
 } from 'react-bootstrap-icons';
 
-const InfoTab = ({ calibration }) => {
+const SummaryTab = ({ calibration }) => {
   const handleGetLocationValue = useCallback(() => {
     if (calibration?.location) {
       const locationData = calibration?.location;
@@ -117,7 +117,7 @@ const InfoTab = ({ calibration }) => {
                 <Building size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Location:</div>
+                <div className='text-secondary fs-6'>Address:</div>
                 <div className='text-primary-label fw-semibold'>{handleGetLocationValue()}</div>
               </div>
             </div>
@@ -136,7 +136,7 @@ const InfoTab = ({ calibration }) => {
 
       <Card.Body>
         <Row className='row-gap-3'>
-          <Col md={4}>
+          <Col md={3}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -153,7 +153,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={4}>
+          <Col md={3}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -170,7 +170,7 @@ const InfoTab = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={4}>
+          <Col md={3}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -182,6 +182,23 @@ const InfoTab = ({ calibration }) => {
                 <div className='text-secondary fs-6'>Certificate No:</div>
                 <div className='text-primary-label fw-semibold'>
                   {calibration?.certificateNumber || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Hash size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Serial No:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {calibration?.serialNumber || 'N/A'}
                 </div>
               </div>
             </div>
@@ -545,4 +562,4 @@ const InfoTab = ({ calibration }) => {
   );
 };
 
-export default InfoTab;
+export default SummaryTab;

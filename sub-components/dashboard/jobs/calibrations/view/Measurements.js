@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Col, Row } from 'react-bootstrap';
 import {
   BookmarkCheck,
+  Buildings,
   Crosshair,
   ListOl,
   Rulers,
@@ -16,6 +17,36 @@ import {
 const Measurements = ({ calibration }) => {
   return (
     <Card className='border-0 shadow-none'>
+      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h4 className='mb-0'>Location</h4>
+            <p className='text-muted fs-6 mb-0'>Location of the calibration.</p>
+          </div>
+        </div>
+      </Card.Header>
+
+      <Card.Body>
+        <Row className='row-gap-3'>
+          <Col md={12}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Buildings size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Location:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {calibration?.calibrationLocation || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
         <div className='d-flex justify-content-between align-items-center'>
           <div>

@@ -72,6 +72,10 @@ const RTest = ({ calibration }) => {
     };
   }, [maxResults?.raw?.error, halfResults?.raw?.error]);
 
+  const isAbove100Kg = useMemo(() => {
+    return rangeMaxCalibration > 100000; //* 100000 in grams is 100kg
+  }, [rangeMaxCalibration]);
+
   return (
     <>
       <Row className='mx-0 d-flex flex-column border border-primary rounded overflow-hidden'>
@@ -94,7 +98,7 @@ const RTest = ({ calibration }) => {
             </thead>
 
             <tbody>
-              {Array.from({ length: calibrationPointNo }).map((_, i) => (
+              {Array.from({ length: isAbove100Kg ? 5 : 10 }).map((_, i) => (
                 <tr key={i}>
                   <td className='text-center'>#{i + 1}</td>
                   <td className='text-center'>{data?.rtest?.half?.[i] || ''}</td>
@@ -114,11 +118,11 @@ const RTest = ({ calibration }) => {
                 <th className='text-center'>{halfResults?.formatted.error ?? ''}</th>
                 <th className='text-center'>{maxResults?.formatted.error ?? ''}</th>
               </tr>
-              <tr>
+              {/* <tr>
                 <th className='text-center'>Std Dvtn</th>
                 <th className='text-center'>{halfResults?.formatted.std ?? ''}</th>
                 <th className='text-center'>{maxResults?.formatted.std ?? ''}</th>
-              </tr>
+              </tr> */}
               <tr>
                 <th className='text-center' colSpan={1}>
                   Max <br />

@@ -8,6 +8,7 @@ export const STATUS = [
   'in progress',
   'completed',
   'cancelled',
+  'rejected',
   'validated',
 ];
 

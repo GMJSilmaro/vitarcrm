@@ -546,8 +546,9 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               </Table>
 
               <div className='d-flex justify-content-center align-items-center mt-1 gap-5'>
-                <img src='/images/diagram1.png' width={100} />
-                <img src='/images/diagram2.png' width={100} />
+                {calibration?.typeOfBalance && (
+                  <img src={`/images/balance-type-${calibration?.typeOfBalance}.png`} width={100} />
+                )}
               </div>
             </div>
 

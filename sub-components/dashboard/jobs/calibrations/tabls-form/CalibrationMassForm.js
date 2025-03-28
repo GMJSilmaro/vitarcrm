@@ -31,6 +31,7 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
       form.setValue('data.rtest.max', resolvedData.rtest.max);
       form.setValue('data.etest.values', resolvedData.etest.values);
       form.setValue('data.measuredValues', resolvedData.measuredValues);
+      form.setValue('data.etest.testLoad', resolvedData.etest.testLoad);
       form.setValue('data.d1', resolvedData.d1);
       form.setValue('data.d2', resolvedData.d2);
 

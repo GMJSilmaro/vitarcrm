@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Col, Form, Row, Table } from 'react-bootstrap';
-import { std, max, min, abs, sum } from 'mathjs';
+import { std, max, min, abs, sum, divide } from 'mathjs';
 import { Controller, useFormContext } from 'react-hook-form';
 import styles from '../../mass.module.css';
 
@@ -89,27 +89,27 @@ const RTest = ({ data }) => {
     };
   }, [maxResults?.raw?.error, halfResults?.raw?.error]);
 
+  const isAbove100Kg = useMemo(() => {
+    return rangeMaxCalibration > 100000; //* 100000 in grams is 100kg
+  }, [rangeMaxCalibration]);
+
   //* set initial rtest data
   useEffect(() => {
-    //* if data exist and calibration point no is same as data's dont dont something, else set initial data
-    if (
-      (data && parseFloat(data.calibrationPointNo) === calibrationPointNo) ||
-      calibrationPointNo === undefined
-    ) {
+    //* if data exist and rangeMaxCalibration is same as data's dont dont something, else set initial data
+    if (data && parseFloat(data.rangeMaxCalibration) === rangeMaxCalibration) {
       return;
     }
 
     setTimeout(() => {
-      if (
-        !data ||
-        (data.calibrationPointNo !== calibrationPointNo &&
-          data.data !== JSON.stringify(calibrationData))
-      ) {
-        form.setValue('data.rtest.half', Array(calibrationPointNo).fill(0));
-        form.setValue('data.rtest.max', Array(calibrationPointNo).fill(0));
+      if (!data || parseFloat(data.rangeMaxCalibration) !== rangeMaxCalibration) {
+        form.setValue(
+          'data.rtest.half',
+          Array(isAbove100Kg ? 5 : 10).fill(divide(rangeMaxCalibration, 2))
+        );
+        form.setValue('data.rtest.max', Array(isAbove100Kg ? 5 : 10).fill(rangeMaxCalibration));
       }
     }, 1000);
-  }, [data, calibrationPointNo]);
+  }, [data, rangeMaxCalibration, isAbove100Kg]);
 
   return (
     <>
@@ -131,7 +131,7 @@ const RTest = ({ data }) => {
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: calibrationPointNo || 0 }).map((_, i) => (
+              {Array.from({ length: isAbove100Kg ? 5 : 10 }).map((_, i) => (
                 <tr key={i}>
                   <td className='text-center'>#{i + 1}</td>
                   <td className='text-center'>
@@ -200,11 +200,11 @@ const RTest = ({ data }) => {
                 <th className='text-center'>{halfResults?.formatted.error ?? ''}</th>
                 <th className='text-center'>{maxResults?.formatted.error ?? ''}</th>
               </tr>
-              <tr>
+              {/* <tr>
                 <th className='text-center'>Std Dvtn</th>
                 <th className='text-center'>{halfResults?.formatted.std ?? ''}</th>
                 <th className='text-center'>{maxResults?.formatted.std ?? ''}</th>
-              </tr>
+              </tr> */}
               <tr>
                 <th className='text-center' colSpan={1}>
                   Max Repeatability Error (g)

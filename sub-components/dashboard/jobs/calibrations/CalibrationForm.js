@@ -124,9 +124,10 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
           `/jobs/${formData.jobId}/calibrations//edit-calibrations/${formData.calibrateId}`
         );
       } else {
-        window.location.assign(
-          `/user/${workerId}/jobs/${formData.jobId}/calibrations/${formData.calibrateId}`
-        );
+        workerId &&
+          window.location.assign(
+            `/user/${workerId}/jobs/${formData.jobId}/calibrations/${formData.calibrateId}`
+          );
       }
       toast.success(`Calibration ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
       setIsLoading(false);
