@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Database, Eye, EyeSlash } from 'react-bootstrap-icons';
 import { useFormContext } from 'react-hook-form';
 import styles from '../../mass.module.css';
-
 import {
   formatScientific,
   formatToDicimalString,
@@ -20,9 +19,8 @@ import {
   divide,
   subtract,
   format,
-  evaluate,
   max,
-  abs,
+  floor,
 } from 'mathjs';
 import { Tab, Col, Row, Nav, Card, Table, Spinner, Button } from 'react-bootstrap';
 import { collection, onSnapshot, query } from 'firebase/firestore';
@@ -37,8 +35,13 @@ const CalculationTable = () => {
 
   const calibrationPointNo = useMemo(() => {
     const value = parseFloat(form.getValues('calibrationPointNo'));
-    return isNaN(value) ? undefined : parseFloat(value);
+    return isNaN(value) ? undefined : value;
   }, [form.watch('calibrationPointNo')]);
+
+  const rangeMaxCalibration = useMemo(() => {
+    const value = parseFloat(form.getValues('rangeMaxCalibration'));
+    return isNaN(value) ? 0 : value;
+  }, [form.watch('rangeMaxCalibration')]);
 
   const dfnv = useMemo(() => {
     const value = form.getValues('data.dfnv');
@@ -124,9 +127,13 @@ const CalculationTable = () => {
     return isNaN(value) ? 0 : value;
   }, [form.watch('data.d2')]);
 
+  const isAbove100Kg = useMemo(() => {
+    return rangeMaxCalibration > 100000; //* 100000 in grams is 100kg
+  }, [rangeMaxCalibration]);
+
   if (calibrationPointNo === undefined)
     return (
-      <div>
+      <div className='p-5 d-flex justify-content-center align-items-center'>
         <h4>Calibration Point No. is not found</h4>
       </div>
     );
@@ -279,8 +286,9 @@ const CalculationTable = () => {
                                     <td>
                                       {formatToDicimalString(
                                         form.watch(`data.corrections.${pointIndex}`),
-                                        6
-                                      )}
+                                        4
+                                      )}{' '}
+                                      g
                                     </td>
                                   </tr>
                                   <tr>
@@ -311,7 +319,7 @@ const CalculationTable = () => {
                                 </thead>
 
                                 <tbody>
-                                  {Array.from({ length: calibrationPointNo }).map((_, i) => (
+                                  {Array.from({ length: isAbove100Kg ? 5 : 10 }).map((_, i) => (
                                     <tr key={`${i}-rtest`}>
                                       <th>#{i + 1}</th>
                                       <td>{formatToDicimalString(rtest?.half[i])} g</td>
@@ -320,8 +328,8 @@ const CalculationTable = () => {
                                   ))}
                                   <tr>
                                     <th className='fst-italic'>u(R)</th>
-                                    <td>{formatToDicimalString(std(rtest?.half))}</td>
-                                    <td>{formatToDicimalString(std(rtest?.max))}</td>
+                                    <td>{formatToDicimalString(std(rtest?.half), 5)}</td>
+                                    <td>{formatToDicimalString(std(rtest?.max), 5)}</td>
                                   </tr>
                                 </tbody>
                               </Table>
@@ -377,18 +385,6 @@ const CalculationTable = () => {
                               >
                                 <tbody>
                                   <tr>
-                                    <th>Total Actual Weight</th>
-                                    <td>
-                                      {formatToDicimalString(
-                                        form.watch(`data.totalActualWeight.${pointIndex}`, 6)
-                                      )}
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <th>Total MPE</th>
-                                    <td>{form.watch(`data.totalMPE.${pointIndex}`)}</td>
-                                  </tr>
-                                  <tr>
                                     <th>
                                       u(M<sub>s</sub>))
                                     </th>
@@ -407,6 +403,18 @@ const CalculationTable = () => {
                                         ? formatScientific(form.watch(`data.vEff.${pointIndex}`), 1)
                                         : ''}
                                     </td>
+                                  </tr>
+                                  <tr>
+                                    <th>Total Actual Weight</th>
+                                    <td>
+                                      {formatToDicimalString(
+                                        form.watch(`data.totalActualWeight.${pointIndex}`, 6)
+                                      )}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <th>Total MPE</th>
+                                    <td>{form.watch(`data.totalMPE.${pointIndex}`)}</td>
                                   </tr>
                                   <tr>
                                     <th>
@@ -434,7 +442,7 @@ const CalculationTable = () => {
                                     <th>Total U(Z)</th>
                                     <td>
                                       {formatScientific(
-                                        form.watch(`data.totalUints2g2.${pointIndex}`)
+                                        form.watch(`data.totalUinstg.${pointIndex}`)
                                       )}
                                     </td>
                                   </tr>
@@ -493,7 +501,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
   const form = useFormContext();
 
   const [refTableData, setRefTableData] = useState({ data: [], isLoading: true, isError: false });
-  const [flattenedData, setFlattenedData] = useState([]);
+  const [entryData, setEntryData] = useState([]);
   const [cuswd, setCuswd] = useState({ data: [], isLoading: true, isError: false });
   const [mpe, setMpe] = useState({ data: [], isLoading: true, isError: false });
 
@@ -502,14 +510,33 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     if (!dfnv || dfnv?.length < 1 || pointIndex == undefined) return;
 
     const dfnvDataCurrentPoint = dfnv.map((entry) => {
-      if (!entry?.calibrationPoints[pointIndex]?.data) [];
-      const flattenData = entry.calibrationPoints?.[pointIndex]?.data?.flat(Infinity);
-      return { ...entry, flattenData: flattenData ? [...flattenData].sort((a, b) => a - b) : [] };
+      if (!entry?.calibrationPoints[pointIndex]?.data) return [];
+
+      let dataWithClass = [];
+      const calibrationPointData = entry.calibrationPoints?.[pointIndex]?.data;
+
+      //* classes related to CUSWD
+      const DATA_CLASSES = ['E2', 'M1', 'F1'];
+
+      if (calibrationPointData?.length > 0) {
+        dataWithClass = calibrationPointData.map((slot, index) => {
+          let valueClass = DATA_CLASSES[2];
+
+          if (index === 0) valueClass = DATA_CLASSES[0];
+          if (index === 1) valueClass = DATA_CLASSES[1];
+          if (index === 2 && index === 3) valueClass = DATA_CLASSES[2];
+
+          return slot.map((value) => ({ value, valueClass }));
+        });
+      }
+
+      return {
+        ...entry,
+        data: dataWithClass,
+      };
     });
 
-    setFlattenedData(dfnvDataCurrentPoint);
-
-    // console.log('trigger....');
+    setEntryData(dfnvDataCurrentPoint);
   }, [JSON.stringify(form.watch('data')), form.watch('calibrationPointNo')]);
 
   //* query Correction, Uncertainty of the Standard Weight & Drift (CUSWD)
@@ -576,17 +603,89 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
 
   //* setRefTable data
   useEffect(() => {
-    const refData = flattenedData.map((entry) => {
-      if (entry.flattenData?.length < 1) return { entry, data: [] };
+    const refData = entryData.map((entry) => {
+      if (entry?.data?.length < 1) return { entry, data: [] };
 
-      const data = entry.flattenData.map((value) => {
-        // TODO: For now in CUSWD, only cater/comapre for number value
-        //TODO: For now in MPE, only cater/comapre for the weight and for MPE code which is "M1", might change for other template
-        const cuswdRef = cuswd.data.find((ref) => ref.tagId === String(value));
-        const mpeRef = mpe.data.find((ref) => ref.weight === String(value) && ref.code === 'M1');
+      const tagIds = entry?.ids?.length > 0 ? entry.ids : [];
+      const dataWithClass = entry.data;
 
-        return { weightUsed: value, ...cuswdRef, ...mpeRef };
-      });
+      //? dataWithClass elements is per class
+      //? element 0 is E2
+      //? element 1 is M1
+      //? element 2 & 3 is F1
+
+      //* criteria lookup
+      //* if class is M1 just compare it to tagId of CUSWD and then map to MPE weight and get its uncertainty
+      //* if clss is E2 or F1 just compare it to the nominal value of CUSWD, ids specified for respective slot and then map to MPE weight but get uncertainty fromm CUSWD
+      const data = dataWithClass
+        .map((slot, slotIndex) => {
+          if (slot?.length < 1) return [];
+
+          // //* M1 class
+          if (slotIndex === 1) {
+            return slot.map((slotData) => {
+              const { value, valueClass } = slotData;
+
+              if (!value || !valueClass) return {};
+
+              const cuswdRef = cuswd.data.find((ref) => ref.tagId === value && ref.class === valueClass); //prettier-ignore
+              const mpeRef = mpe.data.find((ref) => ref.weight === value && ref.code === valueClass); //prettier-ignore
+
+              const result = {
+                valueClass,
+                weightUsed: value,
+                ...(cuswdRef ? cuswdRef : {}),
+                ...(mpeRef ? mpeRef : {}),
+              };
+
+              return result;
+            });
+          }
+
+          //* E2 or F1 Class (1st F1, 2nd F1)
+          if (slotIndex === 0 || slotIndex === 2 || slotIndex === 3) {
+            return slot.map((slotData) => {
+              const { value, valueClass } = slotData;
+
+              let tagIdsSlotIndex;
+              //* if slotindex is 0 which is E2 class then tagIdsSlotIndex is 0
+              if (slotIndex === 0) tagIdsSlotIndex = 0;
+              //* if slotindex is 2 which is 1st F1 class then tagIdsSlotIndex is 1
+              else if (slotIndex === 2) tagIdsSlotIndex = 1;
+              //* if slotindex is 3 which is 2nd F1 class then tagIdsSlotIndex is 2
+              else if (slotIndex === 3) tagIdsSlotIndex = 2;
+
+              if (!value || !valueClass || tagIdsSlotIndex === undefined) return {};
+
+              const slotTagIds = tagIds?.[tagIdsSlotIndex] || [];
+              const cuswdRef = cuswd.data.find(ref => slotTagIds.includes(ref.tagId) && ref.nominalValue === value && ref.class === valueClass ); //prettier-ignore
+              const cuswdRef2 = cuswd.data.filter(ref => slotTagIds.includes(ref.tagId) && ref.nominalValue === value && ref.class === valueClass ); //prettier-ignore
+              const mpeRef = mpe.data.find(ref => ref.weight === value && ref.code === valueClass); //prettier-ignore
+
+              console.log({
+                value,
+                valueClass,
+                cuswdRef,
+                cuswdRef2,
+                mpeRef,
+                slotTagIds,
+                tagIdsSlotIndex,
+              });
+
+              const result = {
+                valueClass,
+                weightUsed: value,
+                ...(cuswdRef ? { ...cuswdRef } : {}),
+                ...(mpeRef ? { ...mpeRef, uncertainty: cuswdRef?.eUncertainty } : {}),
+              };
+
+              return result;
+            });
+          }
+
+          return {};
+        })
+        .flat();
 
       return { entry, data };
     });
@@ -594,7 +693,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     // console.log({ refData, pointIndex });
 
     setRefTableData({ data: refData, isLoading: false, isError: false });
-  }, [cuswd.data, mpe.data, JSON.stringify(flattenedData)]);
+  }, [cuswd.data, mpe.data, JSON.stringify(entryData)]);
 
   const resolution = useMemo(() => {
     const value = form.getValues('resolution');
@@ -631,6 +730,11 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     return isNaN(values) ? 0 : values;
   }, []);
 
+  const testLoad = useMemo(() => {
+    const value = form.getValues('data.etest.testLoad');
+    return isNaN(value) ? 0 : value;
+  }, [form.watch('data.etest.testLoad')]);
+
   const rangeMaxCalibration = useMemo(() => {
     const value = parseFloat(form.getValues('rangeMaxCalibration'));
     return isNaN(value) ? 0 : value;
@@ -653,7 +757,9 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
       .map((refData) => {
         if (refData.data.length < 1) return [0];
         return refData.data.map((ref) =>
-          isNaN(parseFloat(ref?.lastYearActualValue)) ? 0 : parseFloat(ref.lastYearActualValue)
+          isNaN(parseFloat(ref?.currentYearActualValue))
+            ? 0
+            : parseFloat(ref.currentYearActualValue)
         );
       })
       .flat(Infinity);
@@ -800,6 +906,26 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     return result;
   }, [refTableData, pointIndex]);
 
+  const totalUinstg = useMemo(() => {
+    if (refTableData.data.length < 1) return 0;
+
+    const values = refTableData.data
+      .map((refData) => {
+        if (refData.data.length < 1) return [0];
+        return refData.data.map((ref) =>
+          isNaN(parseFloat(ref?.uInstg)) ? 0 : parseFloat(ref.uInstg)
+        );
+      })
+      .flat(Infinity);
+
+    const result = sum(values);
+
+    //* set temporary value used for view in table
+    form.setValue(`data.totalUinstg.${pointIndex}`, result);
+
+    return result;
+  }, [refTableData, pointIndex]);
+
   const totalUncertainty = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
 
@@ -850,14 +976,14 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
 
     const x = mean(mValues);
     const y = totalWeight;
-    const result = subtract(x, y);
+    const result = -subtract(x, y);
 
     //* set temporary value used for view in table
     form.setValue(`data.corrections.${pointIndex}`, result);
     form.setValue(`data.measuredValuesM.${pointIndex}`, x);
 
     return result;
-  }, [refTableData, pointIndex, measuredValue, totalWeight]);
+  }, [refTableData, pointIndex, JSON.stringify(measuredValue), totalWeight]);
 
   const calculations = useMemo(() => {
     return {
@@ -870,6 +996,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
       stdRtestMax,
       stdRtestHalf,
       maxError,
+      testLoad,
       esdm,
       totalWeight,
       totalMPE,
@@ -877,6 +1004,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
       totalUcert4vG4,
       totalUints2g2,
       totalUints4vG4,
+      totalUinstg,
       totalUncertainty,
       uM2,
       vEff,
@@ -891,6 +1019,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     stdRtestMax,
     stdRtestHalf,
     maxError,
+    testLoad,
     esdm,
     totalWeight,
     totalMPE,
@@ -898,12 +1027,13 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     totalUcert4vG4,
     totalUints2g2,
     totalUints4vG4,
+    totalUinstg,
     totalUncertainty,
     uM2,
     vEff,
   ]);
 
-  // console.log({ cuswd, mpe, flattenedData, refTableData });
+  console.log({ pointIndex, cuswd, mpe, entryData, refTableData });
 
   return (
     <>
@@ -911,7 +1041,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
       <Table className='text-center fs-6 m-0 align-middle' bordered responsive>
         <thead>
           <tr>
-            <th className='align-middle'>Instrument</th>
+            <th className='align-middle'>Class</th>
             <th className='align-middle'>Standard Weight(s) Used</th>
             <th className='align-middle'>Actual Weight</th>
             <th className='align-middle'>MPE(g)</th>
@@ -982,40 +1112,24 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
             refTableData.data.map((refData, refDataIndex) => {
               return (
                 <>
-                  <tr key={`${refDataIndex}-refdata`}>
-                    <td
-                      className={`${styles.columnEquipment} align-top`}
-                      rowSpan={refData.data.length + 1}
-                    >
-                      <div>{`${refData?.entry?.description || ''} - ${
-                        refData?.entry?.tagId || ''
-                      }`}</div>
-
-                      <div
-                        className='mt-2 d-inline-flex flex-wrap gap-1 justify-content-center'
-                        style={{ maxWidth: '90%' }}
-                      >
-                        {refData?.entry?.ids?.length > 0 &&
-                          refData?.entry?.ids?.map((id, idIndex) => (
-                            <div className={`${styles.columnData}`} key={`${id}-${idIndex}`}>
-                              <div className={styles.columnDataValue}>{id}</div>
-                            </div>
-                          ))}
-                      </div>
-                    </td>
-                  </tr>
-
                   {refData?.data?.length > 0 &&
                     refData.data.map((ref, refIndex) => (
                       <tr key={`${refDataIndex}-${refIndex}`}>
+                        <td>{ref.valueClass}</td>
                         <td>{ref.weightUsed}</td>
-                        <td>{formatToDicimalString(parseFloat(ref?.currentYearActualValue))} g</td>
+                        <td>{ref?.currentYearActualValue} g</td>
                         <td>{ref?.mpe || ''}</td>
                         <td>{ref?.uCert2g2 || ''}</td>
                         <td>{ref?.uCert4vG4 || ''}</td>
-                        <td>{ref?.uInst2g2 || ''}</td>
+                        <td>{formatScientific(ref?.uInstg ? bignumber(ref?.uInstg) : '') || ''}</td>
                         <td>{ref?.uInst4vG4 || ''}</td>
-                        <td>{ref.uncertainty || ''}</td>
+                        <td>
+                          {formatToDicimalString(
+                            ref.uncertainty ? bignumber(ref.uncertainty) : '',
+                            1
+                          )}{' '}
+                          g
+                        </td>
                       </tr>
                     ))}
                 </>
@@ -1186,10 +1300,10 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
 
   const eccentricityTestRelativeUncertainty = useMemo(() => {
     const maxError = calculations.maxError;
-    const rangeMaxCalibration = calculations.rangeMaxCalibration;
+    const testLoad = calculations.testLoad;
 
     const x = maxError;
-    const y = rangeMaxCalibration;
+    const y = testLoad;
     const y1 = multiply(2, y);
     const y2 = sqrt(3);
     const z = multiply(y1, y2);
@@ -1210,6 +1324,8 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
 
     const x = eccentricityTestU;
     const y = squarRootOfThree;
+
+    // console.log('eccentricityTestUi', { pointIndex, x, y, result: divide(x, y) });
 
     return divide(x, y);
   }, [eccentricityTestU, squarRootOfThree, calculations]);
@@ -1238,9 +1354,10 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
   const repeatabilityTestV = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
 
-    const calibrationPointNo = calculations.calibrationPointNo;
+    const isAbove100Kg = calculations.rangeMaxCalibration > 100000; //* 100000 in grams is 100kg
+    const x = isAbove100Kg ? 5 : 10;
 
-    return subtract(calibrationPointNo, 1);
+    return subtract(x, 1);
   }, [calculations]);
 
   const repeatabilityTestCiUi2 = useMemo(() => {
@@ -1300,16 +1417,17 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
   const driftU = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
 
-    const x = formatScientific(calculations.totalUints4vG4);
-
-    return multiply(x, '1E10');
+    return calculations.totalUinstg;
   }, [calculations]);
 
   const driftUi = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
 
-    const x = format(driftU, { notation: 'fixed', precision: 6 });
+    const x = format(driftU, { notation: 'exponential' });
+    const x1 = format(driftU);
     const y = squarRootOfThree;
+
+    // console.log({ driftU, x, x1 });
 
     return divide(x, y);
   }, [driftU, squarRootOfThree, calculations]);
@@ -1455,15 +1573,35 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
   }, [combineUncertainty, totalCiUi4v]);
 
   const findClosestDOF = useCallback(
-    (inputDOF) => {
-      return ck.data.reduce((prev, curr) => {
-        const current = parseFloat(curr.dof);
-        const previous = parseFloat(prev.dof);
+    (value) => {
+      if (!value && value !== 0) {
+        return { value: 0, dof: 0 };
+      }
 
-        if (isNaN(current) || isNaN(previous)) return { value: 0, dof: 0 };
+      // * sort ck data by DOF
+      const sortedCK = [...ck.data].sort((a, b) => parseFloat(a.dof) - parseFloat(b.dof));
 
-        return abs(current - inputDOF) < Math.abs(previous - inputDOF) ? curr : prev;
+      //* If value is less than the first DOF, return the first entry
+      if (value < parseFloat(sortedCK[0]?.dof)) {
+        return sortedCK[0];
+      }
+
+      //* Find the closest matching or lower DOF
+      const closest = sortedCK.find((entry, index) => {
+        const current = parseFloat(entry.dof);
+        const next = parseFloat(sortedCK[index + 1]?.dof);
+
+        //* Return exact match immediately
+        if (value === current) return true;
+
+        //* If value falls between current and next, return current
+        if (!isNaN(next) && value > current && value < next) return true;
+
+        return false;
       });
+
+      //* If no match was found, return the last element (highest DOF)
+      return closest || sortedCK[sortedCK.length - 1];
     },
     [ck.data]
   );
@@ -1471,14 +1609,17 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
   const coverageFactor = useMemo(() => {
     if (ck.data?.length < 1) return { value: 0, data: null };
 
-    const value = evaluate(formatScientific(effectiveNumberDegressOfFreedom, 1));
+    const value = floor(effectiveNumberDegressOfFreedom);
 
     const result = findClosestDOF(value);
 
     const cf = isNaN(parseFloat(result.value)) ? 0 : parseFloat(result.value);
 
+    //* set temporary value used for view in table
+    form.setValue(`data.coverageFactors.${pointIndex}`, cf);
+
     return { value: cf, data: result };
-  }, [effectiveNumberDegressOfFreedom, ck.data]);
+  }, [effectiveNumberDegressOfFreedom, ck.data, pointIndex]);
 
   const expandedUncertainty = useMemo(() => {
     const x = combineUncertainty;
@@ -1601,8 +1742,8 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td></td>
             <td>{formatToDicimalString(balanceReadingUi, 5)}</td>
             <td>1</td>
-            <td>{formatScientific(balanceReadingCiUi2, 3)}</td>
-            <td>{formatScientific(balanceReadingCiUi4v, 3)}</td>
+            <td className='fw-bold'>{formatScientific(balanceReadingCiUi2, 3)}</td>
+            <td className='fw-bold'>{formatScientific(balanceReadingCiUi4v, 3)}</td>
             <td>{format(balanceReadingPercent * 100, { notation: 'fixed', precision: 2 })}%</td>
           </tr>
 
@@ -1681,7 +1822,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>gram</td>
             <td>Rect.</td>
             <td>B</td>
-            <td>{formatToDicimalString(airBouyancyRelativeUncertainty, 6)}</td>
+            <td>{airBouyancyRelativeUncertainty}</td>
             <td>{formatScientific(vCommonValue, 1)}</td>
             <td>{airBouyancyU}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
@@ -1721,11 +1862,11 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>gram</td>
             <td>Rect.</td>
             <td>B</td>
-            <td>{formatToDicimalString(eccentricityTestRelativeUncertainty, 6)}</td>
+            <td>{formatScientific(eccentricityTestRelativeUncertainty, 6)}</td>
             <td>{calculations.resolution ? formatScientific(vCommonValue, 1) : ''}</td>
             <td>{formatToDicimalString(eccentricityTestU, 6)}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
-            <td>{formatToDicimalString(eccentricityTestUi, 0)}</td>
+            <td>{formatToDicimalString(eccentricityTestUi, 5)}</td>
             <td>1</td>
             <td className='fw-bold'>{formatScientific(eccentricityTestCiUi2, 3)}</td>
             <td className='fw-bold'>{formatScientific(eccentricityTestCiUi4v, 3)} </td>

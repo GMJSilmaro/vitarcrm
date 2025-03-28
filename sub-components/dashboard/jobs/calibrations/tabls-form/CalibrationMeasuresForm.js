@@ -71,6 +71,26 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
   return (
     <Card className='shadow-none'>
       <Card.Body>
+        <h4 className='mb-0'>Location</h4>
+        <p className='text-muted fs-6'>Location of the calibration.</p>
+
+        <Row className='mb-3 row-gap-3'>
+          <Form.Group as={Col} md={12}>
+            <Form.Label>Calibration Location</Form.Label>
+
+            <Controller
+              name='calibrationLocation'
+              control={form.control}
+              render={({ field }) => (
+                <>
+                  <Form.Control {...field} type='text' value={field.value} />
+                </>
+              )}
+            />
+          </Form.Group>
+        </Row>
+
+        <hr className='my-4' />
         <h4 className='mb-0'>Criteria</h4>
         <p className='text-muted fs-6'>
           Measurements criteria to be used as a basis for the calibration.
@@ -460,6 +480,44 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
                 </>
               )}
             />
+          </Form.Group>
+        </Row>
+
+        <Row className='mb-3 row-gap-3'>
+          <Form.Group as={Col} md={12}>
+            <Form.Label>Type of Balance</Form.Label>
+
+            <div className='d-flex gap-6 w-100'>
+              <div
+                className={`d-flex justify-content-center align-items-center hover-item p-5 border rounded ${
+                  form.watch('typeOfBalance') === '1' ? 'border-primary' : ''
+                }`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => form.setValue('typeOfBalance', '1')}
+              >
+                <img src='/images/balance-type-1.png' width={150} />
+              </div>
+
+              <div
+                className={`d-flex justify-content-center align-items-center hover-item p-5 border rounded ${
+                  form.watch('typeOfBalance') === '2' ? 'border-primary' : ''
+                }`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => form.setValue('typeOfBalance', '2')}
+              >
+                <img src='/images/balance-type-2.png' width={100} />
+              </div>
+
+              <div
+                className={`d-flex justify-content-center align-items-center hover-item p-5 border rounded ${
+                  form.watch('typeOfBalance') === '3' ? 'border-primary' : ''
+                }`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => form.setValue('typeOfBalance', '3')}
+              >
+                <img src='/images/balance-type-3.png' width={150} />
+              </div>
+            </div>
           </Form.Group>
         </Row>
 

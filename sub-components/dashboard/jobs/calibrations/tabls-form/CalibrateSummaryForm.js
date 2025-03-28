@@ -3,9 +3,10 @@ import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
 import { db } from '@/firebase';
 import { CALIBRATED_AT, CATEGORY, DUE_DATE_REQUESTED } from '@/schema/calibration';
+import { SCOPE_TYPE } from '@/schema/job';
 import { add, format } from 'date-fns';
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
-import _ from 'lodash';
+import _, { orderBy } from 'lodash';
 import { useRouter } from 'next/router';
 import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -228,8 +229,18 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => 
 
         const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-${scopeInitial}`;
 
+        //* case insensitive regex base on scope type initial
+        const regex = new RegExp(`[${SCOPE_TYPE.map((scope) => scope.charAt(0)).join('')}]`, 'i');
+
         if (!snapshot.empty) {
-          const id = snapshot.docs.pop().id.split('-')[1].replace(/[SL]/, '');
+          const sortedData = snapshot.docs
+            .map((doc) => ({
+              id: doc.id.split('-')[1]?.replace(regex, ''),
+              ...doc.data(),
+            }))
+            .sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10));
+
+          const id = sortedData.pop().id;
           const lastCertificateNumber = parseInt(id, 10);
 
           form.setValue('certificateNumber',  `${calibrationIdPrefix}${(lastCertificateNumber + 1).toString().padStart(6, '0')}`); //prettier-ignore
@@ -243,6 +254,35 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => 
 
     return () => unsubscribe();
   }, [job, data, form.watch('category')]);
+
+  //* append serial number to certificate number
+  useEffect(() => {
+    const certificateNumber = form.getValues('certificateNumber');
+
+    if (!certificateNumber) return;
+
+    if (form.getValues('serialNumber')) {
+      const cetificateNumberParts = certificateNumber?.split('-');
+
+      if (cetificateNumberParts?.length < 1) return;
+
+      const p1 = cetificateNumberParts[0];
+      const p2 = cetificateNumberParts[1];
+
+      if (p1 && p2) {
+        form.setValue('certificateNumber', [p1, p2, form.getValues('serialNumber')].join('-'));
+      }
+    } else {
+      const cetificateNumberParts = certificateNumber?.split('-').slice(0, 2);
+
+      if (cetificateNumberParts?.length < 1) return;
+
+      const p1 = cetificateNumberParts[0];
+      const p2 = cetificateNumberParts[1];
+
+      if (p1 && p2) form.setValue('certificateNumber', [p1, p2].join('-'));
+    }
+  }, [form.watch('serialNumber')]);
 
   //* logger user Effect
   useEffect(() => {
@@ -424,7 +464,7 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => 
             </Form.Group>
 
             <Form.Group as={Col} md={12}>
-              <Form.Label>Location</Form.Label>
+              <Form.Label>Address</Form.Label>
               <Form.Control type='text' value={handleGetLocationValue()} readOnly disabled />
             </Form.Group>
           </Row>
@@ -434,12 +474,12 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => 
           <p className='text-muted fs-6'>Details about the calibration.</p>
 
           <Row className='mb-3 row-gap-3'>
-            <Form.Group as={Col} md={4}>
+            <Form.Group as={Col} md={3}>
               <Form.Label>Calibrate ID</Form.Label>
               <Form.Control type='text' value={form.watch('calibrateId')} readOnly disabled />
             </Form.Group>
 
-            <Form.Group as={Col} md={4}>
+            <Form.Group as={Col} md={3}>
               <RequiredLabel label='Category' id='category' />
               <OverlayTrigger
                 placement='right'
@@ -478,9 +518,28 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => 
               />
             </Form.Group>
 
-            <Form.Group as={Col} md={4}>
+            <Form.Group as={Col} md={3}>
               <Form.Label>Certificate No.</Form.Label>
               <Form.Control type='text' value={form.watch('certificateNumber')} readOnly disabled />
+            </Form.Group>
+
+            <Form.Group as={Col} md={3}>
+              <Form.Label>Serial No.</Form.Label>
+
+              <Controller
+                name='serialNumber'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Form.Control
+                      disabled={!form.watch('certificateNumber')}
+                      {...field}
+                      type='number'
+                      value={field.value}
+                    />
+                  </>
+                )}
+              />
             </Form.Group>
 
             <Form.Group as={Col} md={6}>

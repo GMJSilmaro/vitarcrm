@@ -5,6 +5,10 @@ import styles from '../../mass.module.css';
 import { NOMINAL_VALUE } from '@/schema/calibration';
 
 const DFNVTest = ({ calibration }) => {
+  const slotsFields = useMemo(() => {
+    return [{ title: 'E2' }, { title: 'F1' }, { title: 'F1' }];
+  }, []);
+
   const calibrationPointNo = useMemo(() => {
     const value = parseFloat(calibration.calibrationPointNo);
     return isNaN(value) ? undefined : value;
@@ -49,58 +53,105 @@ const DFNVTest = ({ calibration }) => {
           {dfnv.map((entry, entryIndex) => {
             const calibrationPoints = entry.calibrationPoints.slice(0, 6);
 
-            //* maximum length of the element of point.data
-            const maximumDataLength = max(
-              calibrationPoints.map((point) => {
-                return max(point.data.map((data) => data.length));
-              })
+            //* maximum length of the element of point.data first 2 elements of data
+            const maximumDataLengthRow1 = max(
+              calibrationPoints?.length > 0
+                ? calibrationPoints.map((point) => {
+                    return max(point.data.slice(0, 2).map((data) => data.length));
+                  })
+                : 0
+            );
+
+            //* maximum length of the element of point.data first 2 elements of data
+            const maximumDataLengthRow2 = max(
+              calibrationPoints?.length > 0
+                ? calibrationPoints.map((point) => {
+                    return max(point.data.slice(2, 4).map((data) => data.length));
+                  })
+                : 0
             );
 
             return (
               <tr key={entryIndex}>
                 <td className='align-text-top'>
-                  <div>{`${entry.description} - ${entry.tagId}`}</div>
+                  <div>Weight(s) Used</div>
 
-                  <div
-                    className='mt-3 d-inline-flex flex-wrap gap-1 justify-content-center'
-                    style={{ maxWidth: '90%' }}
-                  >
-                    {entry?.ids?.length > 0 &&
-                      entry?.ids?.map((id, idIndex) => (
-                        <div key={`${id}-${idIndex}`}>
-                          <div>{id}</div>
-                        </div>
-                      ))}
+                  <div className='mt-3 d-flex flex-column row-gap-3'>
+                    {slotsFields.map((slotField, slotIndex) => (
+                      <div
+                        className='mt-2 d-inline-flex flex-wrap gap-1 justify-content-center'
+                        style={{ maxWidth: '90%' }}
+                      >
+                        <h4 className='mb-0 d-block w-100 mb-1'>{slotField.title}:</h4>
+                        {entry?.ids?.[slotIndex]?.length > 0 &&
+                          entry?.ids?.[slotIndex]?.map((id, idIndex) => (
+                            <div key={`${id}-${idIndex}`}>{id}</div>
+                          ))}
+                      </div>
+                    ))}
                   </div>
                 </td>
 
                 {calibrationPoints.map((point) => {
                   return (
-                    <td className='p-0'>
-                      <Table responsive>
+                    <td className='p-0 align-top'>
+                      <Table responsive className='mb-0' style={{ borderCollapse: 'collapse' }}>
                         <tr>
-                          <th className={styles.dataColumnHeader}>E2</th>
-                          <th className={styles.dataColumnHeader}>ST-MW</th>
+                          <th className='border-top-0'>E2</th>
+                          <th className='border-start border-top-0'>ST-MW</th>
                         </tr>
-                        <tbody>
-                          {Array.from({ length: maximumDataLength }).map((_, i) => {
-                            return (
-                              <tr key={i}>
-                                <td className={styles.dataColumn}>
-                                  {point.data?.[0]?.[i] || <>&nbsp;</>}
-                                </td>
-                                <td className={styles.dataColumn}>
-                                  {point.data?.[1]?.[i] || <>&nbsp;</>}
-                                </td>
-                              </tr>
-                            );
-                          })}
 
-                          {maximumDataLength === 0 && (
+                        <tbody>
+                          {Array.from({ length: maximumDataLengthRow1 }).map(
+                            (_, indexColumnData) => {
+                              return (
+                                <tr key={indexColumnData}>
+                                  <td className={`${styles.columnDataContent}`}>
+                                    {point.data?.[0]?.[indexColumnData] || <>&nbsp;</>}
+                                  </td>
+
+                                  <td className={`${styles.columnDataContent} border-start`}>
+                                    {point.data?.[1]?.[indexColumnData] || <>&nbsp;</>}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                          )}
+
+                          {maximumDataLengthRow1 === 0 && (
                             <tr>
-                              <td>&nbsp;</td>
-                              <td>&nbsp;</td>
+                              <td className='border-bottom'>&nbsp;</td>
+                              <td className='border-start border-bottom'>&nbsp;</td>
                             </tr>
+                          )}
+
+                          <tr>
+                            <th className='border-top'>F1</th>
+                            <th className='border-top border-start'>F1</th>
+                          </tr>
+
+                          {maximumDataLengthRow2 === 0 && (
+                            <tr>
+                              <td className='border-bottom'>&nbsp;</td>
+                              <td className='border-start border-bottom'>&nbsp;</td>
+                            </tr>
+                          )}
+
+                          {Array.from({ length: maximumDataLengthRow2 }).map(
+                            (_, indexColumnData) => {
+                              return (
+                                <tr key={indexColumnData}>
+                                  <td className={`${styles.columnDataContent} border-bottom`}>
+                                    {point.data?.[2]?.[indexColumnData] || <>&nbsp;</>}
+                                  </td>
+                                  <td
+                                    className={`${styles.columnDataContent} border-start border-bottom`}
+                                  >
+                                    {point.data?.[3]?.[indexColumnData] || <>&nbsp;</>}
+                                  </td>
+                                </tr>
+                              );
+                            }
                           )}
                         </tbody>
                       </Table>
@@ -158,58 +209,107 @@ const DFNVTest = ({ calibration }) => {
             {dfnv.map((entry, entryIndex) => {
               const calibrationPoints = entry.calibrationPoints.slice(6, calibrationPointNo);
 
-              //* maximum length of the element of point.data
-              const maximumDataLength = max(
-                calibrationPoints.map((point) => {
-                  return max(point.data.map((data) => data.length));
-                })
+              //* maximum length of the element of point.data first 2 elements of data
+              const maximumDataLengthRow1 = max(
+                calibrationPoints?.length > 0
+                  ? calibrationPoints.map((point) => {
+                      return max(point.data.slice(0, 2).map((data) => data.length));
+                    })
+                  : 0
+              );
+
+              //* maximum length of the element of point.data first 2 elements of data
+              const maximumDataLengthRow2 = max(
+                calibrationPoints?.length > 0
+                  ? calibrationPoints.map((point) => {
+                      return max(point.data.slice(2, 4).map((data) => data.length));
+                    })
+                  : 0
               );
 
               return (
                 <tr key={entryIndex}>
                   <td className='align-text-top'>
-                    <div>{`${entry.description} - ${entry.tagId}`}</div>
+                    <div>Weight(s) Used</div>
 
-                    <div
-                      className='mt-3 d-inline-flex flex-wrap gap-1 justify-content-center'
-                      style={{ maxWidth: '90%' }}
-                    >
-                      {entry?.ids?.length > 0 &&
-                        entry?.ids?.map((id, idIndex) => (
-                          <div key={`${id}-${idIndex}`}>
-                            <div>{id}</div>
-                          </div>
-                        ))}
+                    <div className='mt-3 d-flex flex-column row-gap-3'>
+                      {slotsFields.map((slotField, slotIndex) => (
+                        <div
+                          className='mt-2 d-inline-flex flex-wrap gap-1 justify-content-center'
+                          style={{ maxWidth: '90%' }}
+                        >
+                          <h4 className='mb-0 d-block w-100 mb-1'>{slotField.title}:</h4>
+                          {entry?.ids?.[slotIndex]?.length > 0 &&
+                            entry?.ids?.[slotIndex]?.map((id, idIndex) => (
+                              <div key={`${id}-${idIndex}`}>{id}</div>
+                            ))}
+                        </div>
+                      ))}
                     </div>
                   </td>
 
-                  {calibrationPoints.map((point) => {
-                    return (
-                      <td className='p-0'>
-                        <Table borderless responsive>
-                          <tr>
-                            <th className={styles.dataColumnHeader}>E2</th>
-                            <th className={styles.dataColumnHeader}>ST-MW</th>
-                          </tr>
-                          <tbody>
-                            {Array.from({ length: maximumDataLength }).map((_, i) => {
-                              return (
-                                <tr key={i}>
-                                  <td className={styles.dataColumn}>
-                                    {point.data?.[0]?.[i] || <>&nbsp;</>}
-                                  </td>
-                                  <td className={styles.dataColumn}>
-                                    {point.data?.[1]?.[i] || <>&nbsp;</>}
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                  {calibrationPoints.map((point, pointIndex) => {
+                    const _pointIndex = pointIndex + 6;
 
-                            {maximumDataLength === 0 && (
+                    return (
+                      <td className='p-0 align-top' key={_pointIndex}>
+                        <Table responsive className='mb-0' style={{ borderCollapse: 'collapse' }}>
+                          <tr>
+                            <th className='border-top-0'>E2</th>
+                            <th className='border-start border-top-0'>ST-MW</th>
+                          </tr>
+
+                          <tbody>
+                            {Array.from({ length: maximumDataLengthRow1 }).map(
+                              (_, indexColumnData) => {
+                                return (
+                                  <tr key={indexColumnData}>
+                                    <td className={`${styles.columnDataContent}`}>
+                                      {point.data?.[0]?.[indexColumnData] || <>&nbsp;</>}
+                                    </td>
+
+                                    <td className={`${styles.columnDataContent} border-start`}>
+                                      {point.data?.[1]?.[indexColumnData] || <>&nbsp;</>}
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                            )}
+
+                            {maximumDataLengthRow1 === 0 && (
                               <tr>
-                                <td>&nbsp;</td>
-                                <td>&nbsp;</td>
+                                <td className='border-bottom'>&nbsp;</td>
+                                <td className='border-start border-bottom'>&nbsp;</td>
                               </tr>
+                            )}
+
+                            <tr>
+                              <th className='border-top'>F1</th>
+                              <th className='border-top border-start'>F1</th>
+                            </tr>
+
+                            {maximumDataLengthRow2 === 0 && (
+                              <tr>
+                                <td className='border-bottom'>&nbsp;</td>
+                                <td className='border-start border-bottom'>&nbsp;</td>
+                              </tr>
+                            )}
+
+                            {Array.from({ length: maximumDataLengthRow2 }).map(
+                              (_, indexColumnData) => {
+                                return (
+                                  <tr key={indexColumnData}>
+                                    <td className={`${styles.columnDataContent} border-bottom`}>
+                                      {point.data?.[2]?.[indexColumnData] || <>&nbsp;</>}
+                                    </td>
+                                    <td
+                                      className={`${styles.columnDataContent} border-start border-bottom`}
+                                    >
+                                      {point.data?.[3]?.[indexColumnData] || <>&nbsp;</>}
+                                    </td>
+                                  </tr>
+                                );
+                              }
                             )}
                           </tbody>
                         </Table>

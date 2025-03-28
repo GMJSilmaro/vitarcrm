@@ -12,6 +12,14 @@ const DFNVTest = ({ data }) => {
   const form = useFormContext();
   const formErrors = form.formState.errors;
 
+  const slotsFields = useMemo(() => {
+    return [
+      { placeholder: 'Enter E2 Tag IDs' },
+      { placeholder: 'Enter F1 Tag IDs' },
+      { placeholder: 'Enter F1 Tag IDs' },
+    ];
+  }, []);
+
   const { fields, append, update, replace } = useFieldArray({
     name: 'data.dfnv',
     control: form.control,
@@ -47,12 +55,15 @@ const DFNVTest = ({ data }) => {
     form.setValue(key, '');
   };
 
-  const handleIdValueSubmit = ({ value, entry, entryIndex, key }) => {
-    const existingIdsArray = entry.ids;
+  const handleIdValueSubmit = ({ value, entry, entryIndex, key, slotIndex }) => {
+    const existingIdsArray = entry.ids?.[slotIndex];
+
+    if (!existingIdsArray) return;
+
     const newValue = [...existingIdsArray, value];
 
     //* update ids
-    entry.ids = newValue;
+    entry.ids[slotIndex] = newValue;
 
     //* update field
     update(entryIndex, entry);
@@ -61,7 +72,7 @@ const DFNVTest = ({ data }) => {
     form.setValue(key, '');
 
     //* clear errors
-    form.clearErrors(`data.dfnv.${entryIndex}.ids`);
+    form.clearErrors(`data.dfnv.${entryIndex}.${slotIndex}.ids`);
   };
 
   const handleEditData = ({
@@ -77,20 +88,22 @@ const DFNVTest = ({ data }) => {
     const existingDataArray = entry.calibrationPoints[calibrationPointIndex].data[dataColumnIndex]; //prettier-ignore
 
     //* remove data from array
-    existingDataArray.splice(dataIndex, 1, Number(value));
+    existingDataArray.splice(dataIndex, 1, value);
     //* update data
     entry.calibrationPoints[calibrationPointIndex].data[dataColumnIndex] = existingDataArray; //prettier-ignore
     //* update field
     update(entryIndex, entry);
   };
 
-  const handleEditId = ({ value, entry, entryIndex, idIndex }) => {
-    const existingIdsArray = entry.ids;
+  const handleEditId = ({ value, entry, entryIndex, idIndex, slotIndex }) => {
+    const existingIdsArray = entry.ids?.[slotIndex];
+
+    if (!existingIdsArray) return;
 
     //* remove data from array
     existingIdsArray.splice(idIndex, 1, value);
     //* update data
-    entry.ids = existingIdsArray;
+    entry.ids[slotIndex] = existingIdsArray;
     //* update field
     update(entryIndex, entry);
   };
@@ -115,34 +128,37 @@ const DFNVTest = ({ data }) => {
     update(entryIndex, entry);
   };
 
-  const handleRemoveIds = ({ entry, entryIndex, idIndex }) => {
-    const existingIdsArray = entry.ids;
+  const handleRemoveIds = ({ entry, entryIndex, idIndex, slotIndex }) => {
+    const existingIdsArray = entry.ids?.[slotIndex];
+
+    if (!existingIdsArray) return;
 
     //* remove data from array
     existingIdsArray.splice(idIndex, 1);
     //* update data
-    entry.ids = existingIdsArray;
+    entry.ids[slotIndex] = existingIdsArray;
     //* update field
     update(entryIndex, entry);
   };
 
   const handleOnPasteData = (e) => {
     const pastedText = event.clipboardData.getData('text');
-    if (!/^\d*\.?\d+$/.test(pastedText)) e.preventDefault();
+    if (!/[0-9.*]/.test(pastedText)) e.preventDefault();
   };
 
   const handleKeyDownData = (e) => {
     //*Allow: Numbers (0-9), Backspace, Arrow keys, Delete, Enter, and Tab.
     if (
-      !/[0-9.]/.test(e.key) &&
+      !/[0-9.*]/.test(e.key) &&
       !['Backspace', 'ArrowLeft', 'ArrowRight', 'Delete'].includes(e.key)
     ) {
       //* Allow Ctrl + A (Select All). Ctrl + C (Copy). Ctrl + V (Paste),
       if (
         (e.ctrlKey && e.key.toLowerCase() === 'a') ||
         (e.ctrlKey && e.key.toLowerCase() === 'c') | (e.ctrlKey && e.key.toLowerCase() === 'v')
-      )
+      ) {
         return;
+      }
 
       e.preventDefault(); //* Block keypress
     }
@@ -172,7 +188,7 @@ const DFNVTest = ({ data }) => {
   );
 
   const idsInputOnKeyDown = useCallback(
-    ({ event, entry, entryIndex, key }) => {
+    ({ event, entry, entryIndex, key, slotIndex }) => {
       const value = form.getValues(key);
 
       if (event.key === 'Enter') {
@@ -185,6 +201,7 @@ const DFNVTest = ({ data }) => {
             entry,
             entryIndex,
             key,
+            slotIndex,
           });
         }
       }
@@ -200,17 +217,14 @@ const DFNVTest = ({ data }) => {
     if (instruments && instruments?.length > 0 && !isMounted.current && calibrationPointNo) {
       isMounted.current = true;
 
-      const initialDFNV = instruments.map((equipment, i) => {
-        return {
-          tagId: equipment.tagId,
-          ids: [],
-          equipmentId: equipment.id,
-          description: equipment.description,
+      const initialDFNV = [
+        {
+          ids: [[], [], []],
           calibrationPoints: Array.from({ length: calibrationPointNo }, (_, i) => ({
-            data: [[], []],
+            data: [[], [], [], []],
           })),
-        };
-      });
+        },
+      ];
 
       // TODO: retain old data content values when calibrationPointNo changed
 
@@ -282,11 +296,20 @@ const DFNVTest = ({ data }) => {
             {fields.map((entry, entryIndex) => {
               const calibrationPoints = entry.calibrationPoints.slice(0, 6);
 
-              //* maximum length of the element of point.data
-              const maximumDataLength = max(
+              //* maximum length of the element of point.data first 2 elements of data
+              const maximumDataLengthRow1 = max(
                 calibrationPoints?.length > 0
                   ? calibrationPoints.map((point) => {
-                      return max(point.data.map((data) => data.length));
+                      return max(point.data.slice(0, 2).map((data) => data.length));
+                    })
+                  : 0
+              );
+
+              //* maximum length of the element of point.data first 2 elements of data
+              const maximumDataLengthRow2 = max(
+                calibrationPoints?.length > 0
+                  ? calibrationPoints.map((point) => {
+                      return max(point.data.slice(2, 4).map((data) => data.length));
                     })
                   : 0
               );
@@ -294,97 +317,112 @@ const DFNVTest = ({ data }) => {
               return (
                 <tr key={entryIndex}>
                   <td className={`${styles.columnEquipment} align-top`}>
-                    <div>{`${entry.description} - ${entry.tagId}`}</div>
+                    <div>Weight(s) Used</div>
 
-                    <div className='mt-3'>
-                      <Form
-                        onKeyDown={(e) =>
-                          idsInputOnKeyDown({
-                            event: e,
-                            entry,
-                            entryIndex,
-                            key: `data.dfnv.${entryIndex}.idValue`,
-                          })
-                        }
-                      >
-                        <Controller
-                          name={`data.dfnv.${entryIndex}.idValue`}
-                          control={form.control}
-                          render={({ field }) => (
-                            <>
-                              <Form.Control
-                                onChange={(e) => {
-                                  const key = `data.dfnv.${entryIndex}.idValue`;
-                                  form.setValue(key, e.target.value);
-                                }}
-                                name={field.name}
-                                ref={field.ref}
-                                value={field.value}
-                                className={`${styles.columnData} text-center`}
-                                type='text'
+                    <div className='mt-3 d-flex flex-column row-gap-3'>
+                      {slotsFields.map((slotField, slotIndex) => (
+                        <div>
+                          <div>
+                            <Form
+                              onKeyDown={(e) =>
+                                idsInputOnKeyDown({
+                                  event: e,
+                                  entry,
+                                  entryIndex,
+                                  key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
+                                  slotIndex,
+                                })
+                              }
+                            >
+                              <Controller
+                                name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                control={form.control}
+                                render={({ field }) => (
+                                  <>
+                                    <Form.Control
+                                      onChange={(e) => {
+                                        const key = `data.dfnv.${entryIndex}.${slotIndex}.idValue`;
+                                        form.setValue(key, e.target.value);
+                                      }}
+                                      name={field.name}
+                                      ref={field.ref}
+                                      value={field.value}
+                                      className={`${styles.columnData} text-center`}
+                                      placeholder={slotField.placeholder}
+                                      type='text'
+                                    />
+
+                                    {formErrors &&
+                                      formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
+                                        ?.message && (
+                                        <Form.Text className='text-danger'>
+                                          {
+                                            formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
+                                              ?.message
+                                          }
+                                        </Form.Text>
+                                      )}
+                                  </>
+                                )}
                               />
-
-                              {formErrors && formErrors?.data?.dfnv?.[entryIndex]?.ids?.message && (
-                                <Form.Text className='text-danger'>
-                                  {formErrors?.data?.dfnv?.[entryIndex]?.ids?.message}
-                                </Form.Text>
-                              )}
-                            </>
-                          )}
-                        />
-                      </Form>
-                    </div>
-
-                    <div
-                      className='mt-2 d-inline-flex flex-wrap gap-1 justify-content-center'
-                      style={{ maxWidth: '90%' }}
-                    >
-                      {entry?.ids?.length > 0 &&
-                        entry?.ids?.map((id, idIndex) => (
-                          <div className={`${styles.columnData}`} key={`${id}-${idIndex}`}>
-                            <div
-                              className={styles.columnDataValue}
-                              contentEditable
-                              suppressContentEditableWarning={true}
-                              onInput={(e) => {
-                                debouncedHandleEditId({
-                                  value: e.target.innerText,
-                                  entry,
-                                  entryIndex,
-                                  idIndex,
-                                });
-                              }}
-                            >
-                              {id}
-                            </div>
-                            <div
-                              contentEditable={false}
-                              className={styles.columnDataClose}
-                              onClick={() => {
-                                handleRemoveIds({
-                                  entry,
-                                  entryIndex,
-                                  idIndex,
-                                });
-                              }}
-                            >
-                              X
-                            </div>
+                            </Form>
                           </div>
-                        ))}
+
+                          <div
+                            className='mt-2 d-inline-flex flex-wrap gap-1 justify-content-center'
+                            style={{ maxWidth: '90%' }}
+                          >
+                            {entry?.ids?.[slotIndex]?.length > 0 &&
+                              entry?.ids?.[slotIndex]?.map((id, idIndex) => (
+                                <div className={`${styles.columnData}`} key={`${id}-${idIndex}`}>
+                                  <div
+                                    className={styles.columnDataValue}
+                                    contentEditable
+                                    suppressContentEditableWarning={true}
+                                    onInput={(e) => {
+                                      debouncedHandleEditId({
+                                        value: e.target.innerText,
+                                        entry,
+                                        entryIndex,
+                                        idIndex,
+                                        slotIndex,
+                                      });
+                                    }}
+                                  >
+                                    {id}
+                                  </div>
+                                  <div
+                                    contentEditable={false}
+                                    className={styles.columnDataClose}
+                                    onClick={() => {
+                                      handleRemoveIds({
+                                        entry,
+                                        entryIndex,
+                                        idIndex,
+                                        slotIndex,
+                                      });
+                                    }}
+                                  >
+                                    X
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </td>
 
                   {calibrationPoints.map((point, pointIndex) => {
                     return (
                       <td className='p-0 align-top'>
-                        <Table responsive>
+                        <Table responsive className='mb-0' style={{ borderCollapse: 'collapse' }}>
                           <tr>
-                            <th className={styles.dataColumnHeader}>E2</th>
-                            <th className={styles.dataColumnHeader}>ST-MW</th>
+                            <th className='border-top-0'>E2</th>
+                            <th className='border-start border-top-0'>ST-MW</th>
                           </tr>
                           <tbody>
-                            <tr key={`${entryIndex}-${pointIndex}-e2`}>
+                            <tr key={`${entryIndex}-${pointIndex}-row-e2-st-mw`}>
                               <td>
                                 <Form
                                   onKeyDown={(e) =>
@@ -404,21 +442,24 @@ const DFNVTest = ({ data }) => {
                                     render={({ field }) => (
                                       <Form.Control
                                         onChange={(e) => {
+                                          const value = e.target.value;
                                           const key = `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.e2`;
-                                          form.setValue(key, e.target.value);
+                                          //* allow only number, dot, and asterisk
+                                          if (/[^0-9.*]/.test(value)) return;
+                                          form.setValue(key, value);
                                         }}
                                         name={field.name}
                                         ref={field.ref}
                                         value={field.value}
                                         className={`${styles.columnData} text-center`}
-                                        type='number'
+                                        type='text'
                                       />
                                     )}
                                   />
                                 </Form>
                               </td>
 
-                              <td>
+                              <td className='border-start'>
                                 <Form
                                   onKeyDown={(e) =>
                                     dataInputOnKeyDown({
@@ -437,14 +478,17 @@ const DFNVTest = ({ data }) => {
                                     render={({ field }) => (
                                       <Form.Control
                                         onChange={(e) => {
+                                          const value = e.target.value;
                                           const key = `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.st-mw`;
-                                          form.setValue(key, e.target.value);
+                                          //* allow only number, dot, and asterisk
+                                          if (/[^0-9.*]/.test(value)) return;
+                                          form.setValue(key, value);
                                         }}
                                         name={field.name}
                                         ref={field.ref}
                                         value={field.value}
                                         className={`${styles.columnData} text-center`}
-                                        type='number'
+                                        type='text'
                                       />
                                     )}
                                   />
@@ -452,113 +496,319 @@ const DFNVTest = ({ data }) => {
                               </td>
                             </tr>
 
-                            {Array.from({ length: maximumDataLength }).map((_, indexColumnData) => {
-                              return (
-                                <tr key={indexColumnData}>
-                                  <td className={styles.columnDataContent}>
-                                    {point.data?.[0]?.[indexColumnData] ? (
-                                      <div className={`${styles.columnData}`} key={indexColumnData}>
+                            {Array.from({ length: maximumDataLengthRow1 }).map(
+                              (_, indexColumnData) => {
+                                return (
+                                  <tr key={indexColumnData}>
+                                    <td className={`${styles.columnDataContent}`}>
+                                      {point.data?.[0]?.[indexColumnData] ? (
                                         <div
-                                          className={styles.columnDataValue}
-                                          contentEditable
-                                          suppressContentEditableWarning={true}
-                                          onKeyDown={handleKeyDownData}
-                                          onPaste={handleOnPasteData}
-                                          onInput={(e) => {
-                                            debouncedHandleEditData({
-                                              value: e.target.innerText,
-                                              entry,
-                                              entryIndex,
-                                              calibrationPointIndex: pointIndex,
-                                              dataColumnIndex: 0,
-                                              dataIndex: indexColumnData,
-                                            });
-                                          }}
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
                                         >
-                                          {point.data?.[0]?.[indexColumnData]}
+                                          <div
+                                            className={styles.columnDataValue}
+                                            contentEditable
+                                            suppressContentEditableWarning={true}
+                                            onKeyDown={handleKeyDownData}
+                                            onPaste={handleOnPasteData}
+                                            onInput={(e) => {
+                                              debouncedHandleEditData({
+                                                value: e.target.innerText,
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 0,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            {point.data?.[0]?.[indexColumnData]}
+                                          </div>
+                                          <div
+                                            contentEditable={false}
+                                            className={styles.columnDataClose}
+                                            onClick={() => {
+                                              handleRemoveData({
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 0,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            X
+                                          </div>
                                         </div>
+                                      ) : (
                                         <div
-                                          contentEditable={false}
-                                          className={styles.columnDataClose}
-                                          onClick={() => {
-                                            handleRemoveData({
-                                              entry,
-                                              entryIndex,
-                                              calibrationPointIndex: pointIndex,
-                                              dataColumnIndex: 0,
-                                              dataIndex: indexColumnData,
-                                            });
-                                          }}
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
+                                          style={{ borderColor: 'transparent' }}
                                         >
-                                          X
+                                          &nbsp;
                                         </div>
-                                      </div>
-                                    ) : (
-                                      <div
-                                        className={`${styles.columnData}`}
-                                        key={indexColumnData}
-                                        style={{ borderColor: 'transparent' }}
-                                      >
-                                        &nbsp;
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td className={styles.columnDataContent}>
-                                    {point.data?.[1]?.[indexColumnData] ? (
-                                      <div className={`${styles.columnData}`} key={indexColumnData}>
-                                        <div
-                                          className={styles.columnDataValue}
-                                          contentEditable
-                                          suppressContentEditableWarning={true}
-                                          onKeyDown={handleKeyDownData}
-                                          onInput={(e) => {
-                                            debouncedHandleEditData({
-                                              value: e.target.innerText,
-                                              entry,
-                                              entryIndex,
-                                              calibrationPointIndex: pointIndex,
-                                              dataColumnIndex: 1,
-                                              dataIndex: indexColumnData,
-                                            });
-                                          }}
-                                        >
-                                          {point.data?.[1]?.[indexColumnData]}
-                                        </div>
-                                        <div
-                                          contentEditable={false}
-                                          className={styles.columnDataClose}
-                                          onClick={() => {
-                                            handleRemoveData({
-                                              entry,
-                                              entryIndex,
-                                              calibrationPointIndex: pointIndex,
-                                              dataColumnIndex: 1,
-                                              dataIndex: indexColumnData,
-                                            });
-                                          }}
-                                        >
-                                          X
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div
-                                        className={`${styles.columnData}`}
-                                        key={indexColumnData}
-                                        style={{ borderColor: 'transparent' }}
-                                      >
-                                        &nbsp;
-                                      </div>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                                      )}
+                                    </td>
 
-                            {maximumDataLength === 0 && (
+                                    <td className={`${styles.columnDataContent} border-start`}>
+                                      {point.data?.[1]?.[indexColumnData] ? (
+                                        <div
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
+                                        >
+                                          <div
+                                            className={styles.columnDataValue}
+                                            contentEditable
+                                            suppressContentEditableWarning={true}
+                                            onKeyDown={handleKeyDownData}
+                                            onInput={(e) => {
+                                              debouncedHandleEditData({
+                                                value: e.target.innerText,
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 1,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            {point.data?.[1]?.[indexColumnData]}
+                                          </div>
+                                          <div
+                                            contentEditable={false}
+                                            className={styles.columnDataClose}
+                                            onClick={() => {
+                                              handleRemoveData({
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 1,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            X
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
+                                          style={{ borderColor: 'transparent' }}
+                                        >
+                                          &nbsp;
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                            )}
+
+                            {maximumDataLengthRow1 === 0 && (
                               <tr>
-                                <td>&nbsp;</td>
-                                <td>&nbsp;</td>
+                                <td className='border-bottom'>&nbsp;</td>
+                                <td className='border-start border-bottom'>&nbsp;</td>
                               </tr>
+                            )}
+
+                            <tr>
+                              <th className='border-top'>F1</th>
+                              <th className='border-top border-start'>F1</th>
+                            </tr>
+
+                            <tr key={`${entryIndex}-${pointIndex}-row-f1-f1`}>
+                              <td>
+                                <Form
+                                  onKeyDown={(e) =>
+                                    dataInputOnKeyDown({
+                                      event: e,
+                                      key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`,
+                                      entry,
+                                      entryIndex,
+                                      calibrationPointIndex: pointIndex,
+                                      dataColumnIndex: 2,
+                                    })
+                                  }
+                                >
+                                  <Controller
+                                    name={`data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`}
+                                    control={form.control}
+                                    render={({ field }) => (
+                                      <Form.Control
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          const key = `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`;
+                                          //* allow only number, dot, and asterisk
+                                          if (/[^0-9.*]/.test(value)) return;
+                                          form.setValue(key, value);
+                                        }}
+                                        name={field.name}
+                                        ref={field.ref}
+                                        value={field.value}
+                                        className={`${styles.columnData} text-center`}
+                                        type='text'
+                                      />
+                                    )}
+                                  />
+                                </Form>
+                              </td>
+
+                              <td className='border-start'>
+                                <Form
+                                  onKeyDown={(e) =>
+                                    dataInputOnKeyDown({
+                                      event: e,
+                                      key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`,
+                                      entry,
+                                      entryIndex,
+                                      calibrationPointIndex: pointIndex,
+                                      dataColumnIndex: 3,
+                                    })
+                                  }
+                                >
+                                  <Controller
+                                    name={`data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`}
+                                    control={form.control}
+                                    render={({ field }) => (
+                                      <Form.Control
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          const key = `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`;
+                                          //* allow only number, dot, and asterisk
+                                          if (/[^0-9.*]/.test(value)) return;
+                                          form.setValue(key, value);
+                                        }}
+                                        name={field.name}
+                                        ref={field.ref}
+                                        value={field.value}
+                                        className={`${styles.columnData} text-center`}
+                                        type='text'
+                                      />
+                                    )}
+                                  />
+                                </Form>
+                              </td>
+                            </tr>
+
+                            {maximumDataLengthRow2 === 0 && (
+                              <tr>
+                                <td className='border-bottom'>&nbsp;</td>
+                                <td className='border-start border-bottom'>&nbsp;</td>
+                              </tr>
+                            )}
+
+                            {Array.from({ length: maximumDataLengthRow2 }).map(
+                              (_, indexColumnData) => {
+                                return (
+                                  <tr key={indexColumnData}>
+                                    <td className={`${styles.columnDataContent}`}>
+                                      {point.data?.[2]?.[indexColumnData] ? (
+                                        <div
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
+                                        >
+                                          <div
+                                            className={styles.columnDataValue}
+                                            contentEditable
+                                            suppressContentEditableWarning={true}
+                                            onKeyDown={handleKeyDownData}
+                                            onPaste={handleOnPasteData}
+                                            onInput={(e) => {
+                                              debouncedHandleEditData({
+                                                value: e.target.innerText,
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 2,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            {point.data?.[2]?.[indexColumnData]}
+                                          </div>
+                                          <div
+                                            contentEditable={false}
+                                            className={styles.columnDataClose}
+                                            onClick={() => {
+                                              handleRemoveData({
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 2,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            X
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
+                                          style={{ borderColor: 'transparent' }}
+                                        >
+                                          &nbsp;
+                                        </div>
+                                      )}
+                                    </td>
+
+                                    <td className={`${styles.columnDataContent} border-start`}>
+                                      {point.data?.[3]?.[indexColumnData] ? (
+                                        <div
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
+                                        >
+                                          <div
+                                            className={styles.columnDataValue}
+                                            contentEditable
+                                            suppressContentEditableWarning={true}
+                                            onKeyDown={handleKeyDownData}
+                                            onInput={(e) => {
+                                              debouncedHandleEditData({
+                                                value: e.target.innerText,
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 3,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            {point.data?.[3]?.[indexColumnData]}
+                                          </div>
+                                          <div
+                                            contentEditable={false}
+                                            className={styles.columnDataClose}
+                                            onClick={() => {
+                                              handleRemoveData({
+                                                entry,
+                                                entryIndex,
+                                                calibrationPointIndex: pointIndex,
+                                                dataColumnIndex: 3,
+                                                dataIndex: indexColumnData,
+                                              });
+                                            }}
+                                          >
+                                            X
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          className={`${styles.columnData}`}
+                                          key={indexColumnData}
+                                          style={{ borderColor: 'transparent' }}
+                                        >
+                                          &nbsp;
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              }
                             )}
                           </tbody>
                         </Table>
@@ -665,10 +915,18 @@ const DFNVTest = ({ data }) => {
                   const calibrationPoints = entry.calibrationPoints.slice(6, calibrationPointNo);
 
                   //* maximum length of the element of point.data
-                  const maximumDataLength = max(
+                  const maximumDataLengthRow1 = max(
                     calibrationPoints?.length > 0
                       ? calibrationPoints.map((point) => {
-                          return max(point.data.map((data) => data.length));
+                          return max(point.data.slice(0, 2).map((data) => data.length));
+                        })
+                      : 0
+                  );
+
+                  const maximumDataLengthRow2 = max(
+                    calibrationPoints?.length > 0
+                      ? calibrationPoints.map((point) => {
+                          return max(point.data.slice(2, 4).map((data) => data.length));
                         })
                       : 0
                   );
@@ -676,85 +934,103 @@ const DFNVTest = ({ data }) => {
                   return (
                     <tr key={entryIndex}>
                       <td className={`${styles.columnEquipment} align-top`}>
-                        <div>{`${entry.description} - ${entry.tagId}`}</div>
+                        <div>Weight(s) Used</div>
 
-                        <div className='mt-3'>
-                          <Form
-                            onKeyDown={(e) =>
-                              idsInputOnKeyDown({
-                                event: e,
-                                entry,
-                                entryIndex,
-                                key: `data.dfnv.${entryIndex}.idValue`,
-                              })
-                            }
-                          >
-                            <Controller
-                              name={`data.dfnv.${entryIndex}.idValue`}
-                              control={form.control}
-                              render={({ field }) => (
-                                <>
-                                  <Form.Control
-                                    onChange={(e) => {
-                                      const key = `data.dfnv.${entryIndex}.idValue`;
-                                      form.setValue(key, e.target.value);
-                                    }}
-                                    name={field.name}
-                                    ref={field.ref}
-                                    value={field.value}
-                                    className={`${styles.columnData} text-center`}
-                                    type='text'
-                                  />
+                        <div className='mt-3 d-flex flex-column row-gap-3'>
+                          {slotsFields.map((slotField, slotIndex) => (
+                            <div>
+                              <div>
+                                <Form
+                                  onKeyDown={(e) =>
+                                    idsInputOnKeyDown({
+                                      event: e,
+                                      entry,
+                                      entryIndex,
+                                      key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
+                                      slotIndex,
+                                    })
+                                  }
+                                >
+                                  <Controller
+                                    name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                    control={form.control}
+                                    render={({ field }) => (
+                                      <>
+                                        <Form.Control
+                                          onChange={(e) => {
+                                            const key = `data.dfnv.${entryIndex}.${slotIndex}.idValue`;
+                                            form.setValue(key, e.target.value);
+                                          }}
+                                          name={field.name}
+                                          ref={field.ref}
+                                          value={field.value}
+                                          className={`${styles.columnData} text-center`}
+                                          placeholder={slotField.placeholder}
+                                          type='text'
+                                        />
 
-                                  {formErrors &&
-                                    formErrors?.data?.content?.[entryIndex]?.ids?.message && (
-                                      <Form.Text className='text-danger'>
-                                        {formErrors?.data?.content?.[entryIndex]?.ids?.message}
-                                      </Form.Text>
+                                        {formErrors &&
+                                          formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
+                                            ?.message && (
+                                            <Form.Text className='text-danger'>
+                                              {
+                                                formErrors?.data?.dfnv?.[entryIndex]?.ids?.[
+                                                  slotIndex
+                                                ]?.message
+                                              }
+                                            </Form.Text>
+                                          )}
+                                      </>
                                     )}
-                                </>
-                              )}
-                            />
-                          </Form>
-                        </div>
-
-                        <div
-                          className='mt-2 d-inline-flex flex-wrap gap-1 justify-content-center'
-                          style={{ maxWidth: '90%' }}
-                        >
-                          {entry?.ids?.length > 0 &&
-                            entry?.ids?.map((id, idIndex) => (
-                              <div className={`${styles.columnData}`} key={`${id}-${idIndex}`}>
-                                <div
-                                  className={styles.columnDataValue}
-                                  contentEditable
-                                  suppressContentEditableWarning={true}
-                                  onInput={(e) => {
-                                    debouncedHandleEditId({
-                                      value: e.target.innerText,
-                                      entry,
-                                      entryIndex,
-                                      idIndex,
-                                    });
-                                  }}
-                                >
-                                  {id}
-                                </div>
-                                <div
-                                  contentEditable={false}
-                                  className={styles.columnDataClose}
-                                  onClick={() => {
-                                    handleRemoveIds({
-                                      entry,
-                                      entryIndex,
-                                      idIndex,
-                                    });
-                                  }}
-                                >
-                                  X
-                                </div>
+                                  />
+                                </Form>
                               </div>
-                            ))}
+
+                              <div
+                                className='mt-2 d-inline-flex flex-wrap gap-1 justify-content-center'
+                                style={{ maxWidth: '90%' }}
+                              >
+                                {entry?.ids?.[slotIndex]?.length > 0 &&
+                                  entry?.ids?.[slotIndex]?.map((id, idIndex) => (
+                                    <div
+                                      className={`${styles.columnData}`}
+                                      key={`${id}-${idIndex}`}
+                                    >
+                                      <div
+                                        className={styles.columnDataValue}
+                                        contentEditable
+                                        suppressContentEditableWarning={true}
+                                        onInput={(e) => {
+                                          debouncedHandleEditId({
+                                            value: e.target.innerText,
+                                            entry,
+                                            entryIndex,
+                                            idIndex,
+                                            slotIndex,
+                                          });
+                                        }}
+                                      >
+                                        {id}
+                                      </div>
+                                      <div
+                                        contentEditable={false}
+                                        className={styles.columnDataClose}
+                                        onClick={() => {
+                                          handleRemoveIds({
+                                            entry,
+                                            entryIndex,
+                                            idIndex,
+                                            slotIndex,
+                                          });
+                                        }}
+                                      >
+                                        X
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </td>
 
@@ -763,13 +1039,17 @@ const DFNVTest = ({ data }) => {
 
                         return (
                           <td className='p-0 align-top'>
-                            <Table responsive>
+                            <Table
+                              responsive
+                              className='mb-0'
+                              style={{ borderCollapse: 'collapse' }}
+                            >
                               <tr>
-                                <th className={styles.dataColumnHeader}>E2</th>
-                                <th className={styles.dataColumnHeader}>ST-MW</th>
+                                <th className='border-top-0'>E2</th>
+                                <th className='border-start border-top-0'>ST-MW</th>
                               </tr>
                               <tbody>
-                                <tr key={`${entryIndex}-${_pointIndex}-e2`}>
+                                <tr key={`${entryIndex}-${_pointIndex}-row-e2-st-mw`}>
                                   <td>
                                     <Form
                                       onKeyDown={(e) =>
@@ -789,21 +1069,24 @@ const DFNVTest = ({ data }) => {
                                         render={({ field }) => (
                                           <Form.Control
                                             onChange={(e) => {
+                                              const value = e.target.value;
                                               const key = `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.e2`;
-                                              form.setValue(key, e.target.value);
+                                              //* allow only number, dot, and asterisk
+                                              if (/[^0-9.*]/.test(value)) return;
+                                              form.setValue(key, value);
                                             }}
                                             name={field.name}
                                             ref={field.ref}
                                             value={field.value}
                                             className={`${styles.columnData} text-center`}
-                                            type='number'
+                                            type='text'
                                           />
                                         )}
                                       />
                                     </Form>
                                   </td>
 
-                                  <td>
+                                  <td className='border-start'>
                                     <Form
                                       onKeyDown={(e) =>
                                         dataInputOnKeyDown({
@@ -822,14 +1105,17 @@ const DFNVTest = ({ data }) => {
                                         render={({ field }) => (
                                           <Form.Control
                                             onChange={(e) => {
+                                              const value = e.target.value;
                                               const key = `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.st-mw`;
-                                              form.setValue(key, e.target.value);
+                                              //* allow only number, dot, and asterisk
+                                              if (/[^0-9.*]/.test(value)) return;
+                                              form.setValue(key, value);
                                             }}
                                             name={field.name}
                                             ref={field.ref}
                                             value={field.value}
                                             className={`${styles.columnData} text-center`}
-                                            type='number'
+                                            type='text'
                                           />
                                         )}
                                       />
@@ -837,11 +1123,11 @@ const DFNVTest = ({ data }) => {
                                   </td>
                                 </tr>
 
-                                {Array.from({ length: maximumDataLength }).map(
+                                {Array.from({ length: maximumDataLengthRow1 }).map(
                                   (_, indexColumnData) => {
                                     return (
                                       <tr key={indexColumnData}>
-                                        <td className={styles.columnDataContent}>
+                                        <td className={`${styles.columnDataContent}`}>
                                           {point.data?.[0]?.[indexColumnData] ? (
                                             <div
                                               className={`${styles.columnData}`}
@@ -894,7 +1180,8 @@ const DFNVTest = ({ data }) => {
                                             </div>
                                           )}
                                         </td>
-                                        <td className={styles.columnDataContent}>
+
+                                        <td className={`${styles.columnDataContent} border-start`}>
                                           {point.data?.[1]?.[indexColumnData] ? (
                                             <div
                                               className={`${styles.columnData}`}
@@ -951,11 +1238,212 @@ const DFNVTest = ({ data }) => {
                                   }
                                 )}
 
-                                {maximumDataLength === 0 && (
+                                {maximumDataLengthRow1 === 0 && (
                                   <tr>
                                     <td>&nbsp;</td>
                                     <td>&nbsp;</td>
                                   </tr>
+                                )}
+
+                                <tr>
+                                  <th className='border-top'>F1</th>
+                                  <th className='border-top border-start'>F1</th>
+                                </tr>
+
+                                <tr key={`${entryIndex}-${_pointIndex}-row-f1-f1`}>
+                                  <td>
+                                    <Form
+                                      onKeyDown={(e) =>
+                                        dataInputOnKeyDown({
+                                          event: e,
+                                          key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`,
+                                          entry,
+                                          entryIndex,
+                                          calibrationPointIndex: _pointIndex,
+                                          dataColumnIndex: 2,
+                                        })
+                                      }
+                                    >
+                                      <Controller
+                                        name={`data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`}
+                                        control={form.control}
+                                        render={({ field }) => (
+                                          <Form.Control
+                                            onChange={(e) => {
+                                              const value = e.target.value;
+                                              const key = `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`;
+                                              //* allow only number, dot, and asterisk
+                                              if (/[^0-9.*]/.test(value)) return;
+                                              form.setValue(key, value);
+                                            }}
+                                            name={field.name}
+                                            ref={field.ref}
+                                            value={field.value}
+                                            className={`${styles.columnData} text-center`}
+                                            type='text'
+                                          />
+                                        )}
+                                      />
+                                    </Form>
+                                  </td>
+
+                                  <td className='border-start'>
+                                    <Form
+                                      onKeyDown={(e) =>
+                                        dataInputOnKeyDown({
+                                          event: e,
+                                          key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`,
+                                          entry,
+                                          entryIndex,
+                                          calibrationPointIndex: _pointIndex,
+                                          dataColumnIndex: 3,
+                                        })
+                                      }
+                                    >
+                                      <Controller
+                                        name={`data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`}
+                                        control={form.control}
+                                        render={({ field }) => (
+                                          <Form.Control
+                                            onChange={(e) => {
+                                              const value = e.target.value;
+                                              const key = `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`;
+                                              //* allow only number, dot, and asterisk
+                                              if (/[^0-9.*]/.test(value)) return;
+                                              form.setValue(key, value);
+                                            }}
+                                            name={field.name}
+                                            ref={field.ref}
+                                            value={field.value}
+                                            className={`${styles.columnData} text-center`}
+                                            type='text'
+                                          />
+                                        )}
+                                      />
+                                    </Form>
+                                  </td>
+                                </tr>
+
+                                {maximumDataLengthRow2 === 0 && (
+                                  <tr>
+                                    <td>&nbsp;</td>
+                                    <td>&nbsp;</td>
+                                  </tr>
+                                )}
+
+                                {Array.from({ length: maximumDataLengthRow2 }).map(
+                                  (_, indexColumnData) => {
+                                    return (
+                                      <tr key={indexColumnData}>
+                                        <td className={`${styles.columnDataContent}`}>
+                                          {point.data?.[2]?.[indexColumnData] ? (
+                                            <div
+                                              className={`${styles.columnData}`}
+                                              key={indexColumnData}
+                                            >
+                                              <div
+                                                className={styles.columnDataValue}
+                                                contentEditable
+                                                suppressContentEditableWarning={true}
+                                                onKeyDown={handleKeyDownData}
+                                                onPaste={handleOnPasteData}
+                                                onInput={(e) => {
+                                                  debouncedHandleEditData({
+                                                    value: e.target.innerText,
+                                                    entry,
+                                                    entryIndex,
+                                                    calibrationPointIndex: _pointIndex,
+                                                    dataColumnIndex: 2,
+                                                    dataIndex: indexColumnData,
+                                                  });
+                                                }}
+                                              >
+                                                {point.data?.[2]?.[indexColumnData]}
+                                              </div>
+                                              <div
+                                                contentEditable={false}
+                                                className={styles.columnDataClose}
+                                                onClick={() => {
+                                                  handleRemoveData({
+                                                    entry,
+                                                    entryIndex,
+                                                    calibrationPointIndex: _pointIndex,
+                                                    dataColumnIndex: 2,
+                                                    dataIndex: indexColumnData,
+                                                  });
+                                                }}
+                                              >
+                                                X
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div
+                                              className={`${styles.columnData}`}
+                                              key={indexColumnData}
+                                              style={{
+                                                borderColor: 'transparent',
+                                              }}
+                                            >
+                                              &nbsp;
+                                            </div>
+                                          )}
+                                        </td>
+
+                                        <td className={`${styles.columnDataContent} border-start`}>
+                                          {point.data?.[3]?.[indexColumnData] ? (
+                                            <div
+                                              className={`${styles.columnData}`}
+                                              key={indexColumnData}
+                                            >
+                                              <div
+                                                className={styles.columnDataValue}
+                                                contentEditable
+                                                suppressContentEditableWarning={true}
+                                                onKeyDown={handleKeyDownData}
+                                                onInput={(e) => {
+                                                  debouncedHandleEditData({
+                                                    value: e.target.innerText,
+                                                    entry,
+                                                    entryIndex,
+                                                    calibrationPointIndex: _pointIndex,
+                                                    dataColumnIndex: 3,
+                                                    dataIndex: indexColumnData,
+                                                  });
+                                                }}
+                                              >
+                                                {point.data?.[3]?.[indexColumnData]}
+                                              </div>
+                                              <div
+                                                contentEditable={false}
+                                                className={styles.columnDataClose}
+                                                onClick={() => {
+                                                  handleRemoveData({
+                                                    entry,
+                                                    entryIndex,
+                                                    calibrationPointIndex: _pointIndex,
+                                                    dataColumnIndex: 3,
+                                                    dataIndex: indexColumnData,
+                                                  });
+                                                }}
+                                              >
+                                                X
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div
+                                              className={`${styles.columnData}`}
+                                              key={indexColumnData}
+                                              style={{
+                                                borderColor: 'transparent',
+                                              }}
+                                            >
+                                              &nbsp;
+                                            </div>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  }
                                 )}
                               </tbody>
                             </Table>

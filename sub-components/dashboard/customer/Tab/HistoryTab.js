@@ -9,19 +9,38 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap';
 import {
+  ArrowRepeat,
+  ArrowReturnLeft,
+  Building,
   CardList,
+  CheckCircle,
   Eye,
+  Flag,
+  HandThumbsDown,
+  Hourglass,
   PencilSquare,
   PersonFill,
   PersonLinesFill,
+  ShieldCheck,
   ThreeDotsVertical,
   Trash,
+  XCircle,
 } from 'react-bootstrap-icons';
 import DataTableViewOptions from '../../../../components/common/DataTableViewOptions';
 import DataTable from '../../../../components/common/DataTable';
 import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
 import { useRouter } from 'next/router';
-import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  runTransaction,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { db } from '@/firebase';
 import { dateFilter, dateSort, fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import DataTableSearch from '@/components/common/DataTableSearch';
@@ -31,23 +50,38 @@ import DataTableFilter from '@/components/common/DataTableFilter';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const HistoryTab = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const auth = useAuth();
+  const { customerId } = router.query;
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
 
   const columnHelper = createColumnHelper();
 
-  const getDurationText = (startDate, endDate, startTime, endTime) => {
+  const getStartEnd = (startDate, endDate, startTime, endTime) => {
     const start = new Date(`${startDate}T${startTime}:00`);
     const end = new Date(`${endDate}T${endTime}:00`);
-    return formatDistanceStrict(start, end);
+    return { duration: formatDistanceStrict(start, end), start, end };
   };
 
   const columns = useMemo(() => {
     return [
+      columnHelper.accessor('index', {
+        id: 'index',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='#' />,
+        enableSorting: false,
+        size: 50,
+        cell: (info) => {
+          const rowIndex = info.row.index;
+          const pageIndex = table.getState().pagination.pageIndex;
+          const pageSize = table.getState().pagination.pageSize;
+          const displayIndex = rowIndex + pageIndex * pageSize + 1;
+          return <div>{displayIndex}</div>;
+        },
+      }),
       columnHelper.accessor('id', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
@@ -103,20 +137,20 @@ export const HistoryTab = () => {
           );
         },
       }),
-      columnHelper.accessor((row) => `${row.customer.name}`, {
+      columnHelper.accessor((row) => `${row.customer.name} - ${row.location.name}`, {
         id: 'customer',
+        filterFn: 'includesString',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Customer' />,
-        cell: ({ row }) => <span>{row.original.customer.name}</span>,
-      }),
-      columnHelper.accessor((row) => `${row.location.name}`, {
-        id: 'location',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Location' />,
-        cell: ({ row }) => {
-          return <div>{row.original.location.name}</div>;
-        },
-      }),
-      columnHelper.accessor('description', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
+        cell: ({ row }) => (
+          <div className='d-flex flex-column justify-content-center row-gap-1'>
+            <div>
+              <PersonFill size={14} className='text-primary me-2' /> {row.original.customer.name}
+            </div>
+            <div>
+              <Building size={14} className='text-primary me-2' /> {row.original.location.name}
+            </div>
+          </div>
+        ),
       }),
       columnHelper.accessor('status', {
         size: 100,
@@ -128,6 +162,8 @@ export const HistoryTab = () => {
             created: 'warning',
             'in progress': 'primary',
             cancelled: 'danger',
+            rejected: 'danger',
+            validated: 'purple',
           };
           return (
             <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
@@ -189,37 +225,82 @@ export const HistoryTab = () => {
       ),
       columnHelper.accessor(
         (row) => {
+          //TODO: filtering & sorting logic
           const { startDate, endDate, startTime, endTime } = row;
-          return getDurationText(startDate, endDate, startTime, endTime);
+          return getStartEnd(startDate, endDate, startTime, endTime);
         },
         {
-          id: 'duration',
-          size: 100,
-          header: ({ column }) => <DataTableColumnHeader column={column} title='Duration' />,
+          id: 'Schedule',
+          size: 180,
+          header: ({ column }) => <DataTableColumnHeader column={column} title='Schedule' />,
           cell: ({ row }) => {
             const { startDate, endDate, startTime, endTime } = row.original;
-            const duration = getDurationText(startDate, endDate, startTime, endTime);
-            return <div>{duration}</div>;
+            const startEnd = getStartEnd(startDate, endDate, startTime, endTime);
+            return (
+              <div className='d-flex flex-column gap-2 justify-content-center'>
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>Start</div>
+                  <div>{format(startEnd.start, 'dd-MM-yyyy HH:mm')}</div>
+                </div>
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>End</div>
+                  <div>{format(startEnd.end, 'dd-MM-yyyy HH:mm')}</div>
+                </div>
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>Duration:</div> <div>{startEnd.duration}</div>
+                </div>
+              </div>
+            );
           },
         }
       ),
-      columnHelper.accessor((row) => format(row.updatedAt.toDate(), 'dd-MM-yyyy'), {
-        id: 'last updated',
+
+      columnHelper.accessor(
+        (row) => {
+          //TODO: filtering & sorting logic
+          const { startDate, endDate, startTime, endTime } = row;
+          return getStartEnd(startDate, endDate, startTime, endTime);
+        },
+        {
+          id: 'Start / End',
+          size: 180,
+          header: ({ column }) => <DataTableColumnHeader column={column} title='Stard / End' />,
+          cell: ({ row }) => {
+            const startBy = row.original?.details?.startBy?.displayName;
+            const startByAt = row.original?.details?.startByAt?.toDate();
+
+            const endBy = row.original?.details?.endBy?.displayName;
+            const endByAt = row.original?.details?.endByAt?.toDate();
+
+            return (
+              <div className='d-flex flex-column gap-2 justify-content-center'>
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>Start:</div>
+                  <div>{startBy || 'N/A'}</div>
+                  <div>{startByAt ? format(startByAt, 'dd-MM-yyyy HH:mm') : 'N/A'}</div>
+                </div>
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>Completed:</div>
+                  <div>{endBy || 'N/A'}</div>
+                  <div>{endByAt ? format(endByAt, 'dd-MM-yyyy HH:mm') : 'N/A'}</div>
+                </div>
+              </div>
+            );
+          },
+        }
+      ),
+      columnHelper.accessor((row) => row?.details?.isReturnedEquipment, {
+        id: 'equipment status',
         size: 100,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Last Updated' />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment Status' />,
         cell: ({ row }) => {
-          const updatedAt = row.original.updatedAt.toDate();
-          return <div>{format(updatedAt, 'dd-MM-yyyy, p')}</div>;
-        },
-        filterFn: (row, columnId, filterValue, addMeta) => {
-          const updatedAt = row.original.updatedAt.toDate();
-          const filterDateValue = new Date(filterValue);
-          return dateFilter(updatedAt, filterDateValue);
-        },
-        sortingFn: (rowA, rowB, columnId) => {
-          const rowAUpdatedAt = rowA.original.updatedAt.toDate();
-          const rowBUpdatedAt = rowB.original.updatedAt.toDate();
-          return dateSort(rowAUpdatedAt, rowBUpdatedAt);
+          const status = row.original?.details?.isReturnedEquipment;
+
+          return (
+            <Badge className='text-capitalize' bg={status ? 'success' : 'danger'}>
+              {status ? 'Returned' : 'Unreturned'}
+            </Badge>
+          );
         },
       }),
       columnHelper.accessor((row) => row.createdBy?.displayName || 'N/A', {
@@ -243,7 +324,7 @@ export const HistoryTab = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id } = row.original;
+          const { id, details } = row.original;
 
           const handleViewJob = (id) => {
             router.push(`/jobs/view/${id}`);
@@ -289,11 +370,107 @@ export const HistoryTab = () => {
             });
           };
 
+          const handleUpdateJobStatus = (id, status) => {
+            Swal.fire({
+              title: `Job Status Update - Job #${id}`,
+              text: `Are you sure you want to update the job status to "${_.startCase(status)}"?`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  const jobHeaderRef = doc(db, 'jobHeaders', id);
+
+                  await updateDoc(jobHeaderRef, {
+                    status,
+                    updatedAt: serverTimestamp(),
+                    updatedBy: auth.currentUser,
+                  });
+
+                  toast.success('Job status updated successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error updating job status:', error);
+                  toast.error('Error updating job status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
+
+          const handleReturnEquipment = (id, details) => {
+            if (!details || !details.equipments) {
+              toast.error('Job details not found');
+              return;
+            }
+
+            Swal.fire({
+              title: 'Are you sure?',
+              text: 'Are you sure you want to return all the equipment related to this job?',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#1e40a6',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  await runTransaction(db, async (transaction) => {
+                    try {
+                      //* update equipment qty
+                      details.equipments.map((eq) => {
+                        transaction.update(doc(db, 'equipments', eq.id), { qty: increment(1) });
+                      });
+
+                      //* update job header
+                      const jobDetails = doc(db, 'jobDetails', id);
+                      transaction.update(jobDetails, {
+                        isReturnedEquipment: true,
+                        updatedAt: serverTimestamp(),
+                        updatedBy: auth.currentUser,
+                      });
+
+                      //* update job header
+                      const jobHeader = doc(db, 'jobHeaders', id);
+                      transaction.update(jobHeader, {
+                        updatedAt: serverTimestamp(),
+                        updatedBy: auth.currentUser,
+                      });
+                    } catch (error) {
+                      throw error;
+                    }
+                  });
+
+                  toast.success('Equipment returned successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error returning equipment:', error);
+                  toast.error('Error returning equipment: ' + error.message, {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
+
           return (
             <OverlayTrigger
               rootClose
               trigger='click'
-              placement='left-start'
+              placement='left'
+              offset={[0, 20]}
               overlay={
                 <Dropdown.Menu show style={{ zIndex: 999 }}>
                   <Dropdown.Item onClick={() => handleViewJob(id)}>
@@ -308,7 +485,56 @@ export const HistoryTab = () => {
                     <Trash className='me-2' size={16} />
                     Delete Job
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => {}}>
+
+                  <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
+                    <ArrowReturnLeft className='me-2' size={16} />
+                    Return Equipment
+                  </Dropdown.Item>
+
+                  <OverlayTrigger
+                    rootClose
+                    trigger='click'
+                    placement='right-end'
+                    overlay={
+                      <Dropdown.Menu show style={{ zIndex: 999 }}>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'in progress')}>
+                          <Hourglass className='me-2' size={16} />
+                          In Progress
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'confirmed')}>
+                          <Flag className='me-2' size={16} />
+                          Confirmed
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'completed')}>
+                          <CheckCircle className='me-2' size={16} />
+                          Completed
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'cancelled')}>
+                          <XCircle className='me-2' size={16} />
+                          Cancelled
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'rejected')}>
+                          <HandThumbsDown className='me-2' size={16} />
+                          Rejected
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'validated')}>
+                          <ShieldCheck className='me-2' size={16} />
+                          Validated
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    }
+                  >
+                    <Dropdown.Item>
+                      <ArrowRepeat className='me-2' size={16} />
+                      Update Status
+                    </Dropdown.Item>
+                  </OverlayTrigger>
+
+                  <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations`)}>
+                    <Eye className='me-2' size={16} />
+                    View Calibrations
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
                     <CardList className='me-2' size={16} />
                     Create Calibrate
                   </Dropdown.Item>
@@ -332,40 +558,16 @@ export const HistoryTab = () => {
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'Job ID',
+        label: 'ID',
         columnId: 'id',
         type: 'text',
         placeholder: 'Search by job id...',
-      },
-      {
-        label: 'Customer',
-        columnId: 'customer',
-        type: 'text',
-        placeholder: 'Search by customer...',
-      },
-      {
-        label: 'Location',
-        columnId: 'location',
-        type: 'text',
-        placeholder: 'Search by location...',
-      },
-      {
-        label: 'Description',
-        columnId: 'description',
-        type: 'text',
-        placeholder: 'Search by description...',
       },
       {
         label: 'Technician',
         columnId: 'workers',
         type: 'text',
         placeholder: 'Search by technician...',
-      },
-      {
-        label: 'Duration',
-        columnId: 'duration',
-        type: 'text',
-        placeholder: 'Search by duration...',
       },
       {
         label: 'Scope',
@@ -413,11 +615,6 @@ export const HistoryTab = () => {
         columnId: 'date',
         type: 'date',
       },
-      {
-        label: 'Last Updated',
-        columnId: 'last updated',
-        type: 'date',
-      },
     ];
   }, []);
 
@@ -428,17 +625,15 @@ export const HistoryTab = () => {
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: { globalSearch: globalSearchFilter },
-    globalFilterFn: 'globalSearch',
     initialState: {
       columnPinning: { right: ['actions'] },
     },
   });
 
   useEffect(() => {
-    if (!id) return;
+    if (!customerId) return;
 
-    const q = query(collection(db, 'jobHeaders'), where('customer.id', '==', id));
+    const q = query(collection(db, 'jobHeaders'), where('customer.id', '==', customerId));
 
     const unsubscribe = onSnapshot(
       q,
@@ -463,7 +658,7 @@ export const HistoryTab = () => {
     );
 
     return () => unsubscribe();
-  }, [id]);
+  }, [customerId]);
 
   return (
     <Card className='border-0 shadow-none'>

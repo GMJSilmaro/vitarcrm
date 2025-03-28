@@ -112,6 +112,7 @@ export const calibrationInfoSchema = z
     jobId: z.string().min(1, 'Job ID is required'),
     calibrateId: z.string().min(1, 'Calibrate ID is required'),
     certificateNumber: z.string().min(1, 'Certificate No is required'),
+    serialNumber: z.string().default(''),
     category: z.union([categoryEnum, z.record(z.string(), z.any())]).transform((formData) => {
       if (typeof formData === 'object') return formData.value;
       return formData;
@@ -219,6 +220,8 @@ export const calibrationMeasurementSchema = z.object({
       if (typeof formData === 'object') return formData.value;
       return formData;
     }),
+  typeOfBalance: z.string().default(''),
+  calibrationLocation: z.string().default(''),
   rangeMaxCalibration: z.coerce.number({
     message: 'Maximum Range Calibration is required',
   }),
@@ -255,15 +258,12 @@ export const calibrationReferenceInstrumentsSchema = z.object({
 });
 
 export const dfnvCalibrationPointSchema = z.object({
-  data: z.array(z.array(z.coerce.number()).default([])).default([]),
+  data: z.array(z.array(z.string().min(1, 'Please enter a value')).default([])).default([]),
 });
 
 export const dfnvSchema = z.object({
-  equipmentId: z.string(),
-  tagId: z.string(),
-  description: z.string(),
   calibrationPoints: z.array(dfnvCalibrationPointSchema),
-  ids: z.array(z.string()).default([]),
+  ids: z.array(z.array(z.string())),
 });
 
 export const rTestSchema = z.object({
@@ -275,6 +275,7 @@ export const rTestSchema = z.object({
 });
 
 export const eTestSchema = z.object({
+  testLoad: z.coerce.number().default(0),
   values: z.array(z.coerce.number()).default([]),
   maxError: z.coerce.number().default(0),
 });

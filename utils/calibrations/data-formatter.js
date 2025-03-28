@@ -5,7 +5,9 @@ export const formatToDicimalString = (value, dicimalPlaces = 4) => {
     if (typeof value === 'string') return '';
     if (value === undefined || value === null) return '';
     if (isNaN(value)) return '';
-    return value.toFixed(dicimalPlaces);
+    // if (isNaN(value)) return '';
+    // return value.toFixed(dicimalPlaces);
+    return math.format(value, { notation: 'fixed', precision: dicimalPlaces });
   } catch (error) {
     console.error(err);
     console.error('Error formatting decimal value:', value);

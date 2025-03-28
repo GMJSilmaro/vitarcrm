@@ -1,7 +1,7 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
 import Calibration from '@/sub-components/dashboard/jobs/calibrations/view/Calibration';
-import InfoTab from '@/sub-components/dashboard/jobs/calibrations/view/InfoTab';
+import SummaryTab from '@/sub-components/dashboard/jobs/calibrations/view/SummaryTab';
 import Result from '@/sub-components/dashboard/jobs/calibrations/view/Result';
 import Measurements from '@/sub-components/dashboard/jobs/calibrations/view/Measurements';
 import ReferenceInstruments from '@/sub-components/dashboard/jobs/calibrations/view/ReferenceInstruments';
@@ -194,7 +194,7 @@ const CalibrationDetails = () => {
           <Card.Body>
             <Tabs activeKey={activeTab} onSelect={setActiveTab}>
               <Tab eventKey='0' title='Summary'>
-                <InfoTab calibration={calibration} />
+                <SummaryTab calibration={calibration} />
               </Tab>
 
               <Tab eventKey='1' title='Measurements'>

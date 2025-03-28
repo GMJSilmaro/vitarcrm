@@ -6,6 +6,7 @@ import { Dropdown, Image } from 'react-bootstrap';
 import { BoxArrowRight, Gear, Person } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import { useLogo } from '@/contexts/LogoContext';
+import TodayDate from '@/sub-components/dashboard/user/jobs/TodayDate';
 
 const UserLayoutHeader = ({ user }) => {
   const { logo } = useLogo();
@@ -207,7 +208,8 @@ const UserLayoutHeader = ({ user }) => {
 
   return (
     <div className='px-5 py-3 d-flex justify-content-between border boder-bottom'>
-      <Image src={logo} alt='Company Logo' style={{ height: '80px', width: 'auto' }} />
+      {/* <Image src={logo} alt='Company Logo' style={{ height: '80px', width: 'auto' }} /> */}
+      <TodayDate />
 
       <div className='d-flex gap-2 align-items-center'>
         <div className='d-flex flex-column'>

@@ -65,7 +65,7 @@ const ETest = ({ calibration }) => {
           <thead>
             <tr>
               <th>Test Load</th>
-              <th>{testLoadFormatted}</th>
+              <th>{data?.etest?.testLoad || ''}</th>
               <th>Error</th>
             </tr>
           </thead>
