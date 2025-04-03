@@ -37,12 +37,11 @@ const DataTableSearch = ({ table, isGlobalSearch = true, columnId }) => {
   return (
     <Form.Control
       ref={inputRef}
-      className='fs-5 py-2 px-3'
+      className='fs-5 py-2 px-3 data-table-search'
       size='sm'
       type='text'
       placeholder='Search...'
       onChange={handleDebounceSearch}
-      style={{ width: '320px' }}
     />
   );
 };

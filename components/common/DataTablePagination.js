@@ -29,7 +29,7 @@ const DataTablePagination = ({ table, defaultPageSize, pageSize = [5, 10, 25, 50
   if (totalRows === 0) return null;
 
   return (
-    <div className='d-flex justify-content-between align-items-center column-gap-3'>
+    <div className='d-flex justify-content-center justify-content-lg-between align-items-center column-gap-4 row-gap-3 flex-wrap mt-3'>
       <div className='d-flex align-items-center column-gap-3'>
         <Select
           value={selectedPageSize}

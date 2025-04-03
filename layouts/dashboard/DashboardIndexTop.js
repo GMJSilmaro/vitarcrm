@@ -143,11 +143,18 @@ const DashboardIndexTop = (props) => {
   return (
     <div>
       {/* Main Navbar */}
-      <Navbar bg='white' expand='lg' className='border-bottom'>
+      <Navbar bg='white' expand='lg' className='border-bottom py-5'>
         <Container fluid>
           {/* Logo */}
-          <Navbar.Brand as={Link} href='/'>
-            <Image src={logo} alt='Company Logo' style={{ height: '80px', width: 'auto' }} />
+          <Navbar.Brand className='d-none d-md-block' as={Link} href='/'>
+            <div style={{ height: '70px' }}>
+              <Image
+                className='img-fluid'
+                src={logo}
+                alt='Company Logo'
+                style={{ height: '100%', width: '100%' }}
+              />
+            </div>
           </Navbar.Brand>
 
           {/* Search Box - Hidden for now */}
