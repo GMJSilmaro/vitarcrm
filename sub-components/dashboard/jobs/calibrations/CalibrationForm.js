@@ -9,7 +9,7 @@ import {
   calibrationSchema,
 } from '@/schema/calibration';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Form, Tab, Tabs } from 'react-bootstrap';
+import { Accordion, Form, Tab, Tabs } from 'react-bootstrap';
 import { FormProvider, useForm } from 'react-hook-form';
 import { getFormDefaultValues } from '@/utils/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,9 @@ import CalibrationReferenceInstrumentsForm from './tabls-form/CalibrationReferen
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import CalibrationMassForm from './tabls-form/CalibrationMassForm';
+import withReactContent from 'sweetalert2-react-content';
+import Swal from 'sweetalert2';
+import { ExclamationTriangleFill } from 'react-bootstrap-icons';
 
 const CalibrationForm = ({ data, isAdmin = true }) => {
   const auth = useAuth();
@@ -52,9 +55,55 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
 
   const formErrors = form.formState.errors;
 
+  const hasDuplicate = (array) => {
+    const seen = new Set();
+    const duplicates = new Set();
+
+    for (const value of array) {
+      if (seen.has(value)) duplicates.add(value);
+      seen.add(value);
+    }
+
+    return duplicates.size > 0 ? Array.from(duplicates) : [];
+  };
+
+  const validateCalibrationPointsData = (calibrationPoints) => {
+    if (!calibrationPoints) return [];
+
+    let conflict = [];
+    const classes = ['E2', 'ST-MW', '1st F1', '2nd F1'];
+
+    calibrationPoints.forEach((point, index) => {
+      point.data.forEach((slot, slotIndex) => {
+        const duplicates = hasDuplicate(slot);
+
+        if (duplicates.length > 0) {
+          conflict.push({
+            pointIndex: index,
+            slotIndex: slotIndex,
+            values: slot,
+            duplicates: duplicates,
+            message: `Duplicate value(s) in calibration point #${index + 1}, slot ${
+              classes[slotIndex]
+            }`,
+          });
+        }
+      });
+    });
+
+    return conflict;
+  };
+
   const handleNext = useCallback(async () => {
-    const isValid = await form.trigger();
-    if (!isValid) return;
+    //* only trigger form.trigger at top if its not the final part of form becauase it clears all errors which is not needed
+    if (Number(activeKey) < tabSchema.length - 1) {
+      const isValid = await form.trigger();
+
+      if (!isValid) {
+        toast.error('Please fix the errors in the form and try again.', { position: 'top-right' });
+        return;
+      }
+    }
 
     if (Number(activeKey) <= tabSchema.length - 1) {
       const nextActiveKey = String(Number(activeKey) + 1);
@@ -64,6 +113,61 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
         const parseData = calibrationSchema.safeParse(form.getValues());
 
         if (parseData.success) {
+          //* check conflict
+          const conflicts = validateCalibrationPointsData(
+            parseData.data?.data?.dfnv?.[0]?.calibrationPoints
+          );
+
+          if (conflicts.length > 0) {
+            console.log({ conflicts });
+
+            setActiveKey((prev) => prev - 1);
+            setIsLoading(false);
+
+            //* Swal popup with conflict, using accordion
+            await withReactContent(Swal).fire({
+              title: 'Duplicate Value Error',
+              icon: 'error',
+              showConfirmButton: false,
+              showCloseButton: true,
+              cancelButtonText: 'Ok',
+              width: '600px',
+              html: (
+                <div>
+                  <div>
+                    The following calibration points have duplicate values. Please fix the errors
+                    and try again.
+                  </div>
+
+                  <Accordion className='mt-4'>
+                    {conflicts.map((conflict, i) => (
+                      <Accordion.Item eventKey={`${i}-${conflict.pointIndex}`}>
+                        <Accordion.Header className='text-danger'>
+                          <ExclamationTriangleFill className='me-3' size={17} />
+                          {conflict.message}
+                        </Accordion.Header>
+                        <Accordion.Body className='fs-6'>
+                          <div className='d-flex flex-column align-items-start gap-2'>
+                            <div>
+                              <span className='fw-bold me-2'>Duplicates:</span>{' '}
+                              {conflict?.duplicates?.join(', ')}
+                            </div>
+                            <div>
+                              <span className='fw-bold me-2'>Values:</span>{' '}
+                              {conflict?.values?.join(', ')}
+                            </div>
+                          </div>
+                        </Accordion.Body>
+                      </Accordion.Item>
+                    ))}
+                  </Accordion>
+                </div>
+              ),
+            });
+
+            return;
+          }
+
           handleSubmit(parseData.data);
         } else toast.error('Failed to parse data. Please try again later.');
       }
@@ -74,71 +178,76 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
     if (Number(activeKey) > 0) handleOnSelect(activeKey - 1);
   }, [activeKey]);
 
-  const handleSubmit = useCallback(async (formData) => {
-    console.log({ formData });
+  const handleSubmit = useCallback(
+    async (formData) => {
+      console.log({ formData });
 
-    try {
-      setIsLoading(true);
+      try {
+        setIsLoading(true);
 
-      const results = {
-        nominalValues: formData?.data?.nominalValues || [],
-        measuredValuesM: formData?.data?.measuredValuesM || [],
-        corrections: formData?.data?.corrections || [],
-        expandedUncertainties: formData?.data?.expandedUncertainties || [],
-        rangeType: formData?.rangeType || 'single',
-        resolution: !isNaN(parseFloat(formData?.resolution)) ? parseFloat(formData?.resolution) : 0,
-        rtestMaxError: formData?.data?.rtest?.maxError || 0,
-      };
+        const results = {
+          nominalValues: formData?.data?.nominalValues || [],
+          measuredValuesM: formData?.data?.measuredValuesM || [],
+          corrections: formData?.data?.corrections || [],
+          expandedUncertainties: formData?.data?.expandedUncertainties || [],
+          rangeType: formData?.rangeType || 'single',
+          resolution: !isNaN(parseFloat(formData?.resolution))
+            ? parseFloat(formData?.resolution)
+            : 0,
+          rtestMaxError: formData?.data?.rtest?.maxError || 0,
+        };
 
-      const promises = [
-        setDoc(
-          doc(db, 'jobCalibrations', formData.calibrateId),
-          {
-            ...formData,
-            data: JSON.stringify(formData.data),
-            ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-            updatedAt: serverTimestamp(),
-            updatedBy: auth.currentUser,
-          },
-          { merge: true }
-        ),
-        setDoc(
-          doc(db, 'jobCertificates', formData.certificateNumber),
-          {
-            results,
-            jobId: formData.jobId,
-            calibrateId: formData.calibrateId,
-            certificateNumber: formData.certificateNumber,
-            ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-            updatedAt: serverTimestamp(),
-            updatedBy: auth.currentUser,
-          },
-          { merge: true }
-        ),
-      ];
+        const promises = [
+          setDoc(
+            doc(db, 'jobCalibrations', formData.calibrateId),
+            {
+              ...formData,
+              data: JSON.stringify(formData.data),
+              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            },
+            { merge: true }
+          ),
+          setDoc(
+            doc(db, 'jobCertificates', formData.certificateNumber),
+            {
+              results,
+              jobId: formData.jobId,
+              calibrateId: formData.calibrateId,
+              certificateNumber: formData.certificateNumber,
+              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            },
+            { merge: true }
+          ),
+        ];
 
-      await Promise.all(promises);
+        await Promise.all(promises);
 
-      if (isAdmin) {
-        window.location.assign(
-          `/jobs/${formData.jobId}/calibrations//edit-calibrations/${formData.calibrateId}`
-        );
-      } else {
-        workerId &&
+        if (isAdmin) {
           window.location.assign(
-            `/user/${workerId}/jobs/${formData.jobId}/calibrations/${formData.calibrateId}`
+            `/jobs/${formData.jobId}/calibrations//edit-calibrations/${formData.calibrateId}`
           );
+        } else {
+          workerId &&
+            window.location.assign(
+              `/user/${workerId}/jobs/${formData.jobId}/calibrations/${formData.calibrateId}`
+            );
+        }
+        toast.success(`Calibration ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
+        setIsLoading(false);
+        setActiveKey((prev) => prev - 1);
+      } catch (error) {
+        console.error('Error submitting calibraiton:', error);
+        toast.error('Something went wrong. Please try again later.');
+        setIsLoading(false);
+        setActiveKey((prev) => prev - 1);
       }
-      toast.success(`Calibration ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
-      setIsLoading(false);
-      setActiveKey((prev) => prev - 1);
-    } catch (error) {
-      console.error('Error submitting calibraiton:', error);
-      toast.error('Something went wrong. Please try again later.');
-      setIsLoading(false);
-      setActiveKey((prev) => prev - 1);
-    }
-  }, []);
+    },
+    [formErrors]
+  );
 
   const handleOnSelect = async (key) => {
     const isValid = await form.trigger();

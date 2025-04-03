@@ -19,6 +19,7 @@ import {
   Speedometer,
 } from 'react-bootstrap-icons';
 import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
+import PageHeader from '@/components/common/PageHeader';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -176,19 +177,16 @@ const CalibrationDetails = () => {
       />
 
       <div className='d-flex flex-column row-gap-4'>
-        <div className='d-flex justify-content-between align-items-start my-2'>
-          <div>
-            <h2 className='mb-0'>
-              View Calibration #{calibrateId} for Job #{jobId}
-            </h2>
-            <p className='text-muted mb-0'>View calibration details</p>
-          </div>
-
-          <Button variant='light' onClick={() => router.back()}>
-            <ArrowLeftShort size={20} className='me-2' />
-            Go Back
-          </Button>
-        </div>
+        <PageHeader
+          title={`View Calibration #${calibrateId} for Job #${jobId}`}
+          subtitle='View calibration details'
+          action={
+            <Button variant='light' onClick={() => router.back()}>
+              <ArrowLeftShort size={20} className='me-2' />
+              Go Back
+            </Button>
+          }
+        />
 
         <Card className='shadow-sm'>
           <Card.Body>

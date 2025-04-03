@@ -1,12 +1,11 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ClockHistory } from 'react-bootstrap-icons';
 import { JobTimer } from './JobTimer';
 import { Spinner } from 'react-bootstrap';
 import { useRouter } from 'next/router';
-import { useStopwatch } from 'react-timer-hook';
 
 const CurrentJobCard = () => {
   const auth = useAuth();
@@ -15,8 +14,6 @@ const CurrentJobCard = () => {
   const { workerId } = router.query;
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
-
-  const stopWatch = useStopwatch({ autoStart: false });
 
   const currentJobStat = useMemo(() => {
     const currentJob = jobs.data.find((job) => job.status === 'in progress');
@@ -92,12 +89,7 @@ const CurrentJobCard = () => {
         </div>
 
         <div>
-          <JobTimer
-            stopWatch={stopWatch}
-            job={currentJobStat.job}
-            workerId={currentJobStat.workerId}
-            auth={auth}
-          />
+          <JobTimer job={currentJobStat.job} workerId={currentJobStat.workerId} auth={auth} />
         </div>
       </div>
 

@@ -199,11 +199,12 @@ const CalculationTable = () => {
                       <Card.Body>
                         <Row className='position-relative'>
                           <Col
-                            md={3}
+                            lg={3}
                             style={{
                               padding: showCalculationTables ? undefined : '0',
                               width: showCalculationTables ? undefined : '0',
                               maxHeight: showCalculationTables ? '2160px' : '0',
+                              overflow: 'auto',
                               position: 'sticky',
                               transition: 'all 0.5s ease-in-out',
                             }}
@@ -468,7 +469,7 @@ const CalculationTable = () => {
                           </Col>
 
                           <Col
-                            md={showCalculationTables ? 9 : 12}
+                            lg={showCalculationTables ? 9 : 12}
                             style={{
                               maxHeight: showCalculationTables ? '2160px' : 'fit-content',
                               overflow: 'auto',

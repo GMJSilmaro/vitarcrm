@@ -1,3 +1,4 @@
+import PageHeader from '@/components/common/PageHeader';
 import { db } from '@/firebase';
 import JobForm from '@/sub-components/dashboard/jobs/JobForm';
 import { GeeksSEO } from '@/widgets';
@@ -89,17 +90,16 @@ const EditJob = () => {
       <GeeksSEO title={`Edit Job #${jobId} | VITAR Group | Portal`} />
 
       <div className='d-flex flex-column row-gap-4'>
-        <div className='d-flex justify-content-between align-items-start my-2'>
-          <div>
-            <h2 className='mb-0'>Edit Job #{job.id}</h2>
-            <p className='text-muted mb-0'>Edit job details</p>
-          </div>
-
-          <Button variant='light' onClick={() => router.back()}>
-            <ArrowLeftShort size={20} className='me-2' />
-            Go Back
-          </Button>
-        </div>
+        <PageHeader
+          title={`Edit Job #${job.id}`}
+          subtitle='Edit job details'
+          action={
+            <Button variant='light' onClick={() => router.back()}>
+              <ArrowLeftShort size={20} className='me-2' />
+              Go Back
+            </Button>
+          }
+        />
 
         <Card className='shadow-sm'>
           <Card.Body>

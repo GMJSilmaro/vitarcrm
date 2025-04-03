@@ -13,7 +13,7 @@ const TodayDate = () => {
   }, []);
 
   return (
-    <div className='d-flex align-items-center gap-3'>
+    <div className='d-flex align-items-center gap-3 today-date'>
       <span className='fw-bold' style={{ fontSize: 28, color: '#1e40a6' }}>
         {time}
       </span>

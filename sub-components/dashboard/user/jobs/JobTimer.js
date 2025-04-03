@@ -1,23 +1,18 @@
 import { db } from '@/firebase';
-import {
-  differenceInSeconds,
-  hoursToSeconds,
-  intervalToDuration,
-  minutesToSeconds,
-} from 'date-fns';
-import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { prependZero } from '@/utils/common';
+import { add, intervalToDuration } from 'date-fns';
+import { doc, getDoc, runTransaction, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { abs } from 'mathjs';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Spinner } from 'react-bootstrap';
 import { StopFill } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
-export function JobTimer({ stopWatch, job, workerId, auth }) {
-  const { hours, minutes, seconds, isRunning, start, pause, reset} = stopWatch; // prettier-ignore
+export function JobTimer({ job, workerId, auth }) {
+  const [elapse, setElapse] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
-
-  const formatTime = (num) => String(num).padStart(2, '0');
 
   const startJob = async (id) => {
     if (!id) return;
@@ -80,8 +75,6 @@ export function JobTimer({ stopWatch, job, workerId, auth }) {
             setIsLoading(true);
             e.stopPropagation();
 
-            reset(undefined, false);
-
             //* update job header & details
             const jobHeaderRef = doc(db, 'jobHeaders', job.id);
             const jobDetailsRef = doc(db, 'jobDetails', job.id);
@@ -122,23 +115,27 @@ export function JobTimer({ stopWatch, job, workerId, auth }) {
   useEffect(() => {
     if (!workerId || !job || !job?.id) return;
 
+    let interval;
     const jobDetailsRef = doc(db, 'jobDetails', job.id);
 
     getDoc(jobDetailsRef)
       .then((doc) => {
         if (doc.exists()) {
           const jobData = { id: doc.id, ...doc.data() };
-          const startAt = jobData?.startByAt?.toDate();
-          const timeNow = new Date();
+          const startByAt = jobData?.startByAt;
+          const startByAtDate = startByAt.toDate(); // * by using toDate() from  timestamp UTC causes loss of precision since Date objects only support millisecond precision.
 
-          if (startAt) {
-            const differerenceInSeconds = differenceInSeconds(timeNow, startAt);
-            const elapseSeconds = differerenceInSeconds + 60;
+          if (startByAt) {
+            interval = setInterval(() => {
+              const now = add(new Date(), { minutes: 1, seconds: 23 });
 
-            console.log({ startAt, timeNow });
-
-            timeNow.setSeconds(elapseSeconds);
-            reset(timeNow, true);
+              setElapse(
+                intervalToDuration({
+                  start: startByAtDate,
+                  end: now,
+                })
+              );
+            }, 1000);
           } else startJob(job?.id);
         }
       })
@@ -146,6 +143,8 @@ export function JobTimer({ stopWatch, job, workerId, auth }) {
         console.error(err.message);
         toast.error('Failed to reinitialize the timer. Please try again later.');
       });
+
+    return () => interval && clearInterval(interval);
   }, [workerId, job]);
 
   if (isLoading)
@@ -155,37 +154,32 @@ export function JobTimer({ stopWatch, job, workerId, auth }) {
       </div>
     );
 
+  if (!elapse) return null;
+
   return (
     <div className='d-flex gap-2'>
       <span className='fw-bold py-1 px-2 rounded bg-primary-soft text-dark'>
-        {formatTime(hours)}
+        {prependZero(elapse?.days ?? 0)}
       </span>
-      <span>:</span>
+      <span className='my-auto'>:</span>
       <span className='fw-bold py-1 px-2 rounded bg-primary-soft text-dark'>
-        {formatTime(minutes)}
+        {prependZero(elapse?.hours ?? 0)}
       </span>
-      <span>:</span>
+      <span className='my-auto'>:</span>
       <span className='fw-bold py-1 px-2 rounded bg-primary-soft text-dark'>
-        {formatTime(seconds)}
+        {prependZero(elapse?.minutes ?? 0)}
+      </span>
+      <span className='my-auto'>:</span>
+      <span className='fw-bold py-1 px-2 rounded bg-primary-soft text-dark'>
+        {prependZero(elapse?.seconds ?? 0)}
       </span>
 
-      {isRunning && <div className='border mx-2' style={{ width: 1 }} />}
+      <div className='border mx-2' style={{ width: 1 }} />
 
       <div className='d-flex align-items-center gap-2'>
-        {/* {!isRunning && !isStop && (
-          <Button className='py-1 px-2' variant='primary' onClick={handleStart}>
-            <PlayFill size={18} className='me-1' />
-            {hours > 0 || minutes > 0 || seconds > 0 ? 'Resume' : 'Start'}
-          </Button>
-        )} */}
-
-        {isRunning && (
-          <>
-            <Button className='py-1 px-2' variant='danger' onClick={stopJob}>
-              <StopFill size={18} className='me-1' /> Stop
-            </Button>
-          </>
-        )}
+        <Button className='py-1 px-2' variant='danger' onClick={stopJob}>
+          <StopFill size={18} className='me-1' /> Stop
+        </Button>
       </div>
     </div>
   );

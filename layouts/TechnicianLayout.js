@@ -127,6 +127,7 @@ const TechnicianLayout = ({ children }) => {
       <main className='p-5 d-flex flex-column flex-grow-1 h-100'>
         <div className='d-flex mb-4 gap-3 flex-wrap align-content-center'>
           <Button
+            className='shadow-sm'
             onClick={() => router.push(`/user/${workerId}`)}
             variant={pathname === `/${workerId}` ? 'primary' : 'light'}
           >
@@ -135,6 +136,7 @@ const TechnicianLayout = ({ children }) => {
           </Button>
 
           <Button
+            className='shadow-sm'
             onClick={() => router.push(`/user/${workerId}/schedule`)}
             variant={pathname === `/${workerId}/schedule` ? 'primary' : 'light'}
           >
@@ -142,12 +144,12 @@ const TechnicianLayout = ({ children }) => {
             Schedule
           </Button>
 
-          <Button variant='light'>
+          <Button className='shadow-sm' variant='light'>
             <FileText size={16} className='me-2' />
             Reports
           </Button>
 
-          <Button variant='light'>
+          <Button className='shadow-sm' variant='light'>
             <Gear size={16} className='me-2' />
             Settings
           </Button>

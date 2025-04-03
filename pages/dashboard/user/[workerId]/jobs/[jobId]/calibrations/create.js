@@ -1,3 +1,4 @@
+import PageHeader from '@/components/common/PageHeader';
 import CalibrationForm from '@/sub-components/dashboard/jobs/calibrations/CalibrationForm';
 import CurrentJobCard from '@/sub-components/dashboard/user/jobs/CurrentJobCard';
 import { GeeksSEO } from '@/widgets';
@@ -14,17 +15,16 @@ const CreateCalibration = () => {
       <GeeksSEO title='Create Calibration | VITAR Group | Portal' />
 
       <div className='d-flex flex-column row-gap-4'>
-        <div className='d-flex justify-content-between align-items-start my-2'>
-          <div>
-            <h2 className='mb-0'>Create Calibration For Job #{jobId}</h2>
-            <p className='text-muted mb-0'>Create calibration for your job assignment</p>
-          </div>
-
-          <Button variant='light' onClick={() => router.back()}>
-            <ArrowLeftShort size={20} className='me-2' />
-            Go Back
-          </Button>
-        </div>
+        <PageHeader
+          title={`Create Calibration For Job #${jobId}`}
+          subtitle='Create calibration for your job assignment'
+          action={
+            <Button variant='light' onClick={() => router.back()}>
+              <ArrowLeftShort size={20} className='me-2' />
+              Go Back
+            </Button>
+          }
+        />
 
         <CurrentJobCard />
 

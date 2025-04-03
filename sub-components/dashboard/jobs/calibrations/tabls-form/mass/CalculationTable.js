@@ -198,11 +198,12 @@ const CalculationTable = () => {
                       <Card.Body>
                         <Row className='position-relative'>
                           <Col
-                            md={3}
+                            lg={3}
                             style={{
                               padding: showCalculationTables ? undefined : '0',
                               width: showCalculationTables ? undefined : '0',
                               maxHeight: showCalculationTables ? '2160px' : '0',
+                              overflow: 'auto',
                               position: 'sticky',
                               transition: 'all 0.5s ease-in-out',
                             }}
@@ -467,7 +468,7 @@ const CalculationTable = () => {
                           </Col>
 
                           <Col
-                            md={showCalculationTables ? 9 : 12}
+                            lg={showCalculationTables ? 9 : 12}
                             style={{
                               maxHeight: showCalculationTables ? '2160px' : 'fit-content',
                               overflow: 'auto',
@@ -606,7 +607,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
       if (entry?.data?.length < 1) return { entry, data: [] };
 
       const tagIds = entry?.ids?.length > 0 ? entry.ids : [];
-      const dataWithClass = entry.data;
+      const dataWithClass = entry?.data || [];
 
       //? dataWithClass elements is per class
       //? element 0 is E2
@@ -661,15 +662,15 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
               const cuswdRef2 = cuswd.data.filter(ref => slotTagIds.includes(ref.tagId) && ref.nominalValue === value && ref.class === valueClass ); //prettier-ignore
               const mpeRef = mpe.data.find(ref => ref.weight === value && ref.code === valueClass); //prettier-ignore
 
-              console.log({
-                value,
-                valueClass,
-                cuswdRef,
-                cuswdRef2,
-                mpeRef,
-                slotTagIds,
-                tagIdsSlotIndex,
-              });
+              // console.log({
+              //   value,
+              //   valueClass,
+              //   cuswdRef,
+              //   cuswdRef2,
+              //   mpeRef,
+              //   slotTagIds,
+              //   tagIdsSlotIndex,
+              // });
 
               const result = {
                 valueClass,
@@ -1032,7 +1033,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     vEff,
   ]);
 
-  console.log({ pointIndex, cuswd, mpe, entryData, refTableData });
+  // console.log({ pointIndex, cuswd, mpe, entryData, refTableData });
 
   return (
     <>
@@ -1821,7 +1822,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>gram</td>
             <td>Rect.</td>
             <td>B</td>
-            <td>{airBouyancyRelativeUncertainty}</td>
+            <td>{formatToDicimalString(airBouyancyRelativeUncertainty, 8)}</td>
             <td>{formatScientific(vCommonValue, 1)}</td>
             <td>{airBouyancyU}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>

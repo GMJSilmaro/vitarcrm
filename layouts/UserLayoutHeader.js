@@ -209,7 +209,9 @@ const UserLayoutHeader = ({ user }) => {
   return (
     <div className='px-5 py-3 d-flex justify-content-between border boder-bottom'>
       {/* <Image src={logo} alt='Company Logo' style={{ height: '80px', width: 'auto' }} /> */}
-      <TodayDate />
+      <div className='pe-3 d-flex align-items-center'>
+        <TodayDate />
+      </div>
 
       <div className='d-flex gap-2 align-items-center'>
         <div className='d-flex flex-column'>
@@ -238,7 +240,7 @@ const UserLayoutHeader = ({ user }) => {
             <Dropdown.Item as={Link} href='#'>
               <Person size={16} className='me-2' /> Profile
             </Dropdown.Item>
-            <Dropdown.Item as={Link} href='/dashboard/settings'>
+            <Dropdown.Item as={Link} href='#'>
               <Gear size={16} className='me-2' /> Settings
             </Dropdown.Item>
             <Dropdown.Divider />
