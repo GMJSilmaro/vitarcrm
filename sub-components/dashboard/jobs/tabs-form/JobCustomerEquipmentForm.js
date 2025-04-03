@@ -665,7 +665,7 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
                   isLoading={allCustomerEquipment.isLoading}
                   isError={allCustomerEquipment.isError}
                 >
-                  <div className='d-flex justify-content-between'>
+                  <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
                     <DataTableSearch table={table} />
 
                     <div className='d-flex align-items-center gap-2'>

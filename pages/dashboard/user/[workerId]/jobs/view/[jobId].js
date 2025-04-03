@@ -1,3 +1,4 @@
+import PageHeader from '@/components/common/PageHeader';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
@@ -200,17 +201,16 @@ const JobDetails = () => {
       <GeeksSEO title={`View Job #${jobId} | VITAR Group | Portal`} />
 
       <div className='d-flex flex-column row-gap-4'>
-        <div className='d-flex justify-content-between align-items-start my-2'>
-          <div>
-            <h2 className='mb-0'>View Job #{job.id}</h2>
-            <p className='text-muted mb-0'>View job details</p>
-          </div>
-
-          <Button variant='light' onClick={() => router.back()}>
-            <ArrowLeftShort size={20} className='me-2' />
-            Go Back
-          </Button>
-        </div>
+        <PageHeader
+          title={`View Job #${jobId}`}
+          subtitle='View job details'
+          action={
+            <Button variant='light' onClick={() => router.back()}>
+              <ArrowLeftShort size={20} className='me-2' />
+              Go Back
+            </Button>
+          }
+        />
 
         <Card>
           <Card.Body>

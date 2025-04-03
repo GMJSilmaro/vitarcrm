@@ -32,3 +32,21 @@
 .hover-item:hover {
   border: solid 1px #1e40a6 !important;
 }
+
+@media (max-width: 768px) {
+  .today-date span {
+    font-size: 18px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .today-date span {
+    font-size: 12px !important;
+  }
+}
+
+@media (min-width: 992px) {
+  .data-table-search {
+    width: 320px !important;
+  }
+}

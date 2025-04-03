@@ -3,6 +3,7 @@ import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
 import DataTableFilter from '@/components/common/DataTableFilter';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
+import PageHeader from '@/components/common/PageHeader';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
 import CurrentJobCard from '@/sub-components/dashboard/user/jobs/CurrentJobCard';
@@ -16,7 +17,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
@@ -44,6 +45,7 @@ const JobCalibration = () => {
 
   const { jobId, workerId } = router.query;
 
+  const [job, setJob] = useState({ data: null, isLoading: true, isError: false });
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
 
   const columnHelper = createColumnHelper();
@@ -175,18 +177,22 @@ const JobCalibration = () => {
                     <Eye className='me-2' size={16} />
                     View Calibration
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleEditCalibration(id)}>
-                    <PencilSquare className='me-2' size={16} />
-                    Edit Calibration
-                  </Dropdown.Item>
+
+                  {job.data?.status !== 'validated' && (
+                    <Dropdown.Item onClick={() => handleEditCalibration(id)}>
+                      <PencilSquare className='me-2' size={16} />
+                      Edit Calibration
+                    </Dropdown.Item>
+                  )}
+
                   <Dropdown.Item onClick={() => handleDeleteCalibration(id, certificateNumber)}>
                     <Trash className='me-2' size={16} />
                     Delete Calibration
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => {}}>
+                  {/* <Dropdown.Item onClick={() => {}}>
                     <FileEarmarkArrowDown className='me-2' size={16} />
                     Generate Certificate
-                  </Dropdown.Item>
+                  </Dropdown.Item> */}
                 </Dropdown.Menu>
               }
             >
@@ -202,7 +208,7 @@ const JobCalibration = () => {
         },
       }),
     ];
-  }, []);
+  }, [job]);
 
   const filterFields = useMemo(() => {
     return [
@@ -245,8 +251,6 @@ const JobCalibration = () => {
     ];
   }, []);
 
-  console.log({ jobId, workerId });
-
   const table = useReactTable({
     data: calibrations.data,
     columns,
@@ -261,6 +265,41 @@ const JobCalibration = () => {
     },
   });
 
+  //* query job
+  useEffect(() => {
+    if (!jobId) {
+      setJob({ data: null, isLoading: false, isError: false });
+      return;
+    }
+
+    const jobHeaderRef = doc(db, 'jobHeaders', jobId);
+    const jobDetailsRef = doc(db, 'jobDetails', jobId);
+
+    Promise.all([getDoc(jobHeaderRef), getDoc(jobDetailsRef)])
+      .then(([jobHeader, jobDetails]) => {
+        if (jobHeader.exists() && jobDetails.exists()) {
+          setJob({
+            data: {
+              id: jobHeader.id,
+              ...jobHeader.data(),
+              ...jobDetails.data(),
+            },
+            isLoading: false,
+            isError: false,
+          });
+
+          return;
+        }
+
+        setJob({ data: null, isLoading: false, isError: false });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setJob({ data: null, isLoading: false, isError: true });
+      });
+  }, [jobId]);
+
+  //* query calibration
   useEffect(() => {
     if (!jobId) return;
 
@@ -296,22 +335,23 @@ const JobCalibration = () => {
     return () => unsubscribe();
   }, [jobId]);
 
+  console.log({ job });
+
   return (
     <>
       <GeeksSEO title={`Job #${jobId} Calibrations - VITAR Group | Portal`} />
 
       <div className='d-flex flex-column row-gap-4 h-100'>
-        <div className='d-flex justify-content-between align-items-start my-2'>
-          <div>
-            <h2 className='mb-0'>Job #{jobId} Calibrations</h2>
-            <p className='text-muted mb-0'>List of all the calibrations for the job #{jobId}</p>
-          </div>
-
-          <Button variant='light' onClick={() => router.back()}>
-            <ArrowLeftShort size={20} className='me-2' />
-            Go Back
-          </Button>
-        </div>
+        <PageHeader
+          title={`Job #${jobId} Calibrations`}
+          subtitle={`List of all the calibrations for the job #${jobId}`}
+          action={
+            <Button variant='light' onClick={() => router.back()}>
+              <ArrowLeftShort size={20} className='me-2' />
+              Go Back
+            </Button>
+          }
+        />
 
         <CurrentJobCard />
 
@@ -319,10 +359,10 @@ const JobCalibration = () => {
           <Card.Body className='p-4'>
             <DataTable
               table={table}
-              isLoading={calibrations.isLoading}
+              isLoading={calibrations.isLoading || job.isLoading}
               isError={calibrations.isError}
             >
-              <div className='d-flex justify-content-between'>
+              <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
                 <DataTableSearch table={table} />
 
                 <div className='d-flex align-items-center gap-2'>

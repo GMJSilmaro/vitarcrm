@@ -1,74 +1,33 @@
 import { useRouter } from 'next/router';
-import {
-  Row,
-  Col,
-  Container,
-  Button,
-  Card,
-  Badge,
-  OverlayTrigger,
-  Dropdown,
-  Spinner,
-} from 'react-bootstrap';
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Row, Col, Button, Card, Badge, OverlayTrigger, Dropdown, Spinner } from 'react-bootstrap';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import DefaultLayout from '../../../../layouts/marketing/DefaultLayout';
 import { RouteGuard } from '../../../../components/RouteGuard';
 import {
-  WorkerStatsData,
-  CalibrationPerformanceData,
-  RecentCalibrationsData,
-} from 'data/marketing/calibration/WorkerProfileData';
-import UserLayout from '@/layouts/UserLayout';
-import {
-  ArrowRepeat,
   ArrowReturnLeft,
-  Bell,
   Briefcase,
   Building,
-  Calendar,
   CalendarX,
-  CardHeading,
   CardList,
   CheckCircle,
   ClipboardCheck,
   Clock,
   ClockHistory,
   ExclamationCircle,
-  ExclamationTriangle,
   Eye,
-  FileText,
-  Flag,
-  Gear,
-  Hourglass,
-  House,
-  Pause,
-  PauseFill,
+  HandThumbsDown,
   PencilSquare,
   PersonFill,
   PersonLinesFill,
   Play,
-  PlayCircle,
-  PlayFill,
   ShieldCheck,
   Stop,
-  StopFill,
   Thermometer,
   ThreeDotsVertical,
-  Trash,
   XCircle,
 } from 'react-bootstrap-icons';
-import {
-  format,
-  formatDistanceStrict,
-  getUnixTime,
-  hoursToSeconds,
-  isAfter,
-  isBefore,
-  isEqual,
-  minutesToSeconds,
-  sub,
-} from 'date-fns';
+import { format, formatDistanceStrict, isAfter, isBefore, isEqual } from 'date-fns';
 import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
 import {
   createColumnHelper,
@@ -93,19 +52,17 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  Timestamp,
   updateDoc,
   where,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { dateFilter, dateSort } from '@/utils/datatable';
-import { v4 as uuidV4 } from 'uuid';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
-import _, { over } from 'lodash';
+import _ from 'lodash';
 import { GeeksSEO } from '@/widgets';
-import { useStopwatch } from 'react-timer-hook';
 import { JobTimer } from '@/sub-components/dashboard/user/jobs/JobTimer';
+import PageHeader from '@/components/common/PageHeader';
 
 function WorkerDashboard() {
   const router = useRouter();
@@ -115,8 +72,6 @@ function WorkerDashboard() {
   const [activeFilterId, setActiveFilterId] = useState('');
   const [columnFilters, setColumnFilters] = useState([]);
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
-
-  const stopWatch = useStopwatch({ autoStart: false });
 
   const columnHelper = createColumnHelper();
 
@@ -147,28 +102,39 @@ function WorkerDashboard() {
     const confirmedJobs = jobs.data.filter((job) => job.status === 'confirmed').length;
     const completedJobs = jobs.data.filter((job) => job.status === 'completed').length;
     const cancelledJobs = jobs.data.filter((job) => job.status === 'cancelled').length;
+    const rejectedJobs = jobs.data.filter((job) => job.status === 'rejected').length;
     const validatedJobs = jobs.data.filter((job) => job.status === 'validated').length;
     const currentJob = jobs.data.find((job) => job.status === 'in progress');
 
     return [
       {
-        id: 'all',
-        value: total,
-        title: 'Total Jobs',
-        icon: Briefcase,
-        color: 'secondary',
-        width: 3,
-        filter: 'all',
-        filterValue: '',
-      },
-      {
         id: 'upcoming-jobs',
         value: upcomingJobs,
         title: 'Upcoming Jobs',
         icon: Clock,
-        color: 'secondary',
-        width: 3,
+        color: 'dark',
+        width: 2,
         filter: 'startDate',
+        filterValue: null,
+      },
+      {
+        id: 'urgent-jobs',
+        value: urgentJobs,
+        title: 'Urgent Jobs',
+        icon: ExclamationCircle,
+        color: 'warning',
+        width: 2,
+        filter: 'priority',
+        filterValue: 'urgent',
+      },
+      {
+        id: 'overdue-jobs',
+        value: overdueJobs,
+        title: 'Overdue Jobs',
+        icon: CalendarX,
+        color: 'secondary',
+        width: 2,
+        filter: 'endDate',
         filterValue: null,
       },
       {
@@ -177,7 +143,7 @@ function WorkerDashboard() {
         title: 'On Site',
         icon: Building,
         color: 'secondary',
-        width: 3,
+        width: 2,
         filter: 'scope',
         filterValue: 'site',
       },
@@ -187,37 +153,18 @@ function WorkerDashboard() {
         title: 'On Laboratory',
         icon: Thermometer,
         color: 'secondary',
-        width: 3,
+        width: 2,
         filter: 'scope',
         filterValue: 'lab',
       },
-      {
-        id: 'urgent-jobs',
-        value: urgentJobs,
-        title: 'Urgent Jobs',
-        icon: ExclamationCircle,
-        color: 'danger',
-        width: 3,
-        filter: 'priority',
-        filterValue: 'urgent',
-      },
-      {
-        id: 'overdue-jobs',
-        value: overdueJobs,
-        title: 'Overdue Jobs',
-        icon: CalendarX,
-        color: 'danger',
-        width: 3,
-        filter: 'endDate',
-        filterValue: null,
-      },
+
       {
         id: 'confirmed-jobs',
         value: confirmedJobs,
         title: 'Confirmed',
         icon: ClipboardCheck,
         color: 'info',
-        width: 3,
+        width: 2,
         filter: 'status',
         filterValue: 'confirmed',
       },
@@ -227,7 +174,7 @@ function WorkerDashboard() {
         title: 'Completed Jobs',
         icon: CheckCircle,
         color: 'success',
-        width: 3,
+        width: 2,
         filter: 'status',
         filterValue: 'completed',
       },
@@ -237,9 +184,19 @@ function WorkerDashboard() {
         title: 'Cancelled Jobs',
         icon: XCircle,
         color: 'danger',
-        width: 3,
+        width: 2,
         filter: 'status',
         filterValue: 'cancelled',
+      },
+      {
+        id: 'rejected-jobs',
+        value: rejectedJobs,
+        title: 'Rejected Jobs',
+        icon: HandThumbsDown,
+        color: 'danger',
+        width: 2,
+        filter: 'status',
+        filterValue: 'rejected',
       },
       {
         id: 'validated-jobs',
@@ -247,9 +204,19 @@ function WorkerDashboard() {
         title: 'Validated',
         icon: ShieldCheck,
         color: 'purple',
-        width: 3,
+        width: 2,
         filter: 'status',
         filterValue: 'validated',
+      },
+      {
+        id: 'all',
+        value: total,
+        title: 'Total Jobs',
+        icon: Briefcase,
+        color: 'secondary',
+        width: 4,
+        filter: 'all',
+        filterValue: '',
       },
       {
         id: 'current-job',
@@ -260,7 +227,7 @@ function WorkerDashboard() {
         icon: ClockHistory,
         color: 'primary',
         subtitle: currentJob ? 'In Progress' : '',
-        width: 6,
+        width: 12,
         filter: 'status',
         filterValue: 'in progress',
         job: currentJob,
@@ -370,6 +337,7 @@ function WorkerDashboard() {
             created: 'warning',
             'in progress': 'primary',
             cancelled: 'danger',
+            rejected: 'danger',
             validated: 'purple',
           };
           return (
@@ -745,10 +713,13 @@ function WorkerDashboard() {
                     <Eye className='me-2' size={16} />
                     View Job
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleEditJob(id)}>
-                    <PencilSquare className='me-2' size={16} />
-                    Edit Job
-                  </Dropdown.Item>
+
+                  {status !== 'validated' && (
+                    <Dropdown.Item onClick={() => handleEditJob(id)}>
+                      <PencilSquare className='me-2' size={16} />
+                      Edit Job
+                    </Dropdown.Item>
+                  )}
 
                   {/* <Dropdown.Item onClick={() => handleDeleteJob(id)}>
                     <Trash className='me-2' size={16} />
@@ -987,7 +958,7 @@ function WorkerDashboard() {
     });
   };
 
-  const stopJob = useCallback(async (id, setIsLoading) => {
+  const stopJob = async (id, setIsLoading) => {
     if (!id) return;
 
     Swal.fire({
@@ -1005,8 +976,6 @@ function WorkerDashboard() {
       if (data.isConfirmed) {
         try {
           setIsLoading(true);
-
-          stopWatch.reset(undefined, false);
 
           //* update job header & details
           const jobHeaderRef = doc(db, 'jobHeaders', id);
@@ -1041,7 +1010,7 @@ function WorkerDashboard() {
         }
       }
     });
-  });
+  };
 
   //* query jobs header
   useEffect(() => {
@@ -1104,12 +1073,10 @@ function WorkerDashboard() {
       <GeeksSEO title='Technician Dashboard | VITAR Group | Portal' />
 
       <div className='d-flex flex-column row-gap-4'>
-        <div className='d-flex justify-content-between align-items-center my-2'>
-          <div>
-            <h2 className='mb-0'>Dashboard Overview</h2>
-            <p className='text-muted mb-0'>Welcome back! Here's what's happening with your work.</p>
-          </div>
-        </div>
+        <PageHeader
+          title='Dashboard Overview'
+          subtitle="Welcome back! Here's what's happening with your work."
+        />
 
         {/* //* notifications */}
         {/* <div className='bg-white rounded p-4'>
@@ -1143,7 +1110,9 @@ function WorkerDashboard() {
         <Row className='row-gap-4'>
           {stats.map((stat, i) => {
             const Icon = stat.icon;
-            return (
+
+            return stat.id !== 'current-job' ||
+              (stat.id === 'current-job' && stat.value && stat.value !== 'N/A') ? (
               <Col
                 md={stat.width}
                 key={`${stat.id}-${stat.title}`}
@@ -1151,7 +1120,14 @@ function WorkerDashboard() {
                 onClick={() => setFilterBasedOnStat(stat)}
               >
                 <div
-                  className={`bg-white rounded p-4 h-100 border border-transaparent ${
+                  className={`bg-${
+                    activeFilterId !== stat.id ? stat.color : 'primary-subtle'
+                  } rounded`}
+                  style={{ height: 5 }}
+                />
+
+                <div
+                  className={`shadow-sm bg-white rounded-top-0 rounded-bottom p-4 h-100 border border-transaparent w-100 ${
                     activeFilterId === stat.id ? 'border-primary' : 'hover-item'
                   }`}
                 >
@@ -1163,12 +1139,7 @@ function WorkerDashboard() {
 
                     <div>
                       {stat.id == 'current-job' && stat.value && stat.value !== 'N/A' && (
-                        <JobTimer
-                          stopWatch={stopWatch}
-                          job={stat.job}
-                          workerId={stat.workerId}
-                          auth={auth}
-                        />
+                        <JobTimer job={stat.job} workerId={stat.workerId} auth={auth} />
                       )}
                     </div>
                   </div>
@@ -1183,14 +1154,14 @@ function WorkerDashboard() {
                   )}
                 </div>
               </Col>
-            );
+            ) : null;
           })}
         </Row>
 
         <Card className='border-0 shadow-sm'>
           <Card.Body className='p-4'>
             <DataTable table={table} pageSize={5} isLoading={jobs.isLoading} isError={jobs.isError}>
-              <div className='d-flex justify-content-between'>
+              <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
                 <DataTableSearch table={table} isGlobalSearch={false} columnId='customer' />
 
                 <div className='d-flex align-items-center gap-2'>

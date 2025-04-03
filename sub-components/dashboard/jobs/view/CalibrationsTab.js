@@ -296,7 +296,7 @@ const CalibrationTab = ({ job }) => {
     <Card className='border-0 shadow-none'>
       <Card.Body className='p-4'>
         <DataTable table={table} isLoading={calibrations.isLoading} isError={calibrations.isError}>
-          <div className='d-flex justify-content-between'>
+          <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
             <DataTableSearch table={table} />
 
             <div className='d-flex align-items-center gap-2'>
