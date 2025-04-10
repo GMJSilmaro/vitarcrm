@@ -1,12 +1,18 @@
+import CertificateOfCalibrationPDF from '@/components/pdf/CertificateOfCalibrationPDF';
 import { TEST_LOADS, TRACEABILITY_MAP } from '@/schema/calibration';
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
+import { usePDF } from '@react-pdf/renderer';
 import { add, format } from 'date-fns';
 import { ceil, divide, multiply, round } from 'mathjs';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, Spinner, Table } from 'react-bootstrap';
-import { Download, Printer } from 'react-bootstrap-icons';
+import { Calendar4, Download, Printer } from 'react-bootstrap-icons';
 
 const CertificateOfCalibration = ({ calibration, instruments }) => {
+  const iframeRef = useRef(null);
+
+  const [instance, updateInstance] = usePDF();
+
   const handleGetLocationValue = useCallback(() => {
     if (calibration.location) {
       const locationData = calibration.location;
@@ -96,9 +102,9 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
 
       switch (unit) {
         case 'gram':
-          return value;
+          return formatToDicimalString(value, 1);
         case 'kilogram':
-          return formatToDicimalString(multiply(value, 0.001), 2);
+          return formatToDicimalString(multiply(value, 0.001), 4);
         default:
           return value;
       }
@@ -117,10 +123,19 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       const factor = unit === 'gram' ? 1 : 0.001;
       const scaledResolution = resolution * factor;
 
-      return ceil((value * factor) / scaledResolution) * scaledResolution;
+      const result = ceil((value * factor) / scaledResolution) * scaledResolution;
+
+      return unit === 'gram' ? formatToDicimalString(result, 1) : formatToDicimalString(result, 2);
     },
     [resolution]
   );
+
+  const isPositive = (value) => {
+    const parseValue = parseFloat(value);
+
+    if (isNaN(parseValue)) return false;
+    return parseValue > 0;
+  };
 
   const dueDate = useMemo(() => {
     if (!calibration?.dueDateRequested || !calibration?.dateCalibrated) {
@@ -139,6 +154,50 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     return format(dueDate, 'dd MMMM yyyy');
   }, [calibration]);
 
+  const downloadPDF = useCallback(
+    (id) => {
+      const link = document.createElement('a');
+      link.href = instance.url;
+      link.download = `CALIBRATION-${id}-COC.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+    [instance.url]
+  );
+
+  const printPDF = useCallback(() => {
+    if (iframeRef.current) {
+      const iframe = iframeRef.current;
+      iframe.src = instance.url;
+      iframe.onload = () => iframe.contentWindow?.print();
+    }
+  }, [instance.url, iframeRef]);
+
+  useEffect(() => {
+    if (!instruments.isLoading && instruments.data.length > 0 && calibration) {
+      //* trigger re-render for pdf
+      updateInstance(
+        <CertificateOfCalibrationPDF calibration={calibration} instruments={instruments} />
+      );
+      console.log('trigger re-render for pdf', instruments);
+    }
+  }, [instruments.isLoading, JSON.stringify(calibration), JSON.stringify(instruments.data)]);
+
+  if (instance.loading || instruments.isLoading) {
+    return (
+      <Card className='border-0 shadow-none'>
+        <Card.Body
+          className='d-flex justify-content-center align-items-center'
+          style={{ height: '70vh' }}
+        >
+          <Spinner animation='border' variant='primary' />
+          <span className='ms-3'>Loading COC...</span>
+        </Card.Body>
+      </Card>
+    );
+  }
+
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
@@ -151,15 +210,19 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
           </div>
 
           <div className='d-flex align-items-center gap-2'>
-            <Button>
+            <Button onClick={() => printPDF()}>
               <Printer size={18} className='me-2' />
               Print
             </Button>
 
-            <Button variant='outline-primary'>
-              <Download size={18} className='me-2' />
-              Download
-            </Button>
+            <iframe ref={iframeRef} style={{ display: 'none' }} />
+
+            {instance.url && calibration.id && (
+              <Button variant='outline-primary' onClick={() => downloadPDF(calibration.id)}>
+                <Download size={18} className='me-2' />
+                Download
+              </Button>
+            )}
           </div>
         </div>
       </Card.Header>
@@ -309,13 +372,13 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <td colSpan={5}>
                 <div className='d-flex justify-content-center align-items-center gap-4'>
                   <div className='d-flex gap-2'>
-                    <span className='fw-bold'>Min:</span>
-                    <span>{calibration?.minTemperature ?? 0} °C</span>
+                    <span className='fw-bold'>Max:</span>
+                    <span>{calibration?.maxTemperature ?? 0} °C</span>
                   </div>
 
                   <div className='d-flex gap-2'>
-                    <span className='fw-bold'>Max:</span>
-                    <span>{calibration?.maxTemperature ?? 0} °C</span>
+                    <span className='fw-bold'>Min:</span>
+                    <span>{calibration?.minTemperature ?? 0} °C</span>
                   </div>
                 </div>
               </td>
@@ -326,13 +389,13 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <td colSpan={5}>
                 <div className='d-flex justify-content-center align-items-center gap-4'>
                   <div className='d-flex gap-2'>
-                    <span className='fw-bold'>Min:</span>
-                    <span>{calibration?.rangeMinRHumidity ?? 0} °C</span>
+                    <span className='fw-bold'>Max:</span>
+                    <span>{calibration?.rangeMaxRHumidity ?? 0} %rh</span>
                   </div>
 
                   <div className='d-flex gap-2'>
-                    <span className='fw-bold'>Max:</span>
-                    <span>{calibration?.rangeMaxRHumidity ?? 0} %rh</span>
+                    <span className='fw-bold'>Min:</span>
+                    <span>{calibration?.rangeMinRHumidity ?? 0} %rh</span>
                   </div>
                 </div>
               </td>
@@ -464,7 +527,10 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                   Array.from({ length: calibrationPointNo }).map((_, i) => (
                     <tr key={i}>
                       <td>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</td>
-                      <td>{convertValueBasedOnUnit(corrections?.[i] ?? 0)}</td>
+                      <td>
+                        {isPositive(corrections?.[i] ?? 0) ? '+' : ''}
+                        {convertValueBasedOnUnit(corrections?.[i] ?? 0)}
+                      </td>
                       <td>
                         {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
                       </td>
@@ -521,7 +587,8 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                 <thead>
                   <tr>
                     <th>Test Load</th>
-                    <th>{convertValueBasedOnUnit(divide(rangeMaxCalibration, 3))}</th>
+                    <th>{convertValueBasedOnUnit(calibration?.data?.etest?.testLoad ?? 0)}</th>
+                    <th></th>
                   </tr>
                 </thead>
 

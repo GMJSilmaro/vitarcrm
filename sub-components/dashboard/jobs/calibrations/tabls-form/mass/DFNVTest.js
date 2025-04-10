@@ -273,7 +273,7 @@ const DFNVTest = ({ data }) => {
     //* if data exist and calibration point no is same as data's dont dont something, else set initial data
     if (data && parseFloat(data.calibrationPointNo) === calibrationPointNo) return;
 
-    if (instruments && instruments?.length > 0 && !isMounted.current && calibrationPointNo) {
+    if (!isMounted.current && calibrationPointNo) {
       isMounted.current = true;
 
       const initialDFNV = [
@@ -302,7 +302,7 @@ const DFNVTest = ({ data }) => {
     }
 
     return () => (isMounted.current = false);
-  }, [instruments, data, calibrationPointNo]);
+  }, [data, calibrationPointNo]);
 
   return (
     <>

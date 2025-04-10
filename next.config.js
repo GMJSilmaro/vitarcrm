@@ -14,6 +14,13 @@ const nextConfig = {
     NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   },
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.ttf$/i,
+      type: 'asset/resource',
+    });
+    return config;
+  },
 
   sassOptions: {
     includePaths: [path.join(__dirname, 'styles')],

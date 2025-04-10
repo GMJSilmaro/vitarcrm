@@ -1,7 +1,9 @@
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import useMounted from '@/hooks/useMounted';
 import { CALIBRATED_AT, CATEGORY, DUE_DATE_REQUESTED } from '@/schema/calibration';
 import { SCOPE_TYPE } from '@/schema/job';
 import { add, format } from 'date-fns';
@@ -18,12 +20,24 @@ import {
   FormLabel,
   OverlayTrigger,
   Row,
+  Spinner,
   Tooltip,
 } from 'react-bootstrap';
-import { Exclamation, ExclamationCircle } from 'react-bootstrap-icons';
+import { ArrowClockwise, Exclamation, ExclamationCircle, X } from 'react-bootstrap-icons';
 import { Controller, useFormContext } from 'react-hook-form';
+import toast from 'react-hot-toast';
 
-const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => {
+const CalibrateSummaryForm = ({
+  job,
+  data,
+  isLoading,
+  handleNext,
+  isAdmin,
+  handleLoadDataCache,
+  handleClearCache,
+  isLoadingCache,
+  isLoadingClearCache,
+}) => {
   const router = useRouter();
   const { workerId } = router.query;
 
@@ -437,8 +451,52 @@ const CalibrateSummaryForm = ({ job, data, isLoading, handleNext, isAdmin }) => 
             </Alert>
           )}
 
-          <h4 className='mb-0'>Job</h4>
-          <p className='text-muted fs-6'>Details about the job.</p>
+          <div className='d-flex justify-content-between align-items-center'>
+            <div>
+              <h4 className='mb-0'>Job</h4>
+              <p className='text-muted fs-6'>Details about the job.</p>
+            </div>
+
+            <div className='d-flex align-items-center gap-2'>
+              <Button
+                variant='outline-primary'
+                onClick={() => handleLoadDataCache()}
+                disabled={
+                  isLoadingCache ||
+                  isLoadingClearCache ||
+                  customer.isLoading ||
+                  location.isLoading ||
+                  customerEquipmentsOptions.isLoading
+                }
+              >
+                {isLoadingCache ? (
+                  <Spinner animation='border' size='sm' className='me-2' />
+                ) : (
+                  <ArrowClockwise size={18} className='me-2' />
+                )}
+                {isLoadingCache ? 'Loading' : 'Load'} Data Cache
+              </Button>
+
+              <Button
+                variant='outline-primary'
+                onClick={() => handleClearCache()}
+                disabled={
+                  isLoadingCache ||
+                  isLoadingClearCache ||
+                  customer.isLoading ||
+                  location.isLoading ||
+                  customerEquipmentsOptions.isLoading
+                }
+              >
+                {isLoadingClearCache ? (
+                  <Spinner animation='border' size='sm' className='me-2' />
+                ) : (
+                  <X size={18} className='me-2' />
+                )}
+                {isLoadingClearCache ? 'Clearing' : 'Clear'} Data Cache
+              </Button>
+            </div>
+          </div>
 
           <Row className='mb-3 row-gap-3'>
             <Form.Group as={Col} md={3}>

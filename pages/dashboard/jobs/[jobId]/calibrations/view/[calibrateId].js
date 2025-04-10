@@ -19,6 +19,8 @@ import {
   Speedometer,
 } from 'react-bootstrap-icons';
 import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
+import { PDFViewer } from '@react-pdf/renderer';
+import CertificateOfCalibrationPDF from '@/components/pdf/CertificateOfCalibrationPDF';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -232,6 +234,19 @@ const CalibrationDetails = () => {
             <Tab eventKey='6' title='COC'>
               <CertificateOfCalibration calibration={calibration} instruments={instruments} />
             </Tab>
+
+            {/* <Tab eventKey='7' title='PDF COC'>
+              <Card className='border-0 shadow-none'>
+                <Card.Body>
+                  <PDFViewer height={800} width='100%'>
+                    <CertificateOfCalibrationPDF
+                      calibration={calibration}
+                      instruments={instruments}
+                    />
+                  </PDFViewer>
+                </Card.Body>
+              </Card>
+            </Tab> */}
           </Tabs>
         </Card.Body>
       </Card>
