@@ -24,9 +24,11 @@ import CalibrationMassForm from './tabls-form/CalibrationMassForm';
 import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
+import useMounted from '@/hooks/useMounted';
 
 const CalibrationForm = ({ data, isAdmin = true }) => {
   const auth = useAuth();
+  const isMounted = useMounted();
 
   const router = useRouter();
   const { jobId, workerId } = router.query;
@@ -42,6 +44,9 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
   const [job, setJob] = useState({ data: null, isLoading: true, isError: false });
   const [isLoading, setIsLoading] = useState(false);
   const [activeKey, setActiveKey] = useState('0');
+
+  const [isLoadingCache, setIsLoadingCache] = useState(false);
+  const [isLoadingClearCache, setIsLoadingClearCache] = useState(false);
 
   const schema = useMemo(() => {
     return tabSchema[Number(activeKey)] ?? calibrationInfoSchema;
@@ -259,6 +264,91 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
     setActiveKey(key);
   };
 
+  const handleLoadDataCache = useCallback(async () => {
+    setIsLoadingCache(true);
+
+    const calibrationId = data?.calibrateId;
+    const cacheKey = `calibration-${auth.currentUser.uid}-${auth.workerId}${calibrationId ? `-${calibrationId}` : ''}`; //prettier-ignore
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (cachedData) {
+      const formData = JSON.parse(cachedData);
+
+      const fieldToRestore = [
+        { delay: 500, group: [{ name: 'category', value: formData.category }] },
+        {
+          delay: 500,
+          group: [
+            { name: 'certificateNumber', value: formData.certificateNumber },
+            { name: 'serialNumber', value: formData.serialNumber },
+          ],
+        },
+        { delay: 500, group: [{ name: 'description', value: formData.description }] },
+        { delay: 500, group: [{ name: 'dateCalibrated', value: formData.dateCalibrated }] },
+        { delay: 500, group: [{ name: 'dueDateRequested', value: formData.dueDateRequested }] },
+        {
+          delay: 500,
+          group: [
+            { name: 'dueDateDuration', value: formData.dueDateDuration },
+            { name: 'dueDate', value: formData.dueDate },
+          ],
+        },
+        { delay: 500, group: [{ name: 'rangeType', value: formData.rangeType }] },
+        {
+          delay: 500,
+          group: [
+            { name: 'rangeMinCalibration', value: formData.rangeMinCalibration },
+            { name: 'rangeMaxCalibration', value: formData.rangeMaxCalibration },
+          ],
+        },
+        { delay: 500, group: [{ name: 'traceabilityType', value: formData.traceabilityType }] },
+        { delay: 1000, group: [{ name: 'resolution', value: formData.resolution }] },
+        {
+          delay: 2500,
+          group: [
+            { name: 'unitUsedForCOC', value: formData.unitUsedForCOC },
+            { name: 'calibrationPointNo', value: formData.calibrationPointNo },
+            { name: 'instruments', value: formData.instruments },
+          ],
+        },
+        { delay: 1000, group: [{ name: 'data', value: formData.data }] },
+      ];
+
+      //* restore form data with delays
+      for (const fieldGroup of fieldToRestore) {
+        for (const field of fieldGroup.group) {
+          form.setValue(field.name, field.value);
+          delete formData[field.name];
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, fieldGroup.delay));
+      }
+
+      //* Reset remaining form values if any
+      form.reset((formValues) => ({ ...formValues, ...formData }));
+      toast.success('Data cache loaded successfully.');
+    } else toast.error('Failed to load data cache. Please try again later.');
+
+    setIsLoadingCache(false);
+  }, [auth, data]);
+
+  const handleClearCache = useCallback(async () => {
+    setIsLoadingClearCache(true);
+
+    const calibrationId = data?.calibrateId;
+    const cacheKey = `calibration-${auth.currentUser.uid}-${auth.workerId}${calibrationId ? `-${calibrationId}` : ''}`; //prettier-ignore
+    const cachedData = localStorage.getItem(cacheKey);
+
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+
+    if (cachedData) {
+      localStorage.removeItem(cacheKey);
+      toast.success('Data cache cleared successfully.');
+    } else toast.error('Failed to clear data cache. Please try again later.');
+
+    setIsLoadingClearCache(false);
+  }, [auth, data]);
+
   //* query job
   useEffect(() => {
     if (jobId) {
@@ -291,6 +381,15 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
     }
   }, [jobId]);
 
+  //* store form data into cache
+  useEffect(() => {
+    if (auth.currentUser && isMounted && form.formState.isDirty && !isLoadingCache) {
+      const calibrationId = data?.calibrateId;
+      const cacheKey = `calibration-${auth.currentUser.uid}-${auth.workerId}${calibrationId ? `-${calibrationId}` : ''}`; //prettier-ignore
+      localStorage.setItem(cacheKey, JSON.stringify(form.getValues()));
+    }
+  }, [JSON.stringify(form.watch()), auth, data, isLoadingCache]);
+
   return (
     <>
       {/* <FormDebug form={form} /> */}
@@ -309,6 +408,10 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
                 isLoading={isLoading}
                 handleNext={handleNext}
                 isAdmin={isAdmin}
+                handleLoadDataCache={handleLoadDataCache}
+                handleClearCache={handleClearCache}
+                isLoadingCache={isLoadingCache}
+                isLoadingClearCache={isLoadingClearCache}
               />
             </Tab>
 

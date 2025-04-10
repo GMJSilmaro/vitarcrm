@@ -46,12 +46,12 @@ const CalculationTable = () => {
   const dfnv = useMemo(() => {
     const value = form.getValues('data.dfnv');
     return value && Array.isArray(value) ? value : [];
-  }, [form.watch('data.dfnv')]);
+  }, [JSON.stringify(form.watch('data.dfnv'))]);
 
   const nominalValues = useMemo(() => {
     const value = form.getValues('data.nominalValues');
     return value && Array.isArray(value) ? value : [];
-  }, [form.watch('data.nominalValues')]);
+  }, [JSON.stringify(form.watch('data.nominalValues'))]);
 
   const resolution = useMemo(() => {
     const value = form.getValues('resolution');
@@ -61,7 +61,7 @@ const CalculationTable = () => {
   const measuredValues = useMemo(() => {
     const value = form.getValues('data.measuredValues');
     return value && Array.isArray(value) ? value : [];
-  }, [form.watch('data.measuredValues')]);
+  }, [JSON.stringify(form.watch('data.measuredValues'))]);
 
   const rtest = useMemo(() => {
     let actualValue = {};
@@ -391,7 +391,7 @@ const CalculationTable = () => {
                                     </th>
                                     <td>
                                       {resolution
-                                        ? formatScientific(form.watch(`data.uM2.${pointIndex}`), 2)
+                                        ? formatScientific(form.watch(`data.uMs.${pointIndex}`), 2)
                                         : ''}
                                     </td>
                                   </tr>
@@ -608,7 +608,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
       if (entry?.data?.length < 1) return { entry, data: [] };
 
       const tagIds = entry?.ids?.length > 0 ? entry.ids : [];
-      const dataWithClass = entry.data;
+      const dataWithClass = entry?.data || [];
 
       //? dataWithClass elements is per class
       //? element 0 is E2
@@ -660,18 +660,19 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
 
               const slotTagIds = tagIds?.[tagIdsSlotIndex] || [];
               const cuswdRef = cuswd.data.find(ref => slotTagIds.includes(ref.tagId) && ref.nominalValue === value && ref.class === valueClass ); //prettier-ignore
-              const cuswdRef2 = cuswd.data.filter(ref => slotTagIds.includes(ref.tagId) && ref.nominalValue === value && ref.class === valueClass ); //prettier-ignore
               const mpeRef = mpe.data.find(ref => ref.weight === value && ref.code === valueClass); //prettier-ignore
 
-              console.log({
-                value,
-                valueClass,
-                cuswdRef,
-                cuswdRef2,
-                mpeRef,
-                slotTagIds,
-                tagIdsSlotIndex,
-              });
+              // const cuswdRef2 = cuswd.data.filter(ref => slotTagIds.includes(ref.tagId) && ref.nominalValue === value && ref.class === valueClass ); //prettier-ignore
+
+              // console.log({
+              //   value,
+              //   valueClass,
+              //   cuswdRef,
+              //   cuswdRef2,
+              //   mpeRef,
+              //   slotTagIds,
+              //   tagIdsSlotIndex,
+              // });
 
               const result = {
                 valueClass,
@@ -709,27 +710,27 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
   const nominalValue = useMemo(() => {
     const value = form.getValues(`data.nominalValues.${pointIndex}`);
     return isNaN(value) ? 0 : value;
-  }, [pointIndex, form.watch('data.nominalValues')]);
+  }, [pointIndex, JSON.stringify(form.watch('data.nominalValues'))]);
 
   const measuredValue = useMemo(() => {
     const value = form.getValues(`data.measuredValues.${pointIndex}`);
     return value && Array.isArray(value) ? value : [0];
-  }, [form.watch('data.measuredValues')]);
+  }, [JSON.stringify(form.watch('data.measuredValues'))]);
 
   const stdMeasuredValue = useMemo(() => {
     const values = getArrayActualValues(measuredValue);
     return std(values);
-  }, [measuredValue]);
+  }, [JSON.stringify(measuredValue)]);
 
   const esdm = useMemo(() => {
     const values = getArrayActualValues(measuredValue);
     return std(values) / sqrt(values.length);
-  }, [measuredValue]);
+  }, [JSON.stringify(measuredValue)]);
 
   const maxError = useMemo(() => {
     const values = form.getValues('data.etest.maxError');
     return isNaN(values) ? 0 : values;
-  }, []);
+  }, [form.watch('data.etest.maxError')]);
 
   const testLoad = useMemo(() => {
     const value = form.getValues('data.etest.testLoad');
@@ -744,12 +745,12 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
   const stdRtestMax = useMemo(() => {
     const values = getArrayActualValues(rtest.max);
     return std(values);
-  }, [rtest]);
+  }, [rtest.max]);
 
   const stdRtestHalf = useMemo(() => {
     const values = getArrayActualValues(rtest.half);
     return std(values);
-  }, [rtest]);
+  }, [rtest.half]);
 
   const totalWeight = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -771,7 +772,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalActualWeight.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
   const totalMPE = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -789,7 +790,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalMPE.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
   const totalUcert2g2 = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -818,7 +819,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalUcert2g2.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
   const totalUcert4vG4 = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -847,7 +848,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalUcert4vG4.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
   const totalUints2g2 = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -876,7 +877,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalUints2g2.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
   const totalUints4vG4 = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -905,7 +906,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalUints4vG4.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
   const totalUinstg = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -925,7 +926,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalUinstg.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
   const totalUncertainty = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -945,30 +946,30 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.totalUncertainty.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex]);
+  }, [JSON.stringify(refTableData.data), pointIndex]);
 
-  const uM2 = useMemo(() => {
+  const uMs = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
 
     const result = sqrt(totalUcert2g2);
 
     //* set temporary value used for view in table
-    form.setValue(`data.uM2.${pointIndex}`, result);
+    form.setValue(`data.uMs.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex, totalUcert2g2]);
+  }, [JSON.stringify(refTableData.data), pointIndex, totalUcert2g2]);
 
   const vEff = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
 
-    const um2Pow4 = pow(uM2, 4);
-    const result = um2Pow4 / totalUcert4vG4;
+    const uMsPow4 = pow(uMs, 4);
+    const result = uMsPow4 / totalUcert4vG4;
 
     //* set temporary value used for view in table
     form.setValue(`data.vEff.${pointIndex}`, result);
 
     return result;
-  }, [refTableData, pointIndex, uM2, totalUcert4vG4]);
+  }, [JSON.stringify(refTableData.data), pointIndex, uMs, totalUcert4vG4]);
 
   const correction = useMemo(() => {
     if (refTableData.data.length < 1) return 0;
@@ -984,7 +985,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     form.setValue(`data.measuredValuesM.${pointIndex}`, x);
 
     return result;
-  }, [refTableData, pointIndex, JSON.stringify(measuredValue), totalWeight]);
+  }, [JSON.stringify(refTableData.data), pointIndex, JSON.stringify(measuredValue), totalWeight]);
 
   const calculations = useMemo(() => {
     return {
@@ -1007,7 +1008,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
       totalUints4vG4,
       totalUinstg,
       totalUncertainty,
-      uM2,
+      uMs,
       vEff,
     };
   }, [
@@ -1030,11 +1031,11 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     totalUints4vG4,
     totalUinstg,
     totalUncertainty,
-    uM2,
+    uMs,
     vEff,
   ]);
 
-  console.log({ pointIndex, cuswd, mpe, entryData, refTableData });
+  // console.log({ pointIndex, cuswd, mpe, entryData, refTableData });
 
   return (
     <>
@@ -1127,7 +1128,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
                         <td>
                           {formatToDicimalString(
                             ref.uncertainty ? bignumber(ref.uncertainty) : '',
-                            1
+                            2
                           )}{' '}
                           g
                         </td>
@@ -1162,6 +1163,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
 
 const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
   // TODO: make function for common calculations, just accept input
+
   const form = useFormContext();
 
   const [ck, setCk] = useState({ data: [], isLoading: true, isError: false });
@@ -1175,7 +1177,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
   const resolutionHalf = useMemo(() => {
     const resolution = calculations.resolution;
     return divide(resolution ?? 0, 2);
-  }, [calculations]);
+  }, [calculations.resolution]);
 
   const squarRootOfThree = useMemo(() => {
     return sqrt(3);
@@ -1211,7 +1213,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const z = multiply(x, y);
 
     return pow(z, 2);
-  }, [calculations]);
+  }, [calculations.esdm]);
 
   const repeatObservationCiUi4v = useMemo(() => {
     const x = 2;
@@ -1220,7 +1222,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const a = pow(z, 4);
 
     return divide(a, x);
-  }, []);
+  }, [calculations.esdm]);
 
   const airBouyancyRelativeUncertainty = useMemo(() => {
     const totalMpe = calculations.totalMPE;
@@ -1230,13 +1232,13 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const y = totalMpe / multiply(4, nominalValue);
 
     return sum(x, y);
-  }, [calculations]);
+  }, [calculations.totalMPE, JSON.stringify(calculations.nominalValue)]);
 
   const airBouyancyU = useMemo(() => {
     const x = airBouyancyRelativeUncertainty;
     const y = calculations.nominalValue;
     return multiply(x, y);
-  }, [calculations, airBouyancyRelativeUncertainty]);
+  }, [JSON.stringify(calculations.nominalValue), airBouyancyRelativeUncertainty]);
 
   const airBouyancyUi = useMemo(() => {
     const x = airBouyancyU;
@@ -1310,7 +1312,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const z = multiply(y1, y2);
 
     return divide(x, z);
-  }, [calculations]);
+  }, [calculations.maxError, calculations.testLoad]);
 
   const eccentricityTestU = useMemo(() => {
     const x = calculations.nominalValue;
@@ -1318,7 +1320,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const z = sqrt(3);
 
     return multiply(x, y, z);
-  }, [calculations, eccentricityTestRelativeUncertainty]);
+  }, [JSON.stringify(calculations.nominalValue), eccentricityTestRelativeUncertainty]);
 
   const eccentricityTestUi = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1329,7 +1331,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     // console.log('eccentricityTestUi', { pointIndex, x, y, result: divide(x, y) });
 
     return divide(x, y);
-  }, [eccentricityTestU, squarRootOfThree, calculations]);
+  }, [calculations.resolution, eccentricityTestU, squarRootOfThree]);
 
   const eccentricityTestCiUi2 = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1339,7 +1341,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const z = multiply(x || 0, y);
 
     return pow(z, 2);
-  }, [eccentricityTestUi]);
+  }, [calculations.resolution, eccentricityTestUi]);
 
   const eccentricityTestCiUi4v = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1350,7 +1352,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const a = pow(z, 4);
 
     return divide(a, x);
-  }, [eccentricityTestUi, vCommonValue]);
+  }, [calculations.resolution, vCommonValue, eccentricityTestUi]);
 
   const repeatabilityTestV = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1359,7 +1361,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const x = isAbove100Kg ? 5 : 10;
 
     return subtract(x, 1);
-  }, [calculations]);
+  }, [calculations.resolution, calculations.rangeMaxCalibration]);
 
   const repeatabilityTestCiUi2 = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1369,7 +1371,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const z = multiply(x, y);
 
     return pow(z, 2);
-  }, [calculations]);
+  }, [calculations.resolution, calculations.stdRtestHalf, calculations.stdRtestMax]);
 
   const repeatabilityTestCiUi4v = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1380,13 +1382,18 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const a = pow(z, 4);
 
     return divide(a, x || 0);
-  }, [repeatabilityTestV, calculations]);
+  }, [
+    calculations.resolution,
+    repeatabilityTestV,
+    calculations.stdRtestHalf,
+    calculations.stdRtestMax,
+  ]);
 
   const weightStandardU = useMemo(() => {
     const x = calculations.totalUncertainty;
     const y = 1000;
     return divide(x, y);
-  }, [calculations]);
+  }, [calculations.totalUncertainty]);
 
   const weightStandardUi = useMemo(() => {
     const x = weightStandardU;
@@ -1402,7 +1409,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const z = multiply(x, y);
 
     return pow(z, 2);
-  }, [weightStandardUi]);
+  }, [calculations.resolution, weightStandardUi]);
 
   const weightStandardCiUi4v = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1413,13 +1420,13 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const a = pow(z, 4);
 
     return divide(a, x);
-  }, [weightStandardUi, vCommonValue, calculations]);
+  }, [calculations.resolution, calculations.vEff, weightStandardUi]);
 
   const driftU = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
 
     return calculations.totalUinstg;
-  }, [calculations]);
+  }, [calculations.resolution, calculations.totalUinstg]);
 
   const driftUi = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1431,7 +1438,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     // console.log({ driftU, x, x1 });
 
     return divide(x, y);
-  }, [driftU, squarRootOfThree, calculations]);
+  }, [calculations.resolution, driftU, squarRootOfThree]);
 
   const driftCiUi2 = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1441,7 +1448,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const z = multiply(x, y);
 
     return pow(z, 2);
-  }, [driftUi]);
+  }, [calculations.resolution, driftUi]);
 
   const driftCiUi4v = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1452,7 +1459,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const a = pow(z, 4);
 
     return divide(a, x);
-  }, [driftUi, vCommonValue]);
+  }, [calculations.resolution, vCommonValue, driftUi]);
 
   const totalCiUi2 = useMemo(() => {
     let values = [
@@ -1632,7 +1639,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     form.setValue(`data.expandedUncertainties.${pointIndex}`, result);
 
     return result;
-  }, [combineUncertainty, coverageFactor, pointIndex]);
+  }, [combineUncertainty, coverageFactor.value, pointIndex]);
 
   const rtestMaxError = useMemo(() => {
     if (!calculations.resolution || calculations.resolution === 0) return '';
@@ -1643,7 +1650,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     form.setValue('data.rtest.maxError', result);
 
     return result;
-  }, [calculations]);
+  }, [calculations.resolution, calculations.stdRtestHalf, calculations.stdRtestMax]);
 
   //* query CK Table
   useEffect(() => {
@@ -1823,7 +1830,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>gram</td>
             <td>Rect.</td>
             <td>B</td>
-            <td>{airBouyancyRelativeUncertainty}</td>
+            <td>{formatToDicimalString(airBouyancyRelativeUncertainty, 8)}</td>
             <td>{formatScientific(vCommonValue, 1)}</td>
             <td>{airBouyancyU}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>

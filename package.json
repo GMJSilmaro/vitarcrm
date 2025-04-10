@@ -30,6 +30,7 @@
     "@mui/x-data-grid": "^7.19.0",
     "@pathofdev/react-tag-input": "^1.0.7",
     "@react-google-maps/api": "^2.20.3",
+    "@react-pdf/renderer": "^4.3.0",
     "@reduxjs/toolkit": "^2.2.8",
     "@syncfusion/ej2-base": "^27.1.53",
     "@syncfusion/ej2-react-buttons": "^27.1.53",
