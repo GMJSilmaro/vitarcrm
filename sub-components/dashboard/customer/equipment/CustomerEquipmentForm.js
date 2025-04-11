@@ -61,9 +61,7 @@ const CustomerEquipmentForm = ({ data }) => {
       if (isSavedNew) {
         window.location.assign(`/customers/${customerId}/equipment/create`);
       } else {
-        router.push(
-          `/customers/${customerId}/equipment/edit-customer-equipment/${formData.equipmentId}`
-        );
+        router.push(`/customers/view/${customerId}?tab=equipment`);
       }
     } catch (error) {
       console.error('Error submitting customer equipment:', error);

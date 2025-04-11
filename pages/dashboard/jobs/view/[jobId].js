@@ -2,6 +2,7 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
+import ReferenceEquipment from '@/sub-components/dashboard/jobs/view/ReferenceEquipment';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
@@ -235,21 +236,19 @@ const JobDetails = () => {
         <Card.Body>
           <Tabs className='mb-1' activeKey={activeTab} onSelect={setActiveTab}>
             <Tab eventKey='0' title='Summary'>
-              <SummaryTab
-                job={job}
-                customer={customer}
-                contact={contact}
-                location={location}
-                equipments={equipments}
-              />
+              <SummaryTab job={job} customer={customer} contact={contact} location={location} />
             </Tab>
 
-            <Tab eventKey='1' title='Additional Instructions'>
+            <Tab eventKey='1' title='Calibration Items'>
+              <CustomerEquipment job={job} customer={customer} />
+            </Tab>
+
+            <Tab eventKey='2' title='Additional Instructions'>
               <TaskTab job={job} />
             </Tab>
 
-            <Tab eventKey='3' title='Customer Equipment'>
-              <CustomerEquipment job={job} customer={customer} />
+            <Tab eventKey='3' title='Reference Equipment'>
+              <ReferenceEquipment job={job} equipments={equipments} />
             </Tab>
 
             <Tab eventKey='4' title='Schedule'>

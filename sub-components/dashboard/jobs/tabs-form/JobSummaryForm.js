@@ -28,24 +28,11 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
 
   const formErrors = form.formState.errors;
 
-  const equipmentForm = useForm({
-    mode: 'onChange',
-    resolver: zodResolver(equipmentSchema),
-  });
-
-  const equipments = useMemo(() => {
-    return form.getValues('equipments');
-  }, [form.watch('equipments')]);
-
   const [customersOptions, setCustomersOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
-  const [equipmentsOptions, setEquipmentsOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
 
   const [locationIsLoading, setLocationIsLoading] = useState(false);
   const [locationsOptions, setLocationsOptions] = useState([]);
   const [contactsOptions, setContactsOpions] = useState([]);
-
-  const [showLocationFields, setShowLocationFields] = useState(true);
-  const [showEquipmentFields, setShowEquipmentFields] = useState(true);
 
   //* query customers
   useEffect(() => {
@@ -110,38 +97,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     }
   }, [form.watch('location.value')]);
 
-  //* query equipments
-  useEffect(() => {
-    const q = query(collection(db, 'equipments'));
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshop) => {
-        if (!snapshop.empty) {
-          setEquipmentsOptions({
-            data: snapshop.docs.map((doc) => {
-              const data = doc.data();
-
-              return {
-                value: doc.id,
-                label:  `${data?.inventoryId || ''} - ${data?.tagId || ''} - ${data?.description || '' } - ${data?.category || ''} - ${data?.certificateNo || ''}`, //prettier-ignore
-                ...data,
-              };
-            }),
-          });
-        } else {
-          setEquipmentsOptions({ data: [], isLoading: false, isError: false });
-        }
-      },
-      (err) => {
-        console.error(err.message);
-        setEquipmentsOptions({ data: [], isLoading: false, isError: true });
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
-
   //* set customer, contact & location if data exist
   useEffect(() => {
     if (data && customersOptions.data.length > 0) {
@@ -189,21 +144,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     }
   }, [data, customersOptions]);
 
-  //* set equipments if data exist
-  useEffect(() => {
-    if (data && equipmentsOptions.data.length > 0) {
-      const equipmentsIds = data.equipments.map((equipment) => equipment.id);
-
-      //* selected equipments
-      const equipments = equipmentsOptions.data.filter((equipment) =>
-        equipmentsIds.includes(equipment.value)
-      );
-
-      //* set form values
-      form.setValue('equipments', equipments);
-    }
-  }, [data, equipmentsOptions]);
-
   const formatCustomerOptionLabel = (data) => {
     return (
       <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
@@ -234,36 +174,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
       <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
         <span>{data.label}</span>
         {data?.isDefault && <Badge bg='primary'>Default</Badge>}
-      </div>
-    );
-  };
-
-  const formatEquipmentOptionLabel = (data) => {
-    const currentEquipments = form.getValues('equipments') || [];
-    const isAvailable = data?.qty > 0;
-
-    const getLabel = (data) => {
-      if (!data) return '';
-
-      let label = '';
-      if (data?.inventoryId) label += `${data.inventoryId} - `;
-      if (data?.tagId) label += `${data.tagId} - `;
-      if (data?.description) label += `${data.description}`;
-
-      return label;
-    };
-
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{getLabel(data)}</span>
-        <span className='d-flex column-gap-2'>
-          <Badge bg={isAvailable ? 'success' : 'danger'}>
-            {isAvailable ? 'Available' : 'Unavailable'}{' '}
-          </Badge>
-
-          <Badge bg='primary'>{data.category}</Badge>
-          <Badge bg='warning'>{data.certificateNo}</Badge>
-        </span>
       </div>
     );
   };
@@ -325,41 +235,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     },
     [data]
   );
-
-  const handleAddEquipment = () => {
-    equipmentForm.trigger('equipment');
-    const data = equipmentForm.getValues('equipment');
-    if (!data) return;
-
-    const currentEquipments = form.getValues('equipments');
-
-    const isExist = currentEquipments.find(
-      (equipment) => equipment.inventoryId === data.inventoryId
-    );
-
-    const isAvailable = data?.qty > 0;
-
-    if (isExist) {
-      toast.error('Equipment already selected');
-      return;
-    }
-
-    if (!isAvailable) {
-      toast.error('Equipment is not available');
-      return;
-    }
-
-    form.setValue('equipments', [...equipments, data]);
-    form.clearErrors('equipments');
-    equipmentForm.setValue('equipment', null);
-  };
-
-  const handleRemoveEquipment = (id) => {
-    form.setValue(
-      'equipments',
-      equipments.filter((equipment) => equipment.inventoryId !== id)
-    );
-  };
 
   return (
     <>
@@ -505,280 +380,189 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
             style={{ cursor: 'pointer' }}
             onClick={() => setShowLocationFields((prev) => !prev)}
           >
-            Job Address {showLocationFields ? '(-)' : '(+)'}
+            Job Address
           </h4>
           <p className='text-muted fs-6'>Details about the location/site.</p>
 
-          {showLocationFields && (
-            <>
-              <Row className='mb-3'>
-                <Form.Group as={Col} md={12}>
-                  <RequiredLabel label='Location' id='location' />
-                  <OverlayTrigger
-                    placement='right'
-                    overlay={
-                      <Tooltip>
-                        <TooltipContent
-                          title='Location Search'
-                          info={[
-                            "Search by location's id or name",
-                            'Required to proceed with job creation',
-                          ]}
-                        />
-                      </Tooltip>
-                    }
-                  >
-                    <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-                  </OverlayTrigger>
+          <>
+            <Row className='mb-3'>
+              <Form.Group as={Col} md={12}>
+                <RequiredLabel label='Location' id='location' />
+                <OverlayTrigger
+                  placement='right'
+                  overlay={
+                    <Tooltip>
+                      <TooltipContent
+                        title='Location Search'
+                        info={[
+                          "Search by location's id or name",
+                          'Required to proceed with job creation',
+                        ]}
+                      />
+                    </Tooltip>
+                  }
+                >
+                  <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                </OverlayTrigger>
 
-                  <Controller
-                    name='location'
-                    control={form.control}
-                    render={({ field }) => (
-                      <>
-                        <Select
-                          {...field}
-                          inputId='location'
-                          instanceId='location'
-                          onChange={(option) => field.onChange(option)}
-                          formatOptionLabel={formatLocationOptionLabel}
-                          options={locationsOptions}
-                          placeholder="Search by location's id or name"
-                          isDisabled={locationIsLoading || locationsOptions.length < 1}
-                          noOptionsMessage={() =>
-                            locationsOptions.isLoading ? 'Loading...' : 'No locations found'
-                          }
-                        />
+                <Controller
+                  name='location'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Select
+                        {...field}
+                        inputId='location'
+                        instanceId='location'
+                        onChange={(option) => field.onChange(option)}
+                        formatOptionLabel={formatLocationOptionLabel}
+                        options={locationsOptions}
+                        placeholder="Search by location's id or name"
+                        isDisabled={locationIsLoading || locationsOptions.length < 1}
+                        noOptionsMessage={() =>
+                          locationsOptions.isLoading ? 'Loading...' : 'No locations found'
+                        }
+                      />
 
-                        {formErrors && formErrors.location?.message && (
-                          <Form.Text className='text-danger'>
-                            {formErrors.location?.message}
-                          </Form.Text>
-                        )}
-                      </>
-                    )}
-                  />
-                </Form.Group>
-              </Row>
+                      {formErrors && formErrors.location?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.location?.message}
+                        </Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+            </Row>
 
-              <Row className='mb-3'>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={locationIsLoading ? 'Loading...' : form.watch('location.siteName')}
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Latitude</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.latitude')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Longitude</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading
-                        ? 'Loading...'
-                        : form.watch('location.addresses.0.longitude')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-              </Row>
+            <Row className='mb-3'>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Name</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={locationIsLoading ? 'Loading...' : form.watch('location.siteName')}
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Latitude</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.latitude')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Longitude</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.longitude')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+            </Row>
 
-              <Row className='mb-3'>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Street Address #1</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street1')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Street Address #2</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street2')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Street Address #3</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street3')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-              </Row>
+            <Row className='mb-3'>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Street Address #1</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street1')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Street Address #2</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street2')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Street Address #3</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.street3')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+            </Row>
 
-              <Row className='mb-3'>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>City</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.city')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Postal Code</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading
-                        ? 'Loading...'
-                        : form.watch('location.addresses.0.postalCode')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Province</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.province')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-              </Row>
+            <Row className='mb-3'>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>City</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.city')}
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Postal Code</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.postalCode')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Province</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.province')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+            </Row>
 
-              <Row className='mb-3'>
-                <Form.Group as={Col} md='4'>
-                  <Form.Label>Country</Form.Label>
-                  <Form.Control
-                    required
-                    type='text'
-                    value={
-                      locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.country')
-                    }
-                    readOnly
-                    disabled
-                  />
-                </Form.Group>
-              </Row>
-            </>
-          )}
-
-          <hr className='my-4' />
-          <h4
-            className='mb-0'
-            style={{ cursor: 'pointer' }}
-            onClick={() => setShowEquipmentFields((prev) => !prev)}
-          >
-            Job Equipments {showEquipmentFields ? '(-)' : '(+)'}
-          </h4>
-          <p className='text-muted fs-6'>Details about the equipment needed for the job.</p>
-
-          {showEquipmentFields && (
-            <>
-              <Row className='mb-3 gap-0 align-items-center'>
-                <Form.Group as={Col} md='12'>
-                  <RequiredLabel label='Equipments' id='equipment' />
-                  <OverlayTrigger
-                    placement='right'
-                    overlay={
-                      <Tooltip>
-                        <TooltipContent
-                          title='Equipments Search'
-                          info={[
-                            "Search by equipment's tag id, inventory id or description, category or certificate no.",
-                            'Required to proceed with job creation',
-                          ]}
-                        />
-                      </Tooltip>
-                    }
-                  >
-                    <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-                  </OverlayTrigger>
-
-                  <Controller
-                    name='equipment'
-                    control={equipmentForm.control}
-                    render={({ field }) => (
-                      <>
-                        <div className='d-flex gap-2 w-100 align-items-center'>
-                          <Select
-                            className='w-100'
-                            {...field}
-                            inputId='equipment'
-                            instanceId='equipment'
-                            onChange={(option) => {
-                              field.onChange(option);
-                              form.clearErrors('equipments');
-
-                              handleAddEquipment();
-                            }}
-                            formatOptionLabel={formatEquipmentOptionLabel}
-                            options={equipmentsOptions.data}
-                            isDisabled={equipmentsOptions.isLoading || equipmentsOptions.length < 1}
-                            placeholder="Search by equipment's tag id, inventory id or description, category or certificate no."
-                            noOptionsMessage={() => 'No equipments found'}
-                          />
-                        </div>
-
-                        {equipmentForm.formState.errors &&
-                          equipmentForm.formState.errors.equipment?.message && (
-                            <Form.Text className='text-danger'>
-                              {equipmentForm.formState.errors.equipment?.message}
-                            </Form.Text>
-                          )}
-                      </>
-                    )}
-                  />
-                </Form.Group>
-              </Row>
-
-              <JobEquipmentList
-                height={426}
-                data={form.watch('equipments')}
-                handleRemoveEquipment={handleRemoveEquipment}
-              />
-
-              <Row>
-                {formErrors && formErrors.equipments?.message && (
-                  <Form.Text className='text-danger'>{formErrors.equipments?.message}</Form.Text>
-                )}
-              </Row>
-            </>
-          )}
+            <Row className='mb-3'>
+              <Form.Group as={Col} md='4'>
+                <Form.Label>Country</Form.Label>
+                <Form.Control
+                  required
+                  type='text'
+                  value={
+                    locationIsLoading ? 'Loading...' : form.watch('location.addresses.0.country')
+                  }
+                  readOnly
+                  disabled
+                />
+              </Form.Group>
+            </Row>
+          </>
 
           <div className='mt-4 d-flex justify-content-between align-items-center'>
             <Button

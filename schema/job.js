@@ -41,6 +41,23 @@ export const equipmentSchema = z.object({
     }),
 });
 
+export const ReferenceEquipmentSchema = z.object({
+  equipments: z
+    .array(
+      z.record(z.string(), z.any()).transform((formData) => {
+        if (typeof formData === 'object') {
+          return {
+            id: formData.inventoryId,
+            name: formData.description,
+            certificateNo: formData.certificateNo,
+          };
+        }
+        return null;
+      })
+    )
+    .min(1, { message: 'Please select at least one equipment.' }),
+});
+
 export const customerEquipmentSchema = z.object({
   customerEquipments: z
     .array(
@@ -97,20 +114,6 @@ export const summarySchema = z.object({
       if (typeof formData === 'object') return { id: formData.siteId, name: formData.siteName };
       return null;
     }),
-  equipments: z
-    .array(
-      z.record(z.string(), z.any()).transform((formData) => {
-        if (typeof formData === 'object') {
-          return {
-            id: formData.inventoryId,
-            name: formData.description,
-            certificateNo: formData.certificateNo,
-          };
-        }
-        return null;
-      })
-    )
-    .min(1, { message: 'Please select at least one equipment.' }),
 });
 
 export const taskSchema = z.object({
@@ -235,6 +238,7 @@ export const scheduleSchema = z
 export const jobSchema = z
   .object({})
   .merge(summarySchema)
-  .merge(tasksSchema)
   .merge(customerEquipmentSchema)
+  .merge(tasksSchema)
+  .merge(ReferenceEquipmentSchema)
   .merge(scheduleSchema._def.schema._def.schema);

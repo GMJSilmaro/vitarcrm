@@ -32,11 +32,11 @@ import {
   Gear,
 } from 'react-bootstrap-icons';
 
-const CKList = () => {
+const MPEList = () => {
   const router = useRouter();
   const auth = useAuth();
 
-  const [ck, setCk] = useState({ data: [], isLoading: true, isError: false });
+  const [mpe, setMpe] = useState({ data: [], isLoading: true, isError: false });
 
   const columnHelper = createColumnHelper();
 
@@ -55,11 +55,17 @@ const CKList = () => {
           return <div>{displayIndex}</div>;
         },
       }),
-      columnHelper.accessor('dof', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='DOF' />,
+      columnHelper.accessor('code', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Code' />,
       }),
-      columnHelper.accessor('value', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Value' />,
+      columnHelper.accessor('weight', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Weight' />,
+      }),
+      columnHelper.accessor('mpe', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='MPE' />,
+      }),
+      columnHelper.accessor('uncertainty', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Uncertainty' />,
       }),
 
       columnHelper.accessor('actions', {
@@ -117,22 +123,39 @@ const CKList = () => {
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'DOF',
-        columnId: 'dof',
-        type: 'text',
-        placeholder: 'Search by dof...',
+        label: 'Code',
+        columnId: 'code',
+        type: 'select',
+        options: [
+          { label: 'All Code', value: '' },
+          { label: 'E2', value: 'E2' },
+          { label: 'F1', value: 'F1' },
+          { label: 'M1', value: 'M1' },
+        ],
       },
       {
-        label: 'Value',
-        columnId: 'value',
+        label: 'Weight',
+        columnId: 'weight',
         type: 'text',
-        placeholder: 'Search by value...',
+        placeholder: 'Search by weight...',
+      },
+      {
+        label: 'MPE',
+        columnId: 'mpe',
+        type: 'text',
+        placeholder: 'Search by MPE...',
+      },
+      {
+        label: 'Uncertainty',
+        columnId: 'uncertainty',
+        type: 'text',
+        placeholder: 'Search by uncertainty...',
       },
     ];
   }, []);
 
   const table = useReactTable({
-    data: ck.data,
+    data: mpe.data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -146,13 +169,13 @@ const CKList = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'jobCalibrationReferences', 'CR000003', 'data'));
+    const q = query(collection(db, 'jobCalibrationReferences', 'CR000002', 'data'));
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
         if (!snapshot.empty) {
-          setCk({
+          setMpe({
             data: snapshot.docs.map((doc) => ({
               id: doc.id,
               ...doc.data(),
@@ -161,14 +184,21 @@ const CKList = () => {
             isError: false,
           });
 
+          console.log(
+            snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+          );
+
           return;
         }
 
-        setCk({ data: [], isLoading: false, isError: false });
+        setMpe({ data: [], isLoading: false, isError: false });
       },
       (err) => {
         console.error(err.message);
-        setCk({ data: [], isLoading: false, isError: true });
+        setMpe({ data: [], isLoading: false, isError: true });
       }
     );
 
@@ -177,10 +207,10 @@ const CKList = () => {
 
   return (
     <>
-      <GeeksSEO title='CK - VITAR Group | Portal' />
+      <GeeksSEO title='MPE - VITAR Group | Portal' />
 
       <ContentHeader
-        title='CK'
+        title='MPE'
         description='Create, manage all your calibration references in one centralize dashboard'
         badgeText='Calibration References'
         badgeText2='Data Management'
@@ -202,8 +232,8 @@ const CKList = () => {
             icon: <Gear className='me-2' size={14} />,
           },
           {
-            text: 'CK',
-            link: '/calibration-references/mechanical/ck',
+            text: 'MPE',
+            link: '/calibration-references/mass/mpe',
             icon: <Table className='me-2' size={14} />,
           },
         ]}
@@ -212,14 +242,14 @@ const CKList = () => {
             text: 'Add Data',
             icon: <Plus size={20} />,
             variant: 'light',
-            onClick: () => router.push('/calibration-references/mechanical/ck/create'),
+            onClick: () => router.push('/calibration-references/mass/mpe/create'),
           },
         ]}
       />
 
       <Card className='border-0 shadow-none'>
         <Card.Body className='p-4'>
-          <DataTable table={table} isLoading={ck.isLoading} isError={ck.isError}>
+          <DataTable table={table} isLoading={mpe.isLoading} isError={mpe.isError}>
             <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
               <DataTableSearch table={table} />
 
@@ -235,4 +265,4 @@ const CKList = () => {
   );
 };
 
-export default CKList;
+export default MPEList;

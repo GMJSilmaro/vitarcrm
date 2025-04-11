@@ -6,7 +6,7 @@ export const CATEGORY = [
   'ELECTRICAL',
   'DIMENSIONAL',
   'VOLUMETRIC',
-  'MECHANICAL',
+  'MASS',
 ];
 
 const categoryEnum = z.enum(CATEGORY, {

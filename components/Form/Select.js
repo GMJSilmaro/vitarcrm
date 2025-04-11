@@ -34,6 +34,10 @@ const Select = forwardRef((props, ref) => {
         color: '#dc2626',
       },
     }),
+    menu: (styles, { data }) => ({
+      ...styles,
+      zIndex: 500,
+    }),
   };
 
   return (

@@ -7,7 +7,16 @@ import useMounted from '@/hooks/useMounted';
 import { CALIBRATED_AT, CATEGORY, DUE_DATE_REQUESTED } from '@/schema/calibration';
 import { SCOPE_TYPE } from '@/schema/job';
 import { add, format } from 'date-fns';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
 import _, { orderBy } from 'lodash';
 import { useRouter } from 'next/router';
 import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
@@ -257,8 +266,8 @@ const CalibrateSummaryForm = ({
           const id = sortedData.pop().id;
           const lastCertificateNumber = parseInt(id, 10);
 
-          form.setValue('certificateNumber',  `${calibrationIdPrefix}${(lastCertificateNumber + 1).toString().padStart(6, '0')}`); //prettier-ignore
-        } else form.setValue('certificateNumber', `${calibrationIdPrefix}000001`);
+          form.setValue('certificateNumber',  `${calibrationIdPrefix}${(lastCertificateNumber + 1).toString().padStart(4, '0')}`); //prettier-ignore
+        } else form.setValue('certificateNumber', `${calibrationIdPrefix}0001`);
       },
       (err) => {
         console.error(err.message);

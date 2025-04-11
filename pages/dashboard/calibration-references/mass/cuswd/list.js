@@ -515,7 +515,7 @@ const CUSWDList = () => {
           },
           {
             text: 'Correction, Uncertainty of the Standard Weight & Drift',
-            link: '/calibration-references/mechanical/cuswd',
+            link: '/calibration-references/mass/cuswd',
             icon: <Table className='me-2' size={14} />,
           },
         ]}
@@ -524,7 +524,7 @@ const CUSWDList = () => {
             text: 'Add Data',
             icon: <Plus size={20} />,
             variant: 'light',
-            onClick: () => router.push('/calibration-references/mechanical/cuswd/create'),
+            onClick: () => router.push('/calibration-references/mass/cuswd/create'),
           },
         ]}
       />

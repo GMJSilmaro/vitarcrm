@@ -5,6 +5,7 @@ import { Accordion, Button, Card, Form, Tab, Table, Tabs } from 'react-bootstrap
 import {
   customerEquipmentSchema,
   jobSchema,
+  ReferenceEquipmentSchema,
   scheduleSchema,
   summarySchema,
   tasksSchema,
@@ -35,6 +36,7 @@ import { ExclamationTriangleFill } from 'react-bootstrap-icons';
 import FormDebug from '@/components/Form/FormDebug';
 import toast from 'react-hot-toast';
 import JobCustomerEquipmentForm from './tabs-form/JobCustomerEquipmentForm';
+import JobReferenceEquipmentForm from './tabs-form/JobReferenceEquipmentForm';
 
 const JobForm = ({ data, isAdmin = true }) => {
   const auth = useAuth();
@@ -43,8 +45,14 @@ const JobForm = ({ data, isAdmin = true }) => {
   const { workerId } = router.query;
   const [activeKey, setActiveKey] = useState('0');
 
-  const tabsLength = 3;
-  const tabSchema = [summarySchema, tasksSchema, customerEquipmentSchema, scheduleSchema];
+  const tabsLength = 4;
+  const tabSchema = [
+    summarySchema,
+    customerEquipmentSchema,
+    tasksSchema,
+    ReferenceEquipmentSchema,
+    scheduleSchema,
+  ];
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -58,6 +66,7 @@ const JobForm = ({ data, isAdmin = true }) => {
       ...getFormDefaultValues(schema),
       ...data,
       workers: [],
+      equipments: [],
       customerEquipments: [],
     },
     resolver: zodResolver(schema),
@@ -356,15 +365,7 @@ const JobForm = ({ data, isAdmin = true }) => {
               <JobSummaryForm data={data} isLoading={isLoading} handleNext={handleNext} />
             </Tab>
 
-            <Tab eventKey='1' title='Additional Instructions'>
-              <TaskForm
-                isLoading={isLoading}
-                handleNext={handleNext}
-                handlePrevious={handlePrevious}
-              />
-            </Tab>
-
-            <Tab eventKey='2' title='Customer Equipment'>
+            <Tab eventKey='1' title='Calibration Items'>
               <JobCustomerEquipmentForm
                 data={data}
                 isLoading={isLoading}
@@ -373,7 +374,23 @@ const JobForm = ({ data, isAdmin = true }) => {
               />
             </Tab>
 
-            <Tab eventKey='3' title='Job Scheduling'>
+            <Tab eventKey='2' title='Additional Instructions'>
+              <TaskForm
+                isLoading={isLoading}
+                handleNext={handleNext}
+                handlePrevious={handlePrevious}
+              />
+            </Tab>
+
+            <Tab eventKey='3' title='Reference Equipment'>
+              <JobReferenceEquipmentForm
+                data={data}
+                isLoading={isLoading}
+                handleNext={handleNext}
+              />
+            </Tab>
+
+            <Tab eventKey='4' title='Job Scheduling'>
               <JobSchedulingForm
                 data={data}
                 isLoading={isLoading}

@@ -3,9 +3,9 @@ import { Toggles, Check, X } from 'react-bootstrap-icons';
 
 const DataTableViewOptions = ({ table }) => {
   return (
-    <Dropdown className='w-100'>
+    <Dropdown className='data-table-view'>
       <Dropdown.Toggle
-        className='custom-dropdown d-flex align-items-center w-100 justify-content-center'
+        className='custom-dropdown d-flex align-items-center justify-content-center data-table-view'
         size='sm'
         variant='light'
       >

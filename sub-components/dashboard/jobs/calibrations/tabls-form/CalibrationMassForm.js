@@ -38,7 +38,7 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
   }, [data, calibrationPointNo]);
 
   //* temporary check
-  if (!category || category?.toLowerCase() !== 'mechanical' || !calibrationPointNo) {
+  if (!category || category?.toLowerCase() !== 'mass' || !calibrationPointNo) {
     return (
       <Card className='shadow-none'>
         <Card.Body className='text-center mt-5'>

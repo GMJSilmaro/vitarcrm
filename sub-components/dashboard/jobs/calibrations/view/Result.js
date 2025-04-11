@@ -8,7 +8,7 @@ const Result = ({ calibration }) => {
     return calibration.category?.toLowerCase();
   }, [calibration]);
 
-  if (category === 'mechanical') {
+  if (category === 'mass') {
     return <CalibrationMassResult calibration={calibration} category={category} />;
   }
 

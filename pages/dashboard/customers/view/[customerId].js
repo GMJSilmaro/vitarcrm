@@ -13,11 +13,11 @@ import { FaArrowLeft } from 'react-icons/fa';
 
 const CustomerDetails = () => {
   const router = useRouter();
-  const { customerId } = router.query;
+  const { customerId, tab } = router.query;
 
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(tab || 'overview');
 
   useEffect(() => {
     const fetchCustomerDetails = async () => {
@@ -54,6 +54,11 @@ const CustomerDetails = () => {
 
     fetchCustomerDetails();
   }, [customerId]);
+
+  //* set active tab based on query "tab"
+  useEffect(() => {
+    if (tab) setActiveTab(tab);
+  }, [tab]);
 
   if (loading) {
     return (
@@ -487,7 +492,7 @@ const CustomerDetails = () => {
               </Row>
             </Tab>
 
-            <Tab title='Equipment' eventKey='Equipment'>
+            <Tab title='Equipment' eventKey='equipment'>
               <EquipmentsTab />
             </Tab>
 

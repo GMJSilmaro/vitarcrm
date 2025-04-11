@@ -45,6 +45,13 @@
   }
 }
 
+@media (max-width: 992px) {
+  .data-table-view,
+  .data-table-filter {
+    width: 100% !important;
+  }
+}
+
 @media (min-width: 992px) {
   .data-table-search {
     width: 320px !important;

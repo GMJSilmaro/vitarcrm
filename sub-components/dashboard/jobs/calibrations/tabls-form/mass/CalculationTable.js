@@ -1761,7 +1761,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>B</td>
             <td></td>
             <td>{formatScientific(vCommonValue, 1)}</td>
-            <td>{formatToDicimalString(resolutionHalf, 6)}</td>
+            <td>{formatToDicimalString(resolutionHalf, 5)}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
             <td>{formatToDicimalString(resolutionWithoutOrWithLoadUi, 5)}</td>
             <td>1</td>
@@ -1777,7 +1777,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>B</td>
             <td></td>
             <td>{formatScientific(vCommonValue, 1)}</td>
-            <td>{formatToDicimalString(resolutionHalf, 6)}</td>
+            <td>{formatToDicimalString(resolutionHalf, 5)}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
             <td>{formatToDicimalString(resolutionWithoutOrWithLoadUi, 5)}</td>
             <td>1</td>
@@ -1792,7 +1792,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>A</td>
             <td></td>
             <td>2</td>
-            <td>{formatToDicimalString(calculations.stdMeasuredValue, 6)}</td>
+            <td>{formatToDicimalString(calculations.stdMeasuredValue, 5)}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
             <td>{formatToDicimalString(calculations.esdm, 5)}</td>
             <td>1</td>
@@ -1812,7 +1812,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>B</td>
             <td></td>
             <td>{calculations.resolution ? formatScientific(calculations.vEff, 1) : ''}</td>
-            <td>{formatToDicimalString(weightStandardU, 6)}</td>
+            <td>{formatToDicimalString(weightStandardU, 5)}</td>
             <td>{formatToDicimalString(2, 2)}</td>
             <td>{formatToDicimalString(weightStandardUi, 5)}</td>
             <td>1</td>
@@ -1829,9 +1829,9 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>gram</td>
             <td>Rect.</td>
             <td>B</td>
-            <td>{formatToDicimalString(airBouyancyRelativeUncertainty, 8)}</td>
+            <td>{formatToDicimalString(airBouyancyRelativeUncertainty, 9)}</td>
             <td>{formatScientific(vCommonValue, 1)}</td>
-            <td>{airBouyancyU}</td>
+            <td>{formatToDicimalString(airBouyancyU, 9)}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
             <td>{formatToDicimalString(airBouyancyUi, 5)}</td>
             <td>1</td>
@@ -1871,7 +1871,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>B</td>
             <td>{formatScientific(eccentricityTestRelativeUncertainty, 6)}</td>
             <td>{calculations.resolution ? formatScientific(vCommonValue, 1) : ''}</td>
-            <td>{formatToDicimalString(eccentricityTestU, 6)}</td>
+            <td>{formatToDicimalString(eccentricityTestU, 5)}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
             <td>{formatToDicimalString(eccentricityTestUi, 5)}</td>
             <td>1</td>
@@ -1890,7 +1890,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
             <td>B</td>
             <td></td>
             <td>{formatScientific(vCommonValue, 1)}</td>
-            <td>{formatToDicimalString(driftU, 6)}</td>
+            <td>{formatToDicimalString(driftU, 5)}</td>
             <td>{formatToDicimalString(squarRootOfThree, 2)}</td>
             <td>{formatToDicimalString(driftUi, 6)}</td>
             <td>1</td>
