@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { max } from 'mathjs';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import styles from '../../mass.module.css';
-import { NOMINAL_VALUE } from '@/schema/calibration';
+import { NOMINAL_VALUE, TAG_ID_BY_CLASS_MAP } from '@/schema/calibration';
 import { Form, Tab, Table } from 'react-bootstrap';
 import { useDebouncedCallback } from 'use-debounce';
+import Select from '@/components/Form/Select';
+import _ from 'lodash';
 
 const DFNVTest = ({ data }) => {
   const isMounted = useRef(false);
@@ -14,9 +16,9 @@ const DFNVTest = ({ data }) => {
 
   const slotsFields = useMemo(() => {
     return [
-      { placeholder: 'Enter E2 Tag IDs' },
-      { placeholder: 'Enter F1 Tag IDs' },
-      { placeholder: 'Enter F1 Tag IDs' },
+      { class: 'e2', displayClass: 'E2', placeholder: 'Enter E2 Tag IDs' },
+      { class: '1f1', displayClass: 'F1', placeholder: 'Enter F1 Tag IDs' },
+      { class: '2f1', displayClass: 'F1', placeholder: 'Enter F1 Tag IDs' },
     ];
   }, []);
 
@@ -251,6 +253,23 @@ const DFNVTest = ({ data }) => {
     [form.watch('data.dfnv')]
   );
 
+  const idsSelectOnChange = useCallback(
+    ({ value, entry, entryIndex, key, slotIndex }) => {
+      const existingIdsArray = entry.ids?.[slotIndex];
+
+      if (!value || !existingIdsArray || existingIdsArray.includes(value)) return;
+
+      handleIdValueSubmit({
+        value,
+        entry,
+        entryIndex,
+        key,
+        slotIndex,
+      });
+    },
+    [form.watch('data.dfnv')]
+  );
+
   const putCursorAtEnd = (target) => {
     //* ensure the cursor is at the end value
 
@@ -382,49 +401,44 @@ const DFNVTest = ({ data }) => {
                       {slotsFields.map((slotField, slotIndex) => (
                         <div>
                           <div>
-                            <Form
-                              onKeyDown={(e) =>
-                                idsInputOnKeyDown({
-                                  event: e,
-                                  entry,
-                                  entryIndex,
-                                  key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
-                                  slotIndex,
-                                })
-                              }
-                            >
-                              <Controller
-                                name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
-                                control={form.control}
-                                render={({ field }) => (
-                                  <>
-                                    <Form.Control
-                                      onChange={(e) => {
-                                        const key = `data.dfnv.${entryIndex}.${slotIndex}.idValue`;
-                                        form.setValue(key, e.target.value);
-                                      }}
-                                      name={field.name}
-                                      ref={field.ref}
-                                      value={field.value}
-                                      className={`${styles.columnData} text-center`}
-                                      placeholder={slotField.placeholder}
-                                      type='text'
-                                    />
+                            <Controller
+                              name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                              control={form.control}
+                              render={({ field }) => (
+                                <>
+                                  <Select
+                                    {...field}
+                                    inputId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                    instanceId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                    onChange={(option) => {
+                                      idsSelectOnChange({
+                                        value: option.value,
+                                        entry,
+                                        entryIndex,
+                                        key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
+                                        slotIndex,
+                                      });
+                                    }}
+                                    placeholder={`${slotField.displayClass}'s Tag ID`}
+                                    options={TAG_ID_BY_CLASS_MAP[slotField.class]?.map(
+                                      (tagId) => ({ value: tagId, label: tagId } || [])
+                                    )}
+                                    noOptionsMessage={() => 'No tag ids found'}
+                                  />
 
-                                    {formErrors &&
-                                      formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
-                                        ?.message && (
-                                        <Form.Text className='text-danger'>
-                                          {
-                                            formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
-                                              ?.message
-                                          }
-                                        </Form.Text>
-                                      )}
-                                  </>
-                                )}
-                              />
-                            </Form>
+                                  {formErrors &&
+                                    formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
+                                      ?.message && (
+                                      <Form.Text className='text-danger'>
+                                        {
+                                          formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
+                                            ?.message
+                                        }
+                                      </Form.Text>
+                                    )}
+                                </>
+                              )}
+                            />
                           </div>
 
                           <div
@@ -1153,50 +1167,44 @@ const DFNVTest = ({ data }) => {
                           {slotsFields.map((slotField, slotIndex) => (
                             <div>
                               <div>
-                                <Form
-                                  onKeyDown={(e) =>
-                                    idsInputOnKeyDown({
-                                      event: e,
-                                      entry,
-                                      entryIndex,
-                                      key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
-                                      slotIndex,
-                                    })
-                                  }
-                                >
-                                  <Controller
-                                    name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
-                                    control={form.control}
-                                    render={({ field }) => (
-                                      <>
-                                        <Form.Control
-                                          onChange={(e) => {
-                                            const key = `data.dfnv.${entryIndex}.${slotIndex}.idValue`;
-                                            form.setValue(key, e.target.value);
-                                          }}
-                                          name={field.name}
-                                          ref={field.ref}
-                                          value={field.value}
-                                          className={`${styles.columnData} text-center`}
-                                          placeholder={slotField.placeholder}
-                                          type='text'
-                                        />
+                                <Controller
+                                  name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                  control={form.control}
+                                  render={({ field }) => (
+                                    <>
+                                      <Select
+                                        {...field}
+                                        inputId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                        instanceId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                        onChange={(option) => {
+                                          idsSelectOnChange({
+                                            value: option.value,
+                                            entry,
+                                            entryIndex,
+                                            key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
+                                            slotIndex,
+                                          });
+                                        }}
+                                        placeholder={`${slotField.displayClass}'s Tag ID`}
+                                        options={TAG_ID_BY_CLASS_MAP[slotField.class]?.map(
+                                          (tagId) => ({ value: tagId, label: tagId } || [])
+                                        )}
+                                        noOptionsMessage={() => 'No tag ids found'}
+                                      />
 
-                                        {formErrors &&
-                                          formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
-                                            ?.message && (
-                                            <Form.Text className='text-danger'>
-                                              {
-                                                formErrors?.data?.dfnv?.[entryIndex]?.ids?.[
-                                                  slotIndex
-                                                ]?.message
-                                              }
-                                            </Form.Text>
-                                          )}
-                                      </>
-                                    )}
-                                  />
-                                </Form>
+                                      {formErrors &&
+                                        formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
+                                          ?.message && (
+                                          <Form.Text className='text-danger'>
+                                            {
+                                              formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
+                                                ?.message
+                                            }
+                                          </Form.Text>
+                                        )}
+                                    </>
+                                  )}
+                                />
                               </div>
 
                               <div

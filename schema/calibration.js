@@ -6,7 +6,7 @@ export const CATEGORY = [
   'ELECTRICAL',
   'DIMENSIONAL',
   'VOLUMETRIC',
-  'MECHANICAL',
+  'MASS',
 ];
 
 export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
@@ -55,6 +55,12 @@ export const CALIBRATION_POINT_NO = ['6', '7', '8', '9', '10', '11', '12'];
 export const CALIBRATED_AT = ['site'];
 export const DUE_DATE_REQUESTED = ['yes', 'no'];
 export const TEST_LOADS = ['C1', 'E1', 'E2', 'E3', 'E4', 'C2'];
+
+export const TAG_ID_BY_CLASS_MAP = {
+  e2: ['1J'],
+  '1f1': ['1B', '1F', '1G', '1H', '1K', '1L'],
+  '2f1': ['1', '1C', '1D', '1E'],
+};
 
 export const NOMINAL_VALUE = [
   10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000,

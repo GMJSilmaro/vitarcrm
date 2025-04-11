@@ -127,8 +127,8 @@ const CalibrationReferenceInstrumentsForm = ({
         const selectedCategory = form.getValues('category.value')?.toLowerCase();
 
         if (!selectedCategory) return false;
-        if (instrument.category === 'mechanical') return true;
         if (instrument.category === selectedCategory) return true;
+        return false;
       });
 
       form.setValue('instruments', filterInstruments);

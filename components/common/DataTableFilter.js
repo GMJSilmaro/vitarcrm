@@ -90,7 +90,7 @@ const DataTableFilter = ({ table, filterFields, setColumnFilters, children }) =>
     <>
       <Button
         variant='light'
-        className='position-relative h-100 w-100'
+        className='position-relative h-100 data-table-filter'
         size='sm'
         onClick={handleShow}
       >

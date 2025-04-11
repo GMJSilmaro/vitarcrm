@@ -236,7 +236,7 @@ const EquipmentsTab = () => {
           { label: 'Electrical', value: 'ELECTRICAL' },
           { label: 'Dimensional', value: 'DIMENSIONAL' },
           { label: 'Volumetric', value: 'VOLUMETRIC' },
-          { label: 'Mechanical', value: 'MECHANICAL' },
+          { label: 'Mass', value: 'MASS' },
         ],
         placeholder: 'Search by category...',
       },
@@ -303,12 +303,12 @@ const EquipmentsTab = () => {
 
             <div className='d-flex align-items-center gap-2'>
               <Button
-                variant='primary'
                 size='sm'
                 onClick={() => router.push(`/customers/${customerId}/equipment/create`)}
+                className='d-flex'
               >
-                <Plus size={18} className='me-1' />
-                Add Equipment
+                <Plus className='me-2' size={18} />
+                Add
               </Button>
 
               <DataTableFilter table={table} filterFields={filterFields} />

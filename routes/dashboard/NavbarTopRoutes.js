@@ -141,9 +141,9 @@ const NavbarDefault = [
           },
           {
             id: uuid(),
-            menuitem: 'Mechanical',
-            link: '/reference-equipment/mechanical',
-            icon: 'Gear',
+            menuitem: 'Mass',
+            link: '/reference-equipment/mass',
+            icon: 'BoxSeam',
           },
         ],
       },
@@ -155,26 +155,26 @@ const NavbarDefault = [
         children: [
           {
             id: uuid(),
-            menuitem: 'Mechanical',
+            menuitem: 'Mass',
             link: '/#',
-            icon: 'Gear',
+            icon: 'BoxSeam',
             children: [
               {
                 id: uuid(),
                 menuitem: 'Correction, Uncertainty of the Standard Weight & Drift',
-                link: '/calibration-references/mechanical/cuswd',
+                link: '/calibration-references/mass/cuswd',
                 icon: 'Table',
               },
               {
                 id: uuid(),
                 menuitem: 'MPE',
-                link: '/calibration-references/mechanical/mpe',
+                link: '/calibration-references/mass/mpe',
                 icon: 'Table',
               },
               {
                 id: uuid(),
                 menuitem: 'CK',
-                link: '/calibration-references/mechanical/ck',
+                link: '/calibration-references/mass/ck',
                 icon: 'Table',
               },
             ],

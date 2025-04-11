@@ -192,16 +192,16 @@ const nextConfig = {
 
       //* calibration references
       {
-        source: '/calibration-references/mechanical/cuswd',
-        destination: '/dashboard/calibration-references/mechanical/cuswd/list',
+        source: '/calibration-references/mass/cuswd',
+        destination: '/dashboard/calibration-references/mass/cuswd/list',
       },
       {
-        source: '/calibration-references/mechanical/mpe',
-        destination: '/dashboard/calibration-references/mechanical/mpe/list',
+        source: '/calibration-references/mass/mpe',
+        destination: '/dashboard/calibration-references/mass/mpe/list',
       },
       {
-        source: '/calibration-references/mechanical/ck',
-        destination: '/dashboard/calibration-references/mechanical/ck/list',
+        source: '/calibration-references/mass/ck',
+        destination: '/dashboard/calibration-references/mass/ck/list',
       },
 
       // AUTHENTICATION

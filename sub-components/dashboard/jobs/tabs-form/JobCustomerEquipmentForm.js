@@ -9,7 +9,7 @@ import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
-import { CATEGORY } from '@/schema/calibration';
+import { CATEGORY } from '@/schema/customerEquipment';
 import { customerEquipmentSchema } from '@/schema/customerEquipment';
 import { globalSearchFilter } from '@/utils/datatable';
 import { getFormDefaultValues } from '@/utils/zod';
@@ -118,13 +118,14 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
 
       const selected = row.getIsSelected();
 
-      if (selelectedCategoriesCount >= LIMIT && !selected) {
-        toast.error(
-          `You can only select up to 10 pieces of equipment per category of "${formattedCategory}."`,
-          { duration: 5500 }
-        );
-        return;
-      }
+      //?? Disable limit check for now
+      // if (selelectedCategoriesCount >= LIMIT && !selected) {
+      //   toast.error(
+      //     `You can only select up to 10 pieces of equipment per category of "${formattedCategory}."`,
+      //     { duration: 5500 }
+      //   );
+      //   return;
+      // }
 
       row.toggleSelected();
 
@@ -163,13 +164,14 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
         const formattedCategory = activeKey ? activeKey.split(' ').map((str) => _.capitalize(str || '')).join(' ') : ''; //prettier-ignore
         const selelectedCategoriesCount = allCustomerEquipmentByCategory?.length || 0;
 
-        if (selelectedCategoriesCount > LIMIT) {
-          toast.error(
-            `You can only select up to 10 pieces of equipment per category of "${formattedCategory}."`,
-            { duration: 5500 }
-          );
-          return;
-        }
+        //?? Disable limit check for now
+        // if (selelectedCategoriesCount > LIMIT) {
+        //   toast.error(
+        //     `You can only select up to 10 pieces of equipment per category of "${formattedCategory}."`,
+        //     { duration: 5500 }
+        //   );
+        //   return;
+        // }
 
         table.toggleAllRowsSelected();
 
