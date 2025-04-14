@@ -32,7 +32,7 @@ import {
   Signpost,
 } from 'react-bootstrap-icons';
 
-const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
+const SummaryTab = ({ jobRequest, customer, contact, location }) => {
   const renderError = () => {
     return (
       <div
@@ -58,7 +58,7 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
     return undefined;
   }, [location.data]);
 
-  console.log({ job, customer, location, jobRequest });
+  console.log({ job: jobRequest, customer, location, jobRequest });
 
   return (
     <Card className='border-0 shadow-none'>
@@ -71,68 +71,56 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
         </div>
       </Card.Header>
 
-      {jobRequest.isLoading ? (
-        <div
-          className='d-flex justify-content-center align-items-center fs-6 py-2'
-          style={{ height: '200px' }}
-        >
-          <Spinner size='sm' className='me-2' animation='border' variant='primary' /> Loading Job
-          Request Details...
-        </div>
-      ) : (
-        <Card.Body className='pt-4'>
-          <Row>
-            <Col md={3}>
-              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                <div
-                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                  style={{ width: '40px', height: '40px' }}
-                >
-                  <EnvelopePaper size={20} />
-                </div>
-                <div>
-                  <div className='text-secondary fs-6'>Job Request ID:</div>
-                  <div className='text-primary-label fw-semibold'>
-                    {jobRequest?.data?.id || 'N/A'}
-                  </div>
+      <Card.Body className='pt-4'>
+        <Row>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <EnvelopePaper size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Job Request ID:</div>
+                <div className='text-primary-label fw-semibold'>{jobRequest?.id || 'N/A'}</div>
+              </div>
+            </div>
+          </Col>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <PersonUp size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Supervisor:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {jobRequest?.supervisor?.name || 'N/A'}
                 </div>
               </div>
-            </Col>
-            <Col md={3}>
-              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                <div
-                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                  style={{ width: '40px', height: '40px' }}
-                >
-                  <PersonUp size={20} />
-                </div>
-                <div>
-                  <div className='text-secondary fs-6'>Supervisor:</div>
-                  <div className='text-primary-label fw-semibold'>
-                    {jobRequest?.data?.supervisor?.name || 'N/A'}
-                  </div>
+            </div>
+          </Col>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Person size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Created By:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {jobRequest?.createdBy?.displayName || 'N/A'}
                 </div>
               </div>
-            </Col>
-            <Col md={3}>
-              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                <div
-                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                  style={{ width: '40px', height: '40px' }}
-                >
-                  <Person size={20} />
-                </div>
-                <div>
-                  <div className='text-secondary fs-6'>Created By:</div>
-                  <div className='text-primary-label fw-semibold'>
-                    {jobRequest?.data?.createdBy?.displayName || 'N/A'}
-                  </div>
-                </div>
-              </div>
-            </Col>
-          </Row>
-        </Card.Body>
-      )}
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
 
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
         <div className='d-flex justify-content-between align-items-center'>
@@ -471,7 +459,9 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
               <div>
                 <div className='text-secondary fs-6'>Date:</div>
                 <div className='text-primary-label fw-semibold'>
-                  {job?.createdAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
+                  {jobRequest?.createdAt
+                    ? format(jobRequest.createdAt.toDate(), 'dd/MM/yyyy')
+                    : 'N/A'}
                 </div>
               </div>
             </div>
@@ -487,7 +477,7 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
               <div>
                 <div className='text-secondary fs-6'>Created By:</div>
                 <div className='text-primary-label fw-semibold'>
-                  {job?.createdBy?.displayName || 'N/A'}
+                  {jobRequest?.createdBy?.displayName || 'N/A'}
                 </div>
               </div>
             </div>
@@ -503,7 +493,9 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
               <div>
                 <div className='text-secondary fs-6'>Last Updated:</div>
                 <div className='text-primary-label fw-semibold'>
-                  {job?.updatedAt ? format(job.createdAt.toDate(), 'dd/MM/yyyy') : 'N/A'}
+                  {jobRequest?.updatedAt
+                    ? format(jobRequest.createdAt.toDate(), 'dd/MM/yyyy')
+                    : 'N/A'}
                 </div>
               </div>
             </div>
@@ -519,7 +511,7 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
               <div>
                 <div className='text-secondary fs-6'>Updated By:</div>
                 <div className='text-primary-label fw-semibold'>
-                  {job?.updatedBy?.displayName || 'N/A'}
+                  {jobRequest?.updatedBy?.displayName || 'N/A'}
                 </div>
               </div>
             </div>

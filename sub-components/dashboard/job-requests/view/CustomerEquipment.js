@@ -18,31 +18,31 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Badge, Card, Nav, Tab } from 'react-bootstrap';
 import { Tag } from 'react-bootstrap-icons';
 
-const CustomerEquipment = ({ job, customer }) => {
+const CustomerEquipment = ({ jobRequest, customer }) => {
   const [activeKey, setActiveKey] = useState(CATEGORY[0]);
 
   const columnHelper = createColumnHelper();
 
   const getSelectedCategoryCount = useCallback(
     (category) => {
-      const selectedEquipments = job?.customerEquipments;
+      const selectedEquipments = jobRequest?.customerEquipments;
       if (!selectedEquipments || selectedEquipments?.length < 1 || !category) return 0;
       return selectedEquipments.filter((eq) => eq?.category === category)?.length || 0;
     },
-    [job]
+    [jobRequest]
   );
 
   const selectedCustomerEquipmentByCategory = useMemo(() => {
-    if (!job || !customer.data || customer.isLoading) return [];
+    if (!jobRequest || !customer.data || customer.isLoading) return [];
 
     const customerEquipment = customer.data?.equipments || [];
-    const selectedCustomerEquipmentIds = job?.customerEquipments?.map((eq) => eq.id) || [];
+    const selectedCustomerEquipmentIds = jobRequest?.customerEquipments?.map((eq) => eq.id) || [];
     const filteredCustomerEquipment = customerEquipment
       .filter((eq) => selectedCustomerEquipmentIds.includes(eq.id))
       .filter((eq) => eq.category === activeKey);
 
     return filteredCustomerEquipment;
-  }, [job, customer.data, customer.isLoading, activeKey]);
+  }, [jobRequest, customer.data, customer.isLoading, activeKey]);
 
   const columns = useMemo(() => {
     return [

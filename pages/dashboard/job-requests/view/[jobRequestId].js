@@ -1,74 +1,71 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
-import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
-import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
-import ReferenceEquipment from '@/sub-components/dashboard/jobs/view/ReferenceEquipment';
-import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
-import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
-import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
+import CustomerEquipment from '@/sub-components/dashboard/job-requests/view/CustomerEquipment';
+import SummaryTab from '@/sub-components/dashboard/job-requests/view/SummaryTab';
+import TaskTab from '@/sub-components/dashboard/job-requests/view/TaskTab';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
 import { BriefcaseFill } from 'react-bootstrap-icons';
 import { FaArrowLeft } from 'react-icons/fa';
 
-const JobDetails = () => {
+const JobRequestDetails = () => {
   const router = useRouter();
-  const { jobId } = router.query;
+  const { jobRequestId } = router.query;
 
-  const [job, setJob] = useState();
+  const [jobRequest, setJobRequest] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('0');
-
   const [customer, setCustomer] = useState({ data: {}, isLoading: true, isError: false });
-  const [jobRequest, setJobRequest] = useState({ data: {}, isLoading: true, isError: false });
   const [contact, setContact] = useState();
   const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
-  const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
 
-  //* query job header & details
+  //* query job request
   useEffect(() => {
-    if (jobId) {
-      const jobHeaderRef = doc(db, 'jobHeaders', jobId);
-      const jobDetailsRef = doc(db, 'jobDetails', jobId);
-
-      Promise.all([getDoc(jobHeaderRef), getDoc(jobDetailsRef)])
-        .then(([jobHeader, jobDetails]) => {
-          if (jobHeader.exists() && jobDetails.exists()) {
-            setJob({
-              id: jobHeader.id,
-              ...jobHeader.data(),
-              ...jobDetails.data(),
-            });
-            setIsLoading(false);
-          } else {
-            setError('Job not found');
-            setIsLoading(false);
-          }
-        })
-        .catch((err) => {
-          setError(err.message || 'Error fetching job');
-          setIsLoading(false);
-        });
+    if (!jobRequestId) {
+      setJobRequest({ data: {}, isLoading: false, isError: false });
+      return;
     }
-  }, [jobId]);
+
+    getDoc(doc(db, 'jobRequests', jobRequestId))
+      .then((doc) => {
+        if (doc.exists()) {
+          setJobRequest({
+            id: doc.id,
+            ...doc.data(),
+          });
+          setIsLoading(false);
+        } else {
+          setError('Job Request not found');
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setError(err.message || 'Error fetching job');
+        setIsLoading(false);
+      });
+  }, [jobRequestId]);
 
   //* query customer
   useEffect(() => {
-    if (!job?.customer?.id) {
+    if (!jobRequest?.customer?.id) {
       setCustomer({ data: {}, isLoading: false, isError: false });
       return;
     }
 
     Promise.all([
-      getDoc(doc(db, 'customers', job?.customer?.id)),
-      job?.contact?.id ? getDoc(doc(db, 'contacts', job?.contact?.id)) : undefined,
+      getDoc(doc(db, 'customers', jobRequest?.customer?.id)),
+      jobRequest?.contact?.id ? getDoc(doc(db, 'contacts', jobRequest?.contact?.id)) : undefined,
       getDocs(
-        query(collection(db, 'customerEquipments'), where('customerId', '==', job?.customer?.id))
+        query(
+          collection(db, 'customerEquipments'),
+          where('customerId', '==', jobRequest?.customer?.id)
+        )
       ),
     ])
       .then(([customerSnapshot, contactSnapshot, customerEquipmentSnapshot]) => {
@@ -88,7 +85,7 @@ const JobDetails = () => {
         } else setCustomer({ data: {}, isLoading: false, isError: false });
 
         if (
-          job?.contact &&
+          jobRequest?.contact &&
           Array.isArray(customerData.contacts) &&
           customerData.contacts.length > 0 &&
           contactSnapshot.exists()
@@ -101,11 +98,11 @@ const JobDetails = () => {
         console.error(err.message);
         setCustomer({ data: {}, isLoading: false, isError: true });
       });
-  }, [job]);
+  }, [jobRequest]);
 
   //* query location
   useEffect(() => {
-    if (!job?.location?.id) {
+    if (!jobRequest?.location?.id) {
       setLocation({
         data: {},
         isLoading: false,
@@ -114,7 +111,7 @@ const JobDetails = () => {
       return;
     }
 
-    getDoc(doc(db, 'locations', job?.location?.id))
+    getDoc(doc(db, 'locations', jobRequest?.location?.id))
       .then((doc) => {
         const data = doc.data();
 
@@ -139,77 +136,13 @@ const JobDetails = () => {
         console.error(err.message);
         setLocation({ data: {}, isLoading: false, isError: true });
       });
-  }, [job]);
-
-  //* query job request
-  useEffect(() => {
-    if (!job?.jobRequestId) {
-      setJobRequest({ data: {}, isLoading: false, isError: false });
-      return;
-    }
-
-    getDoc(doc(db, 'jobRequests', job?.jobRequestId))
-      .then((doc) => {
-        if (doc.exists()) {
-          setJobRequest({
-            data: {
-              id: doc.id,
-              ...doc.data(),
-            },
-            isLoading: false,
-            isError: false,
-          });
-        } else {
-          setJobRequest({
-            data: {},
-            isLoading: false,
-            isError: false,
-          });
-        }
-      })
-      .catch((err) => {
-        console.error(err.message);
-        setJobRequest({
-          data: {},
-          isLoading: false,
-          isError: true,
-        });
-      });
-  }, [job]);
-
-  //* query equipments
-  useEffect(() => {
-    if (job?.equipments?.length < 1) return;
-
-    const equipmentsIds = job?.equipments?.map((equipment) => equipment.id) || [''];
-
-    Promise.all([...equipmentsIds.filter(Boolean).map((id) => getDoc(doc(db, 'equipments', id)))])
-      .then(([...resultsSnapshot]) => {
-        const data = [];
-
-        for (const result of resultsSnapshot) {
-          if (result.exists()) {
-            data.push({ id: result.id, ...result.data() });
-          }
-        }
-
-        setEquipments({
-          data,
-          isLoading: false,
-          isError: false,
-        });
-      })
-      .catch((err) => {
-        console.error(err.message);
-        setEquipments({ data: [], isLoading: false, isError: true });
-      });
-  }, [job]);
+  }, [jobRequest]);
 
   if (isLoading) {
     return (
       <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
         <Spinner animation='border' variant='primary' />
-        <span className='ms-3'>Loading Job...</span>
+        <span className='ms-3'>Loading Job Request...</span>
       </div>
     );
   }
@@ -224,24 +157,24 @@ const JobDetails = () => {
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
           <button className='btn btn-primary' onClick={() => router.push('/jobs')}>
-            Back to Jobs List
+            Back to Jobs Request List
           </button>
         </div>
       </div>
     );
   }
 
-  if (!job) {
+  if (!jobRequest) {
     return (
       <div
         className='d-flex justify-content-center align-items-center text-center py-5'
         style={{ height: '63vh' }}
       >
         <div>
-          <h3>Job not found</h3>
-          <Link href='/jobs'>
+          <h3>Job Request not found</h3>
+          <Link href='/job-requests'>
             <Button variant='primary' className='mt-3'>
-              Back to Job List
+              Back to Job Requests List
             </Button>
           </Link>
         </div>
@@ -251,13 +184,13 @@ const JobDetails = () => {
 
   return (
     <>
-      <GeeksSEO title={`View Details for Job #${job.id} | VITAR Group`} />
+      <GeeksSEO title={`View Details for Job Request #${jobRequest.id} | VITAR Group`} />
 
       <ContentHeader
-        title={`View Details for Job #${job.id}`}
-        description='View comprehensive job details including job summary, tasks and schedules'
-        badgeText='Job Management'
-        badgeText2='Jobs'
+        title={`View Details for Job Request #${jobRequest.id}`}
+        description='View comprehensive details about the job request'
+        badgeText='Job Request Management'
+        badgeText2='Job Requests'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -265,22 +198,22 @@ const JobDetails = () => {
             icon: <i className='fe fe-home' style={{ marginRight: '8px' }} />,
           },
           {
-            text: 'Job List',
-            link: '/jobs',
+            text: 'Job Requests',
+            link: '/job-requests',
             icon: <BriefcaseFill className='me-2' size={14} />,
           },
           {
-            text: `View ${job.id}`,
+            text: `View ${jobRequest.id}`,
             icon: <i className='fe fe-user' style={{ marginRight: '8px' }} />,
           },
         ]}
         actionButtons={[
           {
-            text: 'Back to Job List',
+            text: 'Back to Job Requests List',
             icon: <FaArrowLeft size={16} />,
             variant: 'light',
-            tooltip: 'Back to Job List',
-            onClick: () => router.push('/jobs'),
+            tooltip: 'Back to Job Requests List',
+            onClick: () => router.push('/job-requests'),
           },
         ]}
       />
@@ -290,7 +223,6 @@ const JobDetails = () => {
           <Tabs className='mb-1' activeKey={activeTab} onSelect={setActiveTab}>
             <Tab eventKey='0' title='Summary'>
               <SummaryTab
-                job={job}
                 customer={customer}
                 contact={contact}
                 location={location}
@@ -299,23 +231,11 @@ const JobDetails = () => {
             </Tab>
 
             <Tab eventKey='1' title='Calibration Items'>
-              <CustomerEquipment job={job} customer={customer} />
+              <CustomerEquipment jobRequest={jobRequest} customer={customer} />
             </Tab>
 
             <Tab eventKey='2' title='Additional Instructions'>
-              <TaskTab job={job} />
-            </Tab>
-
-            <Tab eventKey='3' title='Reference Equipment'>
-              <ReferenceEquipment job={job} equipments={equipments} />
-            </Tab>
-
-            <Tab eventKey='4' title='Schedule'>
-              <SchedulingTab job={job} />
-            </Tab>
-
-            <Tab eventKey='5' title='Calibrations'>
-              <CalibrationTab job={job} />
+              <TaskTab job={jobRequest} />
             </Tab>
           </Tabs>
         </Card.Body>
@@ -324,4 +244,4 @@ const JobDetails = () => {
   );
 };
 
-export default JobDetails;
+export default JobRequestDetails;

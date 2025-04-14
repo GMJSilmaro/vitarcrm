@@ -139,8 +139,24 @@ const nextConfig = {
         source: '/schedule',
         destination: '/dashboard/scheduling/workers/schedules',
       },
+      {
+        source: '/job-requests',
+        destination: '/dashboard/job-requests/list',
+      },
+      {
+        source: '/job-requests/view/:jobRequestId',
+        destination: '/dashboard/job-requests/view/:jobRequestId',
+      },
+      {
+        source: '/job-requests/edit-job-requests/:jobRequestId',
+        destination: '/dashboard/job-requests/edit-job-requests/:jobRequestId',
+      },
+      {
+        source: '/job-requests/create',
+        destination: '/dashboard/job-requests/create',
+      },
 
-      // JOBS
+      //* Jobs
       {
         source: '/jobs',
         destination: '/dashboard/jobs/list',
