@@ -65,7 +65,7 @@ import Swal from 'sweetalert2';
 //* limit per category
 const LIMIT = 10;
 
-const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious }) => {
+const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious }) => {
   const form = useFormContext();
   const formErrors = form.formState.errors;
 
@@ -79,6 +79,7 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
     defaultValues: { ...getFormDefaultValues(customerEquipmentSchema) },
     resolver: zodResolver(customerEquipmentSchema),
   });
+
   const customerEquipmentFormErrors = customerEquipmentForm.formState.errors;
   const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: category.split(' ').map(str => _.capitalize(str)).join(' ') }))); //prettier-ignore
   const [customerEquipmentIsLoading, setCustomerEquipmentIsLoading] = useState(false);
@@ -197,7 +198,7 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
     }
 
     return allCustomerEquipmentByCategory.every((eq) => currentlySelectedEquipmentIds.includes(eq.id)); //prettier-ignore
-  }, [JSON.stringify(form.watch('customerEquipments')), activeKey, allCustomerEquipmentByCategory]);
+  }, [form.watch('customerEquipments'), activeKey, allCustomerEquipmentByCategory]);
 
   const getIsSomeRowSelected = useCallback(() => {
     const currentlySelectedEquipments = form.getValues('customerEquipments') || [];
@@ -212,7 +213,7 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
     }
 
     return allCustomerEquipmentByCategory.some((eq) => currentlySelectedEquipmentIds.includes(eq.id)); //prettier-ignore
-  }, [JSON.stringify(form.watch('customerEquipments')), activeKey, allCustomerEquipmentByCategory]);
+  }, [form.watch('customerEquipments'), activeKey, allCustomerEquipmentByCategory]);
 
   const columns = useMemo(() => {
     return [
@@ -221,7 +222,6 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
           return (
             <Checkbox
               {...{
-                disabled: form.watch('jobRequestId'),
                 checked: getIsAllRowSelected(),
                 indeterminate: getIsSomeRowSelected(),
                 onChange: () => {
@@ -238,7 +238,7 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
               <Checkbox
                 {...{
                   checked: row.getIsSelected(),
-                  disabled: !row.getCanSelect() || form.watch('jobRequestId'),
+                  disabled: !row.getCanSelect(),
                   indeterminate: row.getIsSomeSelected(),
                   onChange: () => {
                     handleSelectRow(row);
@@ -397,7 +397,6 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
   }, [
     form.watch('customerEquipments'),
     form.watch('customer.id'),
-    form.watch('jobRequestId'),
     activeKey,
     allCustomerEquipmentByCategory,
   ]);
@@ -583,7 +582,7 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
 
   //* set selected equipment if data exist
   useEffect(() => {
-    if (data && allCustomerEquipment.length > 1 && table && !form.getValues('jobRequestId')) {
+    if (data && allCustomerEquipment.length > 1 && table) {
       const currentEquipmentsIds = data.customerEquipments?.length > 0 ? data.customerEquipments.map(eq => eq.id) : []; // prettier-ignore
       const selectedEquipments = allCustomerEquipment.filter((eq) => currentEquipmentsIds.includes(eq.id)); // prettier-ignore
 
@@ -591,24 +590,7 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
       form.setValue('customerEquipments', selectedEquipments);
       table.setRowSelection(selectedEquipments.reduce((acc, eq) => ({ ...acc, [eq.id]: true }), {})); // prettier-ignore
     }
-  }, [data, allCustomerEquipment, table, JSON.stringify(form.watch('jobRequestId'))]);
-
-  //* set selected equipment if job request exist and has selected customer equipments
-  useEffect(() => {
-    if (
-      form.getValues('jobRequestId') &&
-      form.getValues('jobRequestId')?.jobRequest &&
-      allCustomerEquipment.length > 1 &&
-      table
-    ) {
-      const jobRequest = form.getValues('jobRequestId')?.jobRequest;
-      const selectedEquipments = jobRequest?.customerEquipments || [];
-
-      //* set form data & row selection state
-      form.setValue('customerEquipments', selectedEquipments);
-      table.setRowSelection(selectedEquipments.reduce((acc, eq) => ({ ...acc, [eq.id]: true }), {})); // prettier-ignore
-    }
-  }, [JSON.stringify(form.watch('jobRequestId')), allCustomerEquipment, table]);
+  }, [data, allCustomerEquipment, table]);
 
   //* query & set last customer equipment  id
   useEffect(() => {
@@ -620,16 +602,10 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
       <Card.Body className='pb-0'>
         <div className='d-flex'>
           <h4 className='mb-0'>Calibration Items</h4>
-          <OverlayTrigger placement='top' overlay={<Tooltip>This field is required</Tooltip>}>
-            <span className='text-danger' style={{ marginLeft: '4px', cursor: 'help' }}>
-              *
-            </span>
-          </OverlayTrigger>
         </div>
         <p className='text-muted fs-6'>
-          The equipment of the currently selected customer. Select up to{' '}
-          <span className='fw-bold'>10 pieces of equipment per category</span> to be calibrated for
-          the job.
+          The equipment of the currently selected customer. Select any number of equipment to be
+          calibrated for the job.
         </p>
 
         {allCustomerEquipment?.length < 1 && (
@@ -1092,4 +1068,4 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
   );
 };
 
-export default JobCustomerEquipmentForm;
+export default JobRequestCustomerEquipmentForm;

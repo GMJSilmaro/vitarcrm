@@ -1,53 +1,57 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
-import JobForm from '@/sub-components/dashboard/jobs/JobForm';
+import JobRequestForm from '@/sub-components/dashboard/job-requests/JobRequestForm';
 import { GeeksSEO } from '@/widgets';
 import { doc, getDoc } from 'firebase/firestore';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Col, Container, Row, Spinner } from 'react-bootstrap';
-import { BriefcaseFill, House, PencilFill, People } from 'react-bootstrap-icons';
+import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import {
+  ArrowLeftShort,
+  EnvelopePaperFill,
+  House,
+  HouseFill,
+  Link,
+  PencilFill,
+} from 'react-bootstrap-icons';
 
-const EditJob = () => {
+const EditJobRequest = () => {
   const router = useRouter();
-  const { jobId } = router.query;
+  const { jobRequestId } = router.query;
 
-  const [job, setJob] = useState();
+  const [jobRequest, setJobRequest] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (jobId) {
-      const jobHeaderRef = doc(db, 'jobHeaders', jobId);
-      const jobDetailsRef = doc(db, 'jobDetails', jobId);
+    if (jobRequestId) {
+      const jobRequestRef = doc(db, 'jobRequests', jobRequestId);
 
-      Promise.all([getDoc(jobHeaderRef), getDoc(jobDetailsRef)])
-        .then(([jobHeader, jobDetails]) => {
-          if (jobHeader.exists() && jobDetails.exists()) {
-            setJob({
-              id: jobHeader.id,
-              ...jobHeader.data(),
-              ...jobDetails.data(),
+      getDoc(jobRequestRef)
+        .then((doc) => {
+          if (doc.exists()) {
+            setJobRequest({
+              id: doc.id,
+              ...doc.data(),
             });
             setIsLoading(false);
           } else {
-            setError('Job not found');
+            setError('Job request not found');
             setIsLoading(false);
           }
         })
         .catch((err) => {
-          setError(err.message || 'Error fetching job');
+          setError(err.message || 'Error fetching job request');
           setIsLoading(false);
         });
     }
-  }, [jobId]);
+  }, [jobRequestId]);
 
   if (isLoading) {
     return (
       <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
         <Spinner animation='border' variant='primary' />
-        <span className='ms-3'>Loading Job...</span>
+        <span className='ms-3'>Loading Job Request...</span>
       </div>
     );
   }
@@ -61,23 +65,23 @@ const EditJob = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <Button onClick={() => router.push('/jobs')}>Back to Jobs List</Button>
+          <Button onClick={() => router.push('/jobs-requests')}>Back to Job Requests List</Button>
         </div>
       </div>
     );
   }
 
-  if (!job) {
+  if (!jobRequest) {
     return (
       <div
         className='d-flex justify-content-center align-items-center text-center py-5'
         style={{ height: '63vh' }}
       >
         <div>
-          <h3>Job not found</h3>
-          <Link href='/jobs'>
+          <h3>Job request not found</h3>
+          <Link href='/jobs-requests'>
             <Button variant='primary' className='mt-3'>
-              Back to Job List
+              Back to Job Requests List
             </Button>
           </Link>
         </div>
@@ -87,27 +91,35 @@ const EditJob = () => {
 
   return (
     <>
-      <GeeksSEO title='Edit Job | VITAR Group' />
+      <GeeksSEO title='Edit Job Request - VITAR Group | Portal' />
 
       <ContentHeader
-        title='Edit Job'
-        description='Update job summary, tasks, and schedules'
-        badgeText='Job Management'
-        badgeText2='Edit Job'
+        title='Edit Job Request'
+        description='Update job request summary, customer equipment, and addional instructions'
+        badgeText='Job Request Management'
+        badgeText2='Edit Job Request'
         breadcrumbItems={[
           {
             text: 'Dashboard',
             link: '/dashboard',
-            icon: <House className='me-2' size={14} />,
+            icon: <HouseFill className='me-2' size={14} />,
           },
           {
-            text: 'Jobs',
-            link: '/jobs',
-            icon: <BriefcaseFill className='me-2' size={14} />,
+            text: 'Jobs Requests',
+            link: '/job-requests',
+            icon: <EnvelopePaperFill className='me-2' size={14} />,
           },
           {
-            text: job ? job.id : 'Create',
+            text: jobRequest.id,
             icon: <PencilFill className='me-2' size={14} />,
+          },
+        ]}
+        actionButtons={[
+          {
+            text: 'Back to Job Request List',
+            icon: <ArrowLeftShort size={16} />,
+            variant: 'light',
+            onClick: () => router.push(`/job-requests`),
           },
         ]}
       />
@@ -116,7 +128,7 @@ const EditJob = () => {
         <Col sm={12}>
           <Card className='shadow-sm'>
             <Card.Body>
-              <JobForm data={job} />
+              <JobRequestForm data={jobRequest} />
             </Card.Body>
           </Card>
         </Col>
@@ -125,4 +137,4 @@ const EditJob = () => {
   );
 };
 
-export default EditJob;
+export default EditJobRequest;

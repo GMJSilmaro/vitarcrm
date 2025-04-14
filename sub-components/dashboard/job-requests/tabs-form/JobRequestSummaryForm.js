@@ -1,36 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
-import { useForm, useFormContext, Controller } from 'react-hook-form';
+import { useFormContext, Controller } from 'react-hook-form';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { equipmentSchema } from '@/schema/job';
-import JobEquipmentList from '../JobEquipmentList';
 import { db } from '@/firebase';
-import {
-  collection,
-  doc,
-  getCountFromServer,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  query,
-  where,
-} from 'firebase/firestore';
-import toast from 'react-hot-toast';
+import { collection, doc, getDoc, getDocs, onSnapshot, query } from 'firebase/firestore';
 import Select from '@/components/Form/Select';
 import { useRouter } from 'next/router';
+import _ from 'lodash';
 
-const JobSummaryForm = ({ data, isLoading, handleNext }) => {
+const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
   const router = useRouter();
 
   const form = useFormContext();
 
   const formErrors = form.formState.errors;
 
-  const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
-  const [jobRequestOptions, setJobRequestOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
   const [customersOptions, setCustomersOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
+  const [usersOptions, setUsersOptions] = useState({ data: [], isLoading: true, isError: false });
 
   const [locationIsLoading, setLocationIsLoading] = useState(false);
   const [locationsOptions, setLocationsOptions] = useState([]);
@@ -103,6 +90,58 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     }
   }, [form.watch('location.value')]);
 
+  //* query users
+  useEffect(() => {
+    const q = query(collection(db, 'users'));
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const userData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setUsersOptions({
+            data: userData.map((user) => ({
+              id: user.id,
+              name: user.fullName,
+              value: user.id,
+              label: user.fullName,
+            })),
+            isLoading: false,
+            isError: false,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setUsersOptions({ data: [], isLoading: false, isError: true });
+      });
+  }, []);
+
+  //* query last job request id
+  useEffect(() => {
+    if (data) return;
+
+    const q = query(collection(db, 'jobRequests'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const id = snapshot.docs.pop().id.replace('JR', '');
+          const lastJobRequestId = parseInt(id, 10);
+
+          form.setValue('jobRequestId', `JR${(lastJobRequestId + 1).toString().padStart(6, '0')}`);
+        } else form.setValue('jobRequestId', 'JR000001');
+      },
+      (err) => {
+        console.error(err.message);
+        toast.error(err.message);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [data]);
+
   //* set customer, contact & location if data exist
   useEffect(() => {
     if (data && customersOptions.data.length > 0) {
@@ -152,84 +191,13 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     }
   }, [data, customersOptions]);
 
-  //* set jobRequestId if data exist
+  //* set supervisor, if data exist
   useEffect(() => {
-    if (data && jobRequestOptions.data.length > 0) {
-      const selectedJobRequest = jobRequestOptions.data.find(
-        (jobRequest) => jobRequest.id === data.jobRequestId
-      );
-      form.setValue('jobRequestId', selectedJobRequest);
+    if (data && usersOptions.data.length > 0) {
+      const supervisor = usersOptions.data.find((option) => option.id === data.supervisor.id);
+      form.setValue('supervisor', supervisor);
     }
-  }, [data, jobRequestOptions]);
-
-  //* query jobs
-  useEffect(() => {
-    const q = query(collection(db, 'jobHeaders'));
-
-    const unsubscribe = onSnapshot(
-      q,
-      async (snapshot) => {
-        if (!snapshot.empty) {
-          setJobs({
-            data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-            isLoading: false,
-            isError: false,
-          });
-          return;
-        }
-
-        setJobs({ data: [], isLoading: false, isError: false });
-      },
-      (err) => {
-        console.error(err.message);
-        setJobs({ data: [], isLoading: false, isError: true });
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  //* query job request which are approved
-  useEffect(() => {
-    const q = query(collection(db, 'jobRequests'), where('status', '==', 'approved'));
-
-    const unsubscribe = onSnapshot(
-      q,
-      async (snapshot) => {
-        if (!snapshot.empty && jobs.data.length > 0) {
-          const jobRequestData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-          const jobRequestWithNoAssociatedJob = jobRequestData.filter((jr) => {
-            if (data && jr.id === data?.jobRequestId) return true;
-
-            const isAssociatedJob = jobs.data.some((j) => j.jobRequestId === jr.id);
-            return !isAssociatedJob;
-          });
-
-          setJobRequestOptions({
-            data: jobRequestWithNoAssociatedJob.map((jr) => ({
-              id: jr.id,
-              value: jr.id,
-              label: `${jr.id} - ${jr.customer.name}`,
-              jobRequest: jr,
-            })),
-            isLoading: false,
-            isError: false,
-          });
-
-          return;
-        }
-
-        setJobRequestOptions({ data: [], isLoading: false, isError: false });
-      },
-      (err) => {
-        console.error(err.message);
-        setJobRequestOptions({ data: [], isLoading: false, isError: true });
-      }
-    );
-
-    return () => unsubscribe();
-  }, [JSON.stringify(jobs), data]);
+  }, [data, usersOptions]);
 
   const formatCustomerOptionLabel = (data) => {
     return (
@@ -239,18 +207,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
           <Badge bg='info'>{data.equipments?.length ?? 0} Equipment</Badge>
           <Badge bg='primary'>{data.contacts?.length ?? 0} Contact</Badge>
           <Badge bg='warning'>{data.locations?.length ?? 0} Location</Badge>
-        </span>
-      </div>
-    );
-  };
-
-  const formatJobRequestOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{data.label}</span>
-        <span className='d-flex column-gap-2'>
-          <Badge bg='primary'>{data?.jobRequest?.supervisor?.name || ''}</Badge>
-          <Badge bg='info'>{data?.jobRequest?.customerEquipments?.length ?? 0} Equipment</Badge>
         </span>
       </div>
     );
@@ -337,170 +293,30 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     [data]
   );
 
-  const handleJobRequestChange = useCallback(
-    (option, field) => {
-      if (customersOptions.data.length > 0) {
-        field.onChange(option);
-
-        //* set customer
-        const customer = customersOptions.data.find((c) => c.value === option?.jobRequest?.customer?.id); //prettier-ignore
-        const customerEquipmentsFromJobRequest = option?.jobRequest?.customerEquipments || [];
-        const tasksFromJobRequest = option?.jobRequest?.tasks || [];
-        form.setValue('customer', customer);
-
-        if (customer) {
-          if (!data) {
-            //* clear customer equipments
-            form.setValue('customerEquipments', []);
-          } else {
-            if (data?.customer?.id !== option?.id) {
-              form.setValue('customerEquipments', []);
-            } else form.setValue('customerEquipments', data?.customerEquipments);
-          }
-
-          //* contact options
-          const cOptions =
-            customer?.contacts?.length > 0
-              ? customer.contacts.map((contact) => ({
-                  value: contact.id,
-                  label: `${contact.firstName} ${contact.lastName}`,
-                  ...contact,
-                }))
-              : [];
-
-          //* location options
-          const lOptions =
-            customer?.locations?.length > 0
-              ? customer.locations.map((location) => ({
-                  value: location.siteId,
-                  label: `${location.siteId} - ${location.siteName}`,
-                  ...location,
-                }))
-              : [];
-
-          if (cOptions.length > 0) {
-            setContactsOpions(cOptions);
-
-            const contactFromJobRequest = cOptions.find(contact => contact.value === option?.jobRequest?.contact?.id); //prettier-ignore
-
-            //* if contactFromJobRequest exist set it, othwerwise set default contact, if has default contact
-            if (contactFromJobRequest) {
-              form.setValue('contact', contactFromJobRequest);
-              form.clearErrors('contact');
-            } else {
-              const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
-              if (defaultContact) {
-                form.setValue('contact', defaultContact);
-                form.clearErrors('contact');
-              }
-            }
-          } else {
-            form.setValue('contact', null);
-            setContactsOpions([]);
-          }
-
-          if (lOptions.length > 0) {
-            setLocationsOptions(lOptions);
-
-            const locationFromJobRequest = lOptions.find(location => location.value === option?.jobRequest?.location?.id); //prettier-ignore
-
-            //* if locationFromJobRequest exist set it, othwerwise set default location, if has default location
-            if (locationFromJobRequest) {
-              form.setValue('location', locationFromJobRequest);
-              form.clearErrors('location');
-            } else {
-              const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
-              if (defaultLocation) {
-                form.setValue('location', defaultLocation);
-                form.clearErrors('location');
-              }
-            }
-          } else {
-            form.setValue('location', null);
-            setLocationsOptions([]);
-          }
-
-          //* set customer equipments based on job request
-          form.setValue('customerEquipments', customerEquipmentsFromJobRequest);
-
-          //* set tasks based on job request
-          form.setValue('tasks', tasksFromJobRequest);
-
-          console.log('xxxxxx', { customerEquipmentsFromJobRequest, tasksFromJobRequest });
-        } else {
-          toast.error('Customer Data not found. Please try again later.');
-        }
-      }
-    },
-    [data, JSON.stringify(customersOptions)]
-  );
-
   return (
     <>
       <Card className='shadow-none'>
         <Card.Body className='pb-0'>
-          <h4 className='mb-0'>Job Request</h4>
-          <p className='text-muted fs-6'>Associate job request for this job.</p>
-
           <Row className='mb-3'>
-            <Form.Group as={Col} md={12}>
-              <Form.Label className='me-1' id='jobRequestId'>
-                Job Request
-              </Form.Label>
-              <OverlayTrigger
-                placement='right'
-                overlay={
-                  <Tooltip>
-                    <TooltipContent
-                      title='Job Request Search'
-                      info={[
-                        "Search by job request's ID & supervisor's name",
-                        'Selection will load customer and its related contacts and locations, calibration items and additional instructions',
-                      ]}
-                    />
-                  </Tooltip>
-                }
-              >
-                <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-              </OverlayTrigger>
+            <Form.Group as={Col} md={6}>
+              <Form.Label>Job Request ID</Form.Label>
+              <Form.Control type='text' value={form.watch('jobRequestId')} readOnly disabled />
+            </Form.Group>
 
-              <Controller
-                name='jobRequestId'
-                control={form.control}
-                render={({ field }) => (
-                  <>
-                    <Select
-                      {...field}
-                      inputId='jobRequestId'
-                      instanceId='jobRequestId'
-                      onChange={(option) => handleJobRequestChange(option, field)}
-                      formatOptionLabel={formatJobRequestOptionLabel}
-                      options={jobRequestOptions.data}
-                      isLoading={jobs.isLoading || jobRequestOptions.isLoading}
-                      placeholder={
-                        jobs.isLoading || jobRequestOptions.isLoading || customersOptions.isLoading
-                          ? 'Loading job requests...'
-                          : "Search by job request's ID & supervisor's name"
-                      }
-                      isDisabled={jobs.isLoading || jobRequestOptions.isLoading}
-                      noOptionsMessage={() =>
-                        jobRequestOptions.isLoading ? 'Loading...' : 'No job request found'
-                      }
-                    />
-
-                    {formErrors && formErrors.jobRequestId?.message && (
-                      <Form.Text className='text-danger'>
-                        {formErrors.jobRequestId?.message}
-                      </Form.Text>
-                    )}
-                  </>
-                )}
+            <Form.Group as={Col} md={6}>
+              <Form.Label>Status</Form.Label>
+              <Form.Control
+                type='text'
+                value={_.capitalize(form.watch('status'))}
+                readOnly
+                disabled
               />
             </Form.Group>
           </Row>
 
           <hr className='my-4' />
-          <h4 className='mb-3'>Customer</h4>
+
+          <h4 className='mb-0'>Customer</h4>
           <p className='text-muted fs-6'>Basic customer details</p>
 
           <Row>
@@ -542,7 +358,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                           ? 'Loading customers...'
                           : "Search by customer's code or name"
                       }
-                      isDisabled={customersOptions.isLoading || form.watch('jobRequestId')}
+                      isDisabled={customersOptions.isLoading}
                       noOptionsMessage={() =>
                         customersOptions.isLoading ? 'Loading...' : 'No customers found'
                       }
@@ -550,6 +366,62 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
 
                     {formErrors && formErrors.customer?.message && (
                       <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
+                    )}
+                  </>
+                )}
+              />
+            </Form.Group>
+          </Row>
+
+          <hr className='my-4' />
+
+          <h4 className='mb-0'>Supervisor</h4>
+          <p className='text-muted fs-6'>Assigned supervisor for the job request.</p>
+
+          <Row className='mb-3'>
+            <Form.Group as={Col} md={12}>
+              <RequiredLabel label='Assigned Supervisor' id='supervisor' />
+              <OverlayTrigger
+                placement='right'
+                overlay={
+                  <Tooltip>
+                    <TooltipContent
+                      title='User search Search'
+                      info={[
+                        "Search by user's name",
+                        'Required to proceed with job request creation',
+                      ]}
+                    />
+                  </Tooltip>
+                }
+              >
+                <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+              </OverlayTrigger>
+
+              <Controller
+                name='supervisor'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Select
+                      {...field}
+                      inputId='supervisor'
+                      instanceId='supervisor'
+                      onChange={(option) => field.onChange(option)}
+                      options={usersOptions.data}
+                      placeholder={
+                        usersOptions.isLoading ? 'Loading users...' : "Search by user's name"
+                      }
+                      isDisabled={usersOptions.isLoading}
+                      noOptionsMessage={() =>
+                        usersOptions.isLoading ? 'Loading...' : 'No user found'
+                      }
+                    />
+
+                    {formErrors && formErrors.supervisor?.message && (
+                      <Form.Text className='text-danger'>
+                        {formErrors.supervisor?.message}
+                      </Form.Text>
                     )}
                   </>
                 )}
@@ -577,11 +449,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                       onChange={(option) => field.onChange(option)}
                       formatOptionLabel={formatContactOptionLabel}
                       options={contactsOptions}
-                      isDisabled={
-                        customersOptions.isLoading ||
-                        contactsOptions.length < 1 ||
-                        form.watch('jobRequestId')
-                      }
+                      isDisabled={customersOptions.isLoading || contactsOptions.length < 1}
                       placeholder="Search by contact's name"
                       noOptionsMessage={() => 'No contacts found'}
                     />
@@ -639,11 +507,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
           </Row>
 
           <hr className='my-4' />
-          <h4
-            className='mb-0'
-            style={{ cursor: 'pointer' }}
-            onClick={() => setShowLocationFields((prev) => !prev)}
-          >
+          <h4 className='mb-0' style={{ cursor: 'pointer' }}>
             Job Address
           </h4>
           <p className='text-muted fs-6'>Details about the location/site.</p>
@@ -681,11 +545,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                       formatOptionLabel={formatLocationOptionLabel}
                       options={locationsOptions}
                       placeholder="Search by location's id or name"
-                      isDisabled={
-                        locationIsLoading ||
-                        locationsOptions.length < 1 ||
-                        form.watch('jobRequestId')
-                      }
+                      isDisabled={locationIsLoading || locationsOptions.length < 1}
                       noOptionsMessage={() =>
                         locationsOptions.isLoading ? 'Loading...' : 'No locations found'
                       }
@@ -854,4 +714,4 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
   );
 };
 
-export default JobSummaryForm;
+export default JobRequestSummaryForm;

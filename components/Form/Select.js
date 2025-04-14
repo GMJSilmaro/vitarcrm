@@ -1,5 +1,15 @@
 import { forwardRef } from 'react';
+import { Spinner } from 'react-bootstrap';
 import ReactSelect from 'react-select';
+
+const LoadingIndicator = (props) => {
+  return (
+    <div className='d-flex align-items-center gap-2 fs-6 me-3'>
+      <Spinner animation='border' size='sm' {...props} style={{ color: '#1e40a6' }}></Spinner>
+      Loading...
+    </div>
+  );
+};
 
 //* custom react select component
 const Select = forwardRef((props, ref) => {
@@ -55,6 +65,9 @@ const Select = forwardRef((props, ref) => {
           primary25: '#edf2ff',
         },
       })}
+      components={{
+        LoadingIndicator,
+      }}
     />
   );
 });

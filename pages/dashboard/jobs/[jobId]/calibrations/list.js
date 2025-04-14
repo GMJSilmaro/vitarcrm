@@ -146,10 +146,10 @@ const JobCalibration = () => {
                 try {
                   setIsLoading(true);
 
-                  const siteRef = doc(db, 'jobCalibrations', id);
+                  const calibrationRef = doc(db, 'jobCalibrations', id);
                   const certificateRef = doc(db, 'jobCertificates', certificateNumber);
 
-                  await Promise.all([deleteDoc(siteRef), deleteDoc(certificateRef)]);
+                  await Promise.all([deleteDoc(calibrationRef), deleteDoc(certificateRef)]);
 
                   toast.success('Site removed successfully', { position: 'top-right' });
                   setIsLoading(false);

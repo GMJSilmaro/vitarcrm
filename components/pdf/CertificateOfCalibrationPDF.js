@@ -7,12 +7,13 @@ import { useCallback, useMemo } from 'react';
 import { add, format } from 'date-fns';
 import { TEST_LOADS, TRACEABILITY_MAP } from '@/schema/calibration';
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
-import { ceil, divide, multiply } from 'mathjs';
+import { ceil, divide, multiply, row } from 'mathjs';
+import { faL } from '@fortawesome/free-solid-svg-icons';
 
 const styles = StyleSheet.create({
   body: {
     fontFamily: 'InterRegular',
-    padding: '40px 40px',
+    padding: '20px 40px 75px 40px',
     width: '100%',
     height: '100%',
   },
@@ -26,7 +27,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: 'InterBold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   sectionTitle: {
     fontSize: 14,
@@ -48,11 +49,19 @@ const styles = StyleSheet.create({
   pageNumber: {
     position: 'absolute',
     fontSize: 8,
-    bottom: 20,
+    bottom: 12,
     left: 0,
     right: 0,
     textAlign: 'center',
     color: '#adadad',
+  },
+  footer: {
+    marginBottom: 30,
+    padding: '0px 40px 0px 40px',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   rowContainer: {
     display: 'flex',
@@ -553,7 +562,9 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
               <Text>{TRACEABILITY_MAP?.[calibration?.traceabilityType] || ''}</Text>
             </View>
           </View>
+        </View>
 
+        <View style={styles.rowContainer} break={instruments.data.length > 6 ? true : false}>
           <View style={styles.row}>
             <View style={[styles.cellHeader, { width: '18%' }]}>
               <Text>Reference</Text>
@@ -601,6 +612,23 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
                 </View>
               </View>
             ))}
+        </View>
+
+        {/* //* footer */}
+        <View fixed style={styles.footer}>
+          <Text
+            style={{
+              fontFamily: 'InterRegular',
+              fontSize: 8,
+              color: '#64748b',
+            }}
+          >
+            This certificate is issued in accordance with the laboratory accreditation requirements
+            of Skim Akreditasi Makmal Malaysia ( SAMM ) of Standards Malaysia which is a signatory
+            to the ILAC MRA. Copyright of this certificate is owned by the issuing laboratory and
+            may not be reproduced other than in full except with the prior written approval of the
+            Head of the issuing laboratory.
+          </Text>
         </View>
 
         <View break style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -857,28 +885,11 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
                 </View>
               </View>
 
-              <View style={{ marginTop: 40, paddingBottom: 50, borderBottom: '1px solid #e2e8f0' }}>
+              <View style={{ marginTop: 40 }}>
                 <Text style={{ fontFamily: 'InterBold', fontSize: 8, textAlign: 'center' }}>
                   The expanded uncertainty is stated as the standard measurement uncertainty
                   multiplied by the coverage factor k, such that the coverage probability
                   corresponds to approximately 95 %.
-                </Text>
-              </View>
-
-              <View style={{ paddingTop: 30 }}>
-                <Text
-                  style={{
-                    fontFamily: 'InterRegular',
-                    fontSize: 8,
-                    color: '#64748b',
-                    textAlign: 'center',
-                  }}
-                >
-                  This certificate is issued in accordance with the laboratory accreditation
-                  requirements of Skim Akreditasi Makmal Malaysia ( SAMM ) of Standards Malaysia
-                  which is a signatory to the ILAC MRA. Copyright of this certificate is owned by
-                  the issuing laboratory and may not be reproduced other than in full except with
-                  the prior written approval of the Head of the issuing laboratory.
                 </Text>
               </View>
             </View>

@@ -79,6 +79,12 @@ export const customerEquipmentSchema = z.object({
 });
 
 export const summarySchema = z.object({
+  jobRequestId: z
+    .union([z.string().nullish().default(null), z.record(z.string(), z.any())])
+    .transform((formData) => {
+      if (formData !== null && typeof formData === 'object') return formData.value;
+      return null;
+    }),
   customer: z
     .record(z.string(), z.any(), {
       message: 'Please select customer',

@@ -86,11 +86,18 @@ const NavbarDefault = [
           },
         ],
       },
+
       {
         id: uuid(),
         menuitem: 'Calendar',
         link: '/jobs/calendar',
         icon: 'CalendarWeekFill',
+      },
+      {
+        id: uuid(),
+        menuitem: 'Job Request',
+        link: '/job-requests',
+        icon: 'EnvelopePaperFill',
       },
       {
         id: uuid(),
