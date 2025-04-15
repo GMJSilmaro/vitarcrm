@@ -47,17 +47,12 @@ const CustomerList = () => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='#' />,
         enableSorting: false,
         size: 50,
-        cell: (info) => {
-          const rowIndex = info.row.index;
-          const pageIndex = table.getState().pagination.pageIndex;
-          const pageSize = table.getState().pagination.pageSize;
-          const displayIndex = rowIndex + pageIndex * pageSize + 1;
-          return (
-            <div className='d-flex justify-content-center align-items-center'>
-              <span className='text-primary'>{displayIndex}</span>
-            </div>
-          );
-        },
+        cell: ({ row, table }) => (
+          <div>
+            {(table.getSortedRowModel()?.flatRows?.findIndex((flatRow) => flatRow.id === row.id) ||
+              0) + 1}
+          </div>
+        ),
       }),
       columnHelper.accessor('id', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
