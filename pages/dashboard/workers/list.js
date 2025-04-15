@@ -66,13 +66,12 @@ const TechnicianList = () => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='#' />,
         enableSorting: false,
         size: 50,
-        cell: (info) => {
-          const rowIndex = info.row.index;
-          const pageIndex = table.getState().pagination.pageIndex;
-          const pageSize = table.getState().pagination.pageSize;
-          const displayIndex = rowIndex + pageIndex * pageSize + 1;
-          return <div>{displayIndex}</div>;
-        },
+        cell: ({ row, table }) => (
+          <div>
+            {(table.getSortedRowModel()?.flatRows?.findIndex((flatRow) => flatRow.id === row.id) ||
+              0) + 1}
+          </div>
+        ),
       }),
       columnHelper.accessor((row) => row.fullName, {
         id: 'technician',
