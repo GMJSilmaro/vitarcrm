@@ -323,6 +323,10 @@ const DFNVTest = ({ data }) => {
     return () => (isMounted.current = false);
   }, [data, calibrationPointNo]);
 
+  const numberInputOnWheel = (e) => {
+    e.target.blur();
+  };
+
   return (
     <>
       <div className='mx-0 border border-primary rounded overflow-hidden'>
@@ -356,6 +360,7 @@ const DFNVTest = ({ data }) => {
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
                           }}
+                          onWheel={numberInputOnWheel}
                           name={field.name}
                           ref={field.ref}
                           value={field.value}
@@ -1068,6 +1073,7 @@ const DFNVTest = ({ data }) => {
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
                           }}
+                          onWheel={numberInputOnWheel}
                           name={field.name}
                           ref={field.ref}
                           value={field.value}
@@ -1122,6 +1128,7 @@ const DFNVTest = ({ data }) => {
                                     isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                                   );
                                 }}
+                                onWheel={numberInputOnWheel}
                                 name={field.name}
                                 ref={field.ref}
                                 value={field.value}
@@ -1864,6 +1871,7 @@ const DFNVTest = ({ data }) => {
                                     isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                                   );
                                 }}
+                                onWheel={numberInputOnWheel}
                                 name={field.name}
                                 ref={field.ref}
                                 value={field.value}

@@ -89,6 +89,10 @@ const ETest = ({ data }) => {
     }, 1000);
   }, [data, rangeMaxCalibration]);
 
+  const numberInputOnWheel = (e) => {
+    e.target.blur();
+  };
+
   return (
     <>
       <div className='mx-0 border border-primary rounded overflow-hidden'>
@@ -108,6 +112,7 @@ const ETest = ({ data }) => {
                           isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                         );
                       }}
+                      onWheel={numberInputOnWheel}
                       name={field.name}
                       ref={field.ref}
                       value={field.value}
@@ -137,6 +142,7 @@ const ETest = ({ data }) => {
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
                           }}
+                          onWheel={numberInputOnWheel}
                           name={field.name}
                           ref={field.ref}
                           value={field.value}
@@ -181,6 +187,7 @@ const ETest = ({ data }) => {
                         isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                       );
                     }}
+                    onWheel={numberInputOnWheel}
                     name={field.name}
                     ref={field.ref}
                     value={field.value}
@@ -208,6 +215,7 @@ const ETest = ({ data }) => {
                         isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                       );
                     }}
+                    onWheel={numberInputOnWheel}
                     name={field.name}
                     ref={field.ref}
                     value={field.value}

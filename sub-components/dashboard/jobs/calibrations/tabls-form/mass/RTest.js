@@ -111,6 +111,10 @@ const RTest = ({ data }) => {
     }, 1000);
   }, [data, rangeMaxCalibration, isAbove100Kg]);
 
+  const numberInputOnWheel = (e) => {
+    e.target.blur();
+  };
+
   return (
     <>
       <Row className='mx-0 d-flex flex-column border border-primary rounded overflow-hidden'>
@@ -148,6 +152,7 @@ const RTest = ({ data }) => {
 
                             form.clearErrors(`data.rtest.half.${i}`);
                           }}
+                          onWheel={numberInputOnWheel}
                           name={field.name}
                           ref={field.ref}
                           value={field.value}
@@ -173,6 +178,7 @@ const RTest = ({ data }) => {
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
                           }}
+                          onWheel={numberInputOnWheel}
                           name={field.name}
                           ref={field.ref}
                           value={field.value}
