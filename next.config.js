@@ -212,12 +212,49 @@ const nextConfig = {
         destination: '/dashboard/calibration-references/mass/cuswd/list',
       },
       {
+        source: '/calibration-references/mass/cuswd/create',
+        destination: '/dashboard/calibration-references/mass/cuswd/create',
+      },
+      {
+        source: '/calibration-references/mass/cuswd/edit-cuswd/:refId',
+        destination: '/dashboard/calibration-references/mass/cuswd/edit-cuswd/:refId',
+      },
+      {
+        source: '/calibration-references/mass/cuswd/view/:refId',
+        destination: '/dashboard/calibration-references/mass/cuswd/view/:refId',
+      },
+      {
         source: '/calibration-references/mass/mpe',
         destination: '/dashboard/calibration-references/mass/mpe/list',
       },
       {
+        source: '/calibration-references/mass/mpe/create',
+        destination: '/dashboard/calibration-references/mass/mpe/create',
+      },
+
+      {
+        source: '/calibration-references/mass/mpe/edit-mpe/:refId',
+        destination: '/dashboard/calibration-references/mass/mpe/edit-mpe/:refId',
+      },
+      {
+        source: '/calibration-references/mass/mpe/view/:refId',
+        destination: '/dashboard/calibration-references/mass/mpe/view/:refId',
+      },
+      {
         source: '/calibration-references/mass/ck',
         destination: '/dashboard/calibration-references/mass/ck/list',
+      },
+      {
+        source: '/calibration-references/mass/ck/create',
+        destination: '/dashboard/calibration-references/mass/ck/create',
+      },
+      {
+        source: '/calibration-references/mass/ck/edit-ck/:refId',
+        destination: '/dashboard/calibration-references/mass/ck/edit-ck/:refId',
+      },
+      {
+        source: '/calibration-references/mass/ck/view/:refId',
+        destination: '/dashboard/calibration-references/mass/ck/view/:refId',
       },
 
       // AUTHENTICATION

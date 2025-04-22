@@ -24,6 +24,7 @@ import {
   FileEarmarkArrowDown,
   PencilSquare,
   PersonLinesFill,
+  Printer,
   Speedometer,
   ThreeDotsVertical,
   Trash,
@@ -175,8 +176,8 @@ const CalibrationTab = ({ job }) => {
                     Delete Calibration
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => {}}>
-                    <FileEarmarkArrowDown className='me-2' size={16} />
-                    Generate Certificate
+                    <Printer className='me-2' size={16} />
+                    Reprint Certificate
                   </Dropdown.Item>
                 </Dropdown.Menu>
               }

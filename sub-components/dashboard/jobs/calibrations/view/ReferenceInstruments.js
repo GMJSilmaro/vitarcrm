@@ -1,3 +1,4 @@
+import Checkbox from '@/components/common/Checkbox';
 import DataTable from '@/components/common/DataTable';
 import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
 import DataTableSearch from '@/components/common/DataTableSearch';
@@ -10,14 +11,57 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import React, { useMemo } from 'react';
-import { Card } from 'react-bootstrap';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { Badge, Card } from 'react-bootstrap';
 
-const ReferenceInstruments = ({ instruments }) => {
+const ReferenceInstruments = ({ calibration, instruments }) => {
   const columnHelper = createColumnHelper();
+
+  const getIsAllRowsSelected = useCallback(() => {
+    const cocInstruments = calibration?.cocInstruments || [];
+
+    if (!cocInstruments || cocInstruments?.length < 1) return false;
+
+    return instruments.data.every((instrument) => cocInstruments.includes(instrument.id)); //prettier-ignore
+  }, [calibration, JSON.stringify(instruments.data)]);
+
+  const getIsSomeRowsSelected = useCallback(() => {
+    const cocInstruments = calibration?.cocInstruments || [];
+
+    if (!cocInstruments || cocInstruments?.length < 1) return false;
+
+    return instruments.data.some((instrument) => cocInstruments.includes(instrument.id)); //prettier-ignore
+  }, [calibration, JSON.stringify(instruments.data)]);
 
   const columns = useMemo(() => {
     return [
+      columnHelper.accessor('select', {
+        header: ({ table }) => {
+          return (
+            <Checkbox
+              {...{
+                disabled: true,
+                checked: getIsAllRowsSelected(),
+                indeterminate: getIsSomeRowsSelected(),
+              }}
+            />
+          );
+        },
+        cell: ({ row }) => {
+          return (
+            <div className='px-1'>
+              <Checkbox
+                {...{
+                  disabled: true,
+                  checked: row.getIsSelected(),
+                  indeterminate: row.getIsSomeSelected(),
+                }}
+              />
+            </div>
+          );
+        },
+        enableSorting: false,
+      }),
       columnHelper.accessor('tagId', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID No' />,
       }),
@@ -42,7 +86,7 @@ const ReferenceInstruments = ({ instruments }) => {
         },
       }),
     ];
-  }, []);
+  }, [JSON.stringify(instruments.data), calibration]);
 
   const table = useReactTable({
     data: instruments.data,
@@ -53,7 +97,18 @@ const ReferenceInstruments = ({ instruments }) => {
     getFilteredRowModel: getFilteredRowModel(),
     filterFns: { globalSearch: globalSearchFilter },
     globalFilterFn: 'globalSearch',
+    getRowId: (row) => row.id,
   });
+
+  //* set selected coc instruments
+  useEffect(() => {
+    if (calibration && instruments.data.length > 0 && table) {
+      const currentCocInstruments = calibration?.cocInstruments || [];
+
+      //* set row selection
+      table.setRowSelection(currentCocInstruments.reduce((acc, id) => ({ ...acc, [id]: true }), {})); // prettier-ignore
+    }
+  }, [calibration, instruments.data, table]);
 
   return (
     <Card className='border-0 shadow-none'>
@@ -63,7 +118,8 @@ const ReferenceInstruments = ({ instruments }) => {
             <h5 className='mb-0'>Instruments</h5>
             <small className='text-muted'>
               The instruments/equipments listed below are based on the selected equipments in the
-              job but filtered out based on the selected category.
+              job but filtered out based on the selected category. The selected instruments will be
+              included in the COC.
             </small>
           </div>
         </div>
@@ -73,6 +129,11 @@ const ReferenceInstruments = ({ instruments }) => {
         <DataTable table={table} isLoading={instruments.isLoading} isError={instruments.isError}>
           <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
             <DataTableSearch table={table} />
+
+            <div className='rounded border' style={{ padding: '8px 16px' }}>
+              <span className='me-2'>Selected:</span>
+              <Badge>{calibration?.cocInstruments?.length || 0}</Badge>
+            </div>
           </div>
         </DataTable>
       </Card.Body>

@@ -32,6 +32,7 @@ import {
   PencilSquare,
   PersonLinesFill,
   Plus,
+  Printer,
   Speedometer,
   ThreeDotsVertical,
   Trash,
@@ -189,10 +190,11 @@ const JobCalibration = () => {
                     <Trash className='me-2' size={16} />
                     Delete Calibration
                   </Dropdown.Item>
-                  {/* <Dropdown.Item onClick={() => {}}>
-                    <FileEarmarkArrowDown className='me-2' size={16} />
-                    Generate Certificate
-                  </Dropdown.Item> */}
+
+                  <Dropdown.Item onClick={() => {}}>
+                    <Printer className='me-2' size={16} />
+                    Reprint Certificate
+                  </Dropdown.Item>
                 </Dropdown.Menu>
               }
             >

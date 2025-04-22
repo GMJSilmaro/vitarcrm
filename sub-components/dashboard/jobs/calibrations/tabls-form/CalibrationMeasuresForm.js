@@ -5,6 +5,9 @@ import {
   CALIBRATION_POINT_NO,
   RANGE_TYPE,
   RESOLUTION,
+  TRACEABILITY_ACCREDITATION_BODY,
+  TRACEABILITY_CALIBRATION_LAB,
+  TRACEABILITY_COUNTRY,
   TRACEABILITY_TYPE,
   UNIT_USED_FOR_COC,
 } from '@/schema/calibration';
@@ -14,13 +17,49 @@ import { Controller, useFormContext } from 'react-hook-form';
 
 const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) => {
   const [rangeTypeOptions] = useState(RANGE_TYPE.map((rangeType) => ({ value: rangeType, label: _.capitalize(rangeType) }))); //prettier-ignore
-  const [traceabilityTypeOptions] = useState(TRACEABILITY_TYPE.map((traceabilityType) => ({ value: traceabilityType, label: traceabilityType }))); //prettier-ignore
   const [resolutionOptions] = useState(RESOLUTION.map((resolution) => ({ value: resolution, label: resolution }))); //prettier-ignore
   const [unitUsedForCOCOptions] = useState(UNIT_USED_FOR_COC.map((unit) => ({ value: unit, label: unit }))); //prettier-ignore
   const [calibrationPointNoOptions] = useState(CALIBRATION_POINT_NO.map((pointNo) => ({ value: pointNo, label: pointNo }))); //prettier-ignore
 
+  const [traceabilityTypeOptions] = useState(TRACEABILITY_TYPE.map((traceabilityType) => ({ value: traceabilityType, label: traceabilityType }))); //prettier-ignore
+  const [traceabilityCountryOptions] = useState(TRACEABILITY_COUNTRY.map((country) => ({ value: country, label: country }))); //prettier-ignore
+  const [traceabilityCalibrationLabOptions] = useState(
+    TRACEABILITY_CALIBRATION_LAB.map((lab) => ({
+      label: `${lab.name}${
+        lab.accreditationNo && lab.accreditationNo !== 'N/A' ? ` - ${lab.accreditationNo}` : ''
+      }`,
+      ...lab,
+    }))
+  );
+  const [traceabilityAccreditationBodyOptions] = useState(TRACEABILITY_ACCREDITATION_BODY.map(body => ({ value: body, label: body }))); //prettier-ignore
+
   const form = useFormContext();
   const formErrors = form.formState.errors;
+
+  const handleTraceabilityTypeChange = (option, field) => {
+    field.onChange(option);
+    form.clearErrors('traceabilityCountry');
+    form.clearErrors('traceabilityCalibrationLab');
+    form.clearErrors('traceabilityAccreditationBody');
+
+    if (option.value !== '3') {
+      //* clear the fields
+      form.setValue('traceabilityCountry', '');
+      form.setValue('traceabilityCalibrationLab', []);
+      form.setValue('traceabilityAccreditationBody', '');
+
+      //* delay to set null value
+      setTimeout(() => {
+        form.setValue('traceabilityCountry', null);
+        form.setValue('traceabilityCalibrationLab', null);
+        form.setValue('traceabilityAccreditationBody', null);
+      }, 100);
+    } else {
+      form.setValue('traceabilityCountry', '');
+      form.setValue('traceabilityCalibrationLab', []);
+      form.setValue('traceabilityAccreditationBody', '');
+    }
+  };
 
   //* set range type, if data exist
   useEffect(() => {
@@ -33,12 +72,46 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
   //* set traceability type, if data exist
   useEffect(() => {
     if (data && traceabilityTypeOptions.length > 0) {
-      const traceabilityType = traceabilityTypeOptions.find(
+      const selectedTraceabilityType = traceabilityTypeOptions.find(
         (option) => option.value === data.traceabilityType
       );
-      form.setValue('traceabilityType', traceabilityType);
+
+      form.setValue('traceabilityType', selectedTraceabilityType);
+
+      if (selectedTraceabilityType.value === '3') {
+        if (traceabilityCountryOptions.length > 0) {
+          const selectedTraceabilityCountry = traceabilityCountryOptions.find(
+            (option) => option.value === data.traceabilityCountry
+          );
+          form.setValue('traceabilityCountry', selectedTraceabilityCountry);
+        }
+
+        if (traceabilityCalibrationLabOptions.length > 0) {
+          const selectedTraceabilityCalibrationLabCodes = data?.traceabilityCalibrationLab || [];
+          const selectedTraceabilityCalibrationLab = traceabilityCalibrationLabOptions.filter(
+            (option) => {
+              return selectedTraceabilityCalibrationLabCodes.includes(option.value);
+            }
+          );
+
+          form.setValue('traceabilityCalibrationLab', selectedTraceabilityCalibrationLab);
+        }
+
+        if (traceabilityAccreditationBodyOptions.length > 0) {
+          const selectedTraceabilityAccreditationBody = traceabilityAccreditationBodyOptions.find(
+            (option) => option.value === data.traceabilityAccreditationBody
+          );
+          form.setValue('traceabilityAccreditationBody', selectedTraceabilityAccreditationBody);
+        }
+      }
     }
-  }, [data, traceabilityTypeOptions]);
+  }, [
+    data,
+    traceabilityTypeOptions,
+    traceabilityCountryOptions,
+    traceabilityCalibrationLabOptions,
+    traceabilityAccreditationBodyOptions,
+  ]);
 
   //* set resolution, if data exist
   useEffect(() => {
@@ -97,7 +170,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
         </p>
 
         <Row className='mb-3 row-gap-3'>
-          <Form.Group as={Col} md={3}>
+          <Form.Group as={Col} md={4}>
             <RequiredLabel label='Type of Range' id='rangeType' />
             <OverlayTrigger
               placement='right'
@@ -133,7 +206,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             />
           </Form.Group>
 
-          <Form.Group as={Col} md={3}>
+          <Form.Group as={Col} md={4}>
             <RequiredLabel label='Range of Calibration (Min)' id='rangeMinCalibration' />
 
             <Controller
@@ -162,7 +235,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             />
           </Form.Group>
 
-          <Form.Group as={Col} md={3}>
+          <Form.Group as={Col} md={4}>
             <RequiredLabel label='Range of Calibration (Max)' id='rangeMaxCalibration' />
 
             <Controller
@@ -191,48 +264,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             />
           </Form.Group>
 
-          <Form.Group as={Col} md={3}>
-            <RequiredLabel label='Traceability Type' id='traceabilityType' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Traceability Type Search'
-                    info={['Search by traceability type']}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='traceabilityType'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    inputId='traceabilityType'
-                    instanceId='traceabilityType'
-                    onChange={(option) => field.onChange(option)}
-                    options={traceabilityTypeOptions}
-                    placeholder='Search by traceability type'
-                    noOptionsMessage={() => 'No traceability type found'}
-                  />
-
-                  {formErrors && formErrors.traceabilityType?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.traceabilityType?.message}
-                    </Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md={3}>
+          <Form.Group as={Col} md={4}>
             <RequiredLabel label='Resolution' id='resolution' />
             <OverlayTrigger
               placement='right'
@@ -273,7 +305,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             />
           </Form.Group>
 
-          <Form.Group as={Col} md={3}>
+          <Form.Group as={Col} md={4}>
             <RequiredLabel label='Unit Used For COC' id='unitUsedForCOC' />
             <OverlayTrigger
               placement='right'
@@ -314,7 +346,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             />
           </Form.Group>
 
-          <Form.Group as={Col} md={3}>
+          <Form.Group as={Col} md={4}>
             <RequiredLabel label='No. of Calibration Point' id='calibrationPointNo' />
             <OverlayTrigger
               placement='right'
@@ -358,33 +390,44 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
         </Row>
 
         <hr className='my-4' />
-        <h4 className='mb-0'>Other measurements</h4>
-        <p className='text-muted fs-6'>Details about the other measurements.</p>
+        <h4 className='mb-0'>Traceability</h4>
+        <p className='text-muted fs-6'>Details of the calibrationn traceability</p>
 
         <Row className='mb-3 row-gap-3'>
-          <Form.Group as={Col} md={3}>
-            <RequiredLabel label='Temperature (Min)' id='minTemperature' />
+          <Form.Group as={Col} md={4}>
+            <RequiredLabel label='Type' id='traceabilityType' />
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Traceability Type Search'
+                    info={['Search by traceability type']}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
 
             <Controller
-              name='minTemperature'
+              name='traceabilityType'
               control={form.control}
               render={({ field }) => (
                 <>
-                  <InputGroup>
-                    <Form.Control
-                      {...field}
-                      style={{ marginTop: '1px' }}
-                      id='minTemperature'
-                      type='number'
-                      placeholder='Enter minimum temperature'
-                    />
+                  <Select
+                    {...field}
+                    inputId='traceabilityType'
+                    instanceId='traceabilityType'
+                    onChange={(option) => handleTraceabilityTypeChange(option, field)}
+                    options={traceabilityTypeOptions}
+                    placeholder='Search by traceability type'
+                    noOptionsMessage={() => 'No traceability type found'}
+                  />
 
-                    <InputGroup.Text>°C</InputGroup.Text>
-                  </InputGroup>
-
-                  {formErrors && formErrors.minTemperature?.message && (
+                  {formErrors && formErrors.traceabilityType?.message && (
                     <Form.Text className='text-danger'>
-                      {formErrors.minTemperature?.message}
+                      {formErrors.traceabilityType?.message}
                     </Form.Text>
                   )}
                 </>
@@ -392,29 +435,43 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             />
           </Form.Group>
 
-          <Form.Group as={Col} md={3}>
-            <RequiredLabel label='Temperature (Max)' id='maxTemperature' />
+          <Form.Group as={Col} md={4}>
+            <Form.Label className='me-2' id='traceabilityCountry'>
+              Country
+            </Form.Label>
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Traceability Country Search'
+                    info={['Search by traceability country']}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
 
             <Controller
-              name='maxTemperature'
+              name='traceabilityCountry'
               control={form.control}
               render={({ field }) => (
                 <>
-                  <InputGroup>
-                    <Form.Control
-                      {...field}
-                      style={{ marginTop: '1px' }}
-                      id='maxTemperature'
-                      type='number'
-                      placeholder='Enter maximum temperature'
-                    />
+                  <Select
+                    {...field}
+                    isDisabled={form.watch('traceabilityType.value') !== '3'}
+                    inputId='traceabilityCountry'
+                    instanceId='traceabilityCountry'
+                    onChange={(option) => field.onChange(option)}
+                    options={traceabilityCountryOptions}
+                    placeholder='Search by traceability country'
+                    noOptionsMessage={() => 'No traceability country found'}
+                  />
 
-                    <InputGroup.Text>°C</InputGroup.Text>
-                  </InputGroup>
-
-                  {formErrors && formErrors.maxTemperature?.message && (
+                  {formErrors && formErrors.traceabilityCountry?.message && (
                     <Form.Text className='text-danger'>
-                      {formErrors.maxTemperature?.message}
+                      {formErrors.traceabilityCountry?.message}
                     </Form.Text>
                   )}
                 </>
@@ -422,102 +479,110 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             />
           </Form.Group>
 
-          <Form.Group as={Col} md={3}>
-            <RequiredLabel label='R. Humidity (Min)' id='rangeMinRHumidity' />
+          <Form.Group as={Col} md={4}>
+            <Form.Label className='me-2' id='traceabilityCalibrationLab'>
+              Calibration Lab
+            </Form.Label>
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Traceability Calibration Lab Search'
+                    info={['Search by traceability calibration lab']}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
 
             <Controller
-              name='rangeMinRHumidity'
+              name='traceabilityCalibrationLab'
+              control={form.control}
+              render={({ field }) => {
+                console.log({ field });
+                return (
+                  <>
+                    <Select
+                      {...field}
+                      isDisabled={form.watch('traceabilityType.value') !== '3'}
+                      id='traceabilityCalibrationLab'
+                      inputId='traceabilityCalibrationLab'
+                      instanceId='traceabilityCalibrationLab'
+                      isMulti
+                      onChange={(option) => field.onChange(option)}
+                      options={traceabilityCalibrationLabOptions}
+                      placeholder='Search by traceability calibration lab'
+                      noOptionsMessage={() => 'No traceability calibration lab found'}
+                    />
+
+                    {formErrors && formErrors.traceabilityCalibrationLab?.message && (
+                      <Form.Text className='text-danger'>
+                        {formErrors.traceabilityCalibrationLab?.message}
+                      </Form.Text>
+                    )}
+                  </>
+                );
+              }}
+            />
+          </Form.Group>
+
+          <Form.Group as={Col} md={4}>
+            <Form.Label className='me-2' htmlFor='serialNumber'>
+              Signatory
+            </Form.Label>
+            <Form.Control
+              id='serialNumber'
+              type='text'
+              value={form.watch('traceabilityCalibrationLab.0.signatory') || ''}
+              readOnly
+              disabled
+            />
+          </Form.Group>
+
+          <Form.Group as={Col} md={4}>
+            <Form.Label className='me-2' id='traceabilityAccreditationBody'>
+              Accreditation Body
+            </Form.Label>
+            <OverlayTrigger
+              placement='right'
+              overlay={
+                <Tooltip>
+                  <TooltipContent
+                    title='Traceability Accreditation Body Search'
+                    info={['Search by traceability accreditation body']}
+                  />
+                </Tooltip>
+              }
+            >
+              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+            </OverlayTrigger>
+
+            <Controller
+              name='traceabilityAccreditationBody'
               control={form.control}
               render={({ field }) => (
                 <>
-                  <InputGroup>
-                    <Form.Control
-                      {...field}
-                      style={{ marginTop: '1px' }}
-                      id='rangeMinRHumidity'
-                      type='number'
-                      placeholder='Enter minimum r. humidity'
-                    />
+                  <Select
+                    {...field}
+                    isDisabled={form.watch('traceabilityType.value') !== '3'}
+                    inputId='traceabilityAccreditationBody'
+                    instanceId='traceabilityAccreditationBody'
+                    onChange={(option) => field.onChange(option)}
+                    options={traceabilityAccreditationBodyOptions}
+                    placeholder='Search by traceability accreditation body'
+                    noOptionsMessage={() => 'No traceability accreditation body found'}
+                  />
 
-                    <InputGroup.Text>%rh</InputGroup.Text>
-                  </InputGroup>
-
-                  {formErrors && formErrors.rangeMinRHumidity?.message && (
+                  {formErrors && formErrors.traceabilityAccreditationBody?.message && (
                     <Form.Text className='text-danger'>
-                      {formErrors.rangeMinRHumidity?.message}
+                      {formErrors.traceabilityAccreditationBody?.message}
                     </Form.Text>
                   )}
                 </>
               )}
             />
-          </Form.Group>
-
-          <Form.Group as={Col} md={3}>
-            <RequiredLabel label='R. Humidity (Max)' id='rangeMaxRHumidity' />
-
-            <Controller
-              name='rangeMaxRHumidity'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <InputGroup>
-                    <Form.Control
-                      {...field}
-                      style={{ marginTop: '1px' }}
-                      id='rangeMaxRHumidity'
-                      type='number'
-                      placeholder='Enter maximum r. humidity'
-                    />
-
-                    <InputGroup.Text>%rh</InputGroup.Text>
-                  </InputGroup>
-
-                  {formErrors && formErrors.rangeMaxRHumidity?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.rangeMaxRHumidity?.message}
-                    </Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-        </Row>
-
-        <Row className='mb-3 row-gap-3'>
-          <Form.Group as={Col} md={12}>
-            <Form.Label>Type of Balance</Form.Label>
-
-            <div className='d-flex gap-6 w-100'>
-              <div
-                className={`d-flex justify-content-center align-items-center hover-item p-5 border rounded ${
-                  form.watch('typeOfBalance') === '1' ? 'border-primary' : ''
-                }`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => form.setValue('typeOfBalance', '1')}
-              >
-                <img src='/images/balance-type-1.png' width={150} />
-              </div>
-
-              <div
-                className={`d-flex justify-content-center align-items-center hover-item p-5 border rounded ${
-                  form.watch('typeOfBalance') === '2' ? 'border-primary' : ''
-                }`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => form.setValue('typeOfBalance', '2')}
-              >
-                <img src='/images/balance-type-2.png' width={100} />
-              </div>
-
-              <div
-                className={`d-flex justify-content-center align-items-center hover-item p-5 border rounded ${
-                  form.watch('typeOfBalance') === '3' ? 'border-primary' : ''
-                }`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => form.setValue('typeOfBalance', '3')}
-              >
-                <img src='/images/balance-type-3.png' width={150} />
-              </div>
-            </div>
           </Form.Group>
         </Row>
 

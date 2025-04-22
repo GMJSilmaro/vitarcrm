@@ -1,11 +1,12 @@
 import { Accordion, Card } from 'react-bootstrap';
 import DFNVTest from './DFNVTest';
-import { Gear, GearFill, Table } from 'react-bootstrap-icons';
+import { Gear, GearFill, Rulers, Table } from 'react-bootstrap-icons';
 import RTest from './RTest';
 import ETest from './ETest';
 import { useEffect, useMemo } from 'react';
 import CalculationTable from './CalculationTable';
 import { FormProvider, useForm } from 'react-hook-form';
+import OtherMeasurements from '../OtherMeasurements';
 
 const CalibrationMass = ({ calibration, category }) => {
   const form = useForm({
@@ -79,6 +80,17 @@ const CalibrationMass = ({ calibration, category }) => {
           </Accordion.Item>
 
           <Accordion.Item eventKey='3'>
+            <Accordion.Header>
+              <Rulers className='me-2' size={17} />
+              Other Measurements
+            </Accordion.Header>
+
+            <Accordion.Body>
+              <OtherMeasurements calibration={calibration} />
+            </Accordion.Body>
+          </Accordion.Item>
+
+          <Accordion.Item eventKey='4'>
             <Accordion.Header>
               <Table className='me-2' size={17} />
               Uncertainty Calculation (Electronic Balance) - A1 - A{calibrationPointNo}

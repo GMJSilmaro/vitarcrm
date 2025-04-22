@@ -16,7 +16,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
@@ -30,7 +30,10 @@ import {
   Trash,
   Table,
   Gear,
+  BoxSeam,
 } from 'react-bootstrap-icons';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const CUSWDList = () => {
   const router = useRouter();
@@ -205,7 +208,8 @@ const CUSWDList = () => {
                 U
                 <sub>
                   inst<sup>4</sup>
-                </sub>
+                </sub>{' '}
+                / <small>V</small>
               </div>
               <div>
                 (g<sup>4</sup>)
@@ -289,13 +293,49 @@ const CUSWDList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, details } = row.original;
+          const { id } = row.original;
 
-          const handleViewData = (id) => {};
+          const handleViewData = (id) => {
+            router.push(`/calibration-references/mass/cuswd/view/${id}`);
+          };
 
-          const handleEditData = (id) => {};
+          const handleEditData = (id) => {
+            router.push(`/calibration-references/mass/cuswd/edit-cuswd/${id}`);
+          };
 
-          const handleDeleteData = (id) => {};
+          const handleDeleteData = (id) => {
+            Swal.fire({
+              title: 'Are you sure?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  const cuswdDocRef = doc(db, 'jobCalibrationReferences', 'CR000001', 'data', id);
+
+                  await deleteDoc(cuswdDocRef);
+
+                  toast.success('Refence data removed successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error removing refence data:', error);
+                  toast.error('Error removing refence data: ' + error.message, {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
 
           return (
             <OverlayTrigger
@@ -492,10 +532,10 @@ const CUSWDList = () => {
       <GeeksSEO title='Correction, Uncertainty of the Standard Weight & Drift - VITAR Group | Portal' />
 
       <ContentHeader
-        title='Correction, Uncertainty of the Standard Weight'
+        title='Correction, Uncertainty of the Standard Weight & Drift'
         description='Create, manage all your calibration references in one centralize dashboard'
         badgeText='Calibration References'
-        badgeText2='Data Management'
+        badgeText2='Reference Data Management'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -504,13 +544,13 @@ const CUSWDList = () => {
           },
           {
             text: 'Calibration References',
-            link: '/#',
+            link: '/calibration-references/mass/cuswd',
             icon: <ListColumns className='me-2' size={14} />,
           },
           {
-            text: 'Category',
-            link: '/#',
-            icon: <Gear className='me-2' size={14} />,
+            text: 'Mass',
+            link: '/calibration-references/mass/cuswd',
+            icon: <BoxSeam className='me-2' size={14} />,
           },
           {
             text: 'Correction, Uncertainty of the Standard Weight & Drift',
@@ -528,7 +568,7 @@ const CUSWDList = () => {
         ]}
       />
 
-      <Card className='border-0 shadow-none'>
+      <Card className='shadow-sm'>
         <Card.Body className='p-4'>
           <DataTable table={table} isLoading={cuswd.isLoading} isError={cuswd.isError}>
             <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>

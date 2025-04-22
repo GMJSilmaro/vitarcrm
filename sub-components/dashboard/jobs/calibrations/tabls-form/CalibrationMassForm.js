@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo } from 'react';
 import { Accordion, Button, Card, Row, Spinner } from 'react-bootstrap';
-import { Save, Table } from 'react-bootstrap-icons';
+import { Rulers, Save, Table } from 'react-bootstrap-icons';
 import DFNTest from './mass/DFNVTest';
 import RTest from './mass/RTest';
 import ETest from './mass/ETest';
 import { useFormContext } from 'react-hook-form';
 import CalculationTable from './mass/CalculationTable';
+import OtherMeasurementsForm from './OtherMeasurementsForm';
+import MassResultForm from './mass/MassResultForm';
 
 const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) => {
   const form = useFormContext();
@@ -109,12 +111,34 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
 
             <Accordion.Item eventKey='3'>
               <Accordion.Header>
+                <Rulers className='me-2' size={17} />
+                Other Measurements
+              </Accordion.Header>
+
+              <Accordion.Body>
+                <OtherMeasurementsForm data={data} />
+              </Accordion.Body>
+            </Accordion.Item>
+
+            <Accordion.Item eventKey='4'>
+              <Accordion.Header>
                 <Table className='me-2' size={17} />
                 Uncertainty Calculation (Electronic Balance) - A1 - A{calibrationPointNo}
               </Accordion.Header>
 
               <Accordion.Body>
                 <CalculationTable data={data} />
+              </Accordion.Body>
+            </Accordion.Item>
+
+            <Accordion.Item eventKey='5'>
+              <Accordion.Header>
+                <Table className='me-2' size={17} />
+                Results
+              </Accordion.Header>
+
+              <Accordion.Body>
+                <MassResultForm />
               </Accordion.Body>
             </Accordion.Item>
           </Accordion>

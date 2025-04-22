@@ -1,6 +1,13 @@
 import CertificateOfCalibrationPDF from '@/components/pdf/CertificateOfCalibrationPDF';
-import { TEST_LOADS, TRACEABILITY_MAP } from '@/schema/calibration';
+import {
+  TEST_LOADS,
+  TRACEABILITY_ACCREDITATION_BODY,
+  TRACEABILITY_CALIBRATION_LAB,
+  TRACEABILITY_COUNTRY,
+  TRACEABILITY_MAP,
+} from '@/schema/calibration';
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
+import { countDecimals } from '@/utils/common';
 import { usePDF } from '@react-pdf/renderer';
 import { add, format } from 'date-fns';
 import { ceil, divide, multiply, round } from 'mathjs';
@@ -92,6 +99,12 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     return calibration?.data?.expandedUncertainties || [];
   }, [calibration]);
 
+  const cocInstruments = useMemo(() => {
+    if (!instruments.data || instruments.data.length < 1) return [];
+    const selectedInstruments = calibration?.cocInstruments || [];
+    return instruments.data.filter((instrument) => selectedInstruments.includes(instrument.id));
+  }, [calibration, instruments.data]);
+
   const convertValueBasedOnUnit = useCallback(
     (value) => {
       const unit = unitUsedForCOC;
@@ -101,15 +114,21 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       }
 
       switch (unit) {
-        case 'gram':
-          return formatToDicimalString(value, 1);
-        case 'kilogram':
-          return formatToDicimalString(multiply(value, 0.001), 4);
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(value, precision);
+        }
+        case 'kilogram': {
+          const result = multiply(value, 0.001);
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+
         default:
           return value;
       }
     },
-    [unitUsedForCOC]
+    [unitUsedForCOC, resolution]
   );
 
   const convertExpandedUncertaintyBasedOnUnit = useCallback(
@@ -119,22 +138,43 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       }
 
       const unit = unitUsedForCOC;
-
       const factor = unit === 'gram' ? 1 : 0.001;
       const scaledResolution = resolution * factor;
-
       const result = ceil((value * factor) / scaledResolution) * scaledResolution;
 
-      return unit === 'gram' ? formatToDicimalString(result, 1) : formatToDicimalString(result, 2);
+      switch (unit) {
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(result, precision);
+        }
+        case 'kilogram': {
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+        default:
+          return value;
+      }
     },
     [resolution]
   );
 
-  const isPositive = (value) => {
+  const renderCorrectionValueWithSymbol = (value) => {
     const parseValue = parseFloat(value);
 
-    if (isNaN(parseValue)) return false;
-    return parseValue > 0;
+    if (isNaN(parseValue)) return value;
+
+    if (parseValue > 0) {
+      if (/^0+(\.0+)?$/.test(value)) return value;
+      return `+${value}`;
+    } else {
+      if (value.includes('-')) {
+        const valueWithoutSymbol = value.replace('-', '');
+        if (/^0+(\.0+)?$/.test(valueWithoutSymbol)) return valueWithoutSymbol;
+        return `-${valueWithoutSymbol}`;
+      }
+
+      return value;
+    }
   };
 
   const dueDate = useMemo(() => {
@@ -152,6 +192,37 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     });
 
     return format(dueDate, 'dd MMMM yyyy');
+  }, [calibration]);
+
+  const traceability = useMemo(() => {
+    if (!calibration?.traceabilityType) return '';
+
+    if (calibration?.traceabilityType === '1' || calibration?.traceabilityType === '2') {
+      return TRACEABILITY_MAP?.[calibration?.traceabilityType] || '';
+    }
+
+    if (calibration?.traceabilityType === '3') {
+      const traceabilityCountry = calibration?.traceabilityCountry || TRACEABILITY_COUNTRY[0]; // prettier-ignore
+      const traceabilityAccreditationBody = calibration?.traceabilityAccreditationBody || TRACEABILITY_ACCREDITATION_BODY[0]; // prettier-ignore
+      const traceabilityCalibrationLabValues = calibration?.traceabilityCalibrationLab || [TRACEABILITY_CALIBRATION_LAB[4].value]; // prettier-ignore
+
+      const selectedTraceabilityCalibrationLab = traceabilityCalibrationLabValues.map(value => TRACEABILITY_CALIBRATION_LAB.find(item => item.value === value)).filter(Boolean); // prettier-ignore
+      const selectedAccreditationNos = selectedTraceabilityCalibrationLab.map(item => item.accreditationNo) // prettier-ignore
+      const signatory = selectedTraceabilityCalibrationLab[0].signatory;
+
+      let accreditationNos = '';
+      if (selectedTraceabilityCalibrationLab.length >= 2) {
+        const lastAccreditationNo = selectedAccreditationNos.pop();
+        accreditationNos = `${selectedAccreditationNos.join(', ')} and ${lastAccreditationNo}`;
+      } else {
+        accreditationNos = selectedAccreditationNos[0];
+      }
+
+      const text = `The measurement results included in this document are traceable to ${traceabilityCountry}'s national standards through SAMM ${accreditationNos} via calibration	Certificate No. as indicated below. ${traceabilityAccreditationBody} is a signatory to the ${signatory}`;
+      return text;
+    }
+
+    return '';
   }, [calibration]);
 
   const downloadPDF = useCallback(
@@ -305,16 +376,16 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <th>Range</th>
               <td colSpan={5}>
                 <div className='d-flex justify-content-center align-items-center'>
-                  <div>{calibration?.rangeMinCalibration ?? 0}</div>
+                  <div>{convertValueBasedOnUnit(calibration?.rangeMinCalibration ?? 0)}</div>
                   <div className='px-5'>to</div>
-                  <div>{calibration?.rangeMaxCalibration ?? 0}</div>
+                  <div>{convertValueBasedOnUnit(calibration?.rangeMaxCalibration ?? 0)}</div>
                 </div>
               </td>
             </tr>
             <tr>
               <th>Resolution</th>
               <td colSpan={5}>
-                {calibration?.resolution || 0} {unitUsedForCOCAcronym}
+                {convertValueBasedOnUnit(resolution)} {unitUsedForCOCAcronym}
               </td>
             </tr>
 
@@ -416,7 +487,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
 
             <tr>
               <td></td>
-              <td colSpan={5}>{TRACEABILITY_MAP?.[calibration?.traceabilityType] || ''}</td>
+              <td colSpan={5}>{traceability}</td>
             </tr>
 
             <tr>
@@ -428,31 +499,19 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <th>Due Date</th>
             </tr>
 
-            {instruments.data.length === 0 && !instruments.isLoading && !instruments.isError && (
-              <tr>
-                <td colSpan={6}>
-                  <div
-                    className='d-flex justify-content-center align-items-center fs-6'
-                    style={{ height: '100px' }}
-                  >
-                    No data available
-                  </div>
-                </td>
-              </tr>
-            )}
-
-            {instruments.isLoading && (
-              <tr>
-                <td colSpan={6}>
-                  <div
-                    className='d-flex justify-content-center align-items-center'
-                    style={{ height: '100px' }}
-                  >
-                    <Spinner className='me-2' animation='border' size='sm' /> Loading...
-                  </div>
-                </td>
-              </tr>
-            )}
+            {(instruments.data.length < 1 && !instruments.isLoading && !instruments.isError) ||
+              (cocInstruments.length < 1 && (
+                <tr>
+                  <td colSpan={6}>
+                    <div
+                      className='d-flex justify-content-center align-items-center fs-6'
+                      style={{ height: '100px' }}
+                    >
+                      No data available
+                    </div>
+                  </td>
+                </tr>
+              ))}
 
             {instruments.isError && (
               <tr>
@@ -472,8 +531,8 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               </tr>
             )}
 
-            {instruments.data.length > 0 &&
-              instruments.data.map((instrument) => (
+            {cocInstruments.length > 0 &&
+              cocInstruments.map((instrument) => (
                 <tr key={instrument.id}>
                   <td>{instrument?.description || ''}</td>
                   <td>{instrument?.tagId || ''}</td>
@@ -528,8 +587,9 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                     <tr key={i}>
                       <td>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</td>
                       <td>
-                        {isPositive(corrections?.[i] ?? 0) ? '+' : ''}
-                        {convertValueBasedOnUnit(corrections?.[i] ?? 0)}
+                        {renderCorrectionValueWithSymbol(
+                          convertValueBasedOnUnit(corrections?.[i] ?? 0)
+                        )}
                       </td>
                       <td>
                         {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}

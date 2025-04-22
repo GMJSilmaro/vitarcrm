@@ -15,14 +15,12 @@ const CreateCalibration = () => {
 
   const [customerEquipment, setCustomerEquipment] = useState();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   //* query customer equipment
   useEffect(() => {
     if (customerId && equipmentId) {
-      setIsLoading(true);
-
       const customerEquipmentRef = doc(db, 'customerEquipments', equipmentId);
 
       getDoc(customerEquipmentRef)
