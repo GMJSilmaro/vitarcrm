@@ -1,16 +1,14 @@
-import React from 'react';
+import { TRACEABILITY_CALIBRATION_LAB } from '@/schema/calibration';
 import { Card, Col, Row } from 'react-bootstrap';
 import {
   BookmarkCheck,
   Buildings,
   Crosshair,
+  GlobeAsiaAustralia,
   ListOl,
   Rulers,
+  ShieldCheck,
   Speedometer,
-  Thermometer,
-  ThermometerHigh,
-  ThermometerSnow,
-  ThermometerSun,
   ViewStacked,
 } from 'react-bootstrap-icons';
 
@@ -60,7 +58,7 @@ const Measurements = ({ calibration }) => {
 
       <Card.Body>
         <Row className='row-gap-3'>
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -77,7 +75,7 @@ const Measurements = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -94,7 +92,7 @@ const Measurements = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -111,24 +109,7 @@ const Measurements = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <BookmarkCheck size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Traceability Type:</div>
-                <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.traceabilityType ?? 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -145,7 +126,7 @@ const Measurements = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -162,7 +143,7 @@ const Measurements = ({ calibration }) => {
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -184,77 +165,105 @@ const Measurements = ({ calibration }) => {
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
         <div className='d-flex justify-content-between align-items-center'>
           <div>
-            <h4 className='mb-0'>Other measurements</h4>
-            <p className='text-muted fs-6 mb-0'>Details about the other measurements.</p>
+            <h4 className='mb-0'>Traceability</h4>
+            <p className='text-muted fs-6 mb-0'>Details of the calibration traceability.</p>
           </div>
         </div>
       </Card.Header>
 
       <Card.Body>
         <Row className='row-gap-3'>
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
               >
-                <Thermometer size={20} />
+                <BookmarkCheck size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Temperature (Min):</div>
+                <div className='text-secondary fs-6'>Traceability Type:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.minTemperature || 'N/A'}
+                  {calibration?.traceabilityType ?? 'N/A'}
                 </div>
               </div>
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
               >
-                <ThermometerHigh size={20} />
+                <GlobeAsiaAustralia size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Temperature (Max):</div>
+                <div className='text-secondary fs-6'>Country Type:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.maxTemperature ?? 'N/A'}
+                  {calibration?.traceabilityCountry ?? 'N/A'}
                 </div>
               </div>
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
               >
-                <ThermometerSnow size={20} />
+                <Buildings size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>R. Humidity (Min):</div>
+                <div className='text-secondary fs-6'>Country Type:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.rangeMinRHumidity ?? 'N/A'}
+                  {calibration?.traceabilityCalibrationLab?.length > 0
+                    ? TRACEABILITY_CALIBRATION_LAB.filter((lab) =>
+                        calibration?.traceabilityCalibrationLab?.includes(lab.value)
+                      )
+                        .filter(Boolean)
+                        .map((lab) => `${lab.name} - ${lab.accreditationNo}`)
+                        .join(', ')
+                    : 'N/A'}
                 </div>
               </div>
             </div>
           </Col>
 
-          <Col md={3}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
               >
-                <ThermometerSun size={20} />
+                <Buildings size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>R. Humidity (Max):</div>
+                <div className='text-secondary fs-6'>Signatory:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.rangeMaxRHumidity ?? 'N/A'}
+                  {calibration?.traceabilityCalibrationLab?.length > 0
+                    ? TRACEABILITY_CALIBRATION_LAB.filter((lab) =>
+                        calibration?.traceabilityCalibrationLab?.includes(lab.value)
+                      )?.[0]?.signatory
+                    : 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={4}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Signatory:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {calibration?.traceabilityAccreditationBody || 'N/A'}
                 </div>
               </div>
             </div>

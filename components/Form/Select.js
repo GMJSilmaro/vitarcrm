@@ -26,6 +26,11 @@ const Select = forwardRef((props, ref) => {
       ':hover': {
         borderColor: '#e2e8f0',
       },
+      ...(props.controlStyles && props.controlStyles),
+    }),
+    placeholder: (base, state) => ({
+      ...base,
+      ...(props.placeholderStyles && props.placeholderStyles),
     }),
     multiValue: (styles, { data }) => ({
       ...styles,
@@ -54,7 +59,7 @@ const Select = forwardRef((props, ref) => {
     <ReactSelect
       {...props}
       ref={ref}
-      styles={selectCustomStyles}
+      styles={{ ...selectCustomStyles, ...props.styles }}
       theme={(theme) => ({
         ...theme,
         colors: {

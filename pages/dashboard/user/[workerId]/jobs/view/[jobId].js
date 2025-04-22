@@ -25,6 +25,7 @@ const JobDetails = () => {
   const [activeTab, setActiveTab] = useState('0');
 
   const [customer, setCustomer] = useState({ data: {}, isLoading: true, isError: false });
+  const [jobRequest, setJobRequest] = useState({ data: {}, isLoading: true, isError: false });
   const [contact, setContact] = useState();
   const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
   const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
@@ -58,7 +59,10 @@ const JobDetails = () => {
 
   //* query customer
   useEffect(() => {
-    if (!job?.customer?.id) return;
+    if (!job?.customer?.id) {
+      setCustomer({ data: {}, isLoading: false, isError: false });
+      return;
+    }
 
     Promise.all([
       getDoc(doc(db, 'customers', job?.customer?.id)),
@@ -101,7 +105,14 @@ const JobDetails = () => {
 
   //* query location
   useEffect(() => {
-    if (!job?.location?.id) return;
+    if (!job?.location?.id) {
+      setLocation({
+        data: {},
+        isLoading: false,
+        isError: false,
+      });
+      return;
+    }
 
     getDoc(doc(db, 'locations', job?.location?.id))
       .then((doc) => {
@@ -116,11 +127,53 @@ const JobDetails = () => {
             isLoading: false,
             isError: false,
           });
+        } else {
+          setLocation({
+            data: {},
+            isLoading: false,
+            isError: false,
+          });
         }
       })
       .catch((err) => {
         console.error(err.message);
-        setLocation({ data: [], isLoading: false, isError: true });
+        setLocation({ data: {}, isLoading: false, isError: true });
+      });
+  }, [job]);
+
+  //* query job request
+  useEffect(() => {
+    if (!job?.jobRequestId) {
+      setJobRequest({ data: {}, isLoading: false, isError: false });
+      return;
+    }
+
+    getDoc(doc(db, 'jobRequests', job?.jobRequestId))
+      .then((doc) => {
+        if (doc.exists()) {
+          setJobRequest({
+            data: {
+              id: doc.id,
+              ...doc.data(),
+            },
+            isLoading: false,
+            isError: false,
+          });
+        } else {
+          setJobRequest({
+            data: {},
+            isLoading: false,
+            isError: false,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setJobRequest({
+          data: {},
+          isLoading: false,
+          isError: true,
+        });
       });
   }, [job]);
 
@@ -221,7 +274,7 @@ const JobDetails = () => {
                   customer={customer}
                   contact={contact}
                   location={location}
-                  equipments={equipments}
+                  jobRequest={jobRequest}
                 />
               </Tab>
 

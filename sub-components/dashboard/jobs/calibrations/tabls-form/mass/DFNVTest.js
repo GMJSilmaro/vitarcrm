@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { max } from 'mathjs';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 import styles from '../../mass.module.css';
-import { NOMINAL_VALUE, TAG_ID_BY_CLASS_MAP } from '@/schema/calibration';
+import { NOMINAL_VALUE, NOMINAL_VALUE_MULTIPLIER, TAG_ID_BY_CLASS_MAP } from '@/schema/calibration';
 import { Form, Tab, Table } from 'react-bootstrap';
 import { useDebouncedCallback } from 'use-debounce';
 import Select from '@/components/Form/Select';
@@ -13,6 +13,11 @@ const DFNVTest = ({ data }) => {
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
+
+  const rangeMaxCalibration = useMemo(() => {
+    const value = parseFloat(form.getValues('rangeMaxCalibration'));
+    return isNaN(value) ? 0 : value;
+  }, [form.watch('rangeMaxCalibration')]);
 
   const slotsFields = useMemo(() => {
     return [
@@ -308,12 +313,22 @@ const DFNVTest = ({ data }) => {
 
       setTimeout(() => {
         //* set initial nominal value
-        form.setValue('data.nominalValues', NOMINAL_VALUE.slice(0, calibrationPointNo));
 
-        //* set initial measured value
+        form.setValue(
+          'data.nominalValues',
+          Array.from(
+            { length: calibrationPointNo },
+            (_, i) => rangeMaxCalibration * NOMINAL_VALUE_MULTIPLIER[i]
+          )
+        );
+
+        // //* set initial measured value
+
         form.setValue(
           'data.measuredValues',
-          NOMINAL_VALUE.slice(0, calibrationPointNo).map((value, i) => Array(3).fill(value))
+          Array.from({ length: calibrationPointNo }).map((_, i) =>
+            Array(3).fill(rangeMaxCalibration * NOMINAL_VALUE_MULTIPLIER[i])
+          )
         );
 
         replace(initialDFNV);
@@ -321,7 +336,7 @@ const DFNVTest = ({ data }) => {
     }
 
     return () => (isMounted.current = false);
-  }, [data, calibrationPointNo]);
+  }, [data, calibrationPointNo, rangeMaxCalibration]);
 
   const numberInputOnWheel = (e) => {
     e.target.blur();
@@ -358,6 +373,11 @@ const DFNVTest = ({ data }) => {
                             form.setValue(
                               `data.nominalValues.${i}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
+                            );
+
+                            form.setValue(
+                              `data.measuredValues.${i}`,
+                              Array(3).fill(isNaN(e.target.value) ? 0 : parseFloat(e.target.value))
                             );
                           }}
                           onWheel={numberInputOnWheel}
@@ -429,6 +449,18 @@ const DFNVTest = ({ data }) => {
                                       (tagId) => ({ value: tagId, label: tagId } || [])
                                     )}
                                     noOptionsMessage={() => 'No tag ids found'}
+                                    {...((slotField.class === '1f1' ||
+                                      slotField.class === '2f1') && {
+                                      placeholderStyles: {
+                                        ...(slotField.class === '1f1' && {
+                                          color: '#27d785',
+                                        }),
+
+                                        ...(slotField.class === '2f1' && {
+                                          color: '#0eb7f0',
+                                        }),
+                                      },
+                                    })}
                                   />
 
                                   {formErrors &&
@@ -770,8 +802,12 @@ const DFNVTest = ({ data }) => {
                             )}
 
                             <tr>
-                              <th className='border-top'>F1</th>
-                              <th className='border-top border-start'>F1</th>
+                              <th className='border-top' style={{ color: '#27d785' }}>
+                                F1
+                              </th>
+                              <th className='border-top border-start' style={{ color: '#0eb7f0' }}>
+                                F1
+                              </th>
                             </tr>
 
                             <tr key={`${entryIndex}-${pointIndex}-row-f1-f1`}>
@@ -1127,6 +1163,13 @@ const DFNVTest = ({ data }) => {
                                     `data.nominalValues.${nominalValueIndex}`,
                                     isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                                   );
+
+                                  form.setValue(
+                                    `data.measuredValues.${nominalValueIndex}`,
+                                    Array(3).fill(
+                                      isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
+                                    )
+                                  );
                                 }}
                                 onWheel={numberInputOnWheel}
                                 name={field.name}
@@ -1197,6 +1240,18 @@ const DFNVTest = ({ data }) => {
                                           (tagId) => ({ value: tagId, label: tagId } || [])
                                         )}
                                         noOptionsMessage={() => 'No tag ids found'}
+                                        {...((slotField.class === '1f1' ||
+                                          slotField.class === '2f1') && {
+                                          placeholderStyles: {
+                                            ...(slotField.class === '1f1' && {
+                                              color: '#27d785',
+                                            }),
+
+                                            ...(slotField.class === '2f1' && {
+                                              color: '#0eb7f0',
+                                            }),
+                                          },
+                                        })}
                                       />
 
                                       {formErrors &&
@@ -1554,10 +1609,16 @@ const DFNVTest = ({ data }) => {
                                     <td>&nbsp;</td>
                                   </tr>
                                 )}
-
                                 <tr>
-                                  <th className='border-top'>F1</th>
-                                  <th className='border-top border-start'>F1</th>
+                                  <th className='border-top' style={{ color: '#27d785' }}>
+                                    F1
+                                  </th>
+                                  <th
+                                    className='border-top border-start'
+                                    style={{ color: '#0eb7f0' }}
+                                  >
+                                    F1
+                                  </th>
                                 </tr>
 
                                 <tr key={`${entryIndex}-${_pointIndex}-row-f1-f1`}>

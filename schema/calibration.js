@@ -1,4 +1,4 @@
-import { coerce, z } from 'zod';
+import { z } from 'zod';
 
 export const CATEGORY = [
   'TEMPERATURE & HUMIDITY',
@@ -17,6 +17,22 @@ export const TRACEABILITY_MAP = {
   2: 'The measurement results included in this document are traceable to the SI system of units and/or to units of measurement realised at the National Metrology Institute of Malaysia ( NMIM ) and other recognised national metrology institutes.',
   3: "The measurement results included in this document are traceable to Malaysia's national standards through SAMM 109, 011 and 088 via calibration	Certificate No. as indicated below. Standards Malaysia is a signatory to the ILAC MRA.",
 };
+export const TRACEABILITY_COUNTRY = ['Malaysia', 'Singapore', 'Thailand'];
+export const TRACEABILITY_CALIBRATION_LAB = [
+  { value: 'nmim', name: 'NMIM', accreditationNo: '261', signatory: 'CIPM MRA' },
+  { value: 'trescal', name: 'Trescal', accreditationNo: '011', signatory: 'ILAC MRA' },
+  { value: 'sendi-mahir', name: 'Sendi Mahir', accreditationNo: '082', signatory: 'ILAC MRA' },
+  { value: 'sst-shah-alam', name: 'SST Shah Alam', accreditationNo: '088' , signatory: 'ILAC MRA' },
+  { value: 'vitar-segatec', name: 'Vitar - Segatec', accreditationNo: '109' , signatory: 'ILAC MRA' },
+  { value: 'nimt', name: 'NIMT', accreditationNo: 'N/A' , signatory: 'ILAC MRA' },
+  { value: 'nmc-singapore', name: 'NMC Singapore', accreditationNo: 'N/A' , signatory: 'ILAC MRA' },
+]; // prettier-ignore
+
+export const TRACEABILITY_ACCREDITATION_BODY = [
+  'Standards Malaysia',
+  'Singapore Accreditation Council ( SAC )',
+  'National Standardization Council ( Thailand )',
+];
 
 export const RESOLUTION = [
   '0.000001',
@@ -65,6 +81,8 @@ export const TAG_ID_BY_CLASS_MAP = {
 export const NOMINAL_VALUE = [
   10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000,
 ];
+
+export const NOMINAL_VALUE_MULTIPLIER = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0];
 
 export const EXPANDED_UNCERTAINTY = [
   '± 8.25387',
@@ -165,7 +183,6 @@ export const calibrationInfoSchema = z
         if (typeof formData === 'object') return formData.value;
         return formData;
       }),
-
     dueDateDuration: z.coerce
       .number()
       .max(60, { message: 'Please enter a duration of at most 60 months' })
@@ -210,6 +227,39 @@ export const calibrationMeasurementSchema = z.object({
       if (typeof formData === 'object') return formData.value;
       return formData;
     }),
+  traceabilityCountry: z
+    .union([z.string().min(1, { message: 'Please select country' }), z.record(z.string(), z.any())])
+    .nullish()
+    .transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return formData;
+    }),
+  traceabilityCalibrationLab: z
+    .array(z.union([z.string(), z.record(z.string(), z.any())]))
+    .min(1, { message: 'Please select at least one calibration lab' })
+    .nullish()
+    .transform((formData) => {
+      if (typeof formData === 'object') {
+        if (formData !== null && formData.length < 1) return null;
+        if (formData === null) return null;
+
+        return formData.map((el) => {
+          if (typeof el === 'object') return el.value;
+          return el;
+        });
+      }
+      return null;
+    }),
+  traceabilityAccreditationBody: z
+    .union([
+      z.string().min(1, { message: 'Please select accreditation body' }),
+      z.record(z.string(), z.any()),
+    ])
+    .nullish()
+    .transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return formData;
+    }),
   resolution: z.union([resolutionEnum, z.record(z.string(), z.any())]).transform((formData) => {
     if (typeof formData === 'object') return formData.value;
     return formData;
@@ -226,7 +276,6 @@ export const calibrationMeasurementSchema = z.object({
       if (typeof formData === 'object') return formData.value;
       return formData;
     }),
-  typeOfBalance: z.string().default(''),
   calibrationLocation: z.string().default(''),
   rangeMaxCalibration: z.coerce.number({
     message: 'Maximum Range Calibration is required',
@@ -234,18 +283,14 @@ export const calibrationMeasurementSchema = z.object({
   rangeMinCalibration: z.coerce.number({
     message: ' Minimum Range Calibration is required',
   }),
-  rangeMaxRHumidity: z.coerce.number({
-    message: ' Maximum Range R. Humidity is required',
-  }),
-  rangeMinRHumidity: z.coerce.number({
-    message: ' Minimum Range R. Humidity is required',
-  }),
-  maxTemperature: z.coerce.number({
-    message: 'Maximum Temperature is required',
-  }),
-  minTemperature: z.coerce.number({
-    message: 'Minimum Temperature is required',
-  }),
+});
+
+const otherMeasurementsSchema = z.object({
+  minTemperature: z.coerce.number().default(0),
+  maxTemperature: z.coerce.number().default(0),
+  rangeMaxRHumidity: z.coerce.number().default(0),
+  rangeMinRHumidity: z.coerce.number().default(0),
+  typeOfBalance: z.string().default(''),
 });
 
 export const calibrationReferenceInstrumentsSchema = z.object({
@@ -261,6 +306,9 @@ export const calibrationReferenceInstrumentsSchema = z.object({
       if (typeof formData === 'object') return formData.map((instrument) => instrument.id);
       return formData;
     }),
+  cocInstruments: z.array(z.string()).min(1, {
+    message: 'Please select atleast 1 instrument to be incuded in the COC',
+  }),
 });
 
 export const dfnvCalibrationPointSchema = z.object({
@@ -286,21 +334,23 @@ export const eTestSchema = z.object({
   maxError: z.coerce.number().default(0),
 });
 
-export const calibrationMassSchema = z.object({
-  data: z.object({
-    nominalValues: z.array(z.coerce.number()).default([]),
-    measuredValuesM: z.array(z.coerce.number()).default([]),
-    corrections: z.array(z.coerce.number()).default([]),
-    expandedUncertainties: z.array(z.coerce.number()).default([]),
-    measuredValues: z.array(z.array(z.coerce.number())).default([]),
-    coverageFactors: z.array(z.coerce.number()).default([]),
-    dfnv: z.array(dfnvSchema).default([]),
-    rtest: rTestSchema,
-    etest: eTestSchema,
-    d1: z.coerce.number().default(0),
-    d2: z.coerce.number().default(0),
-  }),
-});
+export const calibrationMassSchema = z
+  .object({
+    data: z.object({
+      nominalValues: z.array(z.coerce.number()).default([]),
+      measuredValuesM: z.array(z.coerce.number()).default([]),
+      corrections: z.array(z.coerce.number()).default([]),
+      expandedUncertainties: z.array(z.coerce.number()).default([]),
+      measuredValues: z.array(z.array(z.coerce.number())).default([]),
+      coverageFactors: z.array(z.coerce.number()).default([]),
+      dfnv: z.array(dfnvSchema).default([]),
+      rtest: rTestSchema,
+      etest: eTestSchema,
+      d1: z.coerce.number().default(0),
+      d2: z.coerce.number().default(0),
+    }),
+  })
+  .merge(otherMeasurementsSchema);
 
 export const calibrationSchema = z
   .object({})

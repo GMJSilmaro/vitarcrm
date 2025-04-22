@@ -29,6 +29,7 @@ import {
   PencilSquare,
   PersonLinesFill,
   Plus,
+  Printer,
   Speedometer,
   ThreeDotsVertical,
   Trash,
@@ -147,7 +148,7 @@ const JobCalibration = () => {
                   setIsLoading(true);
 
                   const calibrationRef = doc(db, 'jobCalibrations', id);
-                  const certificateRef = doc(db, 'jobCertificates', certificateNumber);
+                  const certificateRef = doc(db, 'jobCertificates', id);
 
                   await Promise.all([deleteDoc(calibrationRef), deleteDoc(certificateRef)]);
 
@@ -182,8 +183,8 @@ const JobCalibration = () => {
                     Delete Calibration
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => {}}>
-                    <FileEarmarkArrowDown className='me-2' size={16} />
-                    Generate Certificate
+                    <Printer className='me-2' size={16} />
+                    Reprint Certificate
                   </Dropdown.Item>
                 </Dropdown.Menu>
               }
@@ -297,7 +298,7 @@ const JobCalibration = () => {
       <ContentHeader
         title={`Job #${jobId} Calibrations List`}
         description='Create, manage and tract all your jobs calibrations in once centralize dashboard'
-        infoText='Manage job calibrations, view results and generate certificates'
+        infoText='Manage job calibrations, view results and Reprint Certificates'
         badgeText='Job Calibration Management'
         badgeText2='Calibration'
         breadcrumbItems={[

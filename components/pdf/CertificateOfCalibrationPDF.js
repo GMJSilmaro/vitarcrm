@@ -5,10 +5,16 @@ import InterItalic from 'public/fonts/inter/Inter-Italic.ttf';
 import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { useCallback, useMemo } from 'react';
 import { add, format } from 'date-fns';
-import { TEST_LOADS, TRACEABILITY_MAP } from '@/schema/calibration';
+import {
+  TEST_LOADS,
+  TRACEABILITY_ACCREDITATION_BODY,
+  TRACEABILITY_CALIBRATION_LAB,
+  TRACEABILITY_COUNTRY,
+  TRACEABILITY_MAP,
+} from '@/schema/calibration';
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
 import { ceil, divide, multiply, row } from 'mathjs';
-import { faL } from '@fortawesome/free-solid-svg-icons';
+import { countDecimals } from '@/utils/common';
 
 const styles = StyleSheet.create({
   body: {
@@ -238,6 +244,12 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
     return calibration?.data?.expandedUncertainties || [];
   }, [calibration]);
 
+  const cocInstruments = useMemo(() => {
+    if (!instruments.data || instruments.data.length < 1) return [];
+    const selectedInstruments = calibration?.cocInstruments || [];
+    return instruments.data.filter((instrument) => selectedInstruments.includes(instrument.id));
+  }, [calibration, instruments.data]);
+
   const convertValueBasedOnUnit = useCallback(
     (value) => {
       const unit = unitUsedForCOC;
@@ -247,15 +259,21 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
       }
 
       switch (unit) {
-        case 'gram':
-          return formatToDicimalString(value, 1);
-        case 'kilogram':
-          return formatToDicimalString(multiply(value, 0.001), 4);
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(value, precision);
+        }
+        case 'kilogram': {
+          const result = multiply(value, 0.001);
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+
         default:
           return value;
       }
     },
-    [unitUsedForCOC]
+    [unitUsedForCOC, resolution]
   );
 
   const convertExpandedUncertaintyBasedOnUnit = useCallback(
@@ -265,22 +283,43 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
       }
 
       const unit = unitUsedForCOC;
-
       const factor = unit === 'gram' ? 1 : 0.001;
       const scaledResolution = resolution * factor;
-
       const result = ceil((value * factor) / scaledResolution) * scaledResolution;
 
-      return unit === 'gram' ? formatToDicimalString(result, 1) : formatToDicimalString(result, 2);
+      switch (unit) {
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(result, precision);
+        }
+        case 'kilogram': {
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+        default:
+          return value;
+      }
     },
     [resolution]
   );
 
-  const isPositive = (value) => {
+  const renderCorrectionValueWithSymbol = (value) => {
     const parseValue = parseFloat(value);
 
-    if (isNaN(parseValue)) return false;
-    return parseValue > 0;
+    if (isNaN(parseValue)) return value;
+
+    if (parseValue > 0) {
+      if (/^0+(\.0+)?$/.test(value)) return value;
+      return `+${value}`;
+    } else {
+      if (value.includes('-')) {
+        const valueWithoutSymbol = value.replace('-', '');
+        if (/^0+(\.0+)?$/.test(valueWithoutSymbol)) return valueWithoutSymbol;
+        return `-${valueWithoutSymbol}`;
+      }
+
+      return value;
+    }
   };
 
   const dueDate = useMemo(() => {
@@ -298,6 +337,37 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
     });
 
     return format(dueDate, 'dd MMMM yyyy');
+  }, [calibration]);
+
+  const traceability = useMemo(() => {
+    if (!calibration?.traceabilityType) return '';
+
+    if (calibration?.traceabilityType === '1' || calibration?.traceabilityType === '2') {
+      return TRACEABILITY_MAP?.[calibration?.traceabilityType] || '';
+    }
+
+    if (calibration?.traceabilityType === '3') {
+      const traceabilityCountry = calibration?.traceabilityCountry || TRACEABILITY_COUNTRY[0]; // prettier-ignore
+      const traceabilityAccreditationBody = calibration?.traceabilityAccreditationBody || TRACEABILITY_ACCREDITATION_BODY[0]; // prettier-ignore
+      const traceabilityCalibrationLabValues = calibration?.traceabilityCalibrationLab || [TRACEABILITY_CALIBRATION_LAB[4].value]; // prettier-ignore
+
+      const selectedTraceabilityCalibrationLab = traceabilityCalibrationLabValues.map(value => TRACEABILITY_CALIBRATION_LAB.find(item => item.value === value)).filter(Boolean); // prettier-ignore
+      const selectedAccreditationNos = selectedTraceabilityCalibrationLab.map(item => item.accreditationNo) // prettier-ignore
+      const signatory = selectedTraceabilityCalibrationLab[0].signatory;
+
+      let accreditationNos = '';
+      if (selectedTraceabilityCalibrationLab.length >= 2) {
+        const lastAccreditationNo = selectedAccreditationNos.pop();
+        accreditationNos = `${selectedAccreditationNos.join(', ')} and ${lastAccreditationNo}`;
+      } else {
+        accreditationNos = selectedAccreditationNos[0];
+      }
+
+      const text = `The measurement results included in this document are traceable to ${traceabilityCountry}'s national standards through SAMM ${accreditationNos} via calibration	Certificate No. as indicated below. ${traceabilityAccreditationBody} is a signatory to the ${signatory}`;
+      return text;
+    }
+
+    return '';
   }, [calibration]);
 
   return (
@@ -419,9 +489,9 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
               <Text>Range</Text>
             </View>
             <View style={styles.value}>
-              <Text>{calibration?.rangeMinCalibration ?? 0}</Text>
+              <Text>{convertValueBasedOnUnit(calibration?.rangeMinCalibration ?? 0)}</Text>
               <Text style={{ paddingLeft: 20, paddingRight: 20 }}>to</Text>
-              <Text>{calibration?.rangeMaxCalibration ?? 0}</Text>
+              <Text>{convertValueBasedOnUnit(calibration?.rangeMaxCalibration ?? 0)}</Text>
             </View>
           </View>
           <View style={styles.row}>
@@ -430,7 +500,7 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
             </View>
             <View style={styles.value}>
               <Text>
-                {calibration?.resolution || 0} {unitUsedForCOCAcronym}
+                {convertValueBasedOnUnit(resolution)} {unitUsedForCOCAcronym}
               </Text>
             </View>
           </View>
@@ -559,12 +629,12 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
           <View style={styles.row}>
             <View style={styles.label}></View>
             <View style={styles.value}>
-              <Text>{TRACEABILITY_MAP?.[calibration?.traceabilityType] || ''}</Text>
+              <Text>{traceability}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.rowContainer} break={instruments.data.length > 6 ? true : false}>
+        <View style={styles.rowContainer} break={cocInstruments.length > 6 ? true : false}>
           <View style={styles.row}>
             <View style={[styles.cellHeader, { width: '18%' }]}>
               <Text>Reference</Text>
@@ -587,8 +657,8 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
             </View>
           </View>
 
-          {instruments.data.length > 0 &&
-            instruments.data.map((instrument) => (
+          {cocInstruments.length > 0 &&
+            cocInstruments.map((instrument) => (
               <View style={styles.row}>
                 <View style={[styles.cell, { width: '18%' }]}>
                   <Text>{instrument?.description || ''}</Text>
@@ -675,8 +745,9 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
                     </View>
                     <View style={[styles.cell, { borderLeft: 'none', width: '25%' }]}>
                       <Text>
-                        {isPositive(corrections?.[i] ?? 0) ? '+' : ''}
-                        {convertValueBasedOnUnit(corrections?.[i] ?? 0)}
+                        {renderCorrectionValueWithSymbol(
+                          convertValueBasedOnUnit(corrections?.[i] ?? 0)
+                        )}
                       </Text>
                     </View>
                     <View style={[styles.cell, { borderLeft: 'none', width: '30%' }]}>
@@ -799,7 +870,9 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
               </View>
 
               <View style={{ width: '15%' }}>
-                <Image src={`/images/balance-type-${calibration?.typeOfBalance}.png`} />
+                {calibration?.typeOfBalance && (
+                  <Image src={`/images/balance-type-${calibration?.typeOfBalance}.png`} />
+                )}
               </View>
             </View>
           </View>

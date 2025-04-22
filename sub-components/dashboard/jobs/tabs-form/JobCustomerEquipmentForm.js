@@ -232,7 +232,6 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
           );
         },
         cell: ({ row }) => {
-          row.sele;
           return (
             <div className='px-1'>
               <Checkbox

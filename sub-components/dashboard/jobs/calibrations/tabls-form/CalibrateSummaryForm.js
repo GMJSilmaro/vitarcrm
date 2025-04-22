@@ -257,17 +257,30 @@ const CalibrateSummaryForm = ({
 
         if (!snapshot.empty) {
           const sortedData = snapshot.docs
-            .map((doc) => ({
-              id: doc.id.split('-')[1]?.replace(regex, ''),
-              ...doc.data(),
-            }))
-            .sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10));
+            .map((doc) => {
+              const docData = doc.data();
 
-          const id = sortedData.pop().id;
-          const lastCertificateNumber = parseInt(id, 10);
+              return {
+                certificateIdNumber: docData.certificateNumber.split('-')[1]?.replace(regex, ''),
+                ...docData,
+              };
+            })
+            .sort(
+              (a, b) => parseInt(a.certificateIdNumber, 10) - parseInt(b.certificateIdNumber, 10)
+            );
 
-          form.setValue('certificateNumber',  `${calibrationIdPrefix}${(lastCertificateNumber + 1).toString().padStart(4, '0')}`); //prettier-ignore
-        } else form.setValue('certificateNumber', `${calibrationIdPrefix}0001`);
+          const jobIdNumber = parseInt(job.data.id.replace('J', ''), 10);
+          const calibrateId = sortedData.pop().calibrateId.replace('CA', '');
+          const lastCalibrateId = parseInt(calibrateId, 10);
+
+          console.log({ jobIdNumber, calibrateId, lastCalibrateId });
+
+          form.setValue('certificateNumber',  `${calibrationIdPrefix}${(jobIdNumber).toString().padStart(4, '0')}`); //prettier-ignore
+          form.setValue('serialNumber', String(lastCalibrateId + 1));
+        } else {
+          form.setValue('certificateNumber', `${calibrationIdPrefix}0001`);
+          form.setValue('serialNumber', '1');
+        }
       },
       (err) => {
         console.error(err.message);
@@ -305,12 +318,7 @@ const CalibrateSummaryForm = ({
 
       if (p1 && p2) form.setValue('certificateNumber', [p1, p2].join('-'));
     }
-  }, [form.watch('serialNumber')]);
-
-  //* logger user Effect
-  useEffect(() => {
-    console.log({ job, customer, customerEquipmentsOptions });
-  }, [job.data, customer, customerEquipmentsOptions]);
+  }, [form.watch('serialNumber'), form.watch('certificateNumber')]);
 
   //* set calibrated by options
   useEffect(() => {
@@ -591,19 +599,14 @@ const CalibrateSummaryForm = ({
             </Form.Group>
 
             <Form.Group as={Col} md={3}>
-              <Form.Label>Serial No.</Form.Label>
+              <Form.Label>Running No.</Form.Label>
 
               <Controller
                 name='serialNumber'
                 control={form.control}
                 render={({ field }) => (
                   <>
-                    <Form.Control
-                      disabled={!form.watch('certificateNumber')}
-                      {...field}
-                      type='number'
-                      value={field.value}
-                    />
+                    <Form.Control disabled {...field} type='number' value={field.value} />
                   </>
                 )}
               />

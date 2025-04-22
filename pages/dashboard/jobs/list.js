@@ -540,7 +540,7 @@ const JobList = () => {
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
                     <CardList className='me-2' size={16} />
-                    Create Calibrate
+                    Start Calibrate
                   </Dropdown.Item>
                 </Dropdown.Menu>
               }

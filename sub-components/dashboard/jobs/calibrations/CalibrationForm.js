@@ -54,7 +54,13 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
 
   const form = useForm({
     mode: 'onChange',
-    defaultValues: { ...getFormDefaultValues(schema), ...data, data: { content: [] } },
+    defaultValues: {
+      ...getFormDefaultValues(schema),
+      ...data,
+      traceabilityCalibrationLab: null,
+      cocInstruments: [],
+      data: { content: [] },
+    },
     resolver: zodResolver(schema),
   });
 
@@ -215,7 +221,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
             { merge: true }
           ),
           setDoc(
-            doc(db, 'jobCertificates', formData.certificateNumber),
+            doc(db, 'jobCertificates', formData.calibrateId),
             {
               results,
               jobId: formData.jobId,
@@ -233,12 +239,12 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
 
         if (isAdmin) {
           window.location.assign(
-            `/jobs/${formData.jobId}/calibrations//edit-calibrations/${formData.calibrateId}`
+            `/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`
           );
         } else {
           workerId &&
             window.location.assign(
-              `/user/${workerId}/jobs/${formData.jobId}/calibrations/${formData.calibrateId}`
+              `/user/${workerId}/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`
             );
         }
         toast.success(`Calibration ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
@@ -301,7 +307,18 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
             { name: 'rangeMaxCalibration', value: formData.rangeMaxCalibration },
           ],
         },
-        { delay: 500, group: [{ name: 'traceabilityType', value: formData.traceabilityType }] },
+        {
+          delay: 500,
+          group: [
+            { name: 'traceabilityType', value: formData.traceabilityType },
+            { name: 'traceabilityCountry', value: formData.traceabilityCountry },
+            { name: 'traceabilityCalibrationLab', value: formData.traceabilityCalibrationLab },
+            {
+              name: 'traceabilityAccreditationBody',
+              value: formData.traceabilityAccreditationBody,
+            },
+          ],
+        },
         { delay: 1000, group: [{ name: 'resolution', value: formData.resolution }] },
         {
           delay: 2500,
@@ -309,6 +326,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
             { name: 'unitUsedForCOC', value: formData.unitUsedForCOC },
             { name: 'calibrationPointNo', value: formData.calibrationPointNo },
             { name: 'instruments', value: formData.instruments },
+            { name: 'cocInstruments', value: formData.cocInstruments },
           ],
         },
         { delay: 1000, group: [{ name: 'data', value: formData.data }] },

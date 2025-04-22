@@ -28,19 +28,15 @@ const EditCalibrations = () => {
   useEffect(() => {
     if (calibrateId) {
       const calibrationRef = doc(db, 'jobCalibrations', calibrateId);
-      const certificateRef = query(
-        collection(db, 'jobCertificates'),
-        where('calibrateId', '==', calibrateId),
-        limit(1)
-      );
+      const certificateRef = doc(db, 'jobCertificates', calibrateId);
 
-      Promise.all([getDoc(calibrationRef), getDocs(certificateRef)])
+      Promise.all([getDoc(calibrationRef), getDoc(certificateRef)])
         .then(([calibrationSnapshot, certificateSnapshot]) => {
-          if (calibrationSnapshot.exists() && !certificateSnapshot.empty) {
+          if (calibrationSnapshot.exists() && certificateSnapshot.exists()) {
             setCalibration({
               id: calibrationSnapshot.id,
               ...calibrationSnapshot.data(),
-              ...certificateSnapshot.docs[0].data(),
+              ...certificateSnapshot.data(),
             });
             setIsLoading(false);
           } else {

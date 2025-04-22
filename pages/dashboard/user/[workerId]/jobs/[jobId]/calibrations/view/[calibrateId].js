@@ -38,21 +38,17 @@ const CalibrationDetails = () => {
     if (calibrateId) {
       const jobHeaderRef = doc(db, 'jobHeaders', jobId);
       const calibrationRef = doc(db, 'jobCalibrations', calibrateId);
-      const certificateRef = query(
-        collection(db, 'jobCertificates'),
-        where('calibrateId', '==', calibrateId),
-        limit(1)
-      );
+      const certificateRef = doc(db, 'jobCertificates', calibrateId);
 
-      Promise.all([getDoc(calibrationRef), getDocs(certificateRef), getDoc(jobHeaderRef)])
+      Promise.all([getDoc(calibrationRef), getDoc(certificateRef), getDoc(jobHeaderRef)])
         .then(async ([calibrationSnapshot, certificateSnapshot, jobHeaderSnapshot]) => {
           if (
             calibrationSnapshot.exists() &&
-            !certificateSnapshot.empty &&
+            certificateSnapshot.exists() &&
             jobHeaderSnapshot.exists()
           ) {
             const calibrationData = calibrationSnapshot.data();
-            const certificateData = certificateSnapshot?.docs[0]?.data();
+            const certificateData = certificateSnapshot.data();
             const jobHeaderData = { jobId: jobHeaderSnapshot.id, ...jobHeaderSnapshot.data() };
 
             const locationSnapshot = jobHeaderData.location.id
@@ -200,7 +196,7 @@ const CalibrationDetails = () => {
               </Tab>
 
               <Tab eventKey='2' title='Referece Instruments'>
-                <ReferenceInstruments instruments={instruments} />
+                <ReferenceInstruments calibration={calibration} instruments={instruments} />
               </Tab>
 
               <Tab eventKey='3' title='Calibration'>

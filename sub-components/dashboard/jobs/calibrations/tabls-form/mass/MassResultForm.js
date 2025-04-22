@@ -1,23 +1,26 @@
 import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
 import { countDecimals } from '@/utils/common';
 import { divide, multiply } from 'mathjs';
-import { useCallback, useMemo } from 'react';
-import { Card, Table } from 'react-bootstrap';
+import React, { useCallback, useMemo } from 'react';
+import { Table } from 'react-bootstrap';
+import { useFormContext } from 'react-hook-form';
 
-const CalibrationMassResult = ({ calibration }) => {
+const MassResultForm = () => {
+  const form = useFormContext();
+
   const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(calibration.calibrationPointNo);
-    return isNaN(value) ? undefined : value;
-  }, [calibration]);
+    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
+    return isNaN(value) ? 0 : value;
+  }, [form.watch('calibrationPointNo')]);
 
   const unitUsedForCOC = useMemo(() => {
-    return calibration?.unitUsedForCOC || 'gram';
-  }, [calibration]);
+    return form.getValues('unitUsedForCOC')?.value || 'gram';
+  }, [form.watch('unitUsedForCOC')]);
 
   const resolution = useMemo(() => {
-    const value = parseFloat(calibration?.resolution);
+    const value = parseFloat(form.getValues('resolution')?.value);
     return isNaN(value) ? 0 : value;
-  }, [calibration]);
+  }, [form.watch('resolution')]);
 
   const convertValueBasedOnUnit = useCallback(
     (value) => {
@@ -45,56 +48,60 @@ const CalibrationMassResult = ({ calibration }) => {
     [unitUsedForCOC, resolution]
   );
 
-  const results = useMemo(() => {
-    const value = calibration?.results;
+  const corrections = useMemo(() => {
+    const value = form.getValues('data.corrections');
+    return value && Array.isArray(value) ? value : [];
+  }, [JSON.stringify(form.watch('data.corrections'))]);
 
-    return value
-      ? value
-      : {
-          corrections: [],
-          expandedUncertainties: [],
-          measuredValuesM: [],
-          nominalValues: [],
-          rangeType: '',
-          resolution: 0,
-          rtestMaxError: 0,
-        };
-  }, [calibration]);
+  const measuredValuesM = useMemo(() => {
+    const value = form.getValues('data.measuredValuesM');
+    return value && Array.isArray(value) ? value : [];
+  }, [JSON.stringify(form.watch('data.measuredValuesM'))]);
 
-  console.log({ calibration, results });
+  const expandedUncertainties = useMemo(() => {
+    const value = form.getValues('data.expandedUncertainties');
+    return value && Array.isArray(value) ? value : [];
+  }, [JSON.stringify(form.watch('data.expandedUncertainties'))]);
+
+  const nominalValues = useMemo(() => {
+    const value = form.getValues('data.nominalValues');
+    return value && Array.isArray(value) ? value : [];
+  }, [JSON.stringify(form.watch('data.nominalValues'))]);
+
+  const rangeType = useMemo(() => {
+    return form.getValues('rangeType')?.value || '';
+  }, [JSON.stringify(form.watch('rangeType'))]);
+
+  const rtestMaxError = useMemo(() => {
+    const value = form.getValues('data.rtest.maxError');
+    return isNaN(value) ? 0 : value;
+  }, [form.watch('data.rtest.maxError')]);
+
+  console.log({ corrections, resolution, unitUsedForCOC });
 
   return (
-    <Card className='shadow-none'>
-      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-        <div className='d-flex justify-content-between align-items-center'>
-          <div>
-            <h5 className='mb-0'>Result</h5>
-            <small className='text-muted'>
-              Result of the calibration for the selected category
-            </small>
-          </div>
-        </div>
-
+    <div className='d-flex flex-column row-gap-4'>
+      <div>
         <div className='mt-3 flex align-items-center gap-2'>
           <div className='mt-3 d-flex align-items-center gap-4'>
             <div className='fs-5'>
               <span className='pe-2'>Type of Range:</span>
-              <span className='fw-bold text-capitalize'>{results?.rangeType || ''}</span>
+              <span className='fw-bold text-capitalize'>{rangeType || ''}</span>
             </div>
 
             <div className='fs-5'>
               <span className='pe-2'>d:</span>
-              <span className='fw-bold'>{results?.resolution || 0} g</span>
+              <span className='fw-bold'>{resolution || 0} g</span>
             </div>
 
             <div className='fs-5'>
               <span className='pe-2'>Repeatability: </span>
-              <span className='fw-bold'>{formatToDicimalString(results?.rtestMaxError, 4)} g</span>
+              <span className='fw-bold'>{formatToDicimalString(rtestMaxError, 4)} g</span>
             </div>
 
             <div className='fs-5'>
               <span className='pe-2'>No. of Calibration Point:</span>
-              <span className='fw-bold'>{calibration?.calibrationPointNo}</span>
+              <span className='fw-bold'>{calibrationPointNo}</span>
             </div>
 
             <div className='fs-5'>
@@ -103,9 +110,9 @@ const CalibrationMassResult = ({ calibration }) => {
             </div>
           </div>
         </div>
-      </Card.Header>
+      </div>
 
-      <Card.Body>
+      <div>
         {calibrationPointNo ? (
           <Table className='text-center align-middle'>
             <thead>
@@ -122,12 +129,12 @@ const CalibrationMassResult = ({ calibration }) => {
               {Array.from({ length: calibrationPointNo }).map((_, i) => (
                 <tr key={i}>
                   <td>A{i + 1}</td>
-                  <td>{results?.nominalValues?.[i] || ''}</td>
-                  <td>{formatToDicimalString(results?.measuredValuesM?.[i])}</td>
-                  <td>{formatToDicimalString(results?.corrections?.[i])}</td>
+                  <td>{nominalValues?.[i] || ''}</td>
+                  <td>{formatToDicimalString(measuredValuesM?.[i])}</td>
+                  <td>{formatToDicimalString(corrections?.[i])}</td>
                   <td>
                     <span className='me-2'>±</span>{' '}
-                    {formatToDicimalString(results?.expandedUncertainties?.[i], 5)}
+                    {formatToDicimalString(expandedUncertainties?.[i], 5)}
                   </td>
                 </tr>
               ))}
@@ -139,9 +146,9 @@ const CalibrationMassResult = ({ calibration }) => {
             <p>Module is under development</p>
           </div>
         )}
-      </Card.Body>
-    </Card>
+      </div>
+    </div>
   );
 };
 
-export default CalibrationMassResult;
+export default MassResultForm;

@@ -33,7 +33,7 @@ const ContentHeader = ({
               <h1
                 className='mb-2'
                 style={{
-                  fontSize: '28px',
+                  fontSize: '24px',
                   fontWeight: '600',
                   color: '#FFFFFF',
                   letterSpacing: '-0.02em',

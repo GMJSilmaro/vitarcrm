@@ -16,7 +16,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
@@ -31,6 +31,8 @@ import {
   Table,
   Gear,
 } from 'react-bootstrap-icons';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const MPEList = () => {
   const router = useRouter();
@@ -74,13 +76,49 @@ const MPEList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, details } = row.original;
+          const { id } = row.original;
 
-          const handleViewData = (id) => {};
+          const handleViewData = (id) => {
+            router.push(`/calibration-references/mass/mpe/view/${id}`);
+          };
 
-          const handleEditData = (id) => {};
+          const handleEditData = (id) => {
+            router.push(`/calibration-references/mass/mpe/edit-mpe/${id}`);
+          };
 
-          const handleDeleteData = (id) => {};
+          const handleDeleteData = (id) => {
+            Swal.fire({
+              title: 'Are you sure?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  const mpeDocRef = doc(db, 'jobCalibrationReferences', 'CR000002', 'data', id);
+
+                  await deleteDoc(mpeDocRef);
+
+                  toast.success('Refence data removed successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error removing refence data:', error);
+                  toast.error('Error removing refence data: ' + error.message, {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
 
           return (
             <OverlayTrigger
@@ -246,7 +284,7 @@ const MPEList = () => {
         ]}
       />
 
-      <Card className='border-0 shadow-none'>
+      <Card className='shadow-none'>
         <Card.Body className='p-4'>
           <DataTable table={table} isLoading={mpe.isLoading} isError={mpe.isError}>
             <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
