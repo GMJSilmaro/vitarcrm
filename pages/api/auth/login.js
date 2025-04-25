@@ -9,6 +9,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  Timestamp,
 } from 'firebase/firestore';
 
 export default async function handler(req, res) {
@@ -65,8 +66,7 @@ export default async function handler(req, res) {
     };
 
     // update online status
-    //TODO: change worker as uid
-    await updateDoc(doc(db, 'users', user.uid), { isOnline: true });
+    await updateDoc(doc(db, 'users', user.uid), { isOnline: true, lastLogin: Timestamp.now() });
     // await updateDoc(doc(db, 'users', workerId), { isOnline: true });
 
     // Set cookies using the workerId from userData

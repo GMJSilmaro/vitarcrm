@@ -313,7 +313,7 @@ const TechnicianList = () => {
                 {status ? 'Active' : 'Inactive'}
               </Badge>
               <small className='text-muted mt-1' style={{ fontSize: '11px' }}>
-                Last login: {isValid(lastLogin) ? format(lastLogin, 'DD-MM-YYYY, p') : ''}
+                Last login: {isValid(lastLogin) ? format(lastLogin, 'dd-MM-yyyy, p') : ''}
               </small>
             </div>
           );
