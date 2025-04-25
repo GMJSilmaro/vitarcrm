@@ -101,9 +101,9 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
 
           setUsersOptions({
             data: userData.map((user) => ({
-              id: user.id,
+              id: user.workerId,
               name: user.fullName,
-              value: user.id,
+              value: user.workerId,
               label: user.fullName,
             })),
             isLoading: false,

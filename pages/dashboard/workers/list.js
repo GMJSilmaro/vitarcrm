@@ -16,7 +16,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { format, isValid } from 'date-fns';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -76,7 +76,7 @@ const TechnicianList = () => {
       columnHelper.accessor((row) => row.fullName, {
         id: 'technician',
         size: 200,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Technician' />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='User / Technician' />,
         cell: (info) => {
           return (
             <div className='d-flex align-items-center'>
@@ -107,53 +107,57 @@ const TechnicianList = () => {
                 />
               </div>
               <div className='ms-3'>
-                <div className='d-flex align-items-center gap-2'>
-                  <span className='fw-semibold text-dark' style={{ fontSize: '14px' }}>
+                <div className='d-flex justify-content-start align-items-center gap-2'>
+                  <span className='text-start fw-semibold text-dark' style={{ fontSize: '14px' }}>
                     {info.getValue()}
                   </span>
-                  <div className='d-flex gap-1'>
-                    {info.row.original.isFieldWorker && (
-                      <Badge
-                        bg='warning'
-                        text='dark'
-                        style={{
-                          fontSize: '10px',
-                          padding: '4px 6px',
-                          borderRadius: '4px',
-                        }}
-                      >
-                        Field Worker
-                      </Badge>
-                    )}
-                    {info.row.original.isAdmin && (
-                      <Badge
-                        bg='purple'
-                        style={{
-                          backgroundColor: 'red',
-                          fontSize: '10px',
-                          padding: '4px 6px',
-                          borderRadius: '4px',
-                        }}
-                      >
-                        Admin
-                      </Badge>
-                    )}
-                  </div>
                 </div>
                 <div className='d-flex align-items-center'>
                   <small
                     className='text-success fw-semibold'
                     style={{ fontSize: '12px', paddingRight: '4px' }}
                   >
-                    {info.row.original.workerId}
+                    #{info.row.original.workerId}
                   </small>
-                  {info.row.original.role && (
+                  {info?.row?.original?.role && info.row.original.role !== 'admin' && (
                     <>
                       <span style={{ paddingRight: '4px' }}>•</span>
-                      <small className='text-warning fw-semibold' style={{ fontSize: '12px' }}>
+                      <small
+                        className='text-warning fw-semibold text-capitalize'
+                        style={{ fontSize: '12px' }}
+                      >
                         {info.row.original.role}
                       </small>
                     </>
+                  )}
+                </div>
+
+                <div className='d-flex gap-1 mt-1'>
+                  {info.row.original.isFieldWorker && (
+                    <Badge
+                      bg='warning'
+                      text='dark'
+                      style={{
+                        fontSize: '10px',
+                        padding: '4px 6px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      Field Worker
+                    </Badge>
+                  )}
+                  {info.row.original.role === 'admin' && (
+                    <Badge
+                      bg='purple'
+                      style={{
+                        backgroundColor: 'red',
+                        fontSize: '10px',
+                        padding: '4px 6px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      Admin
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -289,9 +293,10 @@ const TechnicianList = () => {
       }),
       columnHelper.accessor((row) => (row?.activeUser ? 'active' : 'inactive'), {
         id: 'status',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         size: 50,
         cell: ({ row }) => {
-          const status = row.original?.activeUser;
+          const status = row.original?.isActive;
           const lastLogin = row.original?.lastLogin?.toDate();
 
           return (
@@ -329,7 +334,7 @@ const TechnicianList = () => {
           };
 
           const handleEditTechnician = (id) => {
-            router.push(`/workers/edit-worker/${id}`);
+            router.push(`/workers/edit-workers/${id}`);
           };
 
           const handleDeleteTechnician = (id) => {
@@ -511,14 +516,16 @@ const TechnicianList = () => {
   useEffect(() => {
     if (!workers && workers.data.length < 1) return;
 
+    const technicians = workers.data.filter((user) => user.role === 'technician');
+
     //* calculate
-    const totalWorkers = workers.data.length;
-    const active = workers.data.filter((worker) => worker.activeUser).length;
-    const inactive = workers.data.filter((worker) => !worker.activeUser && worker.id !== 'Admin').length; //prettier-ignore
-    const fieldWorkers = workers.data.filter((worker) => worker.isFieldWorker).length;
+    const totalTechnicians = technicians.length;
+    const active = technicians.filter((technician) => technician.isActive).length;
+    const inactive = technicians.filter((technician) => !technician.isActive && technician.role === 'technician').length; //prettier-ignore
+    const fieldWorkers = technicians.filter((technician) => technician.isFieldWorker).length;
 
     setStats({
-      totalUsers: totalWorkers,
+      totalUsers: totalTechnicians,
       active,
       inactive,
       fieldWorkers,

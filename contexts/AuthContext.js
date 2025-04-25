@@ -12,8 +12,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(null);
+  const [role, setRole] = useState(null);
   const [workerId, setWorkerId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,17 +27,15 @@ export function AuthProvider({ children }) {
         // Check for existing session
         const session = Cookies.get('session');
         const email = Cookies.get('email');
-        const userRole = Cookies.get('userRole');
+        const role = Cookies.get('role');
         const workerId = Cookies.get('workerId');
         const displayName = Cookies.get('displayName');
         const uid = Cookies.get('uid');
-        const isAdmin = Cookies.get('isAdmin') === 'true';
 
         if (session && email) {
           setCurrentUser({ displayName, email, uid });
-          setUserRole(userRole);
+          setRole(role);
           setWorkerId(workerId);
-          setIsAdmin(isAdmin);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -74,8 +71,7 @@ export function AuthProvider({ children }) {
 
       // Set user state based on the response
       setCurrentUser({ email, displayName: data.user.displayName, uid: data.user.uid });
-      setIsAdmin(data.user.isAdmin);
-      setUserRole(data.user.userRole);
+      setRole(data.user.role);
       setWorkerId(data.user.workerId);
 
       // Store auth state in cookies
@@ -83,12 +79,15 @@ export function AuthProvider({ children }) {
       Cookies.set('email', email, { secure: true });
       Cookies.set('displayName', data.user.displayName, { secure: true });
       Cookies.set('uid', data.user.uid, { secure: true });
-      Cookies.set('userRole', data.user.userRole, { secure: true });
+      Cookies.set('role', data.user.role, { secure: true });
       Cookies.set('workerId', data.user.workerId, { secure: true });
-      Cookies.set('isAdmin', data.user.isAdmin, { secure: true });
 
       // Redirect based on user type
-      if (data.user.isAdmin) {
+      if (
+        data.user.role === 'admin' ||
+        data.user.role === 'supervisor' ||
+        data.user.role === 'sales'
+      ) {
         router.push('/');
       } else {
         router.push(`/user/${data.user.workerId}`);
@@ -132,14 +131,12 @@ export function AuthProvider({ children }) {
       Cookies.remove('email');
       Cookies.remove('displayName');
       Cookies.remove('uid');
-      Cookies.remove('userRole');
+      Cookies.remove('role');
       Cookies.remove('workerId');
-      Cookies.remove('isAdmin');
 
       setCurrentUser(null);
-      setUserRole(null);
+      setRole(null);
       setWorkerId(null);
-      setIsAdmin(null);
 
       // Show success message
       await Swal.fire({
@@ -219,9 +216,8 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
-    userRole,
+    role,
     workerId,
-    isAdmin,
     loading,
     error,
     signIn,

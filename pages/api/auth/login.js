@@ -50,9 +50,8 @@ export default async function handler(req, res) {
     const userUid = userData.uid;
 
     console.log('Found user with matching UID:', user.uid);
-    console.log('Using userRole from userData:', userRole);
+    console.log('Using role from userData:', userRole);
     console.log('User Data:', userData);
-    console.log('isAdmin:', userData.isAdmin);
 
     const customToken = await user.getIdToken();
 
@@ -66,7 +65,9 @@ export default async function handler(req, res) {
     };
 
     // update online status
-    await updateDoc(doc(db, 'users', workerId), { isOnline: true });
+    //TODO: change worker as uid
+    await updateDoc(doc(db, 'users', user.uid), { isOnline: true });
+    // await updateDoc(doc(db, 'users', workerId), { isOnline: true });
 
     // Set cookies using the workerId from userData
     res.setHeader('Set-Cookie', [
@@ -76,8 +77,7 @@ export default async function handler(req, res) {
       `email=${email}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
       `displayName=${userFullName}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
       `workerId=${workerId}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
-      `userRole=${userRole}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
-      `isAdmin=${userData.isAdmin === true}; Path=/; ${ cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
+      `role=${userRole}; Path=/; ${cookieOptions.secure ? 'Secure;' : ''} SameSite=Lax; Max-Age=${cookieOptions.maxAge}`,
     ]); // prettier-ignore
 
     return res.status(200).json({
@@ -86,10 +86,9 @@ export default async function handler(req, res) {
       user: {
         email,
         workerId,
-        userRole,
+        role: userRole,
         displayName: userFullName,
         uid: userUid,
-        isAdmin: userData.isAdmin === true,
       },
     });
   } catch (error) {
@@ -102,8 +101,7 @@ export default async function handler(req, res) {
       'email=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'displayName=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
       'workerId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
-      'userRole=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
-      'isAdmin=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+      'role=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
     ]);
 
     return res.status(401).json({

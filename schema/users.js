@@ -8,6 +8,16 @@ import { z } from 'zod';
 
 export const ROLES = ['admin', 'supervisor', 'technician', 'sales'];
 export const GENDER = ['male', 'female'];
+export const EMERGENCY_CONTACT_RELATIONSHIP = ['parent', 'spouse', 'sibling', 'child', 'other'];
+
+export const CATEGORY = [
+  'TEMPERATURE & HUMIDITY',
+  'PRESSURE',
+  'ELECTRICAL',
+  'DIMENSIONAL',
+  'VOLUMETRIC',
+  'MASS',
+];
 
 export const genderEnum = z.enum(GENDER, {
   message: 'Please select a gender',
@@ -30,19 +40,32 @@ export const personalInfoSchema = z.object({
   shortBio: z.string().default(''),
   firstName: z.string().min(1, 'First Name is required'),
   lastName: z.string().min(1, 'Last Name is required'),
-  middleName: z.string().min(1, 'Middle Name is required'),
+  middleName: z.string().default(''),
   isFieldWorker: z.boolean().default(false),
-  isAdmin: z.boolean().default(false),
+  categories: z
+    .array(z.union([z.record(z.string(), z.any())]))
+    .min(1, { message: 'Please select at least one category' })
+    .transform((formData) => {
+      if (typeof formData === 'object') {
+        if (formData !== null && formData.length < 1) return [];
+        if (formData === null) return [];
+
+        return formData.map((el) => {
+          if (typeof el === 'object') return el.value;
+          return el;
+        });
+      }
+      return [];
+    }),
+  isActive: z.boolean().default(false),
   dateOfBirth: z.string().default(''),
-  gender: z.union([genderEnum, z.record(z.string(), z.any())]).transform((formData) => {
-    if (typeof formData === 'object') return formData.value;
-    return formData;
-  }),
+  expirationDate: z.string().default(''),
+  gender: genderEnum,
+  password: z.string().min(6, 'Password must be at least 6 characters long'),
   role: z.union([roleEnum, z.record(z.string(), z.any())]).transform((formData) => {
     if (typeof formData === 'object') return formData.value;
     return formData;
   }),
-  password: z.string().min(1, 'Password is required'),
 });
 
 export const contactInfoSchema = z.object({
@@ -50,4 +73,25 @@ export const contactInfoSchema = z.object({
   secondaryPhone: z.string().default(''),
   isPrimaryPhoneActive: z.boolean().default(false),
   isSecondaryPhoneActive: z.boolean().default(false),
+  address: addressSchema,
+  emergencyContactName: z.string().default(''),
+  emergencyContactPhone: z.string().default(''),
+  emergencyRelationship: z
+    .union([z.string(), z.record(z.string(), z.any())])
+    .nullish()
+    .default('')
+    .transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return '';
+    }),
 });
+
+export const skillsSchemn = z.object({
+  skills: z.array(z.string().min(1, 'Skill is required')).default([]),
+});
+
+export const userSchema = z
+  .object({})
+  .merge(personalInfoSchema)
+  .merge(contactInfoSchema)
+  .merge(skillsSchemn);

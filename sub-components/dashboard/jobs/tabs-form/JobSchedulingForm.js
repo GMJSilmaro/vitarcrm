@@ -31,7 +31,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
 
   //* query workers
   useEffect(() => {
-    const constraints = [where('role', '==', 'Worker')];
+    const constraints = [where('role', '==', 'technician')];
 
     if (!isProd) {
       const devQueryConstraint = [limit(10)];
@@ -48,9 +48,9 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
             data: snapshot.docs.map((doc) => {
               const data = doc.data();
               return {
-                id: doc.id,
+                id: data.workerId,
                 name: data.fullName,
-                value: doc.id,
+                value: data.workerId,
                 label: `${data.workerId} - ${data.fullName}`,
               };
             }),

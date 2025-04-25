@@ -306,8 +306,8 @@ const JobWorkerTimelineCalendar = () => {
           </span>
         </div>
         <div className='d-flex gap-2 align-content-center'>
-          <Badge style={{ fontSize: '10px' }} bg='primary'>
-            {worker?.role === 'Worker' ? 'Technician' : worker?.role || 'N/A'}
+          <Badge className='text-capitalize' style={{ fontSize: '10px' }} bg='primary'>
+            {worker?.role ? worker?.role : 'N/A'}
           </Badge>
 
           <Badge style={{ fontSize: '12px' }} bg='warning'>
@@ -509,7 +509,7 @@ const JobWorkerTimelineCalendar = () => {
 
   //* query workers
   useEffect(() => {
-    const constraints = [orderBy('workerId', 'asc'), where('role', '==', 'Worker')];
+    const constraints = [orderBy('workerId', 'asc'), where('role', '==', 'technician')];
 
     if (!isProd) {
       const devQueryConstraint = [limit(10)];
@@ -573,6 +573,8 @@ const JobWorkerTimelineCalendar = () => {
     );
   }
 
+  console.log({ resourceWorkers, eventSettings });
+
   return (
     <ScheduleComponent
       ref={calendarRef}
@@ -611,7 +613,7 @@ const JobWorkerTimelineCalendar = () => {
           title='Technicians'
           name='Workers'
           textField='text'
-          idField='id'
+          idField='workerId'
           allowMultiple={false}
           dataSource={resourceWorkers.data}
         />

@@ -112,10 +112,16 @@ const nextConfig = {
         destination: '/dashboard/sites/edit-site/:siteId',
       },
 
+      //* profile
+      {
+        source: '/profile/:uid',
+        destination: '/dashboard/profile/:uid',
+      },
+
       // WORKERS
       {
         source: '/workers/create',
-        destination: '/dashboard/workers/create-worker',
+        destination: '/dashboard/workers/create',
       },
       {
         source: '/workers',
@@ -126,8 +132,8 @@ const nextConfig = {
         destination: '/dashboard/workers/view/:id',
       },
       {
-        source: '/workers/edit-worker/:workerId',
-        destination: '/dashboard/workers/:workerId',
+        source: '/workers/edit-workers/:workerId',
+        destination: '/dashboard/workers/edit-workers/:workerId',
       },
 
       // SCHEDULING

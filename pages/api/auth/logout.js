@@ -34,6 +34,7 @@ export default async function handler(req, res) {
 
   // Use the workerId from userData instead of document ID
   const workerId = userData.workerId;
+  const uid = userData.uid;
 
   try {
     // Get user email from request cookies or body
@@ -47,10 +48,10 @@ export default async function handler(req, res) {
     // Sign out from Firebase
     await auth.signOut();
     // update online status
-    await updateDoc(doc(db, 'users', workerId), { isOnline: false });
+    await updateDoc(doc(db, 'users', uid), { isOnline: false });
 
     // List of all cookies to clear
-    const cookiesToClear = ['customToken', 'email', 'isAdmin', 'uid', 'workerId'];
+    const cookiesToClear = ['customToken', 'email', 'uid', 'workerId'];
 
     // Clear all cookies with consistent options
     const cookieStrings = cookiesToClear.map((cookieName) => {
