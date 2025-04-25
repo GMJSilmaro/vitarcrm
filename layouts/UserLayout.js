@@ -4,28 +4,28 @@ import React from 'react';
 import TechnicianLayout from './TechnicianLayout';
 
 const UserLayout = ({ children }) => {
-  const { currentUser, userRole, workerId, isAdmin } = useAuth();
+  const { currentUser, role, workerId } = useAuth();
   const router = useRouter();
 
-  if (!currentUser || !userRole || !workerId) {
+  if (!currentUser || !role || !workerId) {
     router.push('/authentication/sign-in');
     return;
   }
 
-  if (isAdmin) {
+  if (role === 'admin' || role === 'supervisor' || role === 'sales') {
     router.push('/dashboard');
   }
 
   const renderLayoutByRole = (role) => {
     switch (role.toLowerCase()) {
-      case 'worker':
+      case 'technician':
         return <TechnicianLayout>{children}</TechnicianLayout>;
       default:
         return <>{children}</>;
     }
   };
 
-  return renderLayoutByRole(userRole);
+  return renderLayoutByRole(role);
 };
 
 export default UserLayout;

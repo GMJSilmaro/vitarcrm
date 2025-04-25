@@ -104,14 +104,7 @@ const UserLayoutHeader = ({ user }) => {
               await new Promise((resolve) => setTimeout(resolve, 800));
 
               // Clear cookies with proper options
-              const cookiesToClear = [
-                'customToken',
-                'uid',
-                'isAdmin',
-                'email',
-                'workerId',
-                'LAST_ACTIVITY',
-              ];
+              const cookiesToClear = ['customToken', 'uid', 'email', 'workerId', 'LAST_ACTIVITY'];
 
               cookiesToClear.forEach((cookie) => {
                 Cookies.remove(cookie, {

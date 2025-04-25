@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
 
 // Separate Protected Layout Component
 function ProtectedLayout({ children, router, isSignInPage }) {
-  const { currentUser, isAdmin, workerId } = useAuth();
+  const { currentUser, role, workerId } = useAuth();
 
   useEffect(() => {
     if (!currentUser && !isSignInPage) {
@@ -41,7 +41,7 @@ function ProtectedLayout({ children, router, isSignInPage }) {
     const adminPaths = ['/', '/dashboard', '/dashboard/overview'];
 
     if (currentUser) {
-      if (isAdmin) {
+      if (role === 'admin' || role === 'supervisor' || role === 'sales') {
         // Redirect admin away from user dashboard
         if (path.startsWith('/user/')) {
           router.push('/');
@@ -60,7 +60,7 @@ function ProtectedLayout({ children, router, isSignInPage }) {
         }
       }
     }
-  }, [currentUser, isAdmin, workerId, router.pathname, router.query.workerId]);
+  }, [currentUser, workerId, router.pathname, router.query.workerId]);
 
   // Don't protect sign-in page
   if (isSignInPage) {

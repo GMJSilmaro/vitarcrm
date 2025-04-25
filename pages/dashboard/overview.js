@@ -707,12 +707,12 @@ const Overview = () => {
       const isInRange = jobDate >= dateRange.start && jobDate <= dateRange.end;
 
       if (!isInRange) {
-        console.log('Job outside range:', {
-          jobId: job.id,
-          jobDate: jobDate.toISOString(),
-          start: dateRange.start.toISOString(),
-          end: dateRange.end.toISOString(),
-        });
+        // console.log('Job outside range:', {
+        //   jobId: job.id,
+        //   jobDate: jobDate.toISOString(),
+        //   start: dateRange.start.toISOString(),
+        //   end: dateRange.end.toISOString(),
+        // });
       }
 
       return isInRange;

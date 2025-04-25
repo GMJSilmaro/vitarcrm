@@ -22,6 +22,7 @@ import { useRouter } from 'next/router';
 import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Badge,
   Button,
   Card,
   Col,
@@ -121,6 +122,36 @@ const CalibrateSummaryForm = ({
     return '';
   }, [job]);
 
+  const formatApproveSignatoryOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        <span>{data.label}</span>
+        {data?.categories && data?.categories.length > 0 && (
+          <div className='d-flex column-gap-2'>
+            {data.categories.slice(0, 3).map((category) => (
+              <Badge style={{ fontSize: 11 }} bg='light' className='text-dark'>
+                {category || ''}
+              </Badge>
+            ))}
+
+            {data.categories.length > 3 && (
+              <OverlayTrigger
+                placement='top'
+                overlay={
+                  <Tooltip>{data.categories.slice(3, data.categories.length).toString()}</Tooltip>
+                }
+              >
+                <Badge style={{ fontSize: 11 }} bg='secondary'>
+                  +{data.categories.length - 3}
+                </Badge>
+              </OverlayTrigger>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   //* query location
   useEffect(() => {
     if (!job.data) return;
@@ -194,10 +225,12 @@ const CalibrateSummaryForm = ({
 
           setUsersOptions({
             data: userData.map((user) => ({
-              id: user.id,
+              id: user.workerId,
               name: user.fullName,
-              value: user.id,
+              value: user.workerId,
               label: user.fullName,
+              role: user.role,
+              categories: user?.categories || [],
             })),
             isLoading: false,
             isError: false,
@@ -653,7 +686,10 @@ const CalibrateSummaryForm = ({
                       inputId='approvedSignatory'
                       instanceId='approvedSignatory'
                       onChange={(option) => field.onChange(option)}
-                      options={usersOptions.data}
+                      formatOptionLabel={formatApproveSignatoryOptionLabel}
+                      options={usersOptions.data.filter(
+                        (user) => user.role === 'admin' || user.role === 'supervisor'
+                      )}
                       placeholder={
                         usersOptions.isLoading ? 'Loading users...' : "Search by user's name"
                       }

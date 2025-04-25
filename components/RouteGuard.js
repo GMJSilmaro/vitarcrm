@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 export function RouteGuard({ children }) {
-  const { currentUser, isAdmin, workerId } = useAuth();
+  const { currentUser, role, workerId } = useAuth();
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
 
@@ -14,7 +14,7 @@ export function RouteGuard({ children }) {
     async function checkAuthorization() {
       console.log('Auth state:', {
         currentUser,
-        isAdmin,
+        role,
         workerId,
         path: router.pathname,
       });
@@ -26,12 +26,12 @@ export function RouteGuard({ children }) {
       }
 
       const path = router.asPath;
-      console.log('Checking authorization for path:', path, { isAdmin, workerId });
+      console.log('Checking authorization for path:', path, { role, workerId });
 
       // Define admin-only paths
       const adminPaths = ['/', '/dashboard', '/dashboard/overview'];
 
-      if (isAdmin) {
+      if (role === 'admin' || role === 'supervisor' || role === 'sales') {
         // If admin is trying to access user dashboard, redirect to admin dashboard
         if (path.startsWith('/user/')) {
           router.push('/');
@@ -42,7 +42,7 @@ export function RouteGuard({ children }) {
       }
 
       // Non-admin user access rules
-      if (!isAdmin) {
+      if (role !== 'admin') {
         // If trying to access admin paths, redirect to user dashboard
         if (adminPaths.includes(path)) {
           router.push(`/user/${workerId}`);
@@ -70,7 +70,7 @@ export function RouteGuard({ children }) {
     }
 
     checkAuthorization();
-  }, [currentUser, isAdmin, router.isReady, router.pathname, router.query.workerId, workerId]);
+  }, [currentUser, router.isReady, router.pathname, router.query.workerId, workerId]);
 
   // Show nothing while checking authorization
   if (!router.isReady) {

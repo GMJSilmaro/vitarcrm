@@ -922,7 +922,7 @@ const WorkerDetails = () => {
                       {worker.workerId}
                     </span>
                     <div className='d-flex gap-2'>
-                      {worker.isAdmin && (
+                      {worker.role === 'admin' && (
                         <Badge
                           bg='purple'
                           className='px-3 py-2'
@@ -1245,7 +1245,7 @@ const WorkerDetails = () => {
                         <Badge bg='primary' className='role-badge'>
                           {worker.role}
                         </Badge>
-                        {worker.isAdmin && (
+                        {worker.role === 'admin' && (
                           <Badge bg='purple' className='role-badge'>
                             Admin
                           </Badge>

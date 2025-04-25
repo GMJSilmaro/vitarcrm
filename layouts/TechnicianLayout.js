@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import UserLayoutHeader from './UserLayoutHeader';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 import {
@@ -34,9 +34,18 @@ const TechnicianLayout = ({ children }) => {
 
     const uid = Cookies.get('uid');
 
-    getDoc(doc(db, 'users', workerId))
-      .then((doc) => {
-        if (doc.exists()) {
+    getDocs(
+      query(
+        collection(db, 'users'),
+        where('workerId', '==', workerId),
+        where('uid', '==', uid),
+        limit(1)
+      )
+    )
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+
           const data = doc.data();
 
           if (data.uid !== uid) {

@@ -303,7 +303,7 @@ const UserAvatar = React.memo(
               textOverflow: 'ellipsis',
             }}
           >
-            <span className='text-dark small fw-bold'>{userDetails.fullName}</span>
+            {/* <span className='text-dark small fw-bold'>{userDetails.fullName}</span> */}
           </div>
         )}
       </div>
@@ -414,6 +414,7 @@ const QuickMenu = ({ children }) => {
   const { logo, setLogo } = useLogo();
   const isOverviewPage = router.pathname === '/dashboard' || router.pathname === '/';
   const [workerId, setWorkerId] = useState(null); // Add this state
+  const [uid, setUid] = useState(null); // Add this state
 
   const fetchUserDetails = useCallback(async () => {
     const email = Cookies.get('email');
@@ -425,9 +426,9 @@ const QuickMenu = ({ children }) => {
     if (email && workerId && uid) {
       try {
         setWorkerId(workerId); // Add this line to set workerId state
-
+        setUid(uid); // Add this line to set uid state
         // Rest of the existing fetchUserDetails code...
-        const userDocRef = doc(db, 'users', workerId);
+        const userDocRef = doc(db, 'users', uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
@@ -550,14 +551,7 @@ const QuickMenu = ({ children }) => {
               await new Promise((resolve) => setTimeout(resolve, 800));
 
               // Clear cookies with proper options
-              const cookiesToClear = [
-                'customToken',
-                'uid',
-                'isAdmin',
-                'email',
-                'workerId',
-                'LAST_ACTIVITY',
-              ];
+              const cookiesToClear = ['customToken', 'uid', 'email', 'workerId', 'LAST_ACTIVITY'];
 
               cookiesToClear.forEach((cookie) => {
                 Cookies.remove(cookie, {
@@ -1105,23 +1099,26 @@ const QuickMenu = ({ children }) => {
             <UserAvatar userDetails={userDetails} />
           </Dropdown.Toggle>
           <Dropdown.Menu
-            className='dashboard-dropdown dropdown-menu-end mt-4 py-0'
+            className='dashboard-dropdown dropdown-menu-end w-100 mt-4 py-0'
             align='end'
-            aria-labelledby='dropdownUser'
             show={hasMounted && isDesktop ? true : false}
           >
             <Dropdown.Item className='mt-3'>
-              <div className='d-flex'>
-                {userDetails && (
-                  <div>
-                    <h5 className='mb-1'>{userDetails.fullName}</h5>
-                    <p className='mb-0 text-muted'>{userDetails.email}</p>
+              {userDetails && (
+                <div className='w-100 d-flex flex-column justify-content-center align-items-center gap-1'>
+                  <div className='lh-lg d-flex flex-column justify-content-center align-items-center'>
+                    <h5 className='mb-0'>{userDetails.fullName}</h5>
+                    <p className='mb-0 text-muted fs-6'>{userDetails.email}</p>
                   </div>
-                )}
-              </div>
+
+                  <Badge bg='primary' className='text-capitalize'>
+                    {userDetails.role}
+                  </Badge>
+                </div>
+              )}
             </Dropdown.Item>
             <Dropdown.Divider />
-            <Dropdown.Item as={Link} href={`/dashboard/profile/${workerId}`}>
+            <Dropdown.Item as={Link} href={`/profile/${uid}`}>
               <i className='fe fe-user me-2'></i> Profile
             </Dropdown.Item>
             <Dropdown.Item as={Link} href='/dashboard/settings'>
