@@ -15,7 +15,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 
 import { toast } from 'react-toastify';
 
-const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
+const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious, toDuplicateJob }) => {
   const router = useRouter();
 
   const { startDate, startTime, endDate, endTime, workerId } = router.query;
@@ -48,6 +48,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
             data: snapshot.docs.map((doc) => {
               const data = doc.data();
               return {
+                uid: doc.id,
                 id: data.workerId,
                 name: data.fullName,
                 value: data.workerId,
@@ -121,10 +122,10 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
     }
   }, [workerId, workersOptions]);
 
-  //* set default value
+  //* set status value
   useEffect(() => {
     // form.setValue('team', teamOptions[0]);
-    if (!data) form.setValue('status', statusesOptions[0]);
+    if (!data) form.setValue('status', statusesOptions[1]);
     else {
       const selectedStatus = statusesOptions.find((s) => s.value === data.status);
       form.setValue('status', selectedStatus);
@@ -163,6 +164,43 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
       form.setValue('scope', scope);
     }
   }, [data, scopesOptions]);
+
+  //* set data if toDuplicateJob exists
+  useEffect(() => {
+    if (toDuplicateJob) {
+      //* set workers
+      if (workersOptions.data.length > 0) {
+        const workers = workersOptions.data.filter((option) =>
+          toDuplicateJob?.workers?.some((worker) => worker?.id === option.value)
+        );
+
+        form.setValue('workers', workers);
+      }
+
+      //* set priority
+      if (prioritiesOptions.length > 0) {
+        const priority = prioritiesOptions.find(
+          (option) => option.value === toDuplicateJob.priority
+        );
+        form.setValue('priority', priority);
+      }
+
+      //* set scope
+      if (scopesOptions.length > 0) {
+        const scope = scopesOptions.find((option) => option.value === toDuplicateJob.scope);
+        form.setValue('scope', scope);
+      }
+
+      //* set status
+      if (statusesOptions.length > 0) {
+        const selectedStatus = statusesOptions.find((s) => s.value === toDuplicateJob.status);
+        form.setValue('status', selectedStatus);
+      }
+
+      //* set description
+      form.setValue('description', toDuplicateJob.description);
+    }
+  }, [toDuplicateJob, workersOptions, statusesOptions, prioritiesOptions, scopesOptions]);
 
   return (
     <>
@@ -340,7 +378,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious }) => {
                         onChange={(option) => field.onChange(option)}
                         options={statusesOptions}
                         placeholder='Search by job status type'
-                        noOptionsMessage={() => 'No job statuses found'}
+                        noOptionsMessage={() => 'No job status found'}
                       />
 
                       {formErrors && formErrors.status?.message && (

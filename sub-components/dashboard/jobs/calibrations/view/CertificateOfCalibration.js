@@ -1,4 +1,5 @@
-import CertificateOfCalibrationPDF from '@/components/pdf/CertificateOfCalibrationPDF';
+import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrationPDF1';
+import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
 import {
   TEST_LOADS,
   TRACEABILITY_ACCREDITATION_BODY,
@@ -249,7 +250,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     if (!instruments.isLoading && instruments.data.length > 0 && calibration) {
       //* trigger re-render for pdf
       updateInstance(
-        <CertificateOfCalibrationPDF calibration={calibration} instruments={instruments} />
+        <CertificateOfCalibrationPDF2 calibration={calibration} instruments={instruments} />
       );
       console.log('trigger re-render for pdf', instruments);
     }
@@ -268,6 +269,8 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       </Card>
     );
   }
+
+  console.log({ calibration });
 
   return (
     <Card className='border-0 shadow-none'>
@@ -376,9 +379,10 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <th>Range</th>
               <td colSpan={5}>
                 <div className='d-flex justify-content-center align-items-center'>
-                  <div>{convertValueBasedOnUnit(calibration?.rangeMinCalibration ?? 0)}</div>
+                  <div>{calibration?.rangeMinCalibration}</div>
                   <div className='px-5'>to</div>
-                  <div>{convertValueBasedOnUnit(calibration?.rangeMaxCalibration ?? 0)}</div>
+                  <div>{calibration?.rangeMaxCalibration}</div>
+                  <div className='ps-3'>{unitUsedForCOCAcronym}</div>
                 </div>
               </td>
             </tr>

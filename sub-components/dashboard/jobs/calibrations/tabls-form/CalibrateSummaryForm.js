@@ -4,7 +4,7 @@ import Select from '@/components/Form/Select';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import useMounted from '@/hooks/useMounted';
-import { CALIBRATED_AT, CATEGORY, DUE_DATE_REQUESTED } from '@/schema/calibration';
+import { CALIBRATED_AT, CATEGORY, DUE_DATE_REQUESTED, STATUS } from '@/schema/calibration';
 import { SCOPE_TYPE } from '@/schema/job';
 import { add, format } from 'date-fns';
 import {
@@ -60,6 +60,7 @@ const CalibrateSummaryForm = ({
 
   const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: _.capitalize(category) }))); //prettier-ignore
   const [dueDateRequestedOptions] = useState(DUE_DATE_REQUESTED.map((dueDateRequested) => ({ value: dueDateRequested, label: _.capitalize(dueDateRequested) }))); //prettier-ignore
+  const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.capitalize(status) }))); //prettier-ignore
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
@@ -225,6 +226,7 @@ const CalibrateSummaryForm = ({
 
           setUsersOptions({
             data: userData.map((user) => ({
+              uid: user.id,
               id: user.workerId,
               name: user.fullName,
               value: user.workerId,
@@ -450,6 +452,16 @@ const CalibrateSummaryForm = ({
     }
   }, [data, dueDateRequestedOptions]);
 
+  //* set status value
+  useEffect(() => {
+    // form.setValue('team', teamOptions[0]);
+    if (!data) form.setValue('status', statusesOptions[0]);
+    else {
+      const selectedStatus = statusesOptions.find((s) => s.value === data.status);
+      form.setValue('status', selectedStatus);
+    }
+  }, [data]);
+
   //* set due date based on no. of months in Due Date Duration and date calibrated
   useEffect(() => {
     const dueDateDuration = form.getValues('dueDateDuration');
@@ -527,7 +539,7 @@ const CalibrateSummaryForm = ({
                 {isLoadingCache ? 'Loading' : 'Load'} Data Cache
               </Button>
 
-              <Button
+              {/* <Button
                 variant='outline-primary'
                 onClick={() => handleClearCache()}
                 disabled={
@@ -544,7 +556,7 @@ const CalibrateSummaryForm = ({
                   <X size={18} className='me-2' />
                 )}
                 {isLoadingClearCache ? 'Clearing' : 'Clear'} Data Cache
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -631,7 +643,8 @@ const CalibrateSummaryForm = ({
               <Form.Control type='text' value={form.watch('certificateNumber')} readOnly disabled />
             </Form.Group>
 
-            <Form.Group as={Col} md={3}>
+            {/* 
+            <Form.Group className='d-none' as={Col} md={3}>
               <Form.Label>Running No.</Form.Label>
 
               <Controller
@@ -640,6 +653,46 @@ const CalibrateSummaryForm = ({
                 render={({ field }) => (
                   <>
                     <Form.Control disabled {...field} type='number' value={field.value} />
+                  </>
+                )}
+              />
+            </Form.Group> */}
+
+            <Form.Group as={Col} md={3}>
+              <RequiredLabel label='Status' id='status' />
+              <OverlayTrigger
+                placement='right'
+                overlay={
+                  <Tooltip>
+                    <TooltipContent
+                      title='Calibration Status Search'
+                      info={["Search by calibraiton's status type"]}
+                    />
+                  </Tooltip>
+                }
+              >
+                <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+              </OverlayTrigger>
+
+              <Controller
+                name='status'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Select
+                      {...field}
+                      isDisabled
+                      inputId='status'
+                      instanceId='status'
+                      onChange={(option) => field.onChange(option)}
+                      options={statusesOptions}
+                      placeholder='Search by calibration status type'
+                      noOptionsMessage={() => 'No calibration status found'}
+                    />
+
+                    {formErrors && formErrors.status?.message && (
+                      <Form.Text className='text-danger'>{formErrors.status?.message}</Form.Text>
+                    )}
                   </>
                 )}
               />

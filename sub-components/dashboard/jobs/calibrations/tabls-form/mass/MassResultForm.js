@@ -129,7 +129,7 @@ const MassResultForm = () => {
               {Array.from({ length: calibrationPointNo }).map((_, i) => (
                 <tr key={i}>
                   <td>A{i + 1}</td>
-                  <td>{nominalValues?.[i] || ''}</td>
+                  <td>{nominalValues?.[i] ?? ''}</td>
                   <td>{formatToDicimalString(measuredValuesM?.[i])}</td>
                   <td>{formatToDicimalString(corrections?.[i])}</td>
                   <td>

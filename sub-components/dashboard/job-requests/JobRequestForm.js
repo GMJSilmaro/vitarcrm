@@ -20,10 +20,12 @@ import JobRequestTaskForm from './tabs-form/JobRequestTaskForm';
 import FormDebug from '@/components/Form/FormDebug';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const JobRequestForm = ({ data }) => {
   const auth = useAuth();
   const router = useRouter();
+  const notifications = useNotifications();
 
   const [activeKey, setActiveKey] = useState('0');
 
@@ -69,34 +71,74 @@ const JobRequestForm = ({ data }) => {
     if (Number(activeKey) > 0) handleOnSelect(activeKey - 1);
   }, [activeKey]);
 
-  const handleSubmit = async (formData) => {
-    try {
-      setIsLoading(true);
+  const handleSubmit = useCallback(
+    async (formData) => {
+      try {
+        setIsLoading(true);
 
-      await setDoc(
-        doc(db, 'jobRequests', formData.jobRequestId),
-        {
-          ...formData,
-          ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
-          updatedAt: serverTimestamp(),
-          updatedBy: auth.currentUser,
-        },
-        { merge: true }
-      );
+        await setDoc(
+          doc(db, 'jobRequests', formData.jobRequestId),
+          {
+            ...formData,
+            supervisor: { id: formData.supervisor.id, name: formData.supervisor.name },
+            ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser,
+          },
+          { merge: true }
+        );
 
-      toast.success(`Job Request ${data ? 'updated' : 'created'} successfully.`, {
-        position: 'top-right',
-      });
+        //* create notification for admin and supervisor when created a job request
+        if (!data) {
+          await notifications.create({
+            icon: 'job-request',
+            target: ['admin', 'supervisor'],
+            title: 'New job request created',
+            message: `A new job request (#${formData.jobRequestId}) has been created by ${auth.currentUser.displayName} for ${formData.customer.name}.`,
+            data: {
+              redirectUrl: `/job-requests/view/${formData.jobRequestId}`,
+            },
+          });
+        } else {
+          await notifications.create({
+            icon: 'job-request',
+            target: ['admin', 'supervisor'],
+            title: 'Job request updated',
+            message: `Job request (#${formData.jobRequestId}) has been updated by ${auth.currentUser.displayName}.`,
+            data: {
+              redirectUrl: `/job-requests/view/${formData.jobRequestId}`,
+            },
+          });
+        }
 
-      setIsLoading(false);
-      window.location.assign(`/job-requests/edit-job-requests/${formData.jobRequestId}`);
-    } catch (error) {
-      console.error('Error submitting job request:', error);
-      toast.error('Something went wrong. Please try again later.');
-      setIsLoading(false);
-      setActiveKey((prev) => prev - 1);
-    }
-  };
+        //* create notification for assigned supervisor
+        if (formData?.supervisor?.uid) {
+          await notifications.create({
+            icon: 'job-request',
+            target: [formData.supervisor.uid],
+            title: `You are assigned as a supervisor`,
+            message: `Job request (#${formData.jobRequestId}) has been assigned to you by ${auth.currentUser.displayName}.`,
+            data: {
+              redirectUrl: `/job-requests/view/${formData.jobRequestId}`,
+            },
+          });
+        }
+
+        toast.success(`Job Request ${data ? 'updated' : 'created'} successfully.`, {
+          position: 'top-right',
+        });
+
+        setIsLoading(false);
+        window.location.assign(`/job-requests/edit-job-requests/${formData.jobRequestId}`);
+      } catch (error) {
+        console.error('Error submitting job request:', error);
+        toast.error('Something went wrong. Please try again later.');
+        setIsLoading(false);
+        setActiveKey((prev) => prev - 1);
+      }
+    },
+    [data]
+  );
 
   const handleOnSelect = async (key) => {
     const isValid = await form.trigger();

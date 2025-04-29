@@ -32,9 +32,11 @@ import Swal from 'sweetalert2';
 import { BsCircleFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { TooltipContent } from '@/components/common/ToolTipContent';
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobWorkerTimelineCalendar = () => {
   const router = useRouter();
+  const auth = useAuth();
   const calendarRef = useRef(null);
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
@@ -258,17 +260,27 @@ const JobWorkerTimelineCalendar = () => {
           <Button className='p-2' variant='primary' size='sm' onClick={() => handleViewJob(job.id)}>
             <Eye size={18} />
           </Button>
-          <Button
-            className='p-2'
-            variant='danger'
-            size='sm'
-            onClick={() => handleDeleteJob(job.id)}
-          >
-            <Trash size={18} />
-          </Button>
-          <Button className='p-2' variant='warning' size='sm' onClick={() => handleEditJob(job.id)}>
-            <Pencil size={18} />
-          </Button>
+
+          {(auth.role === 'admin' || auth.role === 'supervisor') && (
+            <>
+              <Button
+                className='p-2'
+                variant='danger'
+                size='sm'
+                onClick={() => handleDeleteJob(job.id)}
+              >
+                <Trash size={18} />
+              </Button>
+              <Button
+                className='p-2'
+                variant='warning'
+                size='sm'
+                onClick={() => handleEditJob(job.id)}
+              >
+                <Pencil size={18} />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -415,6 +427,8 @@ const JobWorkerTimelineCalendar = () => {
 
   const handleSelected = useCallback(
     (args) => {
+      if (auth.role === 'sales') return;
+
       if (
         args &&
         args.requestType === 'cellSelect' &&
@@ -426,7 +440,9 @@ const JobWorkerTimelineCalendar = () => {
         const data = args.data;
         const startDate = data.StartTime;
         const endDate = data.EndTime;
-        const groupIndex = resourceWorkers.data.map((worker) => worker.id).indexOf(data.WorkerId);
+        const groupIndex = resourceWorkers.data
+          .map((worker) => worker.workerId)
+          .indexOf(data.WorkerId);
         const worker = resourceWorkers.data[groupIndex];
         const isTimelineMonthView = calendarRef.current.currentView === 'TimelineMonth';
 
@@ -451,7 +467,7 @@ const JobWorkerTimelineCalendar = () => {
         handleCreateJob({ args, startDate, endDate, groupIndex, worker, calendarRef });
       }
     },
-    [router, resourceWorkers, calendarRef]
+    [router, resourceWorkers, calendarRef, auth.role]
   );
 
   const eventSettings = useMemo(() => {
@@ -572,8 +588,6 @@ const JobWorkerTimelineCalendar = () => {
       </div>
     );
   }
-
-  console.log({ resourceWorkers, eventSettings });
 
   return (
     <ScheduleComponent

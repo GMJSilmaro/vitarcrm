@@ -146,7 +146,7 @@ const DashboardIndexTop = (props) => {
       <Navbar bg='white' expand='lg' className='border-bottom py-5'>
         <Container fluid>
           {/* Logo */}
-          <Navbar.Brand className='d-none d-md-block' as={Link} href='/'>
+          <Navbar.Brand className='d-none d-md-block mb-3' as={Link} href='/'>
             <div style={{ height: '70px' }}>
               <Image
                 className='img-fluid'
@@ -166,13 +166,13 @@ const DashboardIndexTop = (props) => {
           </Nav>
 
           {/* Mobile Toggle */}
-          <Navbar.Toggle
+          {/* <Navbar.Toggle
             aria-controls='navbarScroll'
             className='ms-3'
             onClick={() => setExpandedMenu(!expandedMenu)}
           >
             <span className='navbar-toggler-icon'></span>
-          </Navbar.Toggle>
+          </Navbar.Toggle> */}
         </Container>
       </Navbar>
 

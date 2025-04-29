@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 import Select from '@/components/Form/Select';
 import { useRouter } from 'next/router';
 
-const JobSummaryForm = ({ data, isLoading, handleNext }) => {
+const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const router = useRouter();
 
   const form = useFormContext();
@@ -435,6 +435,69 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
     [data, JSON.stringify(customersOptions)]
   );
 
+  //* set date if toDuplicateJob exists
+  useEffect(() => {
+    if (toDuplicateJob) {
+      //* set job request id
+      form.setValue('jobRequestId', null);
+
+      //* set customer
+      if (customersOptions.data.length > 0) {
+        {
+          //* selected customer
+          const customer = customersOptions.data.find(
+            (option) => option.value === toDuplicateJob.customer.id
+          );
+
+          //* set customer
+          if (customer) form.setValue('customer', customer);
+
+          if (customer?.contacts && Array.isArray(customer?.contacts)) {
+            //* contact options
+            // TODO: fetch all properties of contact, causes bug when option is selected twice because it does not all have the same properties from db
+            const cOptions = customer.contacts.map((contact) => ({
+              value: contact.id,
+              label: `${contact.firstName} ${contact.lastName}`,
+              ...contact,
+            }));
+
+            //* selected contact
+            const contact = cOptions.find(
+              (contact) => contact.value === toDuplicateJob?.contact?.id
+            );
+
+            //* set options
+            setContactsOpions(cOptions);
+
+            //* set contact
+            form.setValue('contact', contact);
+          }
+
+          if (customer?.locations && Array.isArray(customer?.locations)) {
+            //* location options
+            // TODO: fetch all properties of location, causes bug when option is selected twice because it does not all have the same properties from db
+            const lOptions = customer.locations.map((location) => ({
+              value: location.siteId,
+              label: `${location.siteId} - ${location.siteName}`,
+              ...location,
+            }));
+
+            //* selected location
+            const location = lOptions.find(
+              (location) => location.value === toDuplicateJob.location.id
+            );
+
+            //* set options
+            setLocationsOptions(lOptions);
+
+            //* set location
+            form.setValue('location', location);
+          }
+        }
+      }
+    }
+  }, [toDuplicateJob, customersOptions]);
+
   return (
     <>
       <Card className='shadow-none'>
@@ -443,7 +506,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
           <p className='text-muted fs-6'>Associate job request for this job.</p>
 
           <Row className='mb-3'>
-            <Form.Group as={Col} md={12}>
+            <Form.Group as={Col} md={6}>
               <Form.Label className='me-1' id='jobRequestId'>
                 Job Request
               </Form.Label>
@@ -495,6 +558,16 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
                     )}
                   </>
                 )}
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md={6}>
+              <Form.Label>Supervisor</Form.Label>
+              <Form.Control
+                type='text'
+                value={form.watch('jobRequestId.jobRequest.supervisor.name') || ''}
+                readOnly
+                disabled
               />
             </Form.Group>
           </Row>
@@ -639,11 +712,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext }) => {
           </Row>
 
           <hr className='my-4' />
-          <h4
-            className='mb-0'
-            style={{ cursor: 'pointer' }}
-            onClick={() => setShowLocationFields((prev) => !prev)}
-          >
+          <h4 className='mb-0' style={{ cursor: 'pointer' }}>
             Job Address
           </h4>
           <p className='text-muted fs-6'>Details about the location/site.</p>

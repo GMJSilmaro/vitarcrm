@@ -16,6 +16,7 @@ import {
   Building,
   CardList,
   CheckCircle,
+  Copy,
   Eye,
   Flag,
   HandThumbsDown,
@@ -57,10 +58,12 @@ import { TooltipContent } from '@/components/common/ToolTipContent';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import _ from 'lodash';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const JobList = () => {
   const router = useRouter();
   const auth = useAuth();
+  const notifications = useNotifications();
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
 
@@ -86,9 +89,26 @@ const JobList = () => {
           </div>
         ),
       }),
-      columnHelper.accessor('id', {
+      columnHelper.accessor((row) => `${row.id} - ${row.jobRequestId || ''}`, {
+        id: 'id',
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
+        cell: ({ row }) => {
+          const { id, jobRequestId } = row.original;
+          return (
+            <div className='d-flex flex-column gap-2 justify-content-center'>
+              <div className='d-flex flex-column justify-content-center'>
+                <div className='fw-bold'>ID:</div> <div>{id}</div>
+              </div>
+
+              {jobRequestId && (
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>Request ID:</div> <div>{jobRequestId}</div>
+                </div>
+              )}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor((row) => format(row.createdAt.toDate(), 'dd-MM-yyyy'), {
         id: 'date',
@@ -244,11 +264,11 @@ const JobList = () => {
               <div className='d-flex flex-column gap-2 justify-content-center'>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Start</div>
-                  <div>{format(startEnd.start, 'dd-MM-yyyy HH:mm')}</div>
+                  <div>{format(startEnd.start, 'dd-MM-yyyy HH:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>End</div>
-                  <div>{format(startEnd.end, 'dd-MM-yyyy HH:mm')}</div>
+                  <div>{format(startEnd.end, 'dd-MM-yyyy HH:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Duration:</div> <div>{startEnd.duration}</div>
@@ -328,7 +348,7 @@ const JobList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, details } = row.original;
+          const { id, details, status } = row.original;
 
           const handleViewJob = (id) => {
             router.push(`/jobs/view/${id}`);
@@ -336,6 +356,10 @@ const JobList = () => {
 
           const handleEditJob = (id) => {
             router.push(`/jobs/edit-jobs/${id}`);
+          };
+
+          const handleDuplicateJob = (id) => {
+            router.push(`/jobs/duplicate/${id}`);
           };
 
           const handleDeleteJob = (id) => {
@@ -359,8 +383,18 @@ const JobList = () => {
                   const jobDetailsRef = doc(db, 'jobDetails', id);
 
                   await Promise.all([
-                    await deleteDoc(jobHeaderRef),
-                    await deleteDoc(jobDetailsRef),
+                    deleteDoc(jobHeaderRef),
+                    deleteDoc(jobDetailsRef),
+                    //* create notification when job is removed
+                    notifications.create({
+                      icon: 'job',
+                      target: ['admin', 'supervisor'],
+                      title: 'Job removed',
+                      message: `Job (#${id}) was removed by ${auth.currentUser.displayName}.`,
+                      data: {
+                        redirectUrl: `/jobs`,
+                      },
+                    }),
                   ]);
 
                   toast.success('Job removed successfully', { position: 'top-right' });
@@ -393,11 +427,23 @@ const JobList = () => {
 
                   const jobHeaderRef = doc(db, 'jobHeaders', id);
 
-                  await updateDoc(jobHeaderRef, {
-                    status,
-                    updatedAt: serverTimestamp(),
-                    updatedBy: auth.currentUser,
-                  });
+                  await Promise.all([
+                    updateDoc(jobHeaderRef, {
+                      status,
+                      updatedAt: serverTimestamp(),
+                      updatedBy: auth.currentUser,
+                    }),
+                    //* create notification for admin and supervisor when updated a job status
+                    notifications.create({
+                      icon: 'job',
+                      target: ['admin', 'supervisor'],
+                      title: 'Job status updated',
+                      message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                      data: {
+                        redirectUrl: `/jobs/view/${id}`,
+                      },
+                    }),
+                  ]);
 
                   toast.success('Job status updated successfully', { position: 'top-right' });
                   setIsLoading(false);
@@ -456,6 +502,17 @@ const JobList = () => {
                     }
                   });
 
+                  //* create notification when equipment is returned
+                  await notifications.create({
+                    icon: 'job',
+                    target: ['admin', 'supervisor'],
+                    title: 'Equipment returned',
+                    message: `Job (#${id}) equipment was returned by ${auth.currentUser.displayName}.`,
+                    data: {
+                      redirectUrl: `/jobs/view/${id}`,
+                    },
+                  });
+
                   toast.success('Equipment returned successfully', { position: 'top-right' });
                   setIsLoading(false);
                 } catch (error) {
@@ -481,67 +538,80 @@ const JobList = () => {
                     <Eye className='me-2' size={16} />
                     View Job
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleEditJob(id)}>
-                    <PencilSquare className='me-2' size={16} />
-                    Edit Job
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleDeleteJob(id)}>
-                    <Trash className='me-2' size={16} />
-                    Delete Job
-                  </Dropdown.Item>
 
-                  <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
-                    <ArrowReturnLeft className='me-2' size={16} />
-                    Return Equipment
-                  </Dropdown.Item>
+                  {(auth.role === 'admin' || auth.role === 'supervisor') && (
+                    <>
+                      <Dropdown.Item onClick={() => handleEditJob(id)}>
+                        <PencilSquare className='me-2' size={16} />
+                        Edit Job
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDeleteJob(id)}>
+                        <Trash className='me-2' size={16} />
+                        Delete Job
+                      </Dropdown.Item>
 
-                  <OverlayTrigger
-                    rootClose
-                    trigger='click'
-                    placement='right-end'
-                    overlay={
-                      <Dropdown.Menu show style={{ zIndex: 999 }}>
-                        {/* <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'in progress')}>
+                      <Dropdown.Item onClick={() => handleDuplicateJob(id)}>
+                        <Copy className='me-2' size={16} />
+                        Duplicate Job
+                      </Dropdown.Item>
+
+                      <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
+                        <ArrowReturnLeft className='me-2' size={16} />
+                        Return Equipment
+                      </Dropdown.Item>
+
+                      <OverlayTrigger
+                        rootClose
+                        trigger='click'
+                        placement='right-end'
+                        overlay={
+                          <Dropdown.Menu show style={{ zIndex: 999 }}>
+                            {/* <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'in progress')}>
                           <Hourglass className='me-2' size={16} />
                           In Progress
                         </Dropdown.Item> */}
-                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'confirmed')}>
-                          <Flag className='me-2' size={16} />
-                          Confirmed
+                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'confirmed')}>
+                              <Flag className='me-2' size={16} />
+                              Confirmed
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'completed')}>
+                              <CheckCircle className='me-2' size={16} />
+                              Completed
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'cancelled')}>
+                              <XCircle className='me-2' size={16} />
+                              Cancelled
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'rejected')}>
+                              <HandThumbsDown className='me-2' size={16} />
+                              Rejected
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'validated')}>
+                              <ShieldCheck className='me-2' size={16} />
+                              Validated
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        }
+                      >
+                        <Dropdown.Item>
+                          <ArrowRepeat className='me-2' size={16} />
+                          Update Status
                         </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'completed')}>
-                          <CheckCircle className='me-2' size={16} />
-                          Completed
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'cancelled')}>
-                          <XCircle className='me-2' size={16} />
-                          Cancelled
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'rejected')}>
-                          <HandThumbsDown className='me-2' size={16} />
-                          Rejected
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'validated')}>
-                          <ShieldCheck className='me-2' size={16} />
-                          Validated
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    }
-                  >
-                    <Dropdown.Item>
-                      <ArrowRepeat className='me-2' size={16} />
-                      Update Status
-                    </Dropdown.Item>
-                  </OverlayTrigger>
+                      </OverlayTrigger>
 
-                  <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations`)}>
-                    <Eye className='me-2' size={16} />
-                    View Calibrations
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
-                    <CardList className='me-2' size={16} />
-                    Start Calibrate
-                  </Dropdown.Item>
+                      {status !== 'created' && status !== 'confirmed' && (
+                        <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations`)}>
+                          <Eye className='me-2' size={16} />
+                          View Calibrations
+                        </Dropdown.Item>
+                      )}
+
+                      <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
+                        <CardList className='me-2' size={16} />
+                        Start Calibrate
+                      </Dropdown.Item>
+                    </>
+                  )}
                 </Dropdown.Menu>
               }
             >
@@ -557,7 +627,7 @@ const JobList = () => {
         },
       }),
     ];
-  }, []);
+  }, [auth.role]);
 
   const filterFields = useMemo(() => {
     return [

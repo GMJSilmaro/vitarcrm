@@ -25,6 +25,8 @@ import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
 import { ExclamationTriangleFill } from 'react-bootstrap-icons';
 import useMounted from '@/hooks/useMounted';
+import { format } from 'date-fns';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const CalibrationForm = ({ data, isAdmin = true }) => {
   const auth = useAuth();
@@ -32,6 +34,8 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
 
   const router = useRouter();
   const { jobId, workerId } = router.query;
+
+  const notifications = useNotifications();
 
   const tabsLength = 3;
   const tabSchema = [
@@ -213,6 +217,10 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
             doc(db, 'jobCalibrations', formData.calibrateId),
             {
               ...formData,
+              approvedSignatory: {
+                id: formData.approvedSignatory.id,
+                name: formData.approvedSignatory.name,
+              },
               data: JSON.stringify(formData.data),
               ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
               updatedAt: serverTimestamp(),
@@ -237,6 +245,46 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
 
         await Promise.all(promises);
 
+        if (!data) {
+          //* create notification for admin and supervisor when created a calibration
+          await notifications.create({
+            icon: 'calibration',
+            target: ['admin', 'supervisor'],
+            title: 'New calibration created',
+            message: `
+             A new calibration (#${formData.calibrateId}) has been created by ${auth.currentUser.displayName} for job (#${formData.jobId}) and calibrated by ${formData.calibratedBy.name}.`,
+            data: {
+              redirectUrl: `/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`,
+            },
+          });
+        } else {
+          //* create notification for admin and supervisor when updated a calibration
+          await notifications.create({
+            icon: 'calibration',
+            target: ['admin', 'supervisor'],
+            title: 'Calibration updated',
+            message: `
+             A calibration (#${formData.calibrateId}) has been updated by ${auth.currentUser.displayName} for job (#${formData.jobId}) and calibrated by ${formData.calibratedBy.name}.`,
+            data: {
+              redirectUrl: `/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`,
+            },
+          });
+        }
+
+        //* create notification for assigned approved signatory
+        if (formData?.approvedSignatory?.uid) {
+          await notifications.create({
+            icon: 'calibration',
+            target: [formData.approvedSignatory.uid],
+            title: `You are assigned as an approved signatory`,
+            message: `
+             A calibration (#${formData.calibrateId}) has been assigned to you by ${auth.currentUser.displayName} for job (#${formData.jobId}).`,
+            data: {
+              redirectUrl: `/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`,
+            },
+          });
+        }
+
         if (isAdmin) {
           window.location.assign(
             `/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`
@@ -257,7 +305,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
         setActiveKey((prev) => prev - 1);
       }
     },
-    [formErrors]
+    [data, formErrors]
   );
 
   const handleOnSelect = async (key) => {

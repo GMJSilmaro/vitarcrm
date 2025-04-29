@@ -165,12 +165,12 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
                   aria-hidden='true'
                   className='me-2'
                 />
-                {data ? 'Updating' : 'Creating'}...
+                {data ? 'Updating' : 'Finishing'}...
               </>
             ) : (
               <>
                 <Save size={14} className='me-2' />
-                {data ? 'Update' : 'Create'} {' Calibration'}
+                {data ? 'Update' : 'Finish'} {' Calibration'}
               </>
             )}
           </Button>

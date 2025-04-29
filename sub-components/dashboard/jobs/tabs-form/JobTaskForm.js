@@ -1,8 +1,9 @@
+import { useEffect } from 'react';
 import { Button, Card, Form, OverlayTrigger, Row, Table, Tooltip } from 'react-bootstrap';
 import { Plus, Trash } from 'react-bootstrap-icons';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 
-const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
+const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => {
   const form = useFormContext();
 
   const formErrors = form.formState.errors;
@@ -35,6 +36,14 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious }) => {
   const handleRemoveTask = (index) => {
     remove(index);
   };
+
+  //* set tasks if toDuplicateJob exists
+  useEffect(() => {
+    if (toDuplicateJob) {
+      //* set tasks
+      form.setValue('tasks', toDuplicateJob.tasks);
+    }
+  }, [toDuplicateJob]);
 
   return (
     <Card className='shadow-none'>

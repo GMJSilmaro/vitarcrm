@@ -2,7 +2,15 @@
 import Link from 'next/link';
 import React, { Fragment, useState, useEffect, useCallback, useMemo } from 'react';
 import { useMediaQuery } from 'react-responsive';
-import { ListGroup, Dropdown, Badge, Button, InputGroup, Form } from 'react-bootstrap';
+import {
+  ListGroup,
+  Dropdown,
+  Badge,
+  Button,
+  InputGroup,
+  Form,
+  OverlayTrigger,
+} from 'react-bootstrap';
 import Image from 'next/image';
 import SimpleBar from 'simplebar-react';
 import {
@@ -42,6 +50,9 @@ import { getCompanyDetails } from '../utils/companyCache';
 
 import { useLogo } from '../contexts/LogoContext';
 import debounce from 'lodash/debounce';
+import { Bell } from 'react-bootstrap-icons';
+import Notifications from './Notifications';
+import NotificationMenu from './NotificationMenu';
 
 const getStatusTag = (type, status) => {
   const statusColors = {
@@ -210,7 +221,7 @@ const UserAvatar = React.memo(
           width: '45px',
           height: '45px',
           display: 'inline-block',
-          marginRight: '80px',
+          marginRight: '32px',
         }}
       >
         {userDetails?.profilePicture ? (
@@ -1022,9 +1033,9 @@ const QuickMenu = ({ children }) => {
       <ListGroup
         as='ul'
         bsPrefix='navbar-nav'
-        className='navbar-right-wrap ms-2 d-flex nav-top-wrap align-items-center'
+        className='navbar-right-wrap ms-2 d-flex nav-top-wrap align-items-center gap-2'
       >
-        {renderSearch}
+        {/* {renderSearch} */}
 
         {/* Notification Dropdown */}
         {/* <Dropdown as="li">
@@ -1093,6 +1104,8 @@ const QuickMenu = ({ children }) => {
           </Dropdown.Menu>
         </Dropdown> */}
 
+        <NotificationMenu />
+
         {/* User Dropdown */}
         <Dropdown as='li' className='ms-2'>
           <Dropdown.Toggle as='a' bsPrefix=' ' className='rounded-circle' id='dropdownUser'>
@@ -1103,12 +1116,12 @@ const QuickMenu = ({ children }) => {
             align='end'
             show={hasMounted && isDesktop ? true : false}
           >
-            <Dropdown.Item className='mt-3'>
+            <Dropdown.Item className='mt-3 px-0'>
               {userDetails && (
                 <div className='w-100 d-flex flex-column justify-content-center align-items-center gap-1'>
-                  <div className='lh-lg d-flex flex-column justify-content-center align-items-center'>
-                    <h5 className='mb-0'>{userDetails.fullName}</h5>
-                    <p className='mb-0 text-muted fs-6'>{userDetails.email}</p>
+                  <div className='lh-lg d-flex flex-column justify-content-center align-items-center flex-wrap'>
+                    <h5 className='mb-0 text-wrap'>{userDetails.fullName}</h5>
+                    <p className='mb-0 text-muted fs-6 text-wrap'>{userDetails.email}</p>
                   </div>
 
                   <Badge bg='primary' className='text-capitalize'>

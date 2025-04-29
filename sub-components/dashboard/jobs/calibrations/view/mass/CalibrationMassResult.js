@@ -122,7 +122,7 @@ const CalibrationMassResult = ({ calibration }) => {
               {Array.from({ length: calibrationPointNo }).map((_, i) => (
                 <tr key={i}>
                   <td>A{i + 1}</td>
-                  <td>{results?.nominalValues?.[i] || ''}</td>
+                  <td>{results?.nominalValues?.[i] ?? ''}</td>
                   <td>{formatToDicimalString(results?.measuredValuesM?.[i])}</td>
                   <td>{formatToDicimalString(results?.corrections?.[i])}</td>
                   <td>

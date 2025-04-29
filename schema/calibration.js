@@ -9,6 +9,8 @@ export const CATEGORY = [
   'MASS',
 ];
 
+export const STATUS = ['completed', 'rejected', 'approval'];
+
 export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
 
 export const TRACEABILITY_TYPE = ['1', '2', '3'];
@@ -137,6 +139,10 @@ export const calibrationInfoSchema = z
     calibrateId: z.string().min(1, 'Calibrate ID is required'),
     certificateNumber: z.string().min(1, 'Certificate No is required'),
     serialNumber: z.string().default(''),
+    status: z.union([z.enum(STATUS), z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
     category: z.union([categoryEnum, z.record(z.string(), z.any())]).transform((formData) => {
       if (typeof formData === 'object') return formData.value;
       return formData;
@@ -149,7 +155,7 @@ export const calibrationInfoSchema = z
       })
       .transform((formData) => {
         if (typeof formData === 'object') {
-          return { id: formData.id, name: formData.name };
+          return { uid: formData.uid, id: formData.id, name: formData.name };
         }
         return null;
       }),

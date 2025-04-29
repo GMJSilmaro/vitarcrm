@@ -89,7 +89,7 @@ const CurrentJobCard = () => {
         </div>
 
         <div>
-          <JobTimer job={currentJobStat.job} workerId={currentJobStat.workerId} auth={auth} />
+          {/* <JobTimer job={currentJobStat.job} workerId={currentJobStat.workerId} auth={auth} /> */}
         </div>
       </div>
 
