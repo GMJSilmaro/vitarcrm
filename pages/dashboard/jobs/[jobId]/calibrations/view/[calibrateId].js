@@ -20,7 +20,8 @@ import {
 } from 'react-bootstrap-icons';
 import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
 import { PDFViewer } from '@react-pdf/renderer';
-import CertificateOfCalibrationPDF from '@/components/pdf/CertificateOfCalibrationPDF';
+import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrationPDF1';
+import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -235,7 +236,7 @@ const CalibrationDetails = () => {
               <Card className='border-0 shadow-none'>
                 <Card.Body>
                   <PDFViewer height={800} width='100%'>
-                    <CertificateOfCalibrationPDF
+                    <CertificateOfCalibrationPDF2
                       calibration={calibration}
                       instruments={instruments}
                     />

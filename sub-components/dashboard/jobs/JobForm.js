@@ -37,9 +37,11 @@ import FormDebug from '@/components/Form/FormDebug';
 import toast from 'react-hot-toast';
 import JobCustomerEquipmentForm from './tabs-form/JobCustomerEquipmentForm';
 import JobReferenceEquipmentForm from './tabs-form/JobReferenceEquipmentForm';
+import { useNotifications } from '@/hooks/useNotifications';
 
-const JobForm = ({ data, isAdmin = true }) => {
+const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const auth = useAuth();
+  const notifications = useNotifications();
 
   const router = useRouter();
   const { workerId } = router.query;
@@ -269,6 +271,10 @@ const JobForm = ({ data, isAdmin = true }) => {
               {
                 ...jobHeaders,
                 jobId,
+                workers: jobHeaders?.workers.map((worker) => ({
+                  id: worker.id,
+                  name: worker.name,
+                })),
                 contact: jobHeaders?.contact ?? null,
                 ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
                 updatedAt: serverTimestamp(),
@@ -322,9 +328,53 @@ const JobForm = ({ data, isAdmin = true }) => {
           }
         });
 
+        if (!data) {
+          //* create notification for admin and supervisor when created a job
+          await notifications.create({
+            icon: 'job',
+            target: ['admin', 'supervisor'],
+            title: 'New job created',
+            message: `
+             A new job (#${jobId}) has been created by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}. 
+             Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
+            data: {
+              redirectUrl: `/jobs/view/${jobId}`,
+            },
+          });
+        } else {
+          console.log('notification update...');
+          //* create notification for admin and supervisor when updated a job
+          await notifications.create({
+            icon: 'job',
+            target: ['admin', 'supervisor'],
+            title: 'Job updated',
+            message: `
+             A job (#${jobId}) has been updated by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}. 
+             Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
+            data: {
+              redirectUrl: `/jobs/view/${jobId}`,
+            },
+          });
+        }
+
+        //* create notification for assigned technician/s
+        if (jobHeaders?.workers?.length > 0) {
+          await notifications.create({
+            icon: 'job',
+            target: jobHeaders.workers.map((worker) => worker.uid),
+            title: `You are assigned to a job (#${jobId}) `,
+            message: `
+               A job has been assigned to you by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}.
+               Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
+            data: {
+              redirectUrl: `/jobs/view/${jobId}`,
+            },
+          });
+        }
+
         if (isAdmin) window.location.assign(`/jobs/edit-jobs/${jobId}`);
         else {
-          window.location.assign(`/user/${workerId}/jobs/${jobId}`);
+          window.location.assign(`/user/${workerId}/jobs/edit-jobs/${jobId}`);
         }
 
         toast.success(`Job ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
@@ -362,7 +412,12 @@ const JobForm = ({ data, isAdmin = true }) => {
             onSelect={handleOnSelect}
           >
             <Tab eventKey='0' title='Summary'>
-              <JobSummaryForm data={data} isLoading={isLoading} handleNext={handleNext} />
+              <JobSummaryForm
+                data={data}
+                isLoading={isLoading}
+                handleNext={handleNext}
+                toDuplicateJob={toDuplicateJob}
+              />
             </Tab>
 
             <Tab eventKey='1' title='Calibration Items'>
@@ -371,6 +426,7 @@ const JobForm = ({ data, isAdmin = true }) => {
                 isLoading={isLoading}
                 handleNext={handleNext}
                 handlePrevious={handlePrevious}
+                toDuplicateJob={toDuplicateJob}
               />
             </Tab>
 
@@ -379,6 +435,7 @@ const JobForm = ({ data, isAdmin = true }) => {
                 isLoading={isLoading}
                 handleNext={handleNext}
                 handlePrevious={handlePrevious}
+                toDuplicateJob={toDuplicateJob}
               />
             </Tab>
 
@@ -387,6 +444,7 @@ const JobForm = ({ data, isAdmin = true }) => {
                 data={data}
                 isLoading={isLoading}
                 handleNext={handleNext}
+                toDuplicateJob={toDuplicateJob}
               />
             </Tab>
 
@@ -396,6 +454,7 @@ const JobForm = ({ data, isAdmin = true }) => {
                 isLoading={isLoading}
                 handleNext={handleNext}
                 handlePrevious={handlePrevious}
+                toDuplicateJob={toDuplicateJob}
               />
             </Tab>
           </Tabs>

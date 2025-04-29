@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
   const [workerId, setWorkerId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [uid, setUid] = useState(null);
   // const IDLE_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
   let activityTimer;
   const router = useRouter();
@@ -36,6 +37,7 @@ export function AuthProvider({ children }) {
           setCurrentUser({ displayName, email, uid });
           setRole(role);
           setWorkerId(workerId);
+          setUid(uid);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -73,6 +75,7 @@ export function AuthProvider({ children }) {
       setCurrentUser({ email, displayName: data.user.displayName, uid: data.user.uid });
       setRole(data.user.role);
       setWorkerId(data.user.workerId);
+      setUid(data.user.uid);
 
       // Store auth state in cookies
       Cookies.set('session', 'true', { secure: true });
@@ -137,6 +140,7 @@ export function AuthProvider({ children }) {
       setCurrentUser(null);
       setRole(null);
       setWorkerId(null);
+      setUid(null);
 
       // Show success message
       await Swal.fire({
@@ -217,6 +221,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     role,
+    uid,
     workerId,
     loading,
     error,

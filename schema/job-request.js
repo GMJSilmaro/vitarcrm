@@ -67,7 +67,7 @@ export const summarySchema = z.object({
     })
     .transform((formData) => {
       if (typeof formData === 'object') {
-        return { id: formData.id, name: formData.name };
+        return { uid: formData.uid, id: formData.id, name: formData.name };
       }
       return null;
     }),

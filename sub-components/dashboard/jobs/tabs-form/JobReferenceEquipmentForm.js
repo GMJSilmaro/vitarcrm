@@ -9,8 +9,15 @@ import { Controller, useForm, useFormContext } from 'react-hook-form';
 import JobEquipmentList from '../JobEquipmentList';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { db } from '@/firebase';
+import toast from 'react-hot-toast';
 
-const JobReferenceEquipmentForm = ({ data, isLoading, handleNext, handlePrevious }) => {
+const JobReferenceEquipmentForm = ({
+  data,
+  isLoading,
+  handleNext,
+  handlePrevious,
+  toDuplicateJob,
+}) => {
   const form = useFormContext();
 
   const formErrors = form.formState.errors;
@@ -137,6 +144,24 @@ const JobReferenceEquipmentForm = ({ data, isLoading, handleNext, handlePrevious
       form.setValue('equipments', equipments);
     }
   }, [data, equipmentsOptions]);
+
+  //* set data if toDuplicateJob exists
+  useEffect(() => {
+    if (toDuplicateJob) {
+      //* set selected equipment (equipments)
+      if (equipmentsOptions.data.length > 0) {
+        const equipmentsIds = toDuplicateJob.equipments.map((equipment) => equipment.id);
+
+        //* selected equipments
+        const equipments = equipmentsOptions.data.filter(
+          (equipment) => equipmentsIds.includes(equipment.value) && equipment.qty > 0
+        );
+
+        //* set form values
+        form.setValue('equipments', equipments);
+      }
+    }
+  }, [toDuplicateJob, equipmentsOptions]);
 
   return (
     <Card className='shadow-none'>

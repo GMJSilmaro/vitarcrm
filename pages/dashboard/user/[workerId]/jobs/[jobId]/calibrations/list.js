@@ -5,6 +5,7 @@ import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import PageHeader from '@/components/common/PageHeader';
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import CurrentJobCard from '@/sub-components/dashboard/user/jobs/CurrentJobCard';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
@@ -43,6 +44,7 @@ import Swal from 'sweetalert2';
 
 const JobCalibration = () => {
   const router = useRouter();
+  const auth = useAuth();
 
   const { jobId, workerId } = router.query;
 
@@ -131,7 +133,7 @@ const JobCalibration = () => {
           };
 
           const handleEditCalibration = (id) => {
-            router.push(`/user/${workerId}/jobs/${jobId}/calibrations/${id}`);
+            router.push(`/user/${workerId}/jobs/${jobId}/calibrations/edit-calibrations/${id}`);
           };
 
           const handleDeleteCalibration = (id, certificateNumber) => {
@@ -151,10 +153,23 @@ const JobCalibration = () => {
                 try {
                   setIsLoading(true);
 
-                  const siteRef = doc(db, 'jobCalibrations', id);
-                  const certificateRef = doc(db, 'jobCertificates', certificateNumber);
+                  const calibrationRef = doc(db, 'jobCalibrations', id);
+                  const certificateRef = doc(db, 'jobCertificates', id);
 
-                  await Promise.all([deleteDoc(siteRef), deleteDoc(certificateRef)]);
+                  await Promise.all([
+                    deleteDoc(calibrationRef),
+                    deleteDoc(certificateRef),
+                    //* create notification when calibration is removed
+                    notifications.create({
+                      icon: 'calibration',
+                      target: ['admin', 'supervisor'],
+                      title: 'Calibration removed',
+                      message: `Calibration (#${id}) was removed by ${auth.currentUser.displayName}.`,
+                      data: {
+                        redirectUrl: `/jobs/${jobId}/calibrations`,
+                      },
+                    }),
+                  ]);
 
                   toast.success('Site removed successfully', { position: 'top-right' });
                   setIsLoading(false);

@@ -22,7 +22,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, deleteDoc, doc, limit, onSnapshot, query } from 'firebase/firestore';
 import _ from 'lodash';
-import { db } from '@/firebase';
+import { auth, db } from '@/firebase';
 import { format, isBefore, startOfDay, subDays } from 'date-fns';
 import { Badge, Button, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap';
 import { Eye, Pencil, Trash, X } from 'react-bootstrap-icons';
@@ -31,8 +31,10 @@ import Swal from 'sweetalert2';
 import { isProd } from '@/constants/environment';
 import toast from 'react-hot-toast';
 import { TooltipContent } from '@/components/common/ToolTipContent';
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobCalendar = () => {
+  const auth = useAuth();
   const router = useRouter();
   const calendarRef = useRef(null);
 
@@ -252,17 +254,27 @@ const JobCalendar = () => {
           <Button className='p-2' variant='primary' size='sm' onClick={() => handleViewJob(job.id)}>
             <Eye size={18} />
           </Button>
-          <Button
-            className='p-2'
-            variant='danger'
-            size='sm'
-            onClick={() => handleDeleteJob(job.id)}
-          >
-            <Trash size={18} />
-          </Button>
-          <Button className='p-2' variant='warning' size='sm' onClick={() => handleEditJob(job.id)}>
-            <Pencil size={18} />
-          </Button>
+
+          {(auth.role === 'admin' || auth.role === 'supervisor') && (
+            <>
+              <Button
+                className='p-2'
+                variant='danger'
+                size='sm'
+                onClick={() => handleDeleteJob(job.id)}
+              >
+                <Trash size={18} />
+              </Button>
+              <Button
+                className='p-2'
+                variant='warning'
+                size='sm'
+                onClick={() => handleEditJob(job.id)}
+              >
+                <Pencil size={18} />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -287,6 +299,8 @@ const JobCalendar = () => {
 
   const handleSelected = useCallback(
     (args) => {
+      if (auth.role === 'sales') return;
+
       if (
         args &&
         args.requestType === 'cellSelect' &&
@@ -367,7 +381,7 @@ const JobCalendar = () => {
         }
       }
     },
-    [router, calendarRef]
+    [router, calendarRef, auth.role]
   );
 
   const eventSettings = useMemo(() => {

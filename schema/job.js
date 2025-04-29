@@ -146,7 +146,7 @@ export const scheduleSchema = z
       .transform((formData) => {
         if (typeof formData === 'object') {
           if (formData.length < 1) return [];
-          return formData.map((el) => ({ id: el.id, name: el.name }));
+          return formData.map((el) => ({ id: el.id, name: el.name, uid: el.uid }));
         }
         return null;
       }),

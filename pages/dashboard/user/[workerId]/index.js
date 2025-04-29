@@ -63,11 +63,13 @@ import _ from 'lodash';
 import { GeeksSEO } from '@/widgets';
 import { JobTimer } from '@/sub-components/dashboard/user/jobs/JobTimer';
 import PageHeader from '@/components/common/PageHeader';
+import { useNotifications } from '@/hooks/useNotifications';
 
 function WorkerDashboard() {
   const router = useRouter();
   const auth = useAuth();
   const { workerId } = router.query;
+  const notifications = useNotifications();
 
   const [activeFilterId, setActiveFilterId] = useState('');
   const [columnFilters, setColumnFilters] = useState([]);
@@ -535,7 +537,7 @@ function WorkerDashboard() {
           };
 
           const handleEditJob = (id) => {
-            router.push(`/user/${workerId}/jobs/${id}`);
+            router.push(`/user/${workerId}/jobs/edit-jobs/${id}`);
           };
 
           const handleDeleteJob = (id) => {
@@ -685,6 +687,17 @@ function WorkerDashboard() {
                     }
                   });
 
+                  //* create notification when equipment is returned
+                  await notifications.create({
+                    icon: 'job',
+                    target: ['admin', 'supervisor'],
+                    title: 'Equipment returned',
+                    message: `Job (#${id}) equipment was returned by ${auth.currentUser.displayName}.`,
+                    data: {
+                      redirectUrl: `/jobs/view/${id}`,
+                    },
+                  });
+
                   toast.success('Equipment returned successfully', { position: 'top-right' });
                   setIsLoading(false);
                 } catch (error) {
@@ -783,12 +796,14 @@ function WorkerDashboard() {
                     </>
                   )}
 
-                  <Dropdown.Item
-                    onClick={() => router.push(`/user/${workerId}/jobs/${id}/calibrations`)}
-                  >
-                    <Eye className='me-2' size={16} />
-                    View Calibrations
-                  </Dropdown.Item>
+                  {status !== 'created' && status !== 'confirmed' && (
+                    <Dropdown.Item
+                      onClick={() => router.push(`/user/${workerId}/jobs/${id}/calibrations`)}
+                    >
+                      <Eye className='me-2' size={16} />
+                      View Calibrations
+                    </Dropdown.Item>
+                  )}
 
                   {status === 'in progress' && (
                     <Dropdown.Item
@@ -945,6 +960,17 @@ function WorkerDashboard() {
             }
           });
 
+          //* create notification for admin and supervisor when updated a job status
+          await notifications.create({
+            icon: 'job',
+            target: ['admin', 'supervisor'],
+            title: 'Job started',
+            message: `Job (#${id}) has been started by ${auth.currentUser.displayName}.`,
+            data: {
+              redirectUrl: `/jobs/view/${id}`,
+            },
+          });
+
           toast.success('Job has been started successfully.', { position: 'top-right' });
           setIsLoading(false);
           console.log('start timer..');
@@ -997,6 +1023,17 @@ function WorkerDashboard() {
             } catch (error) {
               throw error;
             }
+          });
+
+          //* create notification for admin and supervisor when updated a job status
+          await notifications.create({
+            icon: 'job',
+            target: ['admin', 'supervisor'],
+            title: 'Job completed',
+            message: `Job (#${id}) has been marked as "completed" by ${auth.currentUser.displayName}.`,
+            data: {
+              redirectUrl: `/jobs/view/${id}`,
+            },
           });
 
           toast.success('Job has been completed successfully.', { position: 'top-right' });
@@ -1137,9 +1174,9 @@ function WorkerDashboard() {
                     </div>
 
                     <div>
-                      {stat.id == 'current-job' && stat.value && stat.value !== 'N/A' && (
+                      {/* {stat.id == 'current-job' && stat.value && stat.value !== 'N/A' && (
                         <JobTimer job={stat.job} workerId={stat.workerId} auth={auth} />
-                      )}
+                      )} */}
                     </div>
                   </div>
 

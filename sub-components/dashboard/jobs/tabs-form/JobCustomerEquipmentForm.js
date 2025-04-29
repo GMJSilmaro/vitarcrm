@@ -65,7 +65,13 @@ import Swal from 'sweetalert2';
 //* limit per category
 const LIMIT = 10;
 
-const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious }) => {
+const JobCustomerEquipmentForm = ({
+  data,
+  isLoading,
+  handleNext,
+  handlePrevious,
+  toDuplicateJob,
+}) => {
   const form = useFormContext();
   const formErrors = form.formState.errors;
 
@@ -613,6 +619,21 @@ const JobCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePrevious 
   useEffect(() => {
     setLastEquipmentId();
   }, []);
+
+  //* set data if toDuplicateJob exists
+  useEffect(() => {
+    if (toDuplicateJob) {
+      //* set selected equipment (customerEquipments)
+      if (allCustomerEquipment.length > 1 && table) {
+        const currentEquipmentsIds = toDuplicateJob.customerEquipments?.length > 0 ? toDuplicateJob.customerEquipments.map(eq => eq.id) : []; // prettier-ignore
+        const selectedEquipments = allCustomerEquipment.filter((eq) => currentEquipmentsIds.includes(eq.id)); // prettier-ignore
+
+        //* set form data & row selection state
+        form.setValue('customerEquipments', selectedEquipments);
+        table.setRowSelection(selectedEquipments.reduce((acc, eq) => ({ ...acc, [eq.id]: true }), {})); // prettier-ignore
+      }
+    }
+  }, [toDuplicateJob, allCustomerEquipment, table]);
 
   return (
     <Card className='shadow-none'>

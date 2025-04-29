@@ -33,6 +33,7 @@ import {
   query,
   serverTimestamp,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
@@ -47,10 +48,12 @@ import { format } from 'date-fns';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import withReactContent from 'sweetalert2-react-content';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const JobRequestList = () => {
   const router = useRouter();
   const auth = useAuth();
+  const notifications = useNotifications();
 
   const [jobsRequests, setJobsRequests] = useState({ data: [], isLoading: true, isError: false });
 
@@ -200,7 +203,19 @@ const JobRequestList = () => {
 
                   const jobRequestRef = doc(db, 'jobRequests', id);
 
-                  await deleteDoc(jobRequestRef);
+                  await Promise.all(
+                    deleteDoc(jobRequestRef),
+                    //* create notification when job request is removed
+                    notifications.create({
+                      icon: 'job-request',
+                      target: ['admin', 'supervisor', 'sales'],
+                      title: 'Job request removed',
+                      message: `Job request (#${id}) was removed by ${auth.currentUser.displayName}.`,
+                      data: {
+                        redirectUrl: `/job-requests`,
+                      },
+                    })
+                  );
 
                   toast.success('Job request removed successfully', { position: 'top-right' });
                   setIsLoading(false);
@@ -261,12 +276,24 @@ const JobRequestList = () => {
 
                       const jobRequestRef = doc(db, 'jobRequests', id);
 
-                      await updateDoc(jobRequestRef, {
-                        status,
-                        cancelledMessage: value,
-                        updatedAt: serverTimestamp(),
-                        updatedBy: auth.currentUser,
-                      });
+                      await Promise.all([
+                        updateDoc(jobRequestRef, {
+                          status,
+                          cancelledMessage: value,
+                          updatedAt: serverTimestamp(),
+                          updatedBy: auth.currentUser,
+                        }),
+                        //* create notification for admin and supervisor when updated a job request status
+                        notifications.create({
+                          icon: 'job-request',
+                          target: ['admin', 'supervisor', 'sales'],
+                          title: 'Job request status updated',
+                          message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                          data: {
+                            redirectUrl: `/job-requests/view/${id}`,
+                          },
+                        }),
+                      ]);
 
                       toast.success('Job request status updated successfully', {
                         position: 'top-right',
@@ -302,12 +329,24 @@ const JobRequestList = () => {
 
                   const jobRequestRef = doc(db, 'jobRequests', id);
 
-                  await updateDoc(jobRequestRef, {
-                    status,
-                    cancelledMessage: null,
-                    updatedAt: serverTimestamp(),
-                    updatedBy: auth.currentUser,
-                  });
+                  await Promise.all([
+                    updateDoc(jobRequestRef, {
+                      status,
+                      cancelledMessage: null,
+                      updatedAt: serverTimestamp(),
+                      updatedBy: auth.currentUser,
+                    }),
+                    //* create notification for admin and supervisor when updated a job request status
+                    notifications.create({
+                      icon: 'job-request',
+                      target: ['admin', 'supervisor', 'sales'],
+                      title: 'Job request status updated',
+                      message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                      data: {
+                        redirectUrl: `/job-requests/view/${id}`,
+                      },
+                    }),
+                  ]);
 
                   toast.success('Job request status updated successfully', {
                     position: 'top-right',
@@ -404,7 +443,6 @@ const JobRequestList = () => {
         options: [
           { label: 'All Status', value: '' },
           { label: 'Created', value: 'created' },
-          { label: 'Approved', value: 'approved' },
           { label: 'Cancelled', value: 'cancelled' },
           { label: 'Incomplete', value: 'incomplete' },
         ],
@@ -443,7 +481,7 @@ const JobRequestList = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'jobRequests'));
+    const q = query(collection(db, 'jobRequests'), where('status', '!=', 'approved'));
 
     const unsubscribe = onSnapshot(
       q,

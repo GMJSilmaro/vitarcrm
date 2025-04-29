@@ -53,6 +53,12 @@ const nextConfig = {
 
   async rewrites() {
     return [
+      //* notifications
+      {
+        source: '/notifications',
+        destination: '/dashboard/notifications/list',
+      },
+
       // DASHBOARD/OVERVIEW
       {
         source: '/dashboard',
@@ -183,6 +189,10 @@ const nextConfig = {
         source: '/jobs/create',
         destination: '/dashboard/jobs/create?',
       },
+      {
+        source: '/jobs/duplicate/:jobId',
+        destination: '/dashboard/jobs/duplicate/:jobId',
+      },
 
       //* Calibration
       {
@@ -297,8 +307,8 @@ const nextConfig = {
         destination: '/dashboard/user/:workerId/schedule',
       },
       {
-        source: '/user/:workerId/jobs/:jobId',
-        destination: '/dashboard/user/:workerId/jobs/:jobId',
+        source: '/user/:workerId/jobs/edit-jobs/:jobId',
+        destination: '/dashboard/user/:workerId/jobs/edit-jobs/:jobId',
       },
       {
         source: '/user/:workerId/jobs/view/:jobId',
@@ -313,12 +323,17 @@ const nextConfig = {
         destination: '/dashboard/user/:workerId/jobs/:jobId/calibrations/create',
       },
       {
-        source: '/user/:workerId/jobs/:jobId/calibrations/:calibrateId',
-        destination: '/dashboard/user/:workerId/jobs/:jobId/calibrations/:calibrateId',
+        source: '/user/:workerId/jobs/:jobId/calibrations/edit-calibrations/:calibrateId',
+        destination:
+          '/dashboard/user/:workerId/jobs/:jobId/calibrations/edit-calibrations/:calibrateId',
       },
       {
         source: '/user/:workerId/jobs/:jobId/calibrations/view/:calibrateId',
         destination: '/dashboard/user/:workerId/jobs/:jobId/calibrations/view/:calibrateId',
+      },
+      {
+        source: '/user/:workerId/notifications',
+        destination: '/dashboard/user/:workerId/notifications',
       },
     ];
   },

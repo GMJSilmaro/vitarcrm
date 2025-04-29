@@ -7,6 +7,7 @@ import { BoxArrowRight, Gear, Person } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import { useLogo } from '@/contexts/LogoContext';
 import TodayDate from '@/sub-components/dashboard/user/jobs/TodayDate';
+import NotificationMenu from './NotificationMenu';
 
 const UserLayoutHeader = ({ user }) => {
   const { logo } = useLogo();
@@ -215,6 +216,8 @@ const UserLayoutHeader = ({ user }) => {
             </>
           )}
         </div>
+
+        <NotificationMenu />
 
         <Dropdown className='ms-2'>
           <Dropdown.Toggle

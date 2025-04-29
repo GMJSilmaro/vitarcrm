@@ -164,7 +164,7 @@ Font.register({
   src: InterItalic,
 });
 
-const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
+const CertificateOfCalibrationPDF1 = ({ calibration, instruments }) => {
   const handleGetLocationValue = useCallback(() => {
     if (calibration.location) {
       const locationData = calibration.location;
@@ -489,9 +489,10 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
               <Text>Range</Text>
             </View>
             <View style={styles.value}>
-              <Text>{convertValueBasedOnUnit(calibration?.rangeMinCalibration ?? 0)}</Text>
+              <Text>{calibration?.rangeMinCalibration}</Text>
               <Text style={{ paddingLeft: 20, paddingRight: 20 }}>to</Text>
-              <Text>{convertValueBasedOnUnit(calibration?.rangeMaxCalibration ?? 0)}</Text>
+              <Text>{calibration?.rangeMaxCalibration}</Text>
+              <Text style={{ paddingLeft: 10 }}>{unitUsedForCOCAcronym}</Text>
             </View>
           </View>
           <View style={styles.row}>
@@ -942,7 +943,7 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
                 </View>
 
                 <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Text style={{ fontFamily: 'InterBold', fontSize: 8 }}>Approved By</Text>
+                  <Text style={{ fontFamily: 'InterBold', fontSize: 8 }}>Approved Signatory</Text>
                   <Text
                     style={{
                       fontFamily: 'InterRegular',
@@ -979,4 +980,4 @@ const CertificateOfCalibrationPDF = ({ calibration, instruments }) => {
   );
 };
 
-export default CertificateOfCalibrationPDF;
+export default CertificateOfCalibrationPDF1;
