@@ -270,13 +270,13 @@ const CalibrateSummaryForm = ({
     return () => unsubscribe();
   }, [data]);
 
-  //* query last certificate no.
+  //* query last certificate no. (new strat)
   useEffect(() => {
     const category = !form.getValues('category') ? null : form.getValues('category').value;
 
     if (data || !category | job.data) return;
 
-    const q = query(collection(db, 'jobCertificates'));
+    const q = query(collection(db, 'jobCertificates'), where('jobId', '==', job.data.id));
 
     const unsubscribe = onSnapshot(
       q,
@@ -285,38 +285,29 @@ const CalibrateSummaryForm = ({
         const categoryInitial = category?.split(' ')[0]?.charAt(0)?.toUpperCase() || '';
         const scopeInitial = job.data.scope?.charAt(0)?.toUpperCase() || '';
 
+        const jobIdNumber = parseInt(job.data.id.replace('J', ''), 10);
         const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-${scopeInitial}`;
-
-        //TODO: start with 1 the serial number for every job calibraiton,
-        //*TODO: then just increment per created calibration
-
-        //* case insensitive regex base on scope type initial
-        const regex = new RegExp(`[${SCOPE_TYPE.map((scope) => scope.charAt(0)).join('')}]`, 'i');
 
         if (!snapshot.empty) {
           const sortedData = snapshot.docs
-            .map((doc) => {
-              const docData = doc.data();
+            .map((snapshot) => {
+              const docData = { id: snapshot.id, ...snapshot.data() };
+
+              const certNo = docData.certificateNumber;
 
               return {
-                certificateIdNumber: docData.certificateNumber.split('-')[1]?.replace(regex, ''),
                 ...docData,
+                runningNo: Number(certNo.split('-')[2]),
               };
             })
-            .sort(
-              (a, b) => parseInt(a.certificateIdNumber, 10) - parseInt(b.certificateIdNumber, 10)
-            );
+            .sort((a, b) => a.runningNo - b.runningNo);
 
-          const jobIdNumber = parseInt(job.data.id.replace('J', ''), 10);
-          const calibrateId = sortedData.pop().calibrateId.replace('CA', '');
-          const lastCalibrateId = parseInt(calibrateId, 10);
-
-          console.log({ jobIdNumber, calibrateId, lastCalibrateId });
+          const lastRunningNo = sortedData.pop().runningNo;
 
           form.setValue('certificateNumber',  `${calibrationIdPrefix}${(jobIdNumber).toString().padStart(4, '0')}`); //prettier-ignore
-          form.setValue('serialNumber', String(lastCalibrateId + 1));
+          form.setValue('serialNumber', String(lastRunningNo + 1));
         } else {
-          form.setValue('certificateNumber', `${calibrationIdPrefix}0001`);
+          form.setValue('certificateNumber',`${calibrationIdPrefix}${jobIdNumber.toString().padStart(4, '0')}`); //prettier-ignore
           form.setValue('serialNumber', '1');
         }
       },
@@ -328,6 +319,62 @@ const CalibrateSummaryForm = ({
 
     return () => unsubscribe();
   }, [job, data, form.watch('category')]);
+
+  //* query last certificate no. (old strat)
+  // useEffect(() => {
+  //   const category = !form.getValues('category') ? null : form.getValues('category').value;
+
+  //   if (data || !category | job.data) return;
+
+  //   const q = query(collection(db, 'jobCertificates'));
+
+  //   const unsubscribe = onSnapshot(
+  //     q,
+  //     (snapshot) => {
+  //       const date = new Date();
+  //       const categoryInitial = category?.split(' ')[0]?.charAt(0)?.toUpperCase() || '';
+  //       const scopeInitial = job.data.scope?.charAt(0)?.toUpperCase() || '';
+
+  //       const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-${scopeInitial}`;
+
+  //       //* case insensitive regex base on scope type initial
+  //       const regex = new RegExp(`[${SCOPE_TYPE.map((scope) => scope.charAt(0)).join('')}]`, 'i');
+
+  //       if (!snapshot.empty) {
+  //         const sortedData = snapshot.docs
+  //           .map((doc) => {
+  //             const docData = doc.data();
+
+  //             return {
+  //               certificateIdNumber: docData.certificateNumber.split('-')[1]?.replace(regex, ''),
+  //               ...docData,
+  //             };
+  //           })
+  //           .sort(
+  //             (a, b) => parseInt(a.certificateIdNumber, 10) - parseInt(b.certificateIdNumber, 10)
+  //           );
+
+  //         const jobIdNumber = parseInt(job.data.id.replace('J', ''), 10);
+  //         const calibrateId = sortedData.pop().calibrateId.replace('CA', '');
+  //         const lastCalibrateId = parseInt(calibrateId, 10);
+
+  //         console.log({ jobIdNumber, calibrateId, lastCalibrateId });
+
+  //         form.setValue('certificateNumber',  `${calibrationIdPrefix}${(jobIdNumber).toString().padStart(4, '0')}`); //prettier-ignore
+  //         form.setValue('serialNumber', String(lastCalibrateId + 1));
+  //       } else {
+  //         form.setValue('certificateNumber', `${calibrationIdPrefix}0001`);
+  //         form.setValue('serialNumber', '1');
+  //       }
+  //     },
+  //     (err) => {
+  //       console.error(err.message);
+  //       toast.error(err.message);
+  //     }
+  //   );
+
+  //   return () => unsubscribe();
+  // }, [job, data, form.watch('category')]);
 
   //* append serial number to certificate number
   useEffect(() => {
