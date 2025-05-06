@@ -826,7 +826,7 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                   {worker?.fullName || ''}
                 </Text>
                 <Text style={{ fontSize: 8, textAlign: 'center' }}>
-                  Date: {format(new Date(), 'dd MMMM yyyy')}
+                  {format(new Date(), 'dd MMMM yyyy')}
                 </Text>
               </View>
             )}
