@@ -12,6 +12,7 @@ import {
   HouseDoorFill,
   PencilFill,
   People,
+  PeopleFill,
   PlusCircle,
 } from 'react-bootstrap-icons';
 
@@ -106,7 +107,7 @@ const EditUser = () => {
           {
             text: 'Technicians',
             link: '/workers',
-            icon: <People className='me-2' size={14} />,
+            icon: <PeopleFill className='me-2' size={14} />,
           },
           {
             text: user.id,

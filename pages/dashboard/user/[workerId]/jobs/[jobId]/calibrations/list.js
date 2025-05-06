@@ -21,7 +21,7 @@ import {
 import { collection, deleteDoc, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
+import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BriefcaseFill,
@@ -81,6 +81,22 @@ const JobCalibration = () => {
         cell: ({ row }) => (
           <div className='text-capitalize'>{row?.original?.category.toLowerCase() || 'N/A'}</div>
         ),
+      }),
+      columnHelper.accessor('status', {
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
+        cell: ({ row }) => {
+          const colors = {
+            completed: 'success',
+            rejected: 'danger',
+            approval: 'purple',
+          };
+          return (
+            <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
+              {row.original.status}
+            </Badge>
+          );
+        },
       }),
       columnHelper.accessor((row) => row?.location?.name || 'N/A', {
         id: 'location',
@@ -252,6 +268,17 @@ const JobCalibration = () => {
         columnId: 'location',
         type: 'text',
         placeholder: 'Search by location...',
+      },
+      {
+        label: 'Status',
+        columnId: 'status',
+        type: 'select',
+        options: [
+          { label: 'All Status', value: '' },
+          { label: 'Completed', value: 'completed' },
+          { label: 'Rejected', value: 'rejected' },
+          { label: 'Approval', value: 'approval' },
+        ],
       },
       {
         label: 'Equipment',

@@ -125,12 +125,15 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
       setActiveKey(nextActiveKey);
 
       if (Number(activeKey) === tabSchema.length - 1) {
-        const parseData = calibrationSchema.safeParse(form.getValues());
+        const formValues = form.getValues();
+        const parseData = calibrationSchema.safeParse(formValues);
 
         if (parseData.success) {
+          const formData = parseData.data;
+
           //* check conflict
           const conflicts = validateCalibrationPointsData(
-            parseData.data?.data?.dfnv?.[0]?.calibrationPoints
+            formData?.data?.dfnv?.[0]?.calibrationPoints
           );
 
           if (conflicts.length > 0) {
@@ -183,8 +186,55 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
             return;
           }
 
-          handleSubmit(parseData.data);
-        } else toast.error('Failed to parse data. Please try again later.');
+          let dfnvHasData = true;
+
+          const filterNullUndefined = (v) => v !== null && v !== undefined && v !== '';
+
+          // prettier-ignore
+          if (
+            formValues.data?.dfnv?.[0]?.calibrationPoints?.length === 0 || 
+            formValues.data?.dfnv?.[0]?.calibrationPoints?.every((point) => point?.data?.filter(filterNullUndefined).every((columnData) => columnData?.filter(filterNullUndefined).length === 0)) || 
+            formValues?.data?.nominalValues?.filter(filterNullUndefined).length === 0 ||
+            formValues?.data?.measuredValues?.filter(filterNullUndefined).every((mValues) =>mValues?.filter(filterNullUndefined).length === 0)
+          ) {
+            dfnvHasData = false;
+          }
+
+          //* check if theres no data in dfnv (empty), no nominal valueso or measuredValues and the other measurement show popup
+          if (
+            !dfnvHasData ||
+            (!formValues.minTemperature && !formValues.minTemperature !== 0) ||
+            (!formValues.maxTemperature && !formValues.maxTemperature !== 0) ||
+            (!formValues.rangeMinRHumidity && !formValues.rangeMinRHumidity !== 0) ||
+            (!formValues.rangeMaxRHumidity && !formValues.rangeMaxRHumidity !== 0) ||
+            !formValues.typeOfBalance
+          ) {
+            let reminded = false;
+
+            await Swal.fire({
+              title: 'Reminder!',
+              text: 'Please fill-in the data in "Departure From Nominal Value (g)" and "Other Measurements"',
+              icon: 'warning',
+              showCancelButton: false,
+              confirmButtonText: 'Ok',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+              },
+            }).then((data) => {
+              if (data.isConfirmed) {
+                handleSubmit(formData);
+                reminded = true;
+              }
+            });
+
+            if (reminded) return;
+          }
+
+          handleSubmit(formData);
+        } else {
+          toast.error('Failed to parse data. Please try again later.');
+          setActiveKey((prev) => prev - 1);
+        }
       }
     }
   }, [activeKey]);
@@ -248,7 +298,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
         if (!data) {
           //* create notification for admin and supervisor when created a calibration
           await notifications.create({
-            icon: 'calibration',
+            module: 'calibration',
             target: ['admin', 'supervisor'],
             title: 'New calibration created',
             message: `
@@ -260,7 +310,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
         } else {
           //* create notification for admin and supervisor when updated a calibration
           await notifications.create({
-            icon: 'calibration',
+            module: 'calibration',
             target: ['admin', 'supervisor'],
             title: 'Calibration updated',
             message: `
@@ -274,7 +324,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
         //* create notification for assigned approved signatory
         if (formData?.approvedSignatory?.uid) {
           await notifications.create({
-            icon: 'calibration',
+            module: 'calibration',
             target: [formData.approvedSignatory.uid],
             title: `You are assigned as an approved signatory`,
             message: `

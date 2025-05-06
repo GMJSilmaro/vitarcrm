@@ -108,7 +108,7 @@ const NavbarDefault = [
       {
         id: uuid(),
         menuitem: 'Reference Equipment',
-        icon: 'ThermometerHigh',
+        icon: 'Tools',
         hasSubmenu: true,
         children: [
           {

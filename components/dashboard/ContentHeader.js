@@ -1,5 +1,5 @@
-import React from 'react';
-import { Button } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Button, Spinner } from 'react-bootstrap';
 import Link from 'next/link';
 
 const ContentHeader = ({
@@ -12,6 +12,8 @@ const ContentHeader = ({
   actionButtons = [],
   customStyles = {},
 }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
   return (
     <div className='dashboard-header'>
       <div
@@ -145,7 +147,8 @@ const ContentHeader = ({
                 <Button
                   key={index}
                   variant={button.variant}
-                  onClick={button.onClick}
+                  onClick={(event) => button.onClick({ event, setIsLoading, test: 'hello' })}
+                  disabled={isLoading || button?.disabled}
                   className='custom-action-button'
                   style={{
                     padding: '0.5rem 1rem',
@@ -171,7 +174,8 @@ const ContentHeader = ({
                       : '#212529',
                   }}
                 >
-                  {button.icon && button.icon}
+                  {isLoading && <Spinner size='sm' animation='border' variant='primary' />}
+                  {button.icon && !isLoading && button.icon}
                   {button.text}
                 </Button>
               ))}

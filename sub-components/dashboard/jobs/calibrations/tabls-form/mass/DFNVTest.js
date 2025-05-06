@@ -370,6 +370,13 @@ const DFNVTest = ({ data }) => {
                       render={({ field }) => (
                         <Form.Control
                           onChange={(e) => {
+                            if (e.target.value === '') {
+                              form.setValue(`data.nominalValues.${i}`, '');
+
+                              form.setValue(`data.measuredValues.${i}`, Array(3).fill(''));
+                              return;
+                            }
+
                             form.setValue(
                               `data.nominalValues.${i}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
@@ -1104,6 +1111,14 @@ const DFNVTest = ({ data }) => {
                       render={({ field }) => (
                         <Form.Control
                           onChange={(e) => {
+                            if (e.target.value === '') {
+                              form.setValue(
+                                `data.measuredValues.${pointIndex}.${measuredValueIndex}`,
+                                ''
+                              );
+                              return;
+                            }
+
                             form.setValue(
                               `data.measuredValues.${pointIndex}.${measuredValueIndex}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
@@ -1159,6 +1174,16 @@ const DFNVTest = ({ data }) => {
                             render={({ field }) => (
                               <Form.Control
                                 onChange={(e) => {
+                                  if (e.target.value === '') {
+                                    form.setValue(`data.nominalValues.${nominalValueIndex}`, '');
+
+                                    form.setValue(
+                                      `data.measuredValues.${nominalValueIndex}`,
+                                      Array(3).fill('')
+                                    );
+                                    return;
+                                  }
+
                                   form.setValue(
                                     `data.nominalValues.${nominalValueIndex}`,
                                     isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
@@ -1927,6 +1952,14 @@ const DFNVTest = ({ data }) => {
                             render={({ field }) => (
                               <Form.Control
                                 onChange={(e) => {
+                                  if (e.target.value === '') {
+                                    form.setValue(
+                                      `data.measuredValues.${_pointIndex}.${measuredValueIndex}`,
+                                      ''
+                                    );
+                                    return;
+                                  }
+
                                   form.setValue(
                                     `data.measuredValues.${_pointIndex}.${measuredValueIndex}`,
                                     isNaN(e.target.value) ? 0 : parseFloat(e.target.value)

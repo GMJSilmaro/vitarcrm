@@ -77,7 +77,7 @@ const MassResultForm = () => {
     return isNaN(value) ? 0 : value;
   }, [form.watch('data.rtest.maxError')]);
 
-  console.log({ corrections, resolution, unitUsedForCOC });
+  // console.log({ corrections, resolution, unitUsedForCOC });
 
   return (
     <div className='d-flex flex-column row-gap-4'>

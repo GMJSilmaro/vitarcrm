@@ -21,6 +21,8 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
+  getDocs,
   onSnapshot,
   query,
   serverTimestamp,
@@ -153,7 +155,9 @@ const JobCalibration = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, certificateNumber } = row.original;
+          const { id, certificateNumber, calibratedBy } = row.original;
+
+          console.log({ row: row.original });
 
           const handleViewCalibration = (id) => {
             router.push(`/jobs/${jobId}/calibrations/view/${id}`);
@@ -211,7 +215,7 @@ const JobCalibration = () => {
             });
           };
 
-          const handleUpdateCalibrationStatus = (id, status) => {
+          const handleUpdateCalibrationStatus = (id, status, calibratedBy) => {
             Swal.fire({
               title: `Calibration Status Update - Calibration #${id}`,
               text: `Are you sure you want to update the calibration status to "${_.startCase(
@@ -232,6 +236,34 @@ const JobCalibration = () => {
 
                   const jobCalibrationRef = doc(db, 'jobCalibrations', id);
 
+                  const notifyCalibratedBy = async () => {
+                    try {
+                      const workerId = calibratedBy.id;
+                      const snapshots = await getDocs(
+                        query(collection(db, 'users'), where('workerId', '==', workerId))
+                      );
+
+                      if (!snapshots.empty) {
+                        const snapshot = snapshots.docs[0];
+                        const user = { id: snapshot.id, ...snapshot.data() };
+
+                        if (user && user.id) {
+                          await notifications.create({
+                            module: 'calibration',
+                            target: ['admin', 'supervisor', user.id],
+                            title: 'Calibration status updated',
+                            message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                            data: {
+                              redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+                            },
+                          });
+                        }
+                      }
+                    } catch (error) {
+                      console.error('Failed to notify technician:', error);
+                    }
+                  };
+
                   await Promise.all([
                     updateDoc(jobCalibrationRef, {
                       status,
@@ -240,7 +272,7 @@ const JobCalibration = () => {
                     }),
                     //* create notification for admin and supervisor when updated a calibration status
                     notifications.create({
-                      icon: 'calibration',
+                      module: 'calibration',
                       target: ['admin', 'supervisor'],
                       title: 'Calibration status updated',
                       message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
@@ -248,6 +280,7 @@ const JobCalibration = () => {
                         redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
                       },
                     }),
+                    notifyCalibratedBy(),
                   ]);
 
                   toast.success('Calibration status updated successfully', {
@@ -290,20 +323,26 @@ const JobCalibration = () => {
                     overlay={
                       <Dropdown.Menu show style={{ zIndex: 999 }}>
                         <Dropdown.Item
-                          onClick={() => handleUpdateCalibrationStatus(id, 'completed')}
+                          onClick={() => {
+                            handleUpdateCalibrationStatus(id, 'completed', calibratedBy);
+                          }}
                         >
                           <CheckCircle className='me-2' size={16} />
                           Completed
                         </Dropdown.Item>
 
                         <Dropdown.Item
-                          onClick={() => handleUpdateCalibrationStatus(id, 'rejected')}
+                          onClick={() => {
+                            handleUpdateCalibrationStatus(id, 'rejected', calibratedBy);
+                          }}
                         >
                           <HandThumbsDown className='me-2' size={16} />
                           Rejected
                         </Dropdown.Item>
                         <Dropdown.Item
-                          onClick={() => handleUpdateCalibrationStatus(id, 'approval')}
+                          onClick={() => {
+                            handleUpdateCalibrationStatus(id, 'approval', calibratedBy);
+                          }}
                         >
                           <ShieldCheck className='me-2' size={16} />
                           Approval

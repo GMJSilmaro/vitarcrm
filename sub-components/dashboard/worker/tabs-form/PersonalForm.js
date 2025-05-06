@@ -287,7 +287,7 @@ const PersonalForm = ({ data, isLoading, handleNext, setFile }) => {
           </Form.Group>
 
           <Form.Group as={Col} md={4}>
-            <Form.Label htmlFor='lastName'>Middle Name</Form.Label>
+            <Form.Label htmlFor='middleName'>Middle Name</Form.Label>
 
             <Controller
               name='middleName'
@@ -500,7 +500,7 @@ const PersonalForm = ({ data, isLoading, handleNext, setFile }) => {
           </Form.Group>
 
           <Form.Group as={Col} md={4}>
-            <RequiredLabel label='Assigned Categories' id='categories' />
+            <Form.Label htmlFor='categories'>Assigned Categories</Form.Label>
             <OverlayTrigger
               placement='right'
               overlay={

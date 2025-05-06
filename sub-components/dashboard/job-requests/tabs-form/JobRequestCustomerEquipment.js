@@ -292,6 +292,9 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
         id: 'range max',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Max)' />,
       }),
+      columnHelper.accessor('tolerance', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Tolerance' />,
+      }),
       columnHelper.accessor('uom', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='UOM' />,
       }),
@@ -551,6 +554,12 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
         columnId: 'range max',
         type: 'text',
         placeholder: 'Search by range max...',
+      },
+      {
+        label: 'Tolerance',
+        columnId: 'tolerance',
+        type: 'text',
+        placeholder: 'Search by tolerance...',
       },
       {
         label: 'UOM',

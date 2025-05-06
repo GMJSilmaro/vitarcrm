@@ -1,22 +1,42 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import CmrPDF from '@/components/pdf/CmrPDF';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import { useNotifications } from '@/hooks/useNotifications';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
+import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
 import ReferenceEquipment from '@/sub-components/dashboard/jobs/view/ReferenceEquipment';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { PDFViewer } from '@react-pdf/renderer';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { BriefcaseFill } from 'react-bootstrap-icons';
+import { BriefcaseFill, ShieldCheck } from 'react-bootstrap-icons';
+import toast from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 const JobDetails = () => {
   const router = useRouter();
   const { jobId } = router.query;
+  const auth = useAuth();
+  const notifications = useNotifications();
 
   const [job, setJob] = useState();
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +49,63 @@ const JobDetails = () => {
   const [contact, setContact] = useState();
   const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
   const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
+  const [customerEquipments, setCustomerEquipments] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
+  const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
+
+  const handleUpdateToValidated = async (id, setIsLoading) => {
+    if (!id) return;
+
+    Swal.fire({
+      title: `Job Status Update - Job #${id}`,
+      text: `Are you sure you want to update the job status to "Validated"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
+    }).then(async (data) => {
+      if (data.isConfirmed) {
+        try {
+          setIsLoading(true);
+
+          const jobHeaderRef = doc(db, 'jobHeaders', id);
+
+          await Promise.all([
+            updateDoc(jobHeaderRef, {
+              status: 'validated',
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            }),
+            //* create notification for admin and supervisor when updated a job status
+            notifications.create({
+              module: 'job',
+              target: ['admin', 'supervisor'],
+              title: 'Job status updated',
+              message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "Validated".`, //prettier-ignore
+              data: {
+                redirectUrl: `/jobs/view/${id}`,
+              },
+            }),
+          ]);
+
+          toast.success('Job status updated successfully', { position: 'top-right' });
+          setIsLoading(false);
+
+          //* reload page after 2 seconds
+          setTimeout(() => {
+            router.reload();
+          }, 2000);
+        } catch (error) {
+          console.error('Error updating job status:', error);
+          toast.error('Error updating job status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+          setIsLoading(false);
+        }
+      }
+    });
+  };
 
   //* query job header & details
   useEffect(() => {
@@ -179,7 +256,10 @@ const JobDetails = () => {
 
   //* query equipments
   useEffect(() => {
-    if (job?.equipments?.length < 1) return;
+    if (job?.equipments?.length < 1) {
+      setEquipments({ data: [], isLoading: false, isError: false });
+      return;
+    }
 
     const equipmentsIds = job?.equipments?.map((equipment) => equipment.id) || [''];
 
@@ -204,6 +284,78 @@ const JobDetails = () => {
         setEquipments({ data: [], isLoading: false, isError: true });
       });
   }, [job]);
+
+  //* query customer equipments
+  useEffect(() => {
+    if (job?.customerEquipments?.length < 1 || !job?.customer?.id) {
+      setCustomerEquipments({ data: [], isLoading: false, isError: false });
+      return;
+    }
+
+    const customerEquipmentsIds = job?.customerEquipments?.map((ce) => ce.id) || [''];
+
+    Promise.all([
+      ...customerEquipmentsIds
+        .filter(Boolean)
+        .map((id) => getDoc(doc(db, 'customerEquipments', id))),
+    ])
+      .then(([...resultsSnapshot]) => {
+        const data = [];
+
+        for (const result of resultsSnapshot) {
+          if (result.exists()) {
+            data.push({ id: result.id, ...result.data() });
+          }
+        }
+
+        setCustomerEquipments({
+          data,
+          isLoading: false,
+          isError: false,
+        });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setCustomerEquipments({ data: [], isLoading: false, isError: true });
+      });
+  }, [job]);
+
+  //* query job calibration
+  useEffect(() => {
+    if (!jobId) {
+      setCalibrations({ data: [], isLoading: false, isError: false });
+      return;
+    }
+
+    const q = query(
+      collection(db, 'jobCalibrations'),
+      where('jobId', '==', jobId),
+      where('status', 'in', ['completed', 'approval'])
+    );
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const calibrationData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setCalibrations({
+            data: calibrationData,
+            isLoading: false,
+            isError: false,
+          });
+        } else {
+          setCalibrations({
+            data: [],
+            isLoading: false,
+            isError: false,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setCalibrations({ data: [], isLoading: false, isError: true });
+      });
+  }, [jobId]);
 
   if (isLoading) {
     return (
@@ -278,10 +430,20 @@ const JobDetails = () => {
           {
             text: 'Back to Job List',
             icon: <FaArrowLeft size={16} />,
-            variant: 'light',
+            variant: 'outline-primary',
             tooltip: 'Back to Job List',
             onClick: () => router.push('/jobs'),
           },
+          ...(auth.role === 'admin' || auth.role === 'supervisor'
+            ? [
+                {
+                  text: 'Validate Job',
+                  variant: 'light',
+                  icon: <ShieldCheck size={14} />,
+                  onClick: (args) => handleUpdateToValidated(jobId, args.setIsLoading),
+                },
+              ]
+            : []),
         ]}
       />
 
@@ -317,6 +479,38 @@ const JobDetails = () => {
             <Tab eventKey='5' title='Calibrations'>
               <CalibrationTab job={job} />
             </Tab>
+
+            {calibrations.data.length > 0 && (
+              <Tab eventKey='6' title='CMR'>
+                <Cmr
+                  job={job}
+                  customer={customer}
+                  contact={contact}
+                  location={location}
+                  customerEquipments={customerEquipments}
+                  calibrations={calibrations}
+                />
+              </Tab>
+            )}
+
+            {/* {calibrations.data.length > 0 && (
+              <Tab eventKey='7' title='PDF CMR'>
+                <Card className='border-0 shadow-none'>
+                  <Card.Body>
+                    <PDFViewer height={800} width='100%'>
+                      <CmrPDF
+                        job={job}
+                        customer={customer}
+                        contact={contact}
+                        location={location}
+                        customerEquipments={customerEquipments}
+                        calibrations={calibrations}
+                      />
+                    </PDFViewer>
+                  </Card.Body>
+                </Card>
+              </Tab>
+            )} */}
           </Tabs>
         </Card.Body>
       </Card>

@@ -123,7 +123,7 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
                   <Person size={20} />
                 </div>
                 <div>
-                  <div className='text-secondary fs-6'>Created By:</div>
+                  <div className='text-secondary fs-6'>Sales Person:</div>
                   <div className='text-primary-label fw-semibold'>
                     {jobRequest?.data?.createdBy?.displayName || 'N/A'}
                   </div>

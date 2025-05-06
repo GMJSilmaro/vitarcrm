@@ -552,7 +552,7 @@ const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
                 <Text>{calibration?.rangeMinCalibration}</Text>
                 <Text style={{ paddingLeft: 20, paddingRight: 20 }}>to</Text>
                 <Text>{calibration?.rangeMaxCalibration}</Text>
-                <Text style={{ paddingLeft: 10 }}>{unitUsedForCOCAcronym}</Text>
+                <Text style={{ paddingLeft: 10 }}>g</Text>
               </View>
             </View>
           </View>
@@ -697,7 +697,7 @@ const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
             </View>
           </View>
 
-          <View style={[styles.block, { marginBottom: 8 }]}>
+          <View style={[styles.block, { marginBottom: 8, fontSize: 8 }]}>
             <Text>{traceability}</Text>
           </View>
 
@@ -1278,6 +1278,7 @@ const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
             style={{
               fontSize: 7,
               borderTop: '1px solid #00000',
+              paddingTop: '2px',
             }}
           >
             This certificate is issued in accordance with the laboratory accreditation requirements

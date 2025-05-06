@@ -16,7 +16,7 @@ import {
 import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
+import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   BuildingFill,
   CardList,
@@ -69,6 +69,22 @@ const CalibrationTab = ({ job }) => {
           <div className='text-capitalize'>{row?.original?.category.toLowerCase() || 'N/A'}</div>
         ),
       }),
+      columnHelper.accessor('status', {
+        size: 100,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
+        cell: ({ row }) => {
+          const colors = {
+            completed: 'success',
+            rejected: 'danger',
+            approval: 'purple',
+          };
+          return (
+            <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
+              {row.original.status}
+            </Badge>
+          );
+        },
+      }),
       columnHelper.accessor((row) => row?.location?.name || 'N/A', {
         id: 'location',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Location' />,
@@ -105,94 +121,94 @@ const CalibrationTab = ({ job }) => {
           );
         },
       }),
-      columnHelper.accessor('actions', {
-        id: 'actions',
-        size: 50,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const [isLoading, setIsLoading] = useState(false);
+      // columnHelper.accessor('actions', {
+      //   id: 'actions',
+      //   size: 50,
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
+      //   enableSorting: false,
+      //   cell: ({ row }) => {
+      //     const [isLoading, setIsLoading] = useState(false);
 
-          const { id, certificateNumber } = row.original;
+      //     const { id, certificateNumber } = row.original;
 
-          const handleViewCalibration = (id) => {
-            router.push(`/jobs/${job.id}/calibrations/view/${id}`);
-          };
+      //     const handleViewCalibration = (id) => {
+      //       router.push(`/jobs/${job.id}/calibrations/view/${id}`);
+      //     };
 
-          const handleEditCalibration = (id) => {
-            router.push(`/jobs/${job.id}/calibrations/edit-calibrations/${id}`);
-          };
+      //     const handleEditCalibration = (id) => {
+      //       router.push(`/jobs/${job.id}/calibrations/edit-calibrations/${id}`);
+      //     };
 
-          const handleDeleteCalibration = (id, certificateNumber) => {
-            Swal.fire({
-              title: 'Are you sure?',
-              text: 'This action cannot be undone.',
-              icon: 'warning',
-              showCancelButton: true,
-              confirmButtonText: 'Confirm',
-              cancelButtonText: 'Cancel',
-              customClass: {
-                confirmButton: 'btn btn-primary rounded',
-                cancelButton: 'btn btn-secondary rounded',
-              },
-            }).then(async (data) => {
-              if (data.isConfirmed) {
-                try {
-                  setIsLoading(true);
+      //     const handleDeleteCalibration = (id, certificateNumber) => {
+      //       Swal.fire({
+      //         title: 'Are you sure?',
+      //         text: 'This action cannot be undone.',
+      //         icon: 'warning',
+      //         showCancelButton: true,
+      //         confirmButtonText: 'Confirm',
+      //         cancelButtonText: 'Cancel',
+      //         customClass: {
+      //           confirmButton: 'btn btn-primary rounded',
+      //           cancelButton: 'btn btn-secondary rounded',
+      //         },
+      //       }).then(async (data) => {
+      //         if (data.isConfirmed) {
+      //           try {
+      //             setIsLoading(true);
 
-                  const siteRef = doc(db, 'jobCalibrations', id);
-                  const certificateRef = doc(db, 'jobCertificates', certificateNumber);
+      //             const siteRef = doc(db, 'jobCalibrations', id);
+      //             const certificateRef = doc(db, 'jobCertificates', certificateNumber);
 
-                  await Promise.all([deleteDoc(siteRef), deleteDoc(certificateRef)]);
+      //             await Promise.all([deleteDoc(siteRef), deleteDoc(certificateRef)]);
 
-                  toast.success('Site removed successfully', { position: 'top-right' });
-                  setIsLoading(false);
-                } catch (error) {
-                  console.error('Error removing site:', error);
-                  toast.error('Error removing site: ' + error.message, { position: 'top-right' });
-                  setIsLoading(false);
-                }
-              }
-            });
-          };
+      //             toast.success('Site removed successfully', { position: 'top-right' });
+      //             setIsLoading(false);
+      //           } catch (error) {
+      //             console.error('Error removing site:', error);
+      //             toast.error('Error removing site: ' + error.message, { position: 'top-right' });
+      //             setIsLoading(false);
+      //           }
+      //         }
+      //       });
+      //     };
 
-          return (
-            <OverlayTrigger
-              rootClose
-              trigger='click'
-              placement='left-start'
-              overlay={
-                <Dropdown.Menu show style={{ zIndex: 999 }}>
-                  <Dropdown.Item onClick={() => handleViewCalibration(id)}>
-                    <Eye className='me-2' size={16} />
-                    View Calibration
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleEditCalibration(id)}>
-                    <PencilSquare className='me-2' size={16} />
-                    Edit Calibration
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleDeleteCalibration(id, certificateNumber)}>
-                    <Trash className='me-2' size={16} />
-                    Delete Calibration
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => {}}>
-                    <Printer className='me-2' size={16} />
-                    Reprint Certificate
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              }
-            >
-              <Button variant='light' className='p-2' size='sm'>
-                {isLoading ? (
-                  <Spinner animation='border' size='sm' />
-                ) : (
-                  <ThreeDotsVertical size={16} />
-                )}
-              </Button>
-            </OverlayTrigger>
-          );
-        },
-      }),
+      //     return (
+      //       <OverlayTrigger
+      //         rootClose
+      //         trigger='click'
+      //         placement='left-start'
+      //         overlay={
+      //           <Dropdown.Menu show style={{ zIndex: 999 }}>
+      //             <Dropdown.Item onClick={() => handleViewCalibration(id)}>
+      //               <Eye className='me-2' size={16} />
+      //               View Calibration
+      //             </Dropdown.Item>
+      //             <Dropdown.Item onClick={() => handleEditCalibration(id)}>
+      //               <PencilSquare className='me-2' size={16} />
+      //               Edit Calibration
+      //             </Dropdown.Item>
+      //             <Dropdown.Item onClick={() => handleDeleteCalibration(id, certificateNumber)}>
+      //               <Trash className='me-2' size={16} />
+      //               Delete Calibration
+      //             </Dropdown.Item>
+      //             <Dropdown.Item onClick={() => {}}>
+      //               <Printer className='me-2' size={16} />
+      //               Reprint Certificate
+      //             </Dropdown.Item>
+      //           </Dropdown.Menu>
+      //         }
+      //       >
+      //         <Button variant='light' className='p-2' size='sm'>
+      //           {isLoading ? (
+      //             <Spinner animation='border' size='sm' />
+      //           ) : (
+      //             <ThreeDotsVertical size={16} />
+      //           )}
+      //         </Button>
+      //       </OverlayTrigger>
+      //     );
+      //   },
+      // }),
     ];
   }, []);
 
@@ -215,6 +231,17 @@ const CalibrationTab = ({ job }) => {
         columnId: 'category',
         type: 'text',
         placeholder: 'Search by category...',
+      },
+      {
+        label: 'Status',
+        columnId: 'status',
+        type: 'select',
+        options: [
+          { label: 'All Status', value: '' },
+          { label: 'Completed', value: 'completed' },
+          { label: 'Rejected', value: 'rejected' },
+          { label: 'Approval', value: 'approval' },
+        ],
       },
       {
         label: 'Location',

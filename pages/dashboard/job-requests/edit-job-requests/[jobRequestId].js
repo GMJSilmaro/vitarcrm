@@ -1,27 +1,95 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import { useNotifications } from '@/hooks/useNotifications';
 import JobRequestForm from '@/sub-components/dashboard/job-requests/JobRequestForm';
 import { GeeksSEO } from '@/widgets';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   EnvelopePaperFill,
+  HandThumbsUp,
   House,
   HouseFill,
   Link,
   PencilFill,
 } from 'react-bootstrap-icons';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const EditJobRequest = () => {
   const router = useRouter();
   const { jobRequestId } = router.query;
+  const auth = useAuth();
+  const notifications = useNotifications();
 
   const [jobRequest, setJobRequest] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const handleApprovedJobRequest = (id, setIsLoading) => {
+    try {
+      Swal.fire({
+        title: `Job Request Status Update - Job Request #${id}`,
+        text: `Are you sure you want to update the job request status to "Approved"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        customClass: {
+          confirmButton: 'btn btn-primary rounded',
+          cancelButton: 'btn btn-secondary rounded',
+        },
+      }).then(async (data) => {
+        if (data.isConfirmed) {
+          try {
+            setIsLoading(true);
+
+            const jobRequestRef = doc(db, 'jobRequests', id);
+
+            await Promise.all([
+              updateDoc(jobRequestRef, {
+                status: 'approved',
+                cancelledMessage: null,
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              }),
+              //* create notification for admin and supervisor when updated a job request status
+              notifications.create({
+                module: 'job-request',
+                target: ['admin', 'supervisor', 'sales'],
+                title: 'Job request status updated',
+                message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "Approved".`, //prettier-ignore
+                data: {
+                  redirectUrl: `/job-requests/view/${id}`,
+                },
+              }),
+            ]);
+
+            toast.success('Job request status updated successfully', {
+              position: 'top-right',
+            });
+            setIsLoading(false);
+
+            setTimeout(() => {
+              window.location.assign(`/jobs/create?jobRequestId=${id}`);
+            }, 1500);
+          } catch (error) {
+            console.error('Error updating job request status:', error);
+            toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+            setIsLoading(false);
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error updating job request status:', error);
+      toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (jobRequestId) {
@@ -118,9 +186,19 @@ const EditJobRequest = () => {
           {
             text: 'Back to Job Request List',
             icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            variant: 'outline-primary',
             onClick: () => router.push(`/job-requests`),
           },
+          ...(auth.role === 'admin' || auth.role === 'supervisor'
+            ? [
+                {
+                  text: 'Approved Job Request',
+                  variant: 'light',
+                  icon: <HandThumbsUp size={14} />,
+                  onClick: (args) => handleApprovedJobRequest(jobRequestId, args.setIsLoading),
+                },
+              ]
+            : []),
         ]}
       />
 

@@ -167,7 +167,7 @@ const ETest = ({ data }) => {
         </Table>
       </div>
 
-      <hr className='my-4 border border-primary border-3' />
+      {/* <hr className='my-4 border border-primary border-3' />
 
       <Table className='w-50 mx-auto text-center align-middle' responsive bordered>
         <tbody>
@@ -228,7 +228,7 @@ const ETest = ({ data }) => {
             <th>mm</th>
           </tr>
         </tbody>
-      </Table>
+      </Table> */}
     </>
   );
 };

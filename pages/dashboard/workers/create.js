@@ -4,7 +4,13 @@ import { GeeksSEO } from '@/widgets';
 import { useRouter } from 'next/router';
 import React from 'react';
 import { Card } from 'react-bootstrap';
-import { ArrowLeftShort, HouseDoorFill, People, PlusCircle } from 'react-bootstrap-icons';
+import {
+  ArrowLeftShort,
+  HouseDoorFill,
+  People,
+  PeopleFill,
+  PlusCircle,
+} from 'react-bootstrap-icons';
 
 const CreateUser = () => {
   const router = useRouter();
@@ -28,7 +34,7 @@ const CreateUser = () => {
           {
             text: 'Technicians',
             link: '/workers',
-            icon: <People className='me-2' size={14} />,
+            icon: <PeopleFill className='me-2' size={14} />,
           },
           {
             text: 'Create Technician',
