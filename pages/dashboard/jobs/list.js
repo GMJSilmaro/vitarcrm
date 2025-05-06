@@ -387,7 +387,7 @@ const JobList = () => {
                     deleteDoc(jobDetailsRef),
                     //* create notification when job is removed
                     notifications.create({
-                      icon: 'job',
+                      module: 'job',
                       target: ['admin', 'supervisor'],
                       title: 'Job removed',
                       message: `Job (#${id}) was removed by ${auth.currentUser.displayName}.`,
@@ -435,7 +435,7 @@ const JobList = () => {
                     }),
                     //* create notification for admin and supervisor when updated a job status
                     notifications.create({
-                      icon: 'job',
+                      module: 'job',
                       target: ['admin', 'supervisor'],
                       title: 'Job status updated',
                       message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
@@ -504,7 +504,7 @@ const JobList = () => {
 
                   //* create notification when equipment is returned
                   await notifications.create({
-                    icon: 'job',
+                    module: 'job',
                     target: ['admin', 'supervisor'],
                     title: 'Equipment returned',
                     message: `Job (#${id}) equipment was returned by ${auth.currentUser.displayName}.`,

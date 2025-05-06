@@ -501,7 +501,6 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
               name='traceabilityCalibrationLab'
               control={form.control}
               render={({ field }) => {
-                console.log({ field });
                 return (
                   <>
                     <Select

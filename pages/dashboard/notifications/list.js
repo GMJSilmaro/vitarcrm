@@ -16,6 +16,7 @@ import {
 } from '@tanstack/react-table';
 import { formatRelative, subDays } from 'date-fns';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import _ from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -31,6 +32,7 @@ import {
   EnvelopeExclamation,
   EnvelopeCheck,
   ExclamationTriangleFill,
+  Grid,
 } from 'react-bootstrap-icons';
 
 const NotificationList = () => {
@@ -101,6 +103,9 @@ const NotificationList = () => {
         id: 'notification',
         cell: (info) => info.getValue(),
       }),
+      columnHelper.accessor('module', {
+        filterFn: 'equalsString',
+      }),
       columnHelper.accessor('title', {}),
       columnHelper.accessor('message', {}),
       columnHelper.accessor(
@@ -156,6 +161,41 @@ const NotificationList = () => {
     },
     [table]
   );
+
+  const activeModuleFilter = useMemo(() => {
+    if (!table) return;
+
+    const value = table.getState().columnFilters?.find((filter) => filter.id === 'module')?.value;
+
+    if (!value) return { title: 'All Modules', value: '' };
+    else return { title: _.startCase(value), value };
+  }, [table, JSON.stringify(table?.getState().columnFilters)]);
+
+  const handleSetModileFilter = useCallback(
+    (value) => {
+      if (!table) return;
+
+      const moduleColumn = table.getColumn('module');
+
+      if (!moduleColumn) return;
+
+      moduleColumn.setFilterValue(value);
+    },
+    [table]
+  );
+
+  const notificationCountsByModule = useMemo(() => {
+    if (!notifications.data) return {};
+
+    const countsByModule = notifications.data.reduce((acc, notification) => {
+      const moduleValue = notification.module;
+      acc[moduleValue] = (acc[moduleValue] ?? 0) + 1;
+      acc.total = (acc.total ?? 0) + 1;
+      return acc;
+    }, {});
+
+    return countsByModule;
+  }, [notifications.data]);
 
   //* query notifications
   useEffect(() => {
@@ -225,6 +265,51 @@ const NotificationList = () => {
             <DataTableSearch table={table} />
 
             <div className='d-flex gap-2'>
+              <Dropdown drop='down-centered'>
+                <Dropdown.Toggle variant='light'>
+                  <Grid size={20} className='text-primary me-2' />
+                  <span className='me-2'>{activeModuleFilter.title}</span>
+
+                  {activeModuleFilter.value !== '' && (
+                    <Badge pill>{notificationCountsByModule[activeModuleFilter.value]}</Badge>
+                  )}
+
+                  {activeModuleFilter.value === '' && (
+                    <Badge pill>{notificationCountsByModule?.total}</Badge>
+                  )}
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <Dropdown.Item
+                    className='d-flex justify-content-between align-items-center gap-3'
+                    onClick={() => handleSetModileFilter('')}
+                    active={activeModuleFilter.value === ''}
+                  >
+                    <span className='me-2'>All Modules</span>
+                    {notificationCountsByModule?.total > 0 && (
+                      <Badge pill>{notificationCountsByModule?.total}</Badge>
+                    )}
+                  </Dropdown.Item>
+
+                  {Object.keys(NOTIFICATION_ICON_MAP)
+                    .filter((key) => key !== 'default')
+                    .map((key) => (
+                      <Dropdown.Item
+                        className='d-flex justify-content-between align-items-center gap-3'
+                        onClick={() => handleSetModileFilter(key)}
+                        key={key}
+                        active={activeModuleFilter.value === key}
+                      >
+                        <span className='me-2'>{_.startCase(key)}</span>
+
+                        {notificationCountsByModule?.[key] > 0 && (
+                          <Badge pill>{notificationCountsByModule?.[key]}</Badge>
+                        )}
+                      </Dropdown.Item>
+                    ))}
+                </Dropdown.Menu>
+              </Dropdown>
+
               <Button
                 className={activeIsReadFilter === undefined ? 'border border-primary' : ''}
                 variant='light'
@@ -232,8 +317,8 @@ const NotificationList = () => {
                 disabled={notifications.isLoading}
               >
                 <Envelope size={20} className='text-primary me-2' />
-                <span className='me-2'>All</span>
-                <Badge>{notifications.data.length}</Badge>
+                <span className='me-2'>All Notifications</span>
+                {notifications.data.length > 0 && <Badge pill>{notifications.data.length}</Badge>}
               </Button>
 
               <Button
@@ -244,7 +329,7 @@ const NotificationList = () => {
               >
                 <EnvelopeCheck size={20} className='text-primary me-2' />
                 <span className='me-2'>Read</span>
-                <Badge>{readNotifications}</Badge>
+                {readNotifications > 0 && <Badge pill>{readNotifications}</Badge>}
               </Button>
 
               <Button
@@ -255,7 +340,7 @@ const NotificationList = () => {
               >
                 <EnvelopeExclamation size={20} className='text-primary me-2' />
                 <span className='me-2'>Unread</span>
-                <Badge pill>{unreadNotifications}</Badge>
+                {unreadNotifications > 0 && <Badge pill>{unreadNotifications}</Badge>}
               </Button>
 
               <Button
@@ -328,7 +413,7 @@ const NotificationList = () => {
               !notifications.isLoading &&
               !notifications.isError &&
               table.getRowModel().rows.map(({ original: notification }, i) => {
-                const Icon = NOTIFICATION_ICON_MAP?.[notification.icon] || NOTIFICATION_ICON_MAP['default']; //prettier-ignore
+                const Icon = NOTIFICATION_ICON_MAP?.[notification.module] || NOTIFICATION_ICON_MAP['default']; //prettier-ignore
 
                 const Comp = notification?.data?.redirectUrl ? Link : 'div';
                 const hrefPrefix = auth.role === 'technician' && workerId ? `/user/${workerId}` : ''; //prettier-ignore

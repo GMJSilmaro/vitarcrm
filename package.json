@@ -124,6 +124,7 @@
     "redis": "^4.7.0",
     "redux": "^5.0.1",
     "sass": "^1.83.4",
+    "signature_pad": "5.0.7",
     "simplebar": "^6.2.7",
     "simplebar-react": "^3.2.6",
     "stream-browserify": "^3.0.0",

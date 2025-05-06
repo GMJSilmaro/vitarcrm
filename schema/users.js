@@ -44,7 +44,7 @@ export const personalInfoSchema = z.object({
   isFieldWorker: z.boolean().default(false),
   categories: z
     .array(z.union([z.record(z.string(), z.any())]))
-    .min(1, { message: 'Please select at least one category' })
+    .default([])
     .transform((formData) => {
       if (typeof formData === 'object') {
         if (formData !== null && formData.length < 1) return [];

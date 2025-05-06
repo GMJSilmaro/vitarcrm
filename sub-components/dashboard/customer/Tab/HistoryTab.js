@@ -81,9 +81,26 @@ export const HistoryTab = () => {
           </div>
         ),
       }),
-      columnHelper.accessor('id', {
+      columnHelper.accessor((row) => `${row.id} - ${row.jobRequestId || ''}`, {
+        id: 'id',
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
+        cell: ({ row }) => {
+          const { id, jobRequestId } = row.original;
+          return (
+            <div className='d-flex flex-column gap-2 justify-content-center'>
+              <div className='d-flex flex-column justify-content-center'>
+                <div className='fw-bold'>ID:</div> <div>{id}</div>
+              </div>
+
+              {jobRequestId && (
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>Request ID:</div> <div>{jobRequestId}</div>
+                </div>
+              )}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor((row) => format(row.createdAt.toDate(), 'dd-MM-yyyy'), {
         id: 'date',
@@ -239,11 +256,11 @@ export const HistoryTab = () => {
               <div className='d-flex flex-column gap-2 justify-content-center'>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Start</div>
-                  <div>{format(startEnd.start, 'dd-MM-yyyy HH:mm')}</div>
+                  <div>{format(startEnd.start, 'dd-MM-yyyy HH:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>End</div>
-                  <div>{format(startEnd.end, 'dd-MM-yyyy HH:mm')}</div>
+                  <div>{format(startEnd.end, 'dd-MM-yyyy HH:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Duration:</div> <div>{startEnd.duration}</div>
@@ -476,7 +493,8 @@ export const HistoryTab = () => {
                     <Eye className='me-2' size={16} />
                     View Job
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleEditJob(id)}>
+
+                  {/* <Dropdown.Item onClick={() => handleEditJob(id)}>
                     <PencilSquare className='me-2' size={16} />
                     Edit Job
                   </Dropdown.Item>
@@ -536,7 +554,7 @@ export const HistoryTab = () => {
                   <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
                     <CardList className='me-2' size={16} />
                     Start Calibrate
-                  </Dropdown.Item>
+                  </Dropdown.Item> */}
                 </Dropdown.Menu>
               }
             >

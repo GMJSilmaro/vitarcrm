@@ -287,6 +287,9 @@ const CalibrateSummaryForm = ({
 
         const calibrationIdPrefix = `ST${categoryInitial}${format(date, 'yyMM')}-${scopeInitial}`;
 
+        //TODO: start with 1 the serial number for every job calibraiton,
+        //*TODO: then just increment per created calibration
+
         //* case insensitive regex base on scope type initial
         const regex = new RegExp(`[${SCOPE_TYPE.map((scope) => scope.charAt(0)).join('')}]`, 'i');
 

@@ -26,5 +26,6 @@ export const customerEquipmentSchema = z.object({
   rangeMin: z.coerce.number().default(''),
   rangeMax: z.coerce.number().default(''),
   uom: z.string().default(''),
+  tolerance: z.string().default(''),
   notes: z.string().default(''),
 });

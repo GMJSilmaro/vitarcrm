@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Accordion, Button, Card, Form, Tab, Table, Tabs } from 'react-bootstrap';
 import {
+  cmrSchema,
   customerEquipmentSchema,
   jobSchema,
   ReferenceEquipmentSchema,
@@ -16,6 +17,7 @@ import {
   doc,
   getDocs,
   increment,
+  onSnapshot,
   query,
   runTransaction,
   serverTimestamp,
@@ -38,6 +40,7 @@ import toast from 'react-hot-toast';
 import JobCustomerEquipmentForm from './tabs-form/JobCustomerEquipmentForm';
 import JobReferenceEquipmentForm from './tabs-form/JobReferenceEquipmentForm';
 import { useNotifications } from '@/hooks/useNotifications';
+import JobCmrForm from './tabs-form/JobCmrForm';
 
 const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const auth = useAuth();
@@ -47,14 +50,19 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const { workerId } = router.query;
   const [activeKey, setActiveKey] = useState('0');
 
-  const tabsLength = 4;
-  const tabSchema = [
+  const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
+
+  const [tabSchema, setTabsSchema] = useState([
     summarySchema,
     customerEquipmentSchema,
     tasksSchema,
     ReferenceEquipmentSchema,
     scheduleSchema,
-  ];
+  ]);
+
+  const [finalSchema, setFinalSchema] = useState(jobSchema);
+
+  const tabsLength = useMemo(() => tabSchema.length - 1, [JSON.stringify(tabSchema)]);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -76,21 +84,26 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
   const handleNext = useCallback(async () => {
     const isValid = await form.trigger();
-    if (!isValid) return;
+
+    if (!isValid) {
+      toast.error('Please fix the errors in the form and try again.', { position: 'top-right' });
+      return;
+    }
 
     if (Number(activeKey) <= tabSchema.length - 1) {
       const nextActiveKey = String(Number(activeKey) + 1);
       setActiveKey(nextActiveKey);
 
       if (Number(activeKey) === tabSchema.length - 1) {
-        const parseData = jobSchema.safeParse(form.getValues());
+        const parseData = finalSchema.safeParse(form.getValues());
 
         if (parseData.success) {
           handleSubmit(parseData.data);
-        } else toast.error('Failed to parse data. Please try again later.');
+        } else
+          toast.error('Failed to parse data. Please try again later.', { position: 'top-right' });
       }
     }
-  }, [activeKey]);
+  }, [activeKey, JSON.stringify(tabSchema)]);
 
   const handlePrevious = useCallback(() => {
     if (Number(activeKey) > 0) handleOnSelect(activeKey - 1);
@@ -331,7 +344,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
         if (!data) {
           //* create notification for admin and supervisor when created a job
           await notifications.create({
-            icon: 'job',
+            module: 'job',
             target: ['admin', 'supervisor'],
             title: 'New job created',
             message: `
@@ -345,7 +358,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           console.log('notification update...');
           //* create notification for admin and supervisor when updated a job
           await notifications.create({
-            icon: 'job',
+            module: 'job',
             target: ['admin', 'supervisor'],
             title: 'Job updated',
             message: `
@@ -360,7 +373,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
         //* create notification for assigned technician/s
         if (jobHeaders?.workers?.length > 0) {
           await notifications.create({
-            icon: 'job',
+            module: 'job',
             target: jobHeaders.workers.map((worker) => worker.uid),
             title: `You are assigned to a job (#${jobId}) `,
             message: `
@@ -372,9 +385,9 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           });
         }
 
-        if (isAdmin) window.location.assign(`/jobs/edit-jobs/${jobId}`);
+        if (isAdmin) window.location.assign(`/jobs/view/${jobId}`);
         else {
-          window.location.assign(`/user/${workerId}/jobs/edit-jobs/${jobId}`);
+          window.location.assign(`/user/${workerId}/jobs/view/${jobId}`);
         }
 
         toast.success(`Job ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
@@ -399,6 +412,53 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
     setActiveKey(key);
   };
+
+  //* query job calibration
+  useEffect(() => {
+    if (!data) {
+      setCalibrations({ data: [], isLoading: false, isError: false });
+      return;
+    }
+
+    const q = query(
+      collection(db, 'jobCalibrations'),
+      where('jobId', '==', data.id),
+      where('status', 'in', ['completed', 'approval'])
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const calibrationData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setCalibrations({
+            data: calibrationData,
+            isLoading: false,
+            isError: false,
+          });
+
+          //* if calibrationData is greater than 0 then show CMR tab
+          if (calibrationData.length > 0) {
+            setTabsSchema((prev) => [...prev, cmrSchema]);
+            setFinalSchema(jobSchema.merge(cmrSchema));
+          }
+        } else {
+          setCalibrations({
+            data: [],
+            isLoading: false,
+            isError: false,
+          });
+        }
+      },
+      (err) => {
+        console.error(err.message);
+        setCalibrations({ data: [], isLoading: false, isError: true });
+      }
+    );
+
+    return () => unsubscribe();
+  }, [data]);
 
   return (
     <>
@@ -455,8 +515,21 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
                 handleNext={handleNext}
                 handlePrevious={handlePrevious}
                 toDuplicateJob={toDuplicateJob}
+                calibrations={calibrations}
               />
             </Tab>
+
+            {calibrations.data.length > 0 && (
+              <Tab eventKey='5' title='CMR'>
+                <JobCmrForm
+                  data={data}
+                  isLoading={isLoading}
+                  handleNext={handleNext}
+                  handlePrevious={handlePrevious}
+                  calibrations={calibrations}
+                />
+              </Tab>
+            )}
           </Tabs>
         </Form>
       </FormProvider>

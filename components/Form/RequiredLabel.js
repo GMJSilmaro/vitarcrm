@@ -1,7 +1,7 @@
 import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 //TODO: Make this as FormLabel, has props of isRequired, label, id
-export const RequiredLabel = ({ label, id }) => (
+export const RequiredLabel = ({ label, id, children }) => (
   <Form.Label htmlFor={id}>
     {label}
     <OverlayTrigger placement='top' overlay={<Tooltip>This field is required</Tooltip>}>
@@ -9,5 +9,6 @@ export const RequiredLabel = ({ label, id }) => (
         *
       </span>
     </OverlayTrigger>
+    {children}
   </Form.Label>
 );

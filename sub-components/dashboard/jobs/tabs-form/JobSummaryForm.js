@@ -23,6 +23,7 @@ import { useRouter } from 'next/router';
 
 const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const router = useRouter();
+  const { jobRequestId } = router.query;
 
   const form = useFormContext();
 
@@ -39,6 +40,213 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const selectedLocation = useMemo(() => {
     return form.watch('location');
   }, [JSON.stringify(form.watch('location'))]);
+
+  const formatCustomerOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        <span>{data.label}</span>
+        <span className='d-flex column-gap-2'>
+          <Badge bg='info'>{data.equipments?.length ?? 0} Equipment</Badge>
+          <Badge bg='primary'>{data.contacts?.length ?? 0} Contact</Badge>
+          <Badge bg='warning'>{data.locations?.length ?? 0} Location</Badge>
+        </span>
+      </div>
+    );
+  };
+
+  const formatJobRequestOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        <span>{data.label}</span>
+        <span className='d-flex column-gap-2'>
+          <Badge bg='primary'>{data?.jobRequest?.supervisor?.name || ''}</Badge>
+          <Badge bg='info'>{data?.jobRequest?.customerEquipments?.length ?? 0} Equipment</Badge>
+        </span>
+      </div>
+    );
+  };
+
+  const formatContactOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        {data.label}
+        <span className='d-flex column-gap-2'>
+          {data?.isDefault && <Badge bg='primary'>Default</Badge>}
+          <Badge bg='warning'>{data.role}</Badge>
+        </span>
+      </div>
+    );
+  };
+
+  const formatLocationOptionLabel = (data) => {
+    return (
+      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
+        <span>{data.label}</span>
+        {data?.isDefault && <Badge bg='primary'>Default</Badge>}
+      </div>
+    );
+  };
+
+  const handleCustomerChange = useCallback(
+    (option, field) => {
+      field.onChange(option);
+
+      if (!data) {
+        //* clear customer equipments
+        form.setValue('customerEquipments', []);
+      } else {
+        if (data?.customer?.id !== option?.id) {
+          form.setValue('customerEquipments', []);
+        } else form.setValue('customerEquipments', data?.customerEquipments);
+      }
+
+      //* contact options
+      const cOptions =
+        option?.contacts?.length > 0
+          ? option.contacts.map((contact) => ({
+              value: contact.id,
+              label: `${contact.firstName} ${contact.lastName}`,
+              ...contact,
+            }))
+          : [];
+
+      //* location options
+      const lOptions =
+        option?.locations?.length > 0
+          ? option.locations.map((location) => ({
+              value: location.siteId,
+              label: `${location.siteId} - ${location.siteName}`,
+              ...location,
+            }))
+          : [];
+
+      if (cOptions.length > 0) {
+        setContactsOpions(cOptions);
+        const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
+        if (defaultContact) {
+          form.setValue('contact', defaultContact);
+          form.clearErrors('contact');
+        }
+      } else {
+        form.setValue('contact', null);
+        setContactsOpions([]);
+      }
+
+      if (lOptions.length > 0) {
+        setLocationsOptions(lOptions);
+        const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
+        if (defaultLocation) {
+          form.setValue('location', defaultLocation);
+          form.clearErrors('location');
+        }
+      } else {
+        form.setValue('location', null);
+        setLocationsOptions([]);
+      }
+    },
+    [data]
+  );
+
+  const populateJobRequestRelatedData = useCallback(
+    (option) => {
+      //* set customer
+      const customer = customersOptions.data.find((c) => c.value === option?.jobRequest?.customer?.id); //prettier-ignore
+      const customerEquipmentsFromJobRequest = option?.jobRequest?.customerEquipments || [];
+      const tasksFromJobRequest = option?.jobRequest?.tasks || [];
+      form.setValue('customer', customer);
+
+      if (customer) {
+        if (!data) {
+          //* clear customer equipments
+          form.setValue('customerEquipments', []);
+        } else {
+          if (data?.customer?.id !== option?.id) {
+            form.setValue('customerEquipments', []);
+          } else form.setValue('customerEquipments', data?.customerEquipments);
+        }
+
+        //* contact options
+        const cOptions =
+          customer?.contacts?.length > 0
+            ? customer.contacts.map((contact) => ({
+                value: contact.id,
+                label: `${contact.firstName} ${contact.lastName}`,
+                ...contact,
+              }))
+            : [];
+
+        //* location options
+        const lOptions =
+          customer?.locations?.length > 0
+            ? customer.locations.map((location) => ({
+                value: location.siteId,
+                label: `${location.siteId} - ${location.siteName}`,
+                ...location,
+              }))
+            : [];
+
+        if (cOptions.length > 0) {
+          setContactsOpions(cOptions);
+
+          const contactFromJobRequest = cOptions.find(contact => contact.value === option?.jobRequest?.contact?.id); //prettier-ignore
+
+          //* if contactFromJobRequest exist set it, othwerwise set default contact, if has default contact
+          if (contactFromJobRequest) {
+            form.setValue('contact', contactFromJobRequest);
+            form.clearErrors('contact');
+          } else {
+            const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
+            if (defaultContact) {
+              form.setValue('contact', defaultContact);
+              form.clearErrors('contact');
+            }
+          }
+        } else {
+          form.setValue('contact', null);
+          setContactsOpions([]);
+        }
+
+        if (lOptions.length > 0) {
+          setLocationsOptions(lOptions);
+
+          const locationFromJobRequest = lOptions.find(location => location.value === option?.jobRequest?.location?.id); //prettier-ignore
+
+          //* if locationFromJobRequest exist set it, othwerwise set default location, if has default location
+          if (locationFromJobRequest) {
+            form.setValue('location', locationFromJobRequest);
+            form.clearErrors('location');
+          } else {
+            const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
+            if (defaultLocation) {
+              form.setValue('location', defaultLocation);
+              form.clearErrors('location');
+            }
+          }
+        } else {
+          form.setValue('location', null);
+          setLocationsOptions([]);
+        }
+
+        //* set customer equipments based on job request
+        form.setValue('customerEquipments', customerEquipmentsFromJobRequest);
+
+        //* set tasks based on job request
+        form.setValue('tasks', tasksFromJobRequest);
+      }
+    },
+    [data, JSON.stringify(customersOptions)]
+  );
+
+  const handleJobRequestChange = useCallback(
+    (option, field) => {
+      if (customersOptions.data.length > 0) {
+        field.onChange(option);
+
+        populateJobRequestRelatedData(option);
+      }
+    },
+    [data, JSON.stringify(customersOptions)]
+  );
 
   //* query customers
   useEffect(() => {
@@ -152,13 +360,22 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
     }
   }, [data, customersOptions]);
 
-  //* set jobRequestId if data exist
+  //* set jobRequestId if data exist or jobRequestId search params exists
   useEffect(() => {
     if (data && jobRequestOptions.data.length > 0) {
       const selectedJobRequest = jobRequestOptions.data.find(
         (jobRequest) => jobRequest.id === data.jobRequestId
       );
       form.setValue('jobRequestId', selectedJobRequest);
+    }
+
+    if (!data && jobRequestId && jobRequestOptions.data.length > 0) {
+      const selectedJobRequest = jobRequestOptions.data.find(
+        (jobRequest) => jobRequest.id === jobRequestId
+      );
+      form.setValue('jobRequestId', selectedJobRequest);
+
+      populateJobRequestRelatedData(selectedJobRequest);
     }
   }, [data, jobRequestOptions]);
 
@@ -231,210 +448,6 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
     return () => unsubscribe();
   }, [JSON.stringify(jobs), data]);
 
-  const formatCustomerOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{data.label}</span>
-        <span className='d-flex column-gap-2'>
-          <Badge bg='info'>{data.equipments?.length ?? 0} Equipment</Badge>
-          <Badge bg='primary'>{data.contacts?.length ?? 0} Contact</Badge>
-          <Badge bg='warning'>{data.locations?.length ?? 0} Location</Badge>
-        </span>
-      </div>
-    );
-  };
-
-  const formatJobRequestOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{data.label}</span>
-        <span className='d-flex column-gap-2'>
-          <Badge bg='primary'>{data?.jobRequest?.supervisor?.name || ''}</Badge>
-          <Badge bg='info'>{data?.jobRequest?.customerEquipments?.length ?? 0} Equipment</Badge>
-        </span>
-      </div>
-    );
-  };
-
-  const formatContactOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        {data.label}
-        <span className='d-flex column-gap-2'>
-          {data?.isDefault && <Badge bg='primary'>Default</Badge>}
-          <Badge bg='warning'>{data.role}</Badge>
-        </span>
-      </div>
-    );
-  };
-
-  const formatLocationOptionLabel = (data) => {
-    return (
-      <div className='d-flex justify-content-between align-items-center gap-2 text-capitalize'>
-        <span>{data.label}</span>
-        {data?.isDefault && <Badge bg='primary'>Default</Badge>}
-      </div>
-    );
-  };
-
-  const handleCustomerChange = useCallback(
-    (option, field) => {
-      field.onChange(option);
-
-      if (!data) {
-        //* clear customer equipments
-        form.setValue('customerEquipments', []);
-      } else {
-        if (data?.customer?.id !== option?.id) {
-          form.setValue('customerEquipments', []);
-        } else form.setValue('customerEquipments', data?.customerEquipments);
-      }
-
-      //* contact options
-      const cOptions =
-        option?.contacts?.length > 0
-          ? option.contacts.map((contact) => ({
-              value: contact.id,
-              label: `${contact.firstName} ${contact.lastName}`,
-              ...contact,
-            }))
-          : [];
-
-      //* location options
-      const lOptions =
-        option?.locations?.length > 0
-          ? option.locations.map((location) => ({
-              value: location.siteId,
-              label: `${location.siteId} - ${location.siteName}`,
-              ...location,
-            }))
-          : [];
-
-      if (cOptions.length > 0) {
-        setContactsOpions(cOptions);
-        const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
-        if (defaultContact) {
-          form.setValue('contact', defaultContact);
-          form.clearErrors('contact');
-        }
-      } else {
-        form.setValue('contact', null);
-        setContactsOpions([]);
-      }
-
-      if (lOptions.length > 0) {
-        setLocationsOptions(lOptions);
-        const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
-        if (defaultLocation) {
-          form.setValue('location', defaultLocation);
-          form.clearErrors('location');
-        }
-      } else {
-        form.setValue('location', null);
-        setLocationsOptions([]);
-      }
-    },
-    [data]
-  );
-
-  const handleJobRequestChange = useCallback(
-    (option, field) => {
-      if (customersOptions.data.length > 0) {
-        field.onChange(option);
-
-        //* set customer
-        const customer = customersOptions.data.find((c) => c.value === option?.jobRequest?.customer?.id); //prettier-ignore
-        const customerEquipmentsFromJobRequest = option?.jobRequest?.customerEquipments || [];
-        const tasksFromJobRequest = option?.jobRequest?.tasks || [];
-        form.setValue('customer', customer);
-
-        if (customer) {
-          if (!data) {
-            //* clear customer equipments
-            form.setValue('customerEquipments', []);
-          } else {
-            if (data?.customer?.id !== option?.id) {
-              form.setValue('customerEquipments', []);
-            } else form.setValue('customerEquipments', data?.customerEquipments);
-          }
-
-          //* contact options
-          const cOptions =
-            customer?.contacts?.length > 0
-              ? customer.contacts.map((contact) => ({
-                  value: contact.id,
-                  label: `${contact.firstName} ${contact.lastName}`,
-                  ...contact,
-                }))
-              : [];
-
-          //* location options
-          const lOptions =
-            customer?.locations?.length > 0
-              ? customer.locations.map((location) => ({
-                  value: location.siteId,
-                  label: `${location.siteId} - ${location.siteName}`,
-                  ...location,
-                }))
-              : [];
-
-          if (cOptions.length > 0) {
-            setContactsOpions(cOptions);
-
-            const contactFromJobRequest = cOptions.find(contact => contact.value === option?.jobRequest?.contact?.id); //prettier-ignore
-
-            //* if contactFromJobRequest exist set it, othwerwise set default contact, if has default contact
-            if (contactFromJobRequest) {
-              form.setValue('contact', contactFromJobRequest);
-              form.clearErrors('contact');
-            } else {
-              const defaultContact = cOptions.find(contact => contact.isDefault) //prettier-ignore
-              if (defaultContact) {
-                form.setValue('contact', defaultContact);
-                form.clearErrors('contact');
-              }
-            }
-          } else {
-            form.setValue('contact', null);
-            setContactsOpions([]);
-          }
-
-          if (lOptions.length > 0) {
-            setLocationsOptions(lOptions);
-
-            const locationFromJobRequest = lOptions.find(location => location.value === option?.jobRequest?.location?.id); //prettier-ignore
-
-            //* if locationFromJobRequest exist set it, othwerwise set default location, if has default location
-            if (locationFromJobRequest) {
-              form.setValue('location', locationFromJobRequest);
-              form.clearErrors('location');
-            } else {
-              const defaultLocation = lOptions.find(location => location.isDefault) //prettier-ignore
-              if (defaultLocation) {
-                form.setValue('location', defaultLocation);
-                form.clearErrors('location');
-              }
-            }
-          } else {
-            form.setValue('location', null);
-            setLocationsOptions([]);
-          }
-
-          //* set customer equipments based on job request
-          form.setValue('customerEquipments', customerEquipmentsFromJobRequest);
-
-          //* set tasks based on job request
-          form.setValue('tasks', tasksFromJobRequest);
-
-          console.log('xxxxxx', { customerEquipmentsFromJobRequest, tasksFromJobRequest });
-        } else {
-          toast.error('Customer Data not found. Please try again later.');
-        }
-      }
-    },
-    [data, JSON.stringify(customersOptions)]
-  );
-
   //* set date if toDuplicateJob exists
   useEffect(() => {
     if (toDuplicateJob) {
@@ -505,8 +518,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
           <h4 className='mb-0'>Job Request</h4>
           <p className='text-muted fs-6'>Associate job request for this job.</p>
 
-          <Row className='mb-3'>
-            <Form.Group as={Col} md={6}>
+          <Row className='mb-3 row-gap-3'>
+            <Form.Group as={Col} md={12}>
               <Form.Label className='me-1' id='jobRequestId'>
                 Job Request
               </Form.Label>
@@ -566,6 +579,20 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
               <Form.Control
                 type='text'
                 value={form.watch('jobRequestId.jobRequest.supervisor.name') || ''}
+                readOnly
+                disabled
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md={6}>
+              <Form.Label>Sales Person</Form.Label>
+              <Form.Control
+                type='text'
+                value={
+                  form.watch('jobRequestId.jobRequest.createdBy.displayName') ||
+                  data?.createdBy?.displayName ||
+                  ''
+                }
                 readOnly
                 disabled
               />
@@ -700,7 +727,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
               />
             </Form.Group>
             <Form.Group as={Col} md='3'>
-              <Form.Label>Phone</Form.Label>
+              <Form.Label>Email</Form.Label>
               <Form.Control
                 required
                 type='text'

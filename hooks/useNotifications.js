@@ -14,10 +14,10 @@ import toast from 'react-hot-toast';
 export const useNotifications = () => {
   const auth = useAuth();
 
-  const create = async ({ icon: Icon, target, title, message, data }) => {
+  const create = async ({ module, target, title, message, data }) => {
     try {
       await addDoc(collection(db, 'notifications'), {
-        icon: Icon,
+        module,
         target: target,
         title: title,
         message: message,

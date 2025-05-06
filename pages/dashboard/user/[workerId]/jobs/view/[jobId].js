@@ -1,22 +1,38 @@
 import PageHeader from '@/components/common/PageHeader';
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import { useNotifications } from '@/hooks/useNotifications';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  where,
+} from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { ArrowLeftShort, BriefcaseFill } from 'react-bootstrap-icons';
+import { ArrowLeftShort, BriefcaseFill, CheckCircle } from 'react-bootstrap-icons';
+import toast from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 const JobDetails = () => {
   const router = useRouter();
   const { jobId, workerId } = router.query;
+  const auth = useAuth();
+  const notifications = useNotifications();
 
   const [job, setJob] = useState();
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +45,77 @@ const JobDetails = () => {
   const [contact, setContact] = useState();
   const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
   const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
+
+  const [isStoppingJob, setIsStoppingJob] = useState(false);
+
+  const stopJob = async (id, setIsLoading) => {
+    if (!id) return;
+
+    Swal.fire({
+      title: 'Finished Job?',
+      text: 'Are you sure you want you want to mark the job as "Completed"?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
+    }).then(async (data) => {
+      if (data.isConfirmed) {
+        try {
+          setIsLoading(true);
+
+          //* update job header & details
+          const jobHeaderRef = doc(db, 'jobHeaders', id);
+          const jobDetailsRef = doc(db, 'jobDetails', id);
+
+          await runTransaction(db, async (transaction) => {
+            try {
+              transaction.update(jobHeaderRef, {
+                status: 'completed',
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              });
+
+              transaction.update(jobDetailsRef, {
+                endByAt: serverTimestamp(),
+                endBy: auth.currentUser,
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              });
+            } catch (error) {
+              throw error;
+            }
+          });
+
+          //* create notification for admin and supervisor when updated a job status
+          await notifications.create({
+            module: 'job',
+            target: ['admin', 'supervisor'],
+            title: 'Job completed',
+            message: `Job (#${id}) has been marked as "Completed" by ${auth.currentUser.displayName}.`,
+            data: {
+              redirectUrl: `/jobs/view/${id}`,
+            },
+          });
+
+          toast.success('Job has been completed successfully.', { position: 'top-right' });
+          setIsLoading(false);
+
+          //* reload page after 2 seconds
+          setTimeout(() => {
+            router.reload();
+          }, 2000);
+        } catch (error) {
+          setIsLoading(false);
+          console.error('Error stopping job', error);
+          toast.error('Unexpected error occured while stopping job. Please try again later.');
+        }
+      }
+    });
+  };
 
   //* query job header & details
   useEffect(() => {
@@ -258,10 +345,30 @@ const JobDetails = () => {
           title={`View Job #${jobId}`}
           subtitle='View job details'
           action={
-            <Button variant='light' onClick={() => router.back()}>
-              <ArrowLeftShort size={20} className='me-2' />
-              Go Back
-            </Button>
+            <div className='d-flex align-items-center gap-2'>
+              <Button
+                variant={job.status === 'in progress' ? 'outline-light' : 'light'}
+                onClick={() => router.back()}
+              >
+                <ArrowLeftShort size={20} className='me-2' />
+                Go Back
+              </Button>
+
+              {job.status === 'in progress' && (
+                <Button
+                  disabled={isStoppingJob}
+                  variant='light'
+                  onClick={() => stopJob(jobId, setIsStoppingJob)}
+                >
+                  {isStoppingJob ? (
+                    <Spinner animation='border' size='sm' className='me-2' />
+                  ) : (
+                    <CheckCircle size={20} className='me-2' />
+                  )}
+                  Close Job
+                </Button>
+              )}
+            </div>
           }
         />
 

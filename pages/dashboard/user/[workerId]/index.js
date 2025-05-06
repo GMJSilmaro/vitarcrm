@@ -689,7 +689,7 @@ function WorkerDashboard() {
 
                   //* create notification when equipment is returned
                   await notifications.create({
-                    icon: 'job',
+                    module: 'job',
                     target: ['admin', 'supervisor'],
                     title: 'Equipment returned',
                     message: `Job (#${id}) equipment was returned by ${auth.currentUser.displayName}.`,
@@ -962,7 +962,7 @@ function WorkerDashboard() {
 
           //* create notification for admin and supervisor when updated a job status
           await notifications.create({
-            icon: 'job',
+            module: 'job',
             target: ['admin', 'supervisor'],
             title: 'Job started',
             message: `Job (#${id}) has been started by ${auth.currentUser.displayName}.`,
@@ -1027,7 +1027,7 @@ function WorkerDashboard() {
 
           //* create notification for admin and supervisor when updated a job status
           await notifications.create({
-            icon: 'job',
+            module: 'job',
             target: ['admin', 'supervisor'],
             title: 'Job completed',
             message: `Job (#${id}) has been marked as "completed" by ${auth.currentUser.displayName}.`,

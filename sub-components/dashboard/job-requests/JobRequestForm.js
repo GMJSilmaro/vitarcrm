@@ -91,7 +91,7 @@ const JobRequestForm = ({ data }) => {
         //* create notification for admin and supervisor when created a job request
         if (!data) {
           await notifications.create({
-            icon: 'job-request',
+            module: 'job-request',
             target: ['admin', 'supervisor'],
             title: 'New job request created',
             message: `A new job request (#${formData.jobRequestId}) has been created by ${auth.currentUser.displayName} for ${formData.customer.name}.`,
@@ -101,7 +101,7 @@ const JobRequestForm = ({ data }) => {
           });
         } else {
           await notifications.create({
-            icon: 'job-request',
+            module: 'job-request',
             target: ['admin', 'supervisor'],
             title: 'Job request updated',
             message: `Job request (#${formData.jobRequestId}) has been updated by ${auth.currentUser.displayName}.`,
@@ -114,7 +114,7 @@ const JobRequestForm = ({ data }) => {
         //* create notification for assigned supervisor
         if (formData?.supervisor?.uid) {
           await notifications.create({
-            icon: 'job-request',
+            module: 'job-request',
             target: [formData.supervisor.uid],
             title: `You are assigned as a supervisor`,
             message: `Job request (#${formData.jobRequestId}) has been assigned to you by ${auth.currentUser.displayName}.`,

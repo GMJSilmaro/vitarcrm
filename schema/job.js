@@ -241,6 +241,23 @@ export const scheduleSchema = z
     }
   );
 
+export const cmrSchema = z.object({
+  pic: z.string().min(1, { message: 'P.I.C is required' }),
+  recalibrationInterval: z.string().min(1, { message: 'Recalibration Interval is required' }),
+  accessories: z.string().min(1, { message: 'Accessories is required' }),
+  remark: z.string().min(1, { message: 'Remarks is required' }),
+  conditionWhenReceived: z.string().min(1, { message: 'Condition When Received is required' }),
+  isPartialRange: z.boolean().default(false),
+  isNonAccredited: z.boolean().default(false),
+  isOpenWiringConnection: z.boolean().default(false),
+  isAdjustments: z.boolean().default(false),
+  telFax: z.string().default(''),
+  others: z.string().default(''),
+  salesSignature: z.string().min(1, { message: 'Laboratory Representative Signature is required' }),
+  workerSignature: z.string().min(1, { message: 'Reviewed By Signature is required' }),
+  customerSignature: z.string().min(1, { message: 'Customer Signature is required' }),
+});
+
 export const jobSchema = z
   .object({})
   .merge(summarySchema)

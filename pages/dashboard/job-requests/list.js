@@ -207,7 +207,7 @@ const JobRequestList = () => {
                     deleteDoc(jobRequestRef),
                     //* create notification when job request is removed
                     notifications.create({
-                      icon: 'job-request',
+                      module: 'job-request',
                       target: ['admin', 'supervisor', 'sales'],
                       title: 'Job request removed',
                       message: `Job request (#${id}) was removed by ${auth.currentUser.displayName}.`,
@@ -285,7 +285,7 @@ const JobRequestList = () => {
                         }),
                         //* create notification for admin and supervisor when updated a job request status
                         notifications.create({
-                          icon: 'job-request',
+                          module: 'job-request',
                           target: ['admin', 'supervisor', 'sales'],
                           title: 'Job request status updated',
                           message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
@@ -338,7 +338,7 @@ const JobRequestList = () => {
                     }),
                     //* create notification for admin and supervisor when updated a job request status
                     notifications.create({
-                      icon: 'job-request',
+                      module: 'job-request',
                       target: ['admin', 'supervisor', 'sales'],
                       title: 'Job request status updated',
                       message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
@@ -352,6 +352,12 @@ const JobRequestList = () => {
                     position: 'top-right',
                   });
                   setIsLoading(false);
+
+                  if (status === 'approved') {
+                    setTimeout(() => {
+                      window.location.assign(`/jobs/create?jobRequestId=${id}`);
+                    }, 1500);
+                  }
                 } catch (error) {
                   console.error('Error updating job request status:', error);
                   toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
@@ -381,36 +387,40 @@ const JobRequestList = () => {
                     Delete Job Request
                   </Dropdown.Item>
 
-                  <OverlayTrigger
-                    rootClose
-                    trigger='click'
-                    placement='right-end'
-                    overlay={
-                      <Dropdown.Menu show style={{ zIndex: 999 }}>
-                        <Dropdown.Item onClick={() => handleUpdateJobRequestStatus(id, 'approved')}>
-                          <HandThumbsUp className='me-2' size={16} />
-                          Approved
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleUpdateJobRequestStatus(id, 'cancelled')}
-                        >
-                          <HandThumbsDown className='me-2' size={16} />
-                          Cancelled
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => handleUpdateJobRequestStatus(id, 'incomplete')}
-                        >
-                          <CircleHalf className='me-2' size={16} />
-                          Incomplete
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    }
-                  >
-                    <Dropdown.Item>
-                      <ArrowRepeat className='me-2' size={16} />
-                      Update Status
-                    </Dropdown.Item>
-                  </OverlayTrigger>
+                  {(auth.role === 'admin' || auth.role === 'supervisor') && (
+                    <OverlayTrigger
+                      rootClose
+                      trigger='click'
+                      placement='right-end'
+                      overlay={
+                        <Dropdown.Menu show style={{ zIndex: 999 }}>
+                          <Dropdown.Item
+                            onClick={() => handleUpdateJobRequestStatus(id, 'approved')}
+                          >
+                            <HandThumbsUp className='me-2' size={16} />
+                            Approved
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleUpdateJobRequestStatus(id, 'cancelled')}
+                          >
+                            <HandThumbsDown className='me-2' size={16} />
+                            Cancelled
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => handleUpdateJobRequestStatus(id, 'incomplete')}
+                          >
+                            <CircleHalf className='me-2' size={16} />
+                            Incomplete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      }
+                    >
+                      <Dropdown.Item>
+                        <ArrowRepeat className='me-2' size={16} />
+                        Update Status
+                      </Dropdown.Item>
+                    </OverlayTrigger>
+                  )}
                 </Dropdown.Menu>
               }
             >
@@ -426,7 +436,7 @@ const JobRequestList = () => {
         },
       }),
     ];
-  }, []);
+  }, [auth.role]);
 
   const filterFields = useMemo(() => {
     return [
@@ -481,7 +491,10 @@ const JobRequestList = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'jobRequests'), where('status', '!=', 'approved'));
+    const q = query(
+      collection(db, 'jobRequests'),
+      where('status', 'not-in', ['approved', 'cancelled'])
+    );
 
     const unsubscribe = onSnapshot(
       q,
@@ -527,8 +540,8 @@ const JobRequestList = () => {
             icon: <HouseDoorFill className='me-2' style={{ fontSize: '14px' }} />,
           },
           {
-            text: 'Jobs Requests',
-            link: '/jobs-requests',
+            text: 'Job Requests',
+            link: '/job-requests',
             icon: <EnvelopePaperFill className='me-2' size={14} />,
           },
         ]}

@@ -307,7 +307,27 @@ const CustomerEquipmentForm = ({ data }) => {
                 />
               </Form.Group>
 
-              <Form.Group as={Col} md={9}>
+              <Form.Group as={Col} md={3}>
+                <Form.Label htmlFor='tolerance'>Tolerance</Form.Label>
+
+                <Controller
+                  name='tolerance'
+                  control={form.control}
+                  render={({ field }) => (
+                    <>
+                      <Form.Control {...field} id='tolerance' placeholder='Enter tolerance' />
+
+                      {formErrors && formErrors.tolerance?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.tolerance?.message}
+                        </Form.Text>
+                      )}
+                    </>
+                  )}
+                />
+              </Form.Group>
+
+              <Form.Group as={Col} md={6}>
                 <Form.Label htmlFor='uom'>Notes</Form.Label>
 
                 <Controller

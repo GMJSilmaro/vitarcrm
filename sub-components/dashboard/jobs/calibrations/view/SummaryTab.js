@@ -2,6 +2,7 @@ import { add, format, isValid } from 'date-fns';
 import { useCallback, useMemo } from 'react';
 import { Card, Col, Row } from 'react-bootstrap';
 import {
+  Activity,
   Building,
   Calendar,
   CalendarEvent,
@@ -193,12 +194,12 @@ const SummaryTab = ({ calibration }) => {
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
               >
-                <Hash size={20} />
+                <Activity size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Serial No:</div>
-                <div className='text-primary-label fw-semibold'>
-                  {calibration?.serialNumber || 'N/A'}
+                <div className='text-secondary fs-6'>Status:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {calibration?.status || 'N/A'}
                 </div>
               </div>
             </div>

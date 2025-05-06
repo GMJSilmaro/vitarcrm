@@ -1,19 +1,34 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import { useNotifications } from '@/hooks/useNotifications';
 import CustomerEquipment from '@/sub-components/dashboard/job-requests/view/CustomerEquipment';
 import SummaryTab from '@/sub-components/dashboard/job-requests/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/job-requests/view/TaskTab';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { BriefcaseFill } from 'react-bootstrap-icons';
+import { BriefcaseFill, HandThumbsUp } from 'react-bootstrap-icons';
+import toast from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 const JobRequestDetails = () => {
   const router = useRouter();
   const { jobRequestId } = router.query;
+  const auth = useAuth();
+  const notifications = useNotifications();
 
   const [jobRequest, setJobRequest] = useState();
   const [isLoading, setIsLoading] = useState(true);
@@ -23,6 +38,67 @@ const JobRequestDetails = () => {
   const [customer, setCustomer] = useState({ data: {}, isLoading: true, isError: false });
   const [contact, setContact] = useState();
   const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
+
+  const handleApprovedJobRequest = (id, setIsLoading) => {
+    try {
+      Swal.fire({
+        title: `Job Request Status Update - Job Request #${id}`,
+        text: `Are you sure you want to update the job request status to "Approved"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        customClass: {
+          confirmButton: 'btn btn-primary rounded',
+          cancelButton: 'btn btn-secondary rounded',
+        },
+      }).then(async (data) => {
+        if (data.isConfirmed) {
+          try {
+            setIsLoading(true);
+
+            const jobRequestRef = doc(db, 'jobRequests', id);
+
+            await Promise.all([
+              updateDoc(jobRequestRef, {
+                status: 'approved',
+                cancelledMessage: null,
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              }),
+              //* create notification for admin and supervisor when updated a job request status
+              notifications.create({
+                module: 'job-request',
+                target: ['admin', 'supervisor', 'sales'],
+                title: 'Job request status updated',
+                message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "Approved".`, //prettier-ignore
+                data: {
+                  redirectUrl: `/job-requests/view/${id}`,
+                },
+              }),
+            ]);
+
+            toast.success('Job request status updated successfully', {
+              position: 'top-right',
+            });
+            setIsLoading(false);
+
+            setTimeout(() => {
+              window.location.assign(`/jobs/create?jobRequestId=${id}`);
+            }, 1500);
+          } catch (error) {
+            console.error('Error updating job request status:', error);
+            toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+            setIsLoading(false);
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error updating job request status:', error);
+      toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+      setIsLoading(false);
+    }
+  };
 
   //* query job request
   useEffect(() => {
@@ -211,10 +287,20 @@ const JobRequestDetails = () => {
           {
             text: 'Back to Job Requests List',
             icon: <FaArrowLeft size={16} />,
-            variant: 'light',
+            variant: 'outline-primary',
             tooltip: 'Back to Job Requests List',
             onClick: () => router.push('/job-requests'),
           },
+          ...(auth.role === 'admin' || auth.role === 'supervisor'
+            ? [
+                {
+                  text: 'Approved Job Request',
+                  variant: 'light',
+                  icon: <HandThumbsUp size={14} />,
+                  onClick: (args) => handleApprovedJobRequest(jobRequestId, args.setIsLoading),
+                },
+              ]
+            : []),
         ]}
       />
 

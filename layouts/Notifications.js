@@ -17,7 +17,7 @@ import {
 
 //* notification property
 //*  id: String
-//*  icon: String
+//*  module: String
 //*  target: String[] // "all", any roles, any user's uid
 //*  title: String
 //*  message: String
@@ -138,7 +138,7 @@ const Notifications = ({ notifications, setShow }) => {
 
             {notifications.data.length > 0 &&
               notifications.data.slice(0, 5).map((notification) => {
-                const Icon = NOTIFICATION_ICON_MAP?.[notification.icon] || NOTIFICATION_ICON_MAP['default']; //prettier-ignore
+                const Icon = NOTIFICATION_ICON_MAP?.[notification.module] || NOTIFICATION_ICON_MAP['default']; //prettier-ignore
 
                 const Comp = notification?.data?.redirectUrl ? Link : 'div';
                 const hrefPrefix = auth.role === 'technician' && workerId ? `/user/${workerId}` : ''; //prettier-ignore

@@ -15,7 +15,14 @@ import { Controller, useFormContext } from 'react-hook-form';
 
 import { toast } from 'react-toastify';
 
-const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious, toDuplicateJob }) => {
+const JobSchedulingForm = ({
+  isLoading,
+  handleNext,
+  data,
+  handlePrevious,
+  toDuplicateJob,
+  calibrations,
+}) => {
   const router = useRouter();
 
   const { startDate, startTime, endDate, endTime, workerId } = router.query;
@@ -193,8 +200,7 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious, toDupl
 
       //* set status
       if (statusesOptions.length > 0) {
-        const selectedStatus = statusesOptions.find((s) => s.value === toDuplicateJob.status);
-        form.setValue('status', selectedStatus);
+        form.setValue('status', statusesOptions[1]);
       }
 
       //* set description
@@ -559,22 +565,28 @@ const JobSchedulingForm = ({ isLoading, handleNext, data, handlePrevious, toDupl
             </Button>
 
             <Button type='button' onClick={handleNext} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Spinner
-                    as='span'
-                    animation='border'
-                    size='sm'
-                    role='status'
-                    aria-hidden='true'
-                    className='me-2'
-                  />
-                  {data ? 'Updating' : 'Creating'}...
-                </>
+              {calibrations?.data?.length > 0 ? (
+                'Next'
               ) : (
                 <>
-                  <Save size={14} className='me-2' />
-                  {data ? 'Update' : 'Create'} {' Job'}
+                  {isLoading ? (
+                    <>
+                      <Spinner
+                        as='span'
+                        animation='border'
+                        size='sm'
+                        role='status'
+                        aria-hidden='true'
+                        className='me-2'
+                      />
+                      {data ? 'Updating' : 'Creating'}...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={14} className='me-2' />
+                      {data ? 'Update' : 'Create'} {' Job'}
+                    </>
+                  )}
                 </>
               )}
             </Button>
