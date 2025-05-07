@@ -280,7 +280,7 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
             </tr>
             <tr>
               <th>Time</th>
-              <td colSpan={6}>{format(new Date(`1900-01-01T${job.endTime}`), 'p')}</td>
+              <td colSpan={6}>{job?.endByAt ? format(new Date(job.endByAt.toDate()), 'p') : ''}</td>
             </tr>
 
             <tr>

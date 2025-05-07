@@ -579,7 +579,7 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
             <Form.Control
               required
               type='text'
-              value={format(new Date(`1900-01-01T${form.watch('endTime')}`), 'p')}
+              value={data?.endByAt ? format(new Date(data.endByAt.toDate()), 'p') : ''}
               readOnly
               disabled
             />

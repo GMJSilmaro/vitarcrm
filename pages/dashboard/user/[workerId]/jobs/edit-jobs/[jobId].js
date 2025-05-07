@@ -174,7 +174,7 @@ const EditJob = () => {
             <div className='d-flex align-items-center gap-2'>
               <Button
                 variant={job.status === 'in progress' ? 'outline-light' : 'light'}
-                onClick={() => router.back()}
+                onClick={() => router.push(`/user/${workerId}`)}
               >
                 <ArrowLeftShort size={20} className='me-2' />
                 Go Back

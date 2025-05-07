@@ -390,10 +390,30 @@ const JobCalibration = () => {
           title={`Job #${jobId} Calibrations`}
           subtitle={`List of all the calibrations for the job #${jobId}`}
           action={
-            <Button variant='light' onClick={() => router.back()}>
-              <ArrowLeftShort size={20} className='me-2' />
-              Go Back
-            </Button>
+            <div className='d-flex align-items-center gap-2'>
+              {job.data && !job.isLoading && (
+                <>
+                  <Button
+                    variant={job.data?.status !== 'in progress' ? 'light' : 'outline-light'}
+                    onClick={() => router.push(`/user/${workerId}`)}
+                  >
+                    <ArrowLeftShort size={20} className='me-2' />
+                    Go Back
+                  </Button>
+
+                  {job.data?.status === 'in progress' && (
+                    <Button
+                      variant='light'
+                      onClick={() =>
+                        router.push(`/user/${workerId}/jobs/${jobId}/calibrations/create`)
+                      }
+                    >
+                      Start Calibrate
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           }
         />
 

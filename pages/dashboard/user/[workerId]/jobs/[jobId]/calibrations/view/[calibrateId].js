@@ -177,7 +177,10 @@ const CalibrationDetails = () => {
           title={`View Calibration #${calibrateId} for Job #${jobId}`}
           subtitle='View calibration details'
           action={
-            <Button variant='light' onClick={() => router.back()}>
+            <Button
+              variant='light'
+              onClick={() => router.push(`/user/${workerId}/jobs/${jobId}/calibrations`)}
+            >
               <ArrowLeftShort size={20} className='me-2' />
               Go Back
             </Button>
