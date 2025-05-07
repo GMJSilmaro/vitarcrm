@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
+import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
@@ -23,7 +24,7 @@ import {
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { ArrowLeftShort, BriefcaseFill, CheckCircle } from 'react-bootstrap-icons';
+import { ArrowLeftShort, BriefcaseFill, CheckCircle, Play } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import { FaArrowLeft } from 'react-icons/fa';
 import Swal from 'sweetalert2';
@@ -45,7 +46,10 @@ const JobDetails = () => {
   const [contact, setContact] = useState();
   const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
   const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
+  const [customerEquipments, setCustomerEquipments] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
+  const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
 
+  const [isStartingJob, setIsStartingJob] = useState(false);
   const [isStoppingJob, setIsStoppingJob] = useState(false);
 
   const stopJob = async (id, setIsLoading) => {
@@ -102,6 +106,77 @@ const JobDetails = () => {
           });
 
           toast.success('Job has been completed successfully.', { position: 'top-right' });
+          setIsLoading(false);
+
+          //* reload page after 2 seconds
+          setTimeout(() => {
+            router.reload();
+          }, 2000);
+        } catch (error) {
+          setIsLoading(false);
+          console.error('Error stopping job', error);
+          toast.error('Unexpected error occured while stopping job. Please try again later.');
+        }
+      }
+    });
+  };
+
+  const startJob = async (id, setIsLoading) => {
+    if (!id) return;
+
+    Swal.fire({
+      title: 'Start Job?',
+      text: 'Are you sure you want to mark the job as "in progress"?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
+    }).then(async (data) => {
+      if (data.isConfirmed) {
+        try {
+          setIsLoading(true);
+
+          //* update job header & details
+          const jobHeaderRef = doc(db, 'jobHeaders', id);
+          const jobDetailsRef = doc(db, 'jobDetails', id);
+
+          await runTransaction(db, async (transaction) => {
+            try {
+              transaction.update(jobHeaderRef, {
+                status: 'in progress',
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              });
+
+              transaction.update(jobDetailsRef, {
+                startByAt: serverTimestamp(),
+                startBy: auth.currentUser,
+                endByAt: null,
+                endBy: null,
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              });
+            } catch (error) {
+              throw error;
+            }
+          });
+
+          //* create notification for admin and supervisor when updated a job status
+          await notifications.create({
+            module: 'job',
+            target: ['admin', 'supervisor'],
+            title: 'Job started',
+            message: `Job (#${id}) has been started by ${auth.currentUser.displayName}.`,
+            data: {
+              redirectUrl: `/jobs/view/${id}`,
+            },
+          });
+
+          toast.success('Job has been started successfully.', { position: 'top-right' });
           setIsLoading(false);
 
           //* reload page after 2 seconds
@@ -266,7 +341,10 @@ const JobDetails = () => {
 
   //* query equipments
   useEffect(() => {
-    if (job?.equipments?.length < 1) return;
+    if (job?.equipments?.length < 1) {
+      setEquipments({ data: [], isLoading: false, isError: false });
+      return;
+    }
 
     const equipmentsIds = job?.equipments?.map((equipment) => equipment.id) || [''];
 
@@ -291,6 +369,78 @@ const JobDetails = () => {
         setEquipments({ data: [], isLoading: false, isError: true });
       });
   }, [job]);
+
+  //* query customer equipments
+  useEffect(() => {
+    if (job?.customerEquipments?.length < 1 || !job?.customer?.id) {
+      setCustomerEquipments({ data: [], isLoading: false, isError: false });
+      return;
+    }
+
+    const customerEquipmentsIds = job?.customerEquipments?.map((ce) => ce.id) || [''];
+
+    Promise.all([
+      ...customerEquipmentsIds
+        .filter(Boolean)
+        .map((id) => getDoc(doc(db, 'customerEquipments', id))),
+    ])
+      .then(([...resultsSnapshot]) => {
+        const data = [];
+
+        for (const result of resultsSnapshot) {
+          if (result.exists()) {
+            data.push({ id: result.id, ...result.data() });
+          }
+        }
+
+        setCustomerEquipments({
+          data,
+          isLoading: false,
+          isError: false,
+        });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setCustomerEquipments({ data: [], isLoading: false, isError: true });
+      });
+  }, [job]);
+
+  //* query job calibration
+  useEffect(() => {
+    if (!jobId) {
+      setCalibrations({ data: [], isLoading: false, isError: false });
+      return;
+    }
+
+    const q = query(
+      collection(db, 'jobCalibrations'),
+      where('jobId', '==', jobId),
+      where('status', 'in', ['completed', 'approval'])
+    );
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const calibrationData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setCalibrations({
+            data: calibrationData,
+            isLoading: false,
+            isError: false,
+          });
+        } else {
+          setCalibrations({
+            data: [],
+            isLoading: false,
+            isError: false,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setCalibrations({ data: [], isLoading: false, isError: true });
+      });
+  }, [jobId]);
 
   if (isLoading) {
     return (
@@ -347,12 +497,31 @@ const JobDetails = () => {
           action={
             <div className='d-flex align-items-center gap-2'>
               <Button
-                variant={job.status === 'in progress' ? 'outline-light' : 'light'}
-                onClick={() => router.back()}
+                variant={
+                  job.status === 'in progress' || job.status === 'confirmed'
+                    ? 'outline-light'
+                    : 'light'
+                }
+                onClick={() => router.push(`/user/${workerId}`)}
               >
                 <ArrowLeftShort size={20} className='me-2' />
                 Go Back
               </Button>
+
+              {job.status === 'confirmed' && (
+                <Button
+                  disabled={isStartingJob}
+                  variant='light'
+                  onClick={() => startJob(jobId, setIsStartingJob)}
+                >
+                  {isStartingJob ? (
+                    <Spinner animation='border' size='sm' className='me-2' />
+                  ) : (
+                    <Play size={20} className='me-2' />
+                  )}
+                  Start Job
+                </Button>
+              )}
 
               {job.status === 'in progress' && (
                 <Button
@@ -400,6 +569,19 @@ const JobDetails = () => {
               <Tab eventKey='5' title='Calibrations'>
                 <CalibrationTab job={job} />
               </Tab>
+
+              {calibrations.data.length > 0 && (
+                <Tab eventKey='6' title='CMR'>
+                  <Cmr
+                    job={job}
+                    customer={customer}
+                    contact={contact}
+                    location={location}
+                    customerEquipments={customerEquipments}
+                    calibrations={calibrations}
+                  />
+                </Tab>
+              )}
             </Tabs>
           </Card.Body>
         </Card>

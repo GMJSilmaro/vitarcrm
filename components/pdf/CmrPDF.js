@@ -358,7 +358,7 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
             </View>
 
             <View style={styles.blockContentRight}>
-              <Text>{format(new Date(`1900-01-01T${job.endTime}`), 'p')}</Text>
+              <Text>{job?.endByAt ? format(new Date(job.endByAt.toDate()), 'p') : ''}</Text>
             </View>
           </View>
 

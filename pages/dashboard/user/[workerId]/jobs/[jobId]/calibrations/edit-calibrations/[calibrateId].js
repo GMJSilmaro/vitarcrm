@@ -109,7 +109,10 @@ const EditCalibrations = () => {
           title={`Edit Calibration #${calibrateId} for Job #${jobId}`}
           subtitle='Edit calibration details'
           action={
-            <Button variant='light' onClick={() => router.back()}>
+            <Button
+              variant='light'
+              onClick={() => router.push(`/user/${workerId}/jobs/${jobId}/calibrations`)}
+            >
               <ArrowLeftShort size={20} className='me-2' />
               Go Back
             </Button>
