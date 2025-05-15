@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
+import { CATEGORY } from '@/schema/customerEquipment';
 
 const styles = StyleSheet.create({
   body: {
@@ -16,7 +17,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     paddingTop: 99.2088,
-    paddingBottom: 19.836,
+    paddingBottom: '100px',
     paddingLeft: 22.2,
     paddingRight: 22.2,
   },
@@ -44,7 +45,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'TimesNewRomanBold',
     textAlign: 'center',
-    marginBottom: 10,
   },
   container: {
     display: 'flex',
@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footer: {
-    marginBottom: 30,
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -268,8 +267,15 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
           <Image src='/images/VITARLOGO.png' style={styles.logo} />
         </View>
 
-        <View fixed>
+        <View fixed style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
           <Text style={styles.title}>CALIBRATION & MEASUREMENT REQUISITION</Text>
+
+          <View style={{ fontSize: 10, marginLeft: 'auto' }}>
+            <Text
+              render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+              fixed
+            />
+          </View>
         </View>
 
         <View style={styles.container}>
@@ -294,13 +300,6 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
               >
                 <View style={[styles.blockContentBold, { flexGrow: 1 }]}>
                   <Text>{job?.jobId || ''}</Text>
-                </View>
-
-                <View>
-                  <Text
-                    render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
-                    fixed
-                  />
                 </View>
               </View>
             </View>
@@ -447,10 +446,11 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
               width: '100%',
               display: 'flex',
               flexDirection: 'row',
-              alignItems: 'center',
+              alignItems: 'flex-end',
               textDecoration: 'underline',
               fontFamily: 'TimesNewRomanBold',
-              fontSize: 9,
+              fontSize: 9.5,
+              marginBottom: 4,
             }}
           >
             <View style={{ width: '22%' }}>
@@ -484,64 +484,94 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
         </View>
 
         <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          {customerEquipments.data.length > 0 &&
-            customerEquipments.data
-              .sort((a, b) => {
-                if (!a?.description || !b?.description) return 0;
-                return a?.description?.localeCompare(b?.description);
-              })
-              .map((eq, i) => {
-                const rangeMin = eq?.rangeMin;
-                const rangeMax = eq?.rangeMax;
-                const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+          {CATEGORY.map((category) => {
+            const equipmentPerCategory =
+              customerEquipments.data.length > 0
+                ? customerEquipments.data.filter((eq) => eq.category === category)
+                : [];
 
-                return (
+            return (
+              equipmentPerCategory.length > 0 && (
+                <View>
+                  {equipmentPerCategory
+                    .sort((a, b) => {
+                      if (!a?.description || !b?.description) return 0;
+                      return a?.description?.localeCompare(b?.description);
+                    })
+                    .map((eq, i) => {
+                      const rangeMin = eq?.rangeMin;
+                      const rangeMax = eq?.rangeMax;
+                      const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+
+                      return (
+                        <View
+                          key={`${eq.id}-${i}`}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'start',
+                            fontSize: 9.5,
+                          }}
+                        >
+                          <View style={{ width: '22%' }}>
+                            <Text>{eq?.description || ''}</Text>
+                          </View>
+
+                          <View style={{ width: '15%', textTransform: 'capitalize' }}>
+                            <Text>{eq?.category ? eq?.category.toLowerCase() : ''}</Text>
+                          </View>
+
+                          <View style={{ width: '14%' }}>
+                            <Text>{eq?.make || ''}</Text>
+                          </View>
+                          <View style={{ width: '14%' }}>
+                            <Text>{eq?.model || ''}</Text>
+                          </View>
+
+                          <View style={{ width: '14%' }}>
+                            <Text>{eq?.serialNumber || ''}</Text>
+                          </View>
+
+                          <View style={{ width: '11%' }}>
+                            <Text>{range}</Text>
+                          </View>
+
+                          <View style={{ width: '10%' }}>
+                            <Text>{eq?.tolerance || ''}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+
                   <View
-                    key={`${eq.id}-${i}`}
                     style={{
-                      width: '100%',
+                      marginTop: 2,
+                      textTransform: 'capitalize',
+                      fontSize: 9.5,
                       display: 'flex',
                       flexDirection: 'row',
-                      alignItems: 'start',
-                      fontSize: 9,
+                      width: '100%',
+                      gap: 4,
+                      marginBottom: 6,
                     }}
                   >
-                    <View style={{ width: '22%' }}>
-                      <Text>{eq?.description || ''}</Text>
-                    </View>
-
-                    <View style={{ width: '15%', textTransform: 'capitalize' }}>
-                      <Text>{eq?.category ? eq?.category.toLowerCase() : ''}</Text>
-                    </View>
-
-                    <View style={{ width: '14%' }}>
-                      <Text>{eq?.make || ''}</Text>
-                    </View>
-                    <View style={{ width: '14%' }}>
-                      <Text>{eq?.model || ''}</Text>
-                    </View>
-
-                    <View style={{ width: '14%' }}>
-                      <Text>{eq?.serialNumber || ''}</Text>
-                    </View>
-
-                    <View style={{ width: '11%' }}>
-                      <Text>{range}</Text>
-                    </View>
-
-                    <View style={{ width: '10%' }}>
-                      <Text>{eq?.tolerance || ''}</Text>
-                    </View>
+                    <Text>Total ({category.toLowerCase()}):</Text>
+                    <Text style={{ fontFamily: 'TimesNewRomanBold' }}>
+                      {equipmentPerCategory.length}
+                    </Text>
                   </View>
-                );
-              })}
+                </View>
+              )
+            );
+          })}
         </View>
 
         <View
           style={{
             marginTop: 8,
             width: '100%',
-            fontSize: 10,
+            fontSize: 9.5,
             fontFamily: 'TimesNewRomanBold',
             textDecoration: 'underline',
             marginBottom: 4,
@@ -556,10 +586,11 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
             width: '100%',
             display: 'flex',
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'flex-end',
             textDecoration: 'underline',
             fontFamily: 'TimesNewRomanBold',
-            fontSize: 9,
+            fontSize: 9.5,
+            marginBottom: 4,
           }}
         >
           <View style={{ width: '22%' }}>
@@ -592,61 +623,91 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
         </View>
 
         <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          {completedEquipment.length > 0 &&
-            completedEquipment
-              .sort((a, b) => {
-                if (!a?.description || !b?.description) return 0;
-                return a?.description?.localeCompare(b?.description);
-              })
-              .map((eq, i) => {
-                const rangeMin = eq?.rangeMin;
-                const rangeMax = eq?.rangeMax;
-                const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+          {CATEGORY.map((category) => {
+            const equipmentPerCategory =
+              completedEquipment.length > 0
+                ? completedEquipment.filter((eq) => eq.category === category)
+                : [];
 
-                return (
+            return (
+              equipmentPerCategory.length > 0 && (
+                <View>
+                  {equipmentPerCategory
+                    .sort((a, b) => {
+                      if (!a?.description || !b?.description) return 0;
+                      return a?.description?.localeCompare(b?.description);
+                    })
+                    .map((eq, i) => {
+                      const rangeMin = eq?.rangeMin;
+                      const rangeMax = eq?.rangeMax;
+                      const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+
+                      return (
+                        <View
+                          key={`${eq.id}-${i}`}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'start',
+                            fontSize: 9,
+                          }}
+                        >
+                          <View style={{ width: '22%' }}>
+                            <Text>{eq?.description || ''}</Text>
+                          </View>
+
+                          <View style={{ width: '15%', textTransform: 'capitalize' }}>
+                            <Text>{eq?.category ? eq?.category.toLowerCase() : ''}</Text>
+                          </View>
+
+                          <View style={{ width: '14%' }}>
+                            <Text>{eq?.make || ''}</Text>
+                          </View>
+                          <View style={{ width: '14%' }}>
+                            <Text>{eq?.model || ''}</Text>
+                          </View>
+
+                          <View style={{ width: '14%' }}>
+                            <Text>{eq?.serialNumber || ''}</Text>
+                          </View>
+
+                          <View style={{ width: '11%' }}>
+                            <Text>{range}</Text>
+                          </View>
+
+                          <View style={{ width: '10%' }}>
+                            <Text>{eq?.tolerance || ''}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+
                   <View
-                    key={`${eq.id}-${i}`}
                     style={{
-                      width: '100%',
+                      marginTop: 2,
+                      textTransform: 'capitalize',
+                      fontSize: 9.5,
                       display: 'flex',
                       flexDirection: 'row',
-                      alignItems: 'start',
-                      fontSize: 9,
+                      width: '100%',
+                      gap: 4,
+                      marginBottom: 6,
                     }}
                   >
-                    <View style={{ width: '22%' }}>
-                      <Text>{eq?.description || ''}</Text>
-                    </View>
-
-                    <View style={{ width: '15%', textTransform: 'capitalize' }}>
-                      <Text>{eq?.category ? eq?.category.toLowerCase() : ''}</Text>
-                    </View>
-
-                    <View style={{ width: '14%' }}>
-                      <Text>{eq?.make || ''}</Text>
-                    </View>
-                    <View style={{ width: '14%' }}>
-                      <Text>{eq?.model || ''}</Text>
-                    </View>
-
-                    <View style={{ width: '14%' }}>
-                      <Text>{eq?.serialNumber || ''}</Text>
-                    </View>
-
-                    <View style={{ width: '11%' }}>
-                      <Text>{range}</Text>
-                    </View>
-
-                    <View style={{ width: '10%' }}>
-                      <Text>{eq?.tolerance || ''}</Text>
-                    </View>
+                    <Text>Total ({category.toLowerCase()}):</Text>
+                    <Text style={{ fontFamily: 'TimesNewRomanBold' }}>
+                      {equipmentPerCategory.length}
+                    </Text>
                   </View>
-                );
-              })}
+                </View>
+              )
+            );
+          })}
         </View>
 
         <View style={styles.container}>
-          <View style={[styles.block, { marginTop: 16 }]}>
+          <View style={[styles.block, { marginTop: 10 }]}>
             <View style={styles.blockContentLeft}>
               <Text>Recalibration Interval</Text>
             </View>
@@ -725,28 +786,35 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
               width: '100%',
               display: 'flex',
               flexDirection: 'row',
-              alignItems: 'center',
+              alignItems: 'flex-end',
               textDecoration: 'underline',
               fontFamily: 'TimesNewRomanBold',
               fontSize: 10,
             }}
           >
-            <View style={{ width: '25%' }}>
+            <View style={{ width: '15%' }}>
               <Text>Partial Range</Text>
             </View>
 
-            <View style={{ width: '25%' }}>
+            <View style={{ width: '15%' }}>
               <Text>Non Accredited</Text>
             </View>
 
-            <View style={{ width: '25%' }}>
-              <Text>Open Wiring Connection</Text>
+            <View style={{ width: '15%' }}>
+              <Text>Open Wiring</Text>
+              <Text>Connection</Text>
               <Text style={{ fontSize: 8 }}>(stop watch)</Text>
             </View>
 
-            <View style={{ width: '25%' }}>
+            <View style={{ width: '18%' }}>
               <Text>Adjustments</Text>
-              <Text style={{ fontSize: 8 }}>(Manufacturer's instructions Required)</Text>
+              <Text style={{ fontSize: 8 }}>{`(Manufacturer's`} </Text>
+              <Text style={{ fontSize: 8 }}>{`instructions Required)`} </Text>
+            </View>
+
+            <View style={{ width: '37%' }}>
+              <Text>Others</Text>
+              <Text style={{ fontSize: 8 }}>(Please specify)</Text>
             </View>
           </View>
 
@@ -759,36 +827,23 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
               fontSize: 10,
             }}
           >
-            <View style={{ width: '25%' }}>
+            <View style={{ width: '15%' }}>
               <Text>{job?.isPartialRange ? 'Yes' : 'No'}</Text>
             </View>
 
-            <View style={{ width: '25%' }}>
+            <View style={{ width: '15%' }}>
               <Text>{job?.isNonAccredited ? 'Yes' : 'No'}</Text>
             </View>
 
-            <View style={{ width: '25%' }}>
+            <View style={{ width: '15%' }}>
               <Text>{job?.isOpenWiringConnection ? 'Yes' : 'No'}</Text>
             </View>
 
-            <View style={{ width: '25%' }}>
+            <View style={{ width: '18%' }}>
               <Text>{job?.isAdjustments ? 'Yes' : 'No'}</Text>
             </View>
-          </View>
 
-          <View style={[styles.block, { marginBottom: 8, marginTop: 12 }]}>
-            <View style={styles.blockContentLeft}>
-              <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Text>Others</Text>
-                <Text style={{ fontSize: 8 }}>(Please specify)</Text>
-              </View>
-            </View>
-
-            <View style={styles.separator}>
-              <Text>:</Text>
-            </View>
-
-            <View style={styles.blockContentRight}>
+            <View style={{ width: '37%' }}>
               <Text>{job?.others || ''}</Text>
             </View>
           </View>

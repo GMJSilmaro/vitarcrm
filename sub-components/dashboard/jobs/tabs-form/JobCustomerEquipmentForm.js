@@ -227,7 +227,7 @@ const JobCustomerEquipmentForm = ({
           return (
             <Checkbox
               {...{
-                disabled: form.watch('jobRequestId'),
+                // disabled: form.watch('jobRequestId'),
                 checked: getIsAllRowSelected(),
                 indeterminate: getIsSomeRowSelected(),
                 onChange: () => {
@@ -243,7 +243,8 @@ const JobCustomerEquipmentForm = ({
               <Checkbox
                 {...{
                   checked: row.getIsSelected(),
-                  disabled: !row.getCanSelect() || form.watch('jobRequestId'),
+                  // disabled: !row.getCanSelect() || form.watch('jobRequestId'),
+                  disabled: !row.getCanSelect(),
                   indeterminate: row.getIsSomeSelected(),
                   onChange: () => {
                     handleSelectRow(row);
@@ -616,13 +617,22 @@ const JobCustomerEquipmentForm = ({
       table
     ) {
       const jobRequest = form.getValues('jobRequestId')?.jobRequest;
-      const selectedEquipments = jobRequest?.customerEquipments || [];
+
+      let selectedEquipments;
+
+      //* if CREATED, just based the selected customer equipments to job request
+      //* if EDIT, based it to the existing job data because calibration items is enabled even there is a job request
+      //* so calibrations might be different to what is selected in job request
+      //* so by allowing the calibration items to be editable when there is job requuest,
+      //* the job request selected customer equipment will now serve as prepopulated data and can be change later in calibration items
+      if (data) selectedEquipments = data?.customerEquipments || [];
+      else selectedEquipments = jobRequest?.customerEquipments || [];
 
       //* set form data & row selection state
       form.setValue('customerEquipments', selectedEquipments);
       table.setRowSelection(selectedEquipments.reduce((acc, eq) => ({ ...acc, [eq.id]: true }), {})); // prettier-ignore
     }
-  }, [JSON.stringify(form.watch('jobRequestId')), allCustomerEquipment, table]);
+  }, [data, JSON.stringify(form.watch('jobRequestId')), allCustomerEquipment, table]);
 
   //* query & set last customer equipment  id
   useEffect(() => {
@@ -985,7 +995,32 @@ const JobCustomerEquipmentForm = ({
                                 />
                               </Form.Group>
 
-                              <Form.Group as={Col} md={9}>
+                              <Form.Group as={Col} md={3}>
+                                <Form.Label htmlFor='tolerance'>Tolerance</Form.Label>
+
+                                <Controller
+                                  name='tolerance'
+                                  control={customerEquipmentForm.control}
+                                  render={({ field }) => (
+                                    <>
+                                      <Form.Control
+                                        {...field}
+                                        id='tolerance'
+                                        placeholder='Enter tolerance'
+                                      />
+
+                                      {customerEquipmentFormErrors &&
+                                        customerEquipmentFormErrors.tolerance?.message && (
+                                          <Form.Text className='text-danger'>
+                                            {customerEquipmentFormErrors.tolerance?.message}
+                                          </Form.Text>
+                                        )}
+                                    </>
+                                  )}
+                                />
+                              </Form.Group>
+
+                              <Form.Group as={Col} md={6}>
                                 <Form.Label htmlFor='uom'>Notes</Form.Label>
 
                                 <Controller

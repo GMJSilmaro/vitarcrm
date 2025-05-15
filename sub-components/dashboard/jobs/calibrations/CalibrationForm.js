@@ -48,6 +48,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
   const [job, setJob] = useState({ data: null, isLoading: true, isError: false });
   const [isLoading, setIsLoading] = useState(false);
   const [activeKey, setActiveKey] = useState('0');
+  const [reminded, setReminded] = useState(false);
 
   const [isLoadingCache, setIsLoadingCache] = useState(false);
   const [isLoadingClearCache, setIsLoadingClearCache] = useState(false);
@@ -202,15 +203,14 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
 
           //* check if theres no data in dfnv (empty), no nominal valueso or measuredValues and the other measurement show popup
           if (
-            !dfnvHasData ||
-            (!formValues.minTemperature && !formValues.minTemperature !== 0) ||
-            (!formValues.maxTemperature && !formValues.maxTemperature !== 0) ||
-            (!formValues.rangeMinRHumidity && !formValues.rangeMinRHumidity !== 0) ||
-            (!formValues.rangeMaxRHumidity && !formValues.rangeMaxRHumidity !== 0) ||
-            !formValues.typeOfBalance
+            !reminded &&
+            (!dfnvHasData ||
+              (!formValues.minTemperature && !formValues.minTemperature !== 0) ||
+              (!formValues.maxTemperature && !formValues.maxTemperature !== 0) ||
+              (!formValues.rangeMinRHumidity && !formValues.rangeMinRHumidity !== 0) ||
+              (!formValues.rangeMaxRHumidity && !formValues.rangeMaxRHumidity !== 0) ||
+              !formValues.typeOfBalance)
           ) {
-            let reminded = false;
-
             await Swal.fire({
               title: 'Reminder!',
               text: 'Please fill-in the data in "Departure From Nominal Value (g)" and "Other Measurements"',
@@ -222,12 +222,12 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
               },
             }).then((data) => {
               if (data.isConfirmed) {
-                handleSubmit(formData);
-                reminded = true;
+                setReminded(true);
+                setActiveKey((prev) => prev - 1);
               }
             });
 
-            if (reminded) return;
+            return;
           }
 
           handleSubmit(formData);

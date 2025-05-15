@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge, Button } from 'react-bootstrap';
 import { Trash } from 'react-bootstrap-icons';
 
-const JobEquipmentList = ({ data, handleRemoveEquipment, height }) => {
+const JobEquipmentList = ({ data, handleRemoveEquipment, height, isAdmin }) => {
   return (
     <div
       className='d-flex flex-column rounded border border-primary px-2'
@@ -104,14 +104,16 @@ const JobEquipmentList = ({ data, handleRemoveEquipment, height }) => {
               </div>
             </div>
 
-            <Button
-              className='p-2'
-              variant='danger'
-              size='sm'
-              onClick={() => handleRemoveEquipment(equipment.inventoryId)}
-            >
-              <Trash size={18} />
-            </Button>
+            {isAdmin && (
+              <Button
+                className='p-2'
+                variant='danger'
+                size='sm'
+                onClick={() => handleRemoveEquipment(equipment.inventoryId)}
+              >
+                <Trash size={18} />
+              </Button>
+            )}
           </div>
         ))}
     </div>

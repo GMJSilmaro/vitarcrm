@@ -17,6 +17,7 @@ const JobReferenceEquipmentForm = ({
   handleNext,
   handlePrevious,
   toDuplicateJob,
+  isAdmin,
 }) => {
   const form = useFormContext();
 
@@ -208,7 +209,9 @@ const JobReferenceEquipmentForm = ({
                       }}
                       formatOptionLabel={formatEquipmentOptionLabel}
                       options={equipmentsOptions.data}
-                      isDisabled={equipmentsOptions.isLoading || equipmentsOptions.length < 1}
+                      isDisabled={
+                        !isAdmin || equipmentsOptions.isLoading || equipmentsOptions.length < 1
+                      }
                       placeholder="Search by equipment's tag id, inventory id or description, category or certificate no."
                       noOptionsMessage={() => 'No equipments found'}
                     />
@@ -227,6 +230,7 @@ const JobReferenceEquipmentForm = ({
         </Row>
 
         <JobEquipmentList
+          isAdmin={isAdmin}
           height={426}
           data={form.watch('equipments')}
           handleRemoveEquipment={handleRemoveEquipment}
