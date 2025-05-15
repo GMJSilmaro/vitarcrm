@@ -1,20 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import UserLayoutHeader from './UserLayoutHeader';
-import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import { collection, getDocs, limit, query, where } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
-import {
-  Calendar,
-  ExclamationCircle,
-  ExclamationTriangleFill,
-  FileText,
-  Gear,
-  House,
-  Link,
-  People,
-  Plus,
-  WrenchAdjustable,
-} from 'react-bootstrap-icons';
+import { Calendar, ExclamationTriangleFill, Gear, House } from 'react-bootstrap-icons';
 import { Button, Card, Col, Container, Row } from 'react-bootstrap';
 import Cookies from 'js-cookie';
 import { db } from '@/firebase';
@@ -153,10 +142,10 @@ const TechnicianLayout = ({ children }) => {
             Schedule
           </Button>
 
-          <Button className='shadow-sm' variant='light'>
+          {/* <Button className='shadow-sm' variant='light'>
             <FileText size={16} className='me-2' />
             Reports
-          </Button>
+          </Button> */}
 
           <Button className='shadow-sm' variant='light'>
             <Gear size={16} className='me-2' />

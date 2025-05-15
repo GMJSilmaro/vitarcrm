@@ -86,15 +86,25 @@ const JobCalibration = () => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         cell: ({ row }) => {
+          const status = row?.original?.status;
+
           const colors = {
             completed: 'success',
             rejected: 'danger',
             approval: 'purple',
           };
           return (
-            <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
-              {row.original.status}
-            </Badge>
+            <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
+              <Badge className='text-capitalize' bg={colors[status] || 'secondary'}>
+                {status}
+              </Badge>
+
+              {status === 'rejected' && (
+                <span className='fw-medium fst-italic'>
+                  "{row.original.rejectedMessage || 'N/A'}"
+                </span>
+              )}
+            </div>
           );
         },
       }),

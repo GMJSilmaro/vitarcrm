@@ -31,7 +31,7 @@ import {
 } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
+import { Badge, Button, Card, Dropdown, Form, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   ArrowRepeat,
   BriefcaseFill,
@@ -54,6 +54,7 @@ import {
 } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const JobCalibration = () => {
   const router = useRouter();
@@ -99,15 +100,25 @@ const JobCalibration = () => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         cell: ({ row }) => {
+          const status = row?.original?.status;
+
           const colors = {
             completed: 'success',
             rejected: 'danger',
             approval: 'purple',
           };
           return (
-            <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
-              {row.original.status}
-            </Badge>
+            <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
+              <Badge className='text-capitalize' bg={colors[status] || 'secondary'}>
+                {status}
+              </Badge>
+
+              {status === 'rejected' && (
+                <span className='fw-medium fst-italic'>
+                  "{row.original.rejectedMessage || 'N/A'}"
+                </span>
+              )}
+            </div>
           );
         },
       }),
@@ -215,7 +226,113 @@ const JobCalibration = () => {
             });
           };
 
+          const notifyCalibratedBy = async (status) => {
+            try {
+              const workerId = calibratedBy.id;
+              const snapshots = await getDocs(
+                query(collection(db, 'users'), where('workerId', '==', workerId))
+              );
+
+              if (!snapshots.empty) {
+                const snapshot = snapshots.docs[0];
+                const user = { id: snapshot.id, ...snapshot.data() };
+
+                if (user && user.id) {
+                  await notifications.create({
+                    module: 'calibration',
+                    target: [user.id],
+                    title: 'Calibration status updated',
+                    message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                    data: {
+                      redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+                    },
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Failed to notify technician:', error);
+            }
+          };
+
           const handleUpdateCalibrationStatus = (id, status, calibratedBy) => {
+            if (status === 'rejected') {
+              withReactContent(Swal)
+                .fire({
+                  title: `Calibration Status Update - Calibration #${id}`,
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonText: 'Confirm',
+                  cancelButtonText: 'Cancel',
+                  customClass: {
+                    confirmButton: 'btn btn-primary rounded',
+                    cancelButton: 'btn btn-secondary rounded',
+                  },
+                  html: (
+                    <div className='d-flex flex-column gap-4'>
+                      <div
+                        style={{ color: '#545454' }}
+                      >{`Are you sure you want to update the calibration status to "${_.startCase(
+                        status
+                      )}"?`}</div>
+
+                      <div>
+                        <Form.Control
+                          id={`calibration-status-update-${id}`}
+                          type='text'
+                          as='textarea'
+                          rows={4}
+                          placeholder='Enter a message/reason for the rejected calibration..'
+                        />
+                      </div>
+                    </div>
+                  ),
+                  preConfirm: () => {
+                    return document.getElementById(`calibration-status-update-${id}`).value;
+                  },
+                })
+                .then(async (data) => {
+                  const { value, isConfirmed } = data;
+                  if (isConfirmed) {
+                    try {
+                      setIsLoading(true);
+
+                      const calibrationRef = doc(db, 'jobCalibrations', id);
+
+                      await Promise.all([
+                        updateDoc(calibrationRef, {
+                          status,
+                          rejectedMessage: value,
+                          updatedAt: serverTimestamp(),
+                          updatedBy: auth.currentUser,
+                        }),
+                        //* create notification for admin and supervisor when updated a calibration status
+                        notifications.create({
+                          module: 'calibration',
+                          target: ['admin', 'supervisor'],
+                          title: 'Calibration status updated',
+                          message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                          data: {
+                            redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+                          },
+                        }),
+
+                        notifyCalibratedBy(status),
+                      ]);
+
+                      toast.success('Job request status updated successfully', {
+                        position: 'top-right',
+                      });
+                      setIsLoading(false);
+                    } catch (error) {
+                      console.error('Error updating job request status:', error);
+                      toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+                      setIsLoading(false);
+                    }
+                  }
+                });
+              return;
+            }
+
             Swal.fire({
               title: `Calibration Status Update - Calibration #${id}`,
               text: `Are you sure you want to update the calibration status to "${_.startCase(
@@ -236,40 +353,13 @@ const JobCalibration = () => {
 
                   const jobCalibrationRef = doc(db, 'jobCalibrations', id);
 
-                  const notifyCalibratedBy = async () => {
-                    try {
-                      const workerId = calibratedBy.id;
-                      const snapshots = await getDocs(
-                        query(collection(db, 'users'), where('workerId', '==', workerId))
-                      );
-
-                      if (!snapshots.empty) {
-                        const snapshot = snapshots.docs[0];
-                        const user = { id: snapshot.id, ...snapshot.data() };
-
-                        if (user && user.id) {
-                          await notifications.create({
-                            module: 'calibration',
-                            target: ['admin', 'supervisor', user.id],
-                            title: 'Calibration status updated',
-                            message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
-                            data: {
-                              redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
-                            },
-                          });
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to notify technician:', error);
-                    }
-                  };
-
                   await Promise.all([
                     updateDoc(jobCalibrationRef, {
                       status,
                       updatedAt: serverTimestamp(),
                       updatedBy: auth.currentUser,
                     }),
+
                     //* create notification for admin and supervisor when updated a calibration status
                     notifications.create({
                       module: 'calibration',
@@ -280,7 +370,8 @@ const JobCalibration = () => {
                         redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
                       },
                     }),
-                    notifyCalibratedBy(),
+
+                    notifyCalibratedBy(status),
                   ]);
 
                   toast.success('Calibration status updated successfully', {

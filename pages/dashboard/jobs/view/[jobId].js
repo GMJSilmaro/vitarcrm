@@ -404,7 +404,6 @@ const JobDetails = () => {
   return (
     <>
       <GeeksSEO title={`View Details for Job #${job.id} | VITAR Group`} />
-
       <ContentHeader
         title={`View Details for Job #${job.id}`}
         description='View comprehensive job details including job summary, tasks and schedules'

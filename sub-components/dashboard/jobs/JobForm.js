@@ -501,6 +501,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
             <Tab eventKey='3' title='Reference Equipment'>
               <JobReferenceEquipmentForm
+                isAdmin={isAdmin}
                 data={data}
                 isLoading={isLoading}
                 handleNext={handleNext}

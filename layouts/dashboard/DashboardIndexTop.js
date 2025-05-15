@@ -3,7 +3,7 @@
  */
 
 // import node module libraries
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Container, Nav, Navbar, Image, NavDropdown, Badge } from 'react-bootstrap';
 
@@ -11,16 +11,22 @@ import { Container, Nav, Navbar, Image, NavDropdown, Badge } from 'react-bootstr
 import QuickMenu from '../QuickMenu';
 
 // import routes file
-import NavbarTopRoutes from 'routes/dashboard/NavbarTopRoutes';
+import NavbarTopRoutes, { getNavbarItems } from 'routes/dashboard/NavbarTopRoutes';
 
 // import utility function
 import { useLogo } from '../../contexts/LogoContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DashboardIndexTop = (props) => {
+  const auth = useAuth();
   const { logo } = useLogo();
   const [expandedMenu, setExpandedMenu] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [activeSubmenu, setActiveSubmenu] = useState(null);
+
+  const navbarItems = useMemo(() => {
+    return getNavbarItems(auth.role);
+  }, [auth.role]);
 
   const handleMouseEnter = (itemId) => {
     setActiveDropdown(itemId);
@@ -180,7 +186,7 @@ const DashboardIndexTop = (props) => {
       <Navbar expand='lg' className='navbar-light bg-white border-bottom'>
         <Container fluid>
           <Navbar.Collapse id='navbarScroll' in={expandedMenu}>
-            <Nav>{renderDropdownItems(NavbarTopRoutes)}</Nav>
+            <Nav>{renderDropdownItems(navbarItems)}</Nav>
           </Navbar.Collapse>
         </Container>
       </Navbar>

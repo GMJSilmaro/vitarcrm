@@ -127,7 +127,7 @@ const JobRequestList = () => {
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
               <Badge className='text-capitalize' bg={colors[status] || 'secondary'}>
-                {row.original.status}
+                {status}
               </Badge>
 
               {(status === 'cancelled' || status === 'incomplete') && (
@@ -231,12 +231,10 @@ const JobRequestList = () => {
           };
 
           const handleUpdateJobRequestStatus = (id, status) => {
-            //TODO: if status is cancelled, show popup with fields for message/reason (optional)
             if (status === 'cancelled' || status === 'incomplete') {
               withReactContent(Swal)
                 .fire({
                   title: `Job Request Status Update - Job Request #${id}`,
-
                   icon: 'warning',
                   showCancelButton: true,
                   confirmButtonText: 'Confirm',
