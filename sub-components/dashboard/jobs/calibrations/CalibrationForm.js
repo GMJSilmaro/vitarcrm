@@ -267,6 +267,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
             doc(db, 'jobCalibrations', formData.calibrateId),
             {
               ...formData,
+              ...(data && data?.status === 'rejected' && { status: 'resubmission' }),
               approvedSignatory: {
                 id: formData.approvedSignatory.id,
                 name: formData.approvedSignatory.name,
@@ -319,6 +320,19 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
               redirectUrl: `/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`,
             },
           });
+
+          if (data?.status === 'rejected') {
+            //* create notification for admin and supervisor when updated a calibration status to resubmission
+            notifications.create({
+              module: 'calibration',
+              target: ['admin', 'supervisor'],
+              title: 'Calibration status updated',
+              message: `Calibration (#${formData.calibrateId}) status was updated by ${auth.currentUser.displayName} to "Resubmission".`, //prettier-ignore
+              data: {
+                redirectUrl: `/jobs/${formData.jobId}/calibrations/view/${formData.calibrateId}`,
+              },
+            });
+          }
         }
 
         //* create notification for assigned approved signatory
@@ -505,6 +519,8 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
       localStorage.setItem(cacheKey, JSON.stringify(form.getValues()));
     }
   }, [JSON.stringify(form.watch()), auth, data, isLoadingCache]);
+
+  console.log({ data });
 
   return (
     <>

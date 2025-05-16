@@ -9,7 +9,7 @@ export const CATEGORY = [
   'MASS',
 ];
 
-export const STATUS = ['completed', 'rejected', 'approval'];
+export const STATUS = ['completed', 'rejected', 'approval', 'resubmission'];
 
 export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
 
@@ -81,13 +81,10 @@ export const TAG_ID_BY_CLASS_MAP = {
 };
 
 export const NOMINAL_VALUE = [
-  10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000,
-  270000, 300000,
+  10000, 20000, 30000, 60000, 90000, 120000, 150000, 180000, 210000, 240000, 270000, 300000,
 ];
 
-export const NOMINAL_VALUE_MULTIPLIER = [
-  0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0,
-];
+export const NOMINAL_VALUE_MULTIPLIER = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 0];
 
 export const EXPANDED_UNCERTAINTY = [
   '± 8.25387',
@@ -142,18 +139,14 @@ export const calibrationInfoSchema = z
     calibrateId: z.string().min(1, 'Calibrate ID is required'),
     certificateNumber: z.string().min(1, 'Certificate No is required'),
     serialNumber: z.string().default(''),
-    status: z
-      .union([z.enum(STATUS), z.record(z.string(), z.any())])
-      .transform((formData) => {
-        if (typeof formData === 'object') return formData.value;
-        return formData;
-      }),
-    category: z
-      .union([categoryEnum, z.record(z.string(), z.any())])
-      .transform((formData) => {
-        if (typeof formData === 'object') return formData.value;
-        return formData;
-      }),
+    status: z.union([z.enum(STATUS), z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
+    category: z.union([categoryEnum, z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
     approvedSignatory: z
       .record(z.string(), z.any(), {
         message: 'Please select approved signatory',
@@ -203,9 +196,7 @@ export const calibrationInfoSchema = z
     dueDate: z.string().nullish(),
     dateIssued: z.string().default(''),
     dateReceived: z.string().min(1, { message: 'Date Received is required' }),
-    dateCalibrated: z
-      .string()
-      .min(1, { message: 'Date Calibrated is required' }),
+    dateCalibrated: z.string().min(1, { message: 'Date Calibrated is required' }),
   })
   .refine(
     (formObj) => {
@@ -232,12 +223,10 @@ export const calibrationInfoSchema = z
   );
 
 export const calibrationMeasurementSchema = z.object({
-  rangeType: z
-    .union([rangeTypeEnum, z.record(z.string(), z.any())])
-    .transform((formData) => {
-      if (typeof formData === 'object') return formData.value;
-      return formData;
-    }),
+  rangeType: z.union([rangeTypeEnum, z.record(z.string(), z.any())]).transform((formData) => {
+    if (typeof formData === 'object') return formData.value;
+    return formData;
+  }),
   traceabilityType: z
     .union([traceabilityTypeEnum, z.record(z.string(), z.any())])
     .transform((formData) => {
@@ -245,14 +234,10 @@ export const calibrationMeasurementSchema = z.object({
       return formData;
     }),
   traceabilityCountry: z
-    .union([
-      z.string().min(1, { message: 'Please select country' }),
-      z.record(z.string(), z.any()),
-    ])
+    .union([z.string().min(1, { message: 'Please select country' }), z.record(z.string(), z.any())])
     .nullish()
     .transform((formData) => {
-      if (typeof formData === 'object' && formData !== null)
-        return formData.value;
+      if (typeof formData === 'object' && formData !== null) return formData.value;
       return formData;
     }),
   traceabilityCalibrationLab: z
@@ -278,16 +263,13 @@ export const calibrationMeasurementSchema = z.object({
     ])
     .nullish()
     .transform((formData) => {
-      if (typeof formData === 'object' && formData !== null)
-        return formData.value;
+      if (typeof formData === 'object' && formData !== null) return formData.value;
       return formData;
     }),
-  resolution: z
-    .union([resolutionEnum, z.record(z.string(), z.any())])
-    .transform((formData) => {
-      if (typeof formData === 'object') return formData.value;
-      return formData;
-    }),
+  resolution: z.union([resolutionEnum, z.record(z.string(), z.any())]).transform((formData) => {
+    if (typeof formData === 'object') return formData.value;
+    return formData;
+  }),
   unitUsedForCOC: z
     .union([unitUsedForCOCEnum, z.record(z.string(), z.any())])
     .transform((formData) => {
@@ -327,8 +309,7 @@ export const calibrationReferenceInstrumentsSchema = z.object({
       z.array(z.record(z.string(), z.any())),
     ])
     .transform((formData) => {
-      if (typeof formData === 'object')
-        return formData.map((instrument) => instrument.id);
+      if (typeof formData === 'object') return formData.map((instrument) => instrument.id);
       return formData;
     }),
   cocInstruments: z.array(z.string()),
@@ -338,9 +319,7 @@ export const calibrationReferenceInstrumentsSchema = z.object({
 });
 
 export const dfnvCalibrationPointSchema = z.object({
-  data: z
-    .array(z.array(z.string().min(1, 'Please enter a value')).default([]))
-    .default([]),
+  data: z.array(z.array(z.string().min(1, 'Please enter a value')).default([])).default([]),
 });
 
 export const dfnvSchema = z.object({

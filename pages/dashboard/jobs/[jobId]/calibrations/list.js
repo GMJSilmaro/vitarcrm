@@ -105,6 +105,7 @@ const JobCalibration = () => {
           const colors = {
             completed: 'success',
             rejected: 'danger',
+            resubmission: 'warning',
             approval: 'purple',
           };
           return (

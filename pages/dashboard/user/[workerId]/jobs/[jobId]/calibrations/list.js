@@ -92,6 +92,7 @@ const JobCalibration = () => {
             completed: 'success',
             rejected: 'danger',
             approval: 'purple',
+            resubmission: 'warning',
           };
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
