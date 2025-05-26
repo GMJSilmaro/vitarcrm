@@ -9,7 +9,7 @@ export const CATEGORY = [
   'MASS',
 ];
 
-export const STATUS = ['completed', 'rejected', 'approval', 'resubmission'];
+export const STATUS = ['validate', 'completed', 'rejected', 'resubmission'];
 
 export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
 

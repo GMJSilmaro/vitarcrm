@@ -34,6 +34,15 @@ import { toast } from 'react-toastify';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { useAuth } from '@/contexts/AuthContext';
 
+const JOB_STATUS_COLOR = {
+  confirmed: 'info',
+  'in progress': 'primary',
+  completed: 'success',
+  cancelled: 'warning',
+  rejected: 'danger',
+  validated: 'purple',
+};
+
 const JobWorkerTimelineCalendar = () => {
   const router = useRouter();
   const auth = useAuth();
@@ -97,6 +106,8 @@ const JobWorkerTimelineCalendar = () => {
   };
 
   const eventRendered = (args) => {
+    const status = args.data.Job.status;
+    args.element.classList.add(`bg-${JOB_STATUS_COLOR[status] || 'secondary'}`);
     args.element.style.borderRadius = '4px';
   };
 
@@ -148,15 +159,7 @@ const JobWorkerTimelineCalendar = () => {
     if (elementType === 'cell') return null;
 
     const getStatusColor = (status) => {
-      const statusMap = {
-        confirmed: 'info',
-        completed: 'success',
-        created: 'warning',
-        'in progress': 'primary',
-        cancelled: 'danger',
-      };
-
-      return statusMap[status] || 'secondary';
+      return JOB_STATUS_COLOR[status] || 'secondary';
     };
 
     return (
@@ -590,55 +593,71 @@ const JobWorkerTimelineCalendar = () => {
   }
 
   return (
-    <ScheduleComponent
-      ref={calendarRef}
-      className='overflow-auto'
-      width='100%'
-      height='84vh'
-      currentView='TimelineDay'
-      selectedDate={new Date()}
-      startHour='00:00'
-      endHour='24:00'
-      timezone='Asia/Taipei'
-      eventRendered={eventRendered}
-      eventSettings={eventSettings}
-      popupOpen={handlePopupOpen}
-      eventDoubleClick={handleEventDoubleClick}
-      select={handleSelected}
-      quickInfoTemplates={{
-        header: quickInfoHeaderTemplate,
-        content: quickInfoContentTemplate,
-        footer: quickInfoFooterTemplate,
-      }}
-      resourceHeaderTemplate={resourceHeaderTemplate}
-      allowDragAndDrop={false}
-      allowResizing={false}
-      allowMultiDrag={false}
-      group={{
-        byGroupID: false,
-        resources: ['Workers'],
-        headerHeight: 'auto', // Allows header to adjust height
-        allowGroupDragAndDrop: false,
-      }}
-    >
-      <ResourcesDirective>
-        <ResourceDirective
-          field='WorkerId'
-          title='Technicians'
-          name='Workers'
-          textField='text'
-          idField='workerId'
-          allowMultiple={false}
-          dataSource={resourceWorkers.data}
-        />
-      </ResourcesDirective>
-      <ViewsDirective>
-        <ViewDirective option='TimelineDay' allowVirtualScrolling={true} />
-        <ViewDirective option='TimelineWeek' allowVirtualScrolling={true} />
-        <ViewDirective option='TimelineMonth' allowVirtualScrolling={true} />
-      </ViewsDirective>
-      <Inject services={[TimelineViews, TimelineMonth]} />
-    </ScheduleComponent>
+    <div className='d-flex flex-column h-100 gap-3'>
+      <div className='d-flex gap-4 flex-wrap align-align-items-center'>
+        {Object.entries(JOB_STATUS_COLOR).map(([key, value], i) => (
+          <div className='d-flex align-items-center gap-2 fs-5 fw-medium'>
+            <div
+              key={`${i}-${key}`}
+              className={`bg-${value}`}
+              style={{ width: '20px', height: '20px', borderRadius: '50%' }}
+            ></div>
+
+            <span className='text-capitalize'>{key}</span>
+          </div>
+        ))}
+      </div>
+
+      <ScheduleComponent
+        ref={calendarRef}
+        className='overflow-auto'
+        width='100%'
+        height='84vh'
+        currentView='TimelineDay'
+        selectedDate={new Date()}
+        startHour='00:00'
+        endHour='24:00'
+        timezone='Asia/Taipei'
+        eventRendered={eventRendered}
+        eventSettings={eventSettings}
+        popupOpen={handlePopupOpen}
+        eventDoubleClick={handleEventDoubleClick}
+        select={handleSelected}
+        quickInfoTemplates={{
+          header: quickInfoHeaderTemplate,
+          content: quickInfoContentTemplate,
+          footer: quickInfoFooterTemplate,
+        }}
+        resourceHeaderTemplate={resourceHeaderTemplate}
+        allowDragAndDrop={false}
+        allowResizing={false}
+        allowMultiDrag={false}
+        group={{
+          byGroupID: false,
+          resources: ['Workers'],
+          headerHeight: 'auto', // Allows header to adjust height
+          allowGroupDragAndDrop: false,
+        }}
+      >
+        <ResourcesDirective>
+          <ResourceDirective
+            field='WorkerId'
+            title='Technicians'
+            name='Workers'
+            textField='text'
+            idField='workerId'
+            allowMultiple={false}
+            dataSource={resourceWorkers.data}
+          />
+        </ResourcesDirective>
+        <ViewsDirective>
+          <ViewDirective option='TimelineDay' allowVirtualScrolling={true} />
+          <ViewDirective option='TimelineWeek' allowVirtualScrolling={true} />
+          <ViewDirective option='TimelineMonth' allowVirtualScrolling={true} />
+        </ViewsDirective>
+        <Inject services={[TimelineViews, TimelineMonth]} />
+      </ScheduleComponent>
+    </div>
   );
 };
 

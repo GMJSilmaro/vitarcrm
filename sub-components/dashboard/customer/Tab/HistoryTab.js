@@ -174,10 +174,9 @@ export const HistoryTab = () => {
         cell: ({ row }) => {
           const colors = {
             confirmed: 'info',
-            completed: 'success',
-            created: 'warning',
             'in progress': 'primary',
-            cancelled: 'danger',
+            completed: 'success',
+            cancelled: 'warning',
             rejected: 'danger',
             validated: 'purple',
           };
@@ -552,8 +551,8 @@ export const HistoryTab = () => {
                     View Calibrations
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
-                    <CardList className='me-2' size={16} />
-                    Start Calibrate
+                      <PlusSquare className='me-2' size={16} />
+                    Add Calibration
                   </Dropdown.Item> */}
                 </Dropdown.Menu>
               }
@@ -644,6 +643,7 @@ export const HistoryTab = () => {
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
       columnPinning: { right: ['actions'] },
+      sorting: [{ id: 'date', desc: true }],
     },
   });
 

@@ -5,8 +5,9 @@ import { Accordion, Button, Card, Form, Tab, Table, Tabs } from 'react-bootstrap
 import {
   cmrSchema,
   customerEquipmentSchema,
+  documentsSchema,
   jobSchema,
-  ReferenceEquipmentSchema,
+  referenceEquipmentSchema,
   scheduleSchema,
   summarySchema,
   tasksSchema,
@@ -24,7 +25,7 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db, storage } from '@/firebase';
 import TaskForm from './tabs-form/JobTaskForm';
 import JobSchedulingForm from './tabs-form/JobSchedulingForm';
 
@@ -41,6 +42,9 @@ import JobCustomerEquipmentForm from './tabs-form/JobCustomerEquipmentForm';
 import JobReferenceEquipmentForm from './tabs-form/JobReferenceEquipmentForm';
 import { useNotifications } from '@/hooks/useNotifications';
 import JobCmrForm from './tabs-form/JobCmrForm';
+import JobDocumentsForm from './tabs-form/JobDocumentsForm';
+import { getFileFromBlobUrl } from '@/utils/common';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
 const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const auth = useAuth();
@@ -56,8 +60,9 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
     summarySchema,
     customerEquipmentSchema,
     tasksSchema,
-    ReferenceEquipmentSchema,
+    referenceEquipmentSchema,
     scheduleSchema,
+    documentsSchema,
   ]);
 
   const [finalSchema, setFinalSchema] = useState(jobSchema);
@@ -78,6 +83,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
       workers: [],
       equipments: [],
       customerEquipments: [],
+      documents: [],
     },
     resolver: zodResolver(schema),
   });
@@ -276,6 +282,60 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           return;
         }
 
+        let docFiles = [];
+
+        //* upload documents
+        if (jobHeaders?.documents && Array.isArray(jobHeaders?.documents || [])) {
+          const uploadPromises = jobHeaders.documents
+            .map(async (docFile) => {
+              if (!docFile.url.startsWith('blob:')) return docFile;
+
+              //* only upload if url is blob url
+              try {
+                //* Create a reference to the storage location
+                const storageRef = ref(storage, docFile.path);
+
+                //* get file from url
+                const file = await getFileFromBlobUrl(docFile.url);
+
+                //* Upload the file
+                await uploadBytes(storageRef, file);
+
+                //* Get the download URL
+                const downloadURL = await getDownloadURL(storageRef);
+
+                //* Update document file
+                return {
+                  ...docFile,
+                  url: downloadURL,
+                };
+              } catch (err) {
+                console.error(err, `Error uploading document: ${docFile.name}`, err);
+                return null;
+              }
+            })
+            .filter(Boolean);
+
+          const newFileIds = jobHeaders?.documents?.map((docFile) => docFile.id) || [];
+          const toDeleteFiles = data?.documents?.filter((docFile) => !newFileIds.includes(docFile.id)) || []; // prettier-ignore
+
+          const deletePromises = toDeleteFiles
+            .map(async (docFile) => {
+              try {
+                //* Delete from Storage
+                const storageRef = ref(storage, docFile.path);
+                await deleteObject(storageRef);
+              } catch (err) {
+                console.error(err, `Error deleting document: ${docFile.name}`, err);
+                return null;
+              }
+            })
+            .filter(Boolean);
+
+          docFiles = await Promise.all(uploadPromises);
+          await Promise.all(deletePromises);
+        }
+
         await runTransaction(db, async (transaction) => {
           try {
             //* create job header
@@ -284,6 +344,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
               {
                 ...jobHeaders,
                 jobId,
+                documents: docFiles,
                 workers: jobHeaders?.workers.map((worker) => ({
                   id: worker.id,
                   name: worker.name,
@@ -348,7 +409,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
             target: ['admin', 'supervisor'],
             title: 'New job created',
             message: `
-             A new job (#${jobId}) has been created by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}. 
+             A new job (#${jobId}) has been created by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}.
              Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
             data: {
               redirectUrl: `/jobs/view/${jobId}`,
@@ -362,7 +423,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
             target: ['admin', 'supervisor'],
             title: 'Job updated',
             message: `
-             A job (#${jobId}) has been updated by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}. 
+             A job (#${jobId}) has been updated by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}.
              Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
             data: {
               redirectUrl: `/jobs/view/${jobId}`,
@@ -385,9 +446,14 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           });
         }
 
-        if (isAdmin) window.location.assign(`/jobs/view/${jobId}`);
-        else {
-          window.location.assign(`/user/${workerId}/jobs/view/${jobId}`);
+        if (isAdmin) {
+          setTimeout(() => {
+            window.location.assign(`/jobs/view/${jobId}`);
+          }, 1500);
+        } else {
+          setTimeout(() => {
+            window.location.assign(`/user/${workerId}/jobs/view/${jobId}`);
+          }, 1500);
         }
 
         toast.success(`Job ${data ? 'updated' : 'created'} successfully.`, {position: 'top-right'}); // prettier-ignore
@@ -420,11 +486,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
       return;
     }
 
-    const q = query(
-      collection(db, 'jobCalibrations'),
-      where('jobId', '==', data.id),
-      where('status', 'in', ['completed', 'approval'])
-    );
+    const q = query(collection(db, 'jobCalibrations'), where('jobId', '==', data.id));
 
     const unsubscribe = onSnapshot(
       q,
@@ -516,12 +578,22 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
                 handleNext={handleNext}
                 handlePrevious={handlePrevious}
                 toDuplicateJob={toDuplicateJob}
+              />
+            </Tab>
+
+            <Tab eventKey='5' title='Documents'>
+              <JobDocumentsForm
+                data={data}
+                isLoading={isLoading}
+                handleNext={handleNext}
+                handlePrevious={handlePrevious}
+                toDuplicateJob={toDuplicateJob}
                 calibrations={calibrations}
               />
             </Tab>
 
             {calibrations.data.length > 0 && (
-              <Tab eventKey='5' title='CMR'>
+              <Tab eventKey='6' title='CMR'>
                 <JobCmrForm
                   data={data}
                   isLoading={isLoading}

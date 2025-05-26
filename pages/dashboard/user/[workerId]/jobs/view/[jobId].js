@@ -6,6 +6,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
+import Documents from '@/sub-components/dashboard/jobs/view/Documents';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
@@ -125,7 +126,7 @@ const JobDetails = () => {
     if (!id) return;
 
     Swal.fire({
-      title: 'Start Job?',
+      title: 'Initiate Job?',
       text: 'Are you sure you want to mark the job as "in progress"?',
       icon: 'warning',
       showCancelButton: true,
@@ -519,7 +520,7 @@ const JobDetails = () => {
                   ) : (
                     <Play size={20} className='me-2' />
                   )}
-                  Start Job
+                  Initiate Job
                 </Button>
               )}
 
@@ -570,8 +571,12 @@ const JobDetails = () => {
                 <CalibrationTab job={job} />
               </Tab>
 
+              <Tab eventKey='6' title='Documents'>
+                <Documents job={job} />
+              </Tab>
+
               {calibrations.data.length > 0 && (
-                <Tab eventKey='6' title='CMR'>
+                <Tab eventKey='7' title='CMR'>
                   <Cmr
                     job={job}
                     customer={customer}

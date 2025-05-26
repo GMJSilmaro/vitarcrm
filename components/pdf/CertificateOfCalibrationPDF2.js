@@ -113,7 +113,12 @@ Font.register({
   src: TimesNewRomanBoldItalic,
 });
 
-const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
+const CertificateOfCalibrationPDF2 = ({
+  calibration,
+  instruments,
+  calibratedBy,
+  approvedSignatory,
+}) => {
   const handleGetLocationValue = useCallback(() => {
     if (calibration.location) {
       const locationData = calibration.location;
@@ -331,11 +336,11 @@ const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
     return { siteName: l?.siteName || '', defaultAddress };
   }, [calibration.location]);
 
-  console.log({ resolution });
+  console.log('COC PDF', { resolution, calibratedBy, approvedSignatory });
 
   return (
     <Document>
-      <Page size='A4' debug={false} style={styles.body} wrap>
+      <Page size='A4' style={styles.body} wrap>
         <View>
           <Text style={styles.title}>CERTIFICATE OF CALIBRATION</Text>
         </View>
@@ -1221,10 +1226,18 @@ const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
           >
             <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Text style={{ fontSize: 8 }}>Calibrated By</Text>
+
+              {calibratedBy?.data?.signature && (
+                <Image
+                  style={{ width: '32px', height: 'auto', marginTop: 7 }}
+                  src={calibratedBy?.data?.signature}
+                />
+              )}
+
               <Text
                 style={{
                   fontSize: 8,
-                  marginTop: 20,
+                  marginTop: calibratedBy?.data?.signature ? 5 : 20,
                   padding: '8px 0',
                   borderTop: '1px dotted #00000',
                   maxWidth: 180,
@@ -1236,10 +1249,18 @@ const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
 
             <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Text style={{ fontSize: 8 }}>Approved Signatory</Text>
+
+              {approvedSignatory?.data?.signature && (
+                <Image
+                  style={{ width: '32px', height: 'auto', marginTop: 7 }}
+                  src={approvedSignatory?.data?.signature}
+                />
+              )}
+
               <Text
                 style={{
                   fontSize: 8,
-                  marginTop: 20,
+                  marginTop: approvedSignatory?.data?.signature ? 5 : 20,
                   padding: '8px 0',
                   borderTop: '1px dotted #00000',
                   maxWidth: 180,
@@ -1254,9 +1275,8 @@ const CertificateOfCalibrationPDF2 = ({ calibration, instruments }) => {
             <Text
               style={{
                 fontSize: 7,
-                marginTop: 6,
                 textAlign: 'center',
-                padding: '4px 0',
+                paddingBottom: '4px',
                 fontFamily: 'TimesNewRomanBold',
               }}
               render={({ pageNumber, totalPages }) => {

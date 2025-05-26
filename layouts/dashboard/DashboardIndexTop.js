@@ -11,7 +11,7 @@ import { Container, Nav, Navbar, Image, NavDropdown, Badge } from 'react-bootstr
 import QuickMenu from '../QuickMenu';
 
 // import routes file
-import NavbarTopRoutes, { getNavbarItems } from 'routes/dashboard/NavbarTopRoutes';
+import { getNavbarItems } from 'routes/dashboard/NavbarTopRoutes';
 
 // import utility function
 import { useLogo } from '../../contexts/LogoContext';
@@ -152,7 +152,11 @@ const DashboardIndexTop = (props) => {
       <Navbar bg='white' expand='lg' className='border-bottom py-5'>
         <Container fluid>
           {/* Logo */}
-          <Navbar.Brand className='d-none d-md-block mb-3' as={Link} href='/'>
+          <Navbar.Brand
+            className='d-none mx-md-auto mx-lg-0  mx-auto d-md-block mb-3'
+            as={Link}
+            href='/'
+          >
             <div style={{ height: '70px' }}>
               <Image
                 className='img-fluid'
@@ -164,7 +168,7 @@ const DashboardIndexTop = (props) => {
           </Navbar.Brand>
 
           {/* Search Box - Hidden for now */}
-          <div className='ms-lg-3 d-none d-md-none d-lg-block'></div>
+          {/* <div className='ms-lg-3 d-none d-md-none d-lg-block'></div> */}
 
           {/* Quick Menu */}
           <Nav className='ms-auto d-flex align-items-center'>

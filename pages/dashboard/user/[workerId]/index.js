@@ -21,6 +21,7 @@ import {
   PersonFill,
   PersonLinesFill,
   Play,
+  PlusSquare,
   ShieldCheck,
   Stop,
   Thermometer,
@@ -780,7 +781,7 @@ function WorkerDashboard() {
 
                   {status !== 'in progress' && status !== 'completed' && status === 'confirmed' && (
                     <Dropdown.Item onClick={() => startJob(id, setIsLoading)}>
-                      <Play className='me-2' size={18} /> Start Job
+                      <Play className='me-2' size={18} /> Initiate Job
                     </Dropdown.Item>
                   )}
 
@@ -811,8 +812,8 @@ function WorkerDashboard() {
                         router.push(`/user/${workerId}/jobs/${id}/calibrations/create`)
                       }
                     >
-                      <CardList className='me-2' size={16} />
-                      Start Calibrate
+                      <PlusSquare className='me-2' size={16} />
+                      Add Calibration
                     </Dropdown.Item>
                   )}
                 </Dropdown.Menu>
@@ -870,6 +871,7 @@ function WorkerDashboard() {
     initialState: {
       columnVisibility: { startDate: false, endDate: false },
       columnPinning: { right: ['actions'] },
+      sorting: [{ id: 'date', desc: true }],
     },
     state: {
       columnFilters,
@@ -920,7 +922,7 @@ function WorkerDashboard() {
     if (!id) return;
 
     Swal.fire({
-      title: 'Start Job?',
+      title: 'Initiate Job?',
       text: 'Are you sure you want to mark the job as "in progress"?',
       icon: 'warning',
       showCancelButton: true,

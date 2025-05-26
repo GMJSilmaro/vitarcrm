@@ -476,7 +476,9 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
             </tr>
             <tr>
               <th>Remark</th>
-              <td colSpan={6}>{job?.remark || ''}</td>
+              <td colSpan={6} style={{ whiteSpace: 'pre-wrap' }}>
+                {job?.remark || ''}
+              </td>
             </tr>
             <tr>
               <th>Condition When Received</th>

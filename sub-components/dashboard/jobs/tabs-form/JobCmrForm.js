@@ -521,6 +521,7 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
   //* if data exist set default value for customer signature
   useEffect(() => {
     if (data) {
+      form.setValue('telFax', data?.telFax || '');
       form.setValue('pic', data?.pic || '');
       form.setValue('customerSignature', data?.customerSignature || '');
       form.setValue('recalibrationInterval', data?.recalibrationInterval || '');
@@ -533,6 +534,25 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
       form.setValue('isAdjustments', data?.isAdjustments || false);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (data) {
+      if (!form.getValues('telFax')) {
+        if (form.getValues('contact')) {
+          const phone = form.watch('contact')?.phone || '';
+          form.setValue('telFax', phone);
+        } else form.setValue('telFax', data?.telFax || '');
+      }
+
+      if (!form.getValues('pic')) {
+        if (form.getValues('contact')) {
+          const fname = form.watch('contact')?.firstName || '';
+          const lname = form.watch('contact')?.lastName || '';
+          form.setValue('pic', `${fname ?? ''}${lname ?? ''}`);
+        } else form.setValue('pic', data?.pic || '');
+      }
+    }
+  }, [data, form.watch('contact')]);
 
   useEffect(() => {
     console.log({ labRepresentative, worker });
@@ -725,7 +745,13 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
               control={form.control}
               render={({ field }) => (
                 <>
-                  <Form.Control {...field} id='remark' placeholder='Enter remark' />
+                  <Form.Control
+                    {...field}
+                    id='remark'
+                    as='textarea'
+                    rows={2}
+                    placeholder='Enter remark'
+                  />
 
                   {formErrors && formErrors.remark?.message && (
                     <Form.Text className='text-danger'>{formErrors.remark?.message}</Form.Text>
@@ -920,8 +946,11 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
           </Form.Group>
         </Row>
 
-        <Row className='row-gap-3'>
-          <Form.Group as={Col} md={4}>
+        <Row className='row-gap-5 justify-content-evenly'>
+          <Form.Group
+            className='d-flex flex-column justify-content-center align-items-center'
+            as={Col}
+          >
             <RequiredLabel label='Signature' id='salesSignature' />
 
             {isSettingLabRepresentative ? (
@@ -953,10 +982,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
               <div className='d-flex justify-content-center flex-column align-items-center text-center '>
                 <div
                   className='d-flex justify-content-center align-items-center border rounded overflow-hidden'
-                  style={{ width: 500, height: 200 }}
+                  style={{ width: 400, height: 160 }}
                 >
                   <Image
-                    style={{ margin: 'auto', width: 450, height: 150 }}
+                    style={{ margin: 'auto', width: 300, height: 100 }}
                     src={form.watch('salesSignature')}
                     alt='Signature'
                   />
@@ -988,7 +1017,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
             )}
           </Form.Group>
 
-          <Form.Group as={Col} md={4}>
+          <Form.Group
+            className='d-flex flex-column justify-content-center align-items-center'
+            as={Col}
+          >
             <RequiredLabel label='Signature' id='workerSignature' />
 
             {isSettingWorker ? (
@@ -1023,10 +1055,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
               <div className='d-flex justify-content-center flex-column align-items-center text-center '>
                 <div
                   className='d-flex justify-content-center align-items-center border rounded overflow-hidden'
-                  style={{ width: 500, height: 200 }}
+                  style={{ width: 400, height: 160 }}
                 >
                   <Image
-                    style={{ margin: 'auto', width: 450, height: 150 }}
+                    style={{ margin: 'auto', width: 300, height: 100 }}
                     src={form.watch('workerSignature')}
                     alt='Signature'
                   />
@@ -1062,7 +1094,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
             )}
           </Form.Group>
 
-          <Form.Group as={Col} md={4}>
+          <Form.Group
+            className='d-flex flex-column justify-content-center align-items-center'
+            as={Col}
+          >
             <RequiredLabel label='Signature' id='customerSignature' />
 
             <Controller

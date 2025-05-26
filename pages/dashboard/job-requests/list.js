@@ -35,7 +35,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db, storage } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import DataTable from '@/components/common/DataTable';
 import { useRouter } from 'next/router';
@@ -49,6 +49,7 @@ import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import withReactContent from 'sweetalert2-react-content';
 import { useNotifications } from '@/hooks/useNotifications';
+import { deleteObject, listAll, ref } from 'firebase/storage';
 
 const JobRequestList = () => {
   const router = useRouter();
@@ -203,9 +204,25 @@ const JobRequestList = () => {
 
                   const jobRequestRef = doc(db, 'jobRequests', id);
 
-                  await Promise.all(
+                  const deleteFiles = async () => {
+                    try {
+                      const storageRef = ref(storage, `job-requests/${id}/documents`);
+                      const res = await listAll(storageRef);
+
+                      //* delete all files
+                      const deletePromises = res.items.map((itemRef) => deleteObject(itemRef));
+
+                      await Promise.all(deletePromises);
+
+                      console.log('deleted files from path: ', `job-requests/${id}/documents`);
+                    } catch (error) {
+                      console.error(err, 'Failed to delete related documents/files:');
+                    }
+                  };
+
+                  await Promise.all([
                     deleteDoc(jobRequestRef),
-                    //* create notification when job request is removed
+                    deleteFiles(),
                     notifications.create({
                       module: 'job-request',
                       target: ['admin', 'supervisor', 'sales'],
@@ -214,8 +231,8 @@ const JobRequestList = () => {
                       data: {
                         redirectUrl: `/job-requests`,
                       },
-                    })
-                  );
+                    }),
+                  ]);
 
                   toast.success('Job request removed successfully', { position: 'top-right' });
                   setIsLoading(false);

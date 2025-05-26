@@ -4,6 +4,8 @@ import DataTableFilter from '@/components/common/DataTableFilter';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import { db } from '@/firebase';
+import { CATEGORY, STATUS } from '@/schema/calibration';
+import { titleCase } from '@/utils/common';
 import { globalSearchFilter } from '@/utils/datatable';
 import {
   createColumnHelper,
@@ -74,9 +76,10 @@ const CalibrationTab = ({ job }) => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         cell: ({ row }) => {
           const colors = {
-            completed: 'success',
+            validate: 'success',
             rejected: 'danger',
-            approval: 'purple',
+            resubmission: 'warning',
+            completed: 'purple',
           };
           return (
             <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
@@ -215,10 +218,10 @@ const CalibrationTab = ({ job }) => {
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'Calibration ID',
+        label: 'ID',
         columnId: 'id',
         type: 'text',
-        placeholder: 'Search by calibration id...',
+        placeholder: 'Search by id...',
       },
       {
         label: 'Certificate No.',
@@ -229,8 +232,14 @@ const CalibrationTab = ({ job }) => {
       {
         label: 'Category',
         columnId: 'category',
-        type: 'text',
-        placeholder: 'Search by category...',
+        type: 'select',
+        options: [
+          { label: 'All Category', value: '' },
+          ...CATEGORY.map((c) => ({
+            label: titleCase(c),
+            value: c,
+          })),
+        ],
       },
       {
         label: 'Status',
@@ -238,9 +247,10 @@ const CalibrationTab = ({ job }) => {
         type: 'select',
         options: [
           { label: 'All Status', value: '' },
-          { label: 'Completed', value: 'completed' },
-          { label: 'Rejected', value: 'rejected' },
-          { label: 'Approval', value: 'approval' },
+          ...STATUS.map((s) => ({
+            label: titleCase(s),
+            value: s,
+          })),
         ],
       },
       {

@@ -7,7 +7,9 @@ import PageHeader from '@/components/common/PageHeader';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import { CATEGORY, STATUS } from '@/schema/calibration';
 import CurrentJobCard from '@/sub-components/dashboard/user/jobs/CurrentJobCard';
+import { titleCase } from '@/utils/common';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
 import {
@@ -89,10 +91,10 @@ const JobCalibration = () => {
           const status = row?.original?.status;
 
           const colors = {
-            completed: 'success',
+            validate: 'success',
             rejected: 'danger',
-            approval: 'purple',
             resubmission: 'warning',
+            completed: 'purple',
           };
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
@@ -257,10 +259,10 @@ const JobCalibration = () => {
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'Calibration ID',
+        label: 'ID',
         columnId: 'id',
         type: 'text',
-        placeholder: 'Search by calibration id...',
+        placeholder: 'Search by id...',
       },
       {
         label: 'Certificate No.',
@@ -271,14 +273,14 @@ const JobCalibration = () => {
       {
         label: 'Category',
         columnId: 'category',
-        type: 'text',
-        placeholder: 'Search by category...',
-      },
-      {
-        label: 'Location',
-        columnId: 'location',
-        type: 'text',
-        placeholder: 'Search by location...',
+        type: 'select',
+        options: [
+          { label: 'All Category', value: '' },
+          ...CATEGORY.map((c) => ({
+            label: titleCase(c),
+            value: c,
+          })),
+        ],
       },
       {
         label: 'Status',
@@ -286,10 +288,17 @@ const JobCalibration = () => {
         type: 'select',
         options: [
           { label: 'All Status', value: '' },
-          { label: 'Completed', value: 'completed' },
-          { label: 'Rejected', value: 'rejected' },
-          { label: 'Approval', value: 'approval' },
+          ...STATUS.map((s) => ({
+            label: titleCase(s),
+            value: s,
+          })),
         ],
+      },
+      {
+        label: 'Location',
+        columnId: 'location',
+        type: 'text',
+        placeholder: 'Search by location...',
       },
       {
         label: 'Equipment',
@@ -419,7 +428,7 @@ const JobCalibration = () => {
                         router.push(`/user/${workerId}/jobs/${jobId}/calibrations/create`)
                       }
                     >
-                      Start Calibrate
+                      Add Calibration
                     </Button>
                   )}
                 </>

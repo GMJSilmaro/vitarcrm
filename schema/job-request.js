@@ -21,7 +21,7 @@ export const customerEquipmentSchema = z.object({
     )
     .default([]),
 });
-0;
+
 export const summarySchema = z.object({
   jobRequestId: z.string().min(1, { message: 'Job Request ID is required' }),
   customer: z
@@ -30,7 +30,7 @@ export const summarySchema = z.object({
       required_error: 'Please select customer',
     })
     .transform((formData) => {
-      if (typeof formData === 'object') {
+      if (typeof formData === 'object' && formData !== null) {
         return { id: formData.id, name: formData.name };
       }
       return null;
@@ -41,7 +41,7 @@ export const summarySchema = z.object({
       required_error: 'Please select contact',
     })
     .transform((formData) => {
-      if (typeof formData === 'object') {
+      if (typeof formData === 'object' && formData !== null) {
         return {
           id: formData.id,
           name: formData.firstName + ' ' + formData.lastName,
@@ -49,7 +49,8 @@ export const summarySchema = z.object({
       }
       return null;
     })
-    .nullish(),
+    .nullish()
+    .default(null),
   location: z
     .record(z.string(), z.any(), {
       message: 'Please select location',
@@ -85,8 +86,23 @@ export const tasksSchema = z.object({
   tasks: z.array(taskSchema).default([]),
 });
 
+const documentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  url: z.string(),
+  type: z.string(),
+  size: z.number(),
+  uploadedAt: z.any(),
+  path: z.string(),
+});
+
+export const documentsSchema = z.object({
+  documents: z.array(documentSchema).default([]),
+});
+
 export const jobRequestSchema = z
   .object({})
   .merge(summarySchema)
   .merge(customerEquipmentSchema)
-  .merge(tasksSchema);
+  .merge(tasksSchema)
+  .merge(documentsSchema);

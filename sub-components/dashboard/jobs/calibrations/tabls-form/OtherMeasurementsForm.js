@@ -133,7 +133,7 @@ const OtherMeasurementsForm = (data) => {
         <Form.Group as={Col} md={12}>
           <Form.Label>Type of Balance</Form.Label>
 
-          <div className='d-flex gap-6 w-100'>
+          <div className='d-flex gap-6 w-100 flex-wrap justify-content-center justify-content-md-start'>
             <div
               className={`d-flex justify-content-center align-items-center hover-item p-5 border rounded ${
                 form.watch('typeOfBalance') === '1' ? 'border-primary' : ''

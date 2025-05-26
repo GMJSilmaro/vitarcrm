@@ -33,10 +33,6 @@ const EquipmentsTab = () => {
 
   const columns = useMemo(() => {
     return [
-      columnHelper.accessor('id', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
-        size: 100,
-      }),
       columnHelper.accessor('description', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
       }),
@@ -78,8 +74,9 @@ const EquipmentsTab = () => {
       columnHelper.accessor('tolerance', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Tolerance' />,
       }),
-      columnHelper.accessor('uom', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='UOM' />,
+      columnHelper.accessor((row) => row?.uom || '', {
+        id: 'unit',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Unit' />,
       }),
       columnHelper.accessor('notes', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Notes' />,
@@ -175,12 +172,6 @@ const EquipmentsTab = () => {
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'Equipment ID',
-        columnId: 'id',
-        type: 'text',
-        placeholder: 'Search by equipment id...',
-      },
-      {
         label: 'Description',
         columnId: 'description',
         type: 'text',
@@ -223,10 +214,10 @@ const EquipmentsTab = () => {
         placeholder: 'Search by tolerance...',
       },
       {
-        label: 'UOM',
-        columnId: 'uom',
+        label: 'Unit',
+        columnId: 'unit',
         type: 'text',
-        placeholder: 'Search by uom...',
+        placeholder: 'Search by unit...',
       },
       {
         label: 'Notes',

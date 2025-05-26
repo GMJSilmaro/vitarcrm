@@ -221,7 +221,6 @@ const UserAvatar = React.memo(
           width: '45px',
           height: '45px',
           display: 'inline-block',
-          marginRight: '32px',
         }}
       >
         {userDetails?.profilePicture ? (
@@ -1108,8 +1107,18 @@ const QuickMenu = ({ children }) => {
 
         {/* User Dropdown */}
         <Dropdown as='li' className='ms-2'>
-          <Dropdown.Toggle as='a' bsPrefix=' ' className='rounded-circle' id='dropdownUser'>
+          <Dropdown.Toggle
+            as='a'
+            bsPrefix=' '
+            className='me-5 d-flex flex-column justify-content-center align-items-center gap-2'
+          >
             <UserAvatar userDetails={userDetails} />
+
+            {userDetails && (
+              <Badge bg='secondary' className='text-capitalize'>
+                {userDetails.role}
+              </Badge>
+            )}
           </Dropdown.Toggle>
           <Dropdown.Menu
             className='dashboard-dropdown dropdown-menu-end w-100 mt-4 py-0'
@@ -1124,7 +1133,7 @@ const QuickMenu = ({ children }) => {
                     <p className='mb-0 text-muted fs-6 text-wrap'>{userDetails.email}</p>
                   </div>
 
-                  <Badge bg='primary' className='text-capitalize'>
+                  <Badge bg='secondary' className='text-capitalize'>
                     {userDetails.role}
                   </Badge>
                 </div>

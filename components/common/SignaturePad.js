@@ -4,7 +4,7 @@ import { Button } from 'react-bootstrap';
 import { XCircleFill } from 'react-bootstrap-icons';
 import Signature from 'signature_pad';
 
-export default function SignatureField({ width = 500, height = 200, onChange, value }) {
+export default function SignatureField({ width = 450, height = 160, onChange, value }) {
   const canvasRef = useRef(null);
   const sigPadRef = useRef(null);
   const [url, setUrl] = useState('');
@@ -13,10 +13,25 @@ export default function SignatureField({ width = 500, height = 200, onChange, va
   useEffect(() => {
     //* Initialize signature pad on the canvas
     const canvas = canvasRef.current;
+    const ratio = window.devicePixelRatio || 1;
+
+    const displayWidth = width;
+    const displayHeight = height;
 
     //* Ensure canvas has the correct size
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = 500;
+    canvas.height = 200;
+
+    //* Set canvas width/height according to pixel ratio
+    canvas.width = displayWidth * ratio;
+    canvas.height = displayHeight * ratio;
+
+    // Style stays the same (for visual size)
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(ratio, ratio); // Scale everything
 
     const signaturePad = new Signature(canvas, {
       penColor: 'black',
