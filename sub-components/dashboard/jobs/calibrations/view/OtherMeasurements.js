@@ -78,7 +78,7 @@ const OtherMeasurements = ({ calibration }) => {
         </div>
       </Col>
 
-      <Col md={3}>
+      <Col md={4}>
         <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
           <div className='d-flex justify-content-center align-items-center flex-column w-100 gap-3'>
             <div

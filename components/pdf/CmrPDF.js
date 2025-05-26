@@ -125,6 +125,8 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
   const [labRepresentative, setLabRepresentative] = useState(null);
   const [isSettingLabRepresentative, setIsSettingLabRepresentative] = useState(false);
 
+  const [totalPages, setTotalPages] = useState(0);
+
   const scope = useMemo(() => {
     const value = job?.scope;
 
@@ -259,8 +261,32 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
     }
   }, [job]);
 
+  const prewrap = (text) => {
+    if (!text) return null;
+
+    let output = null;
+    const lines = text.split('\n');
+
+    output = lines.map((line, index) => {
+      return <Text key={`line_${index}`}>{line || <>&nbsp;</>}</Text>;
+    });
+
+    return output;
+  };
+
+  const serializeToString = (value) => {
+    if (value === null || value === undefined) return '';
+    return String(value).trim();
+  };
+
   return (
-    <Document>
+    <Document
+    // onRender={(props) => {
+    //   //* get total pages stored in a state
+    //   const value = props?._INTERNAL__LAYOUT__DATA_?.children?.length || 0;
+    //   setTotalPages(value);
+    // }}
+    >
       <Page size='A4' debug={false} style={styles.body} wrap>
         <View fixed style={styles.logoContainer}>
           <Text style={styles.formNumber}>F508-000702</Text>
@@ -457,14 +483,14 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
               <Text>Equipment</Text>
             </View>
 
-            <View style={{ width: '15%' }}>
+            <View style={{ width: '22%' }}>
               <Text>Category</Text>
             </View>
 
-            <View style={{ width: '14%' }}>
+            <View style={{ width: '10%' }}>
               <Text>Make</Text>
             </View>
-            <View style={{ width: '14%' }}>
+            <View style={{ width: '10%' }}>
               <Text>Model</Text>
             </View>
 
@@ -472,7 +498,7 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
               <Text>Serial No</Text>
             </View>
 
-            <View style={{ width: '11%' }}>
+            <View style={{ width: '12%' }}>
               <Text>Calibration</Text>
               <Text>Points/Range</Text>
             </View>
@@ -515,30 +541,30 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                           }}
                         >
                           <View style={{ width: '22%' }}>
-                            <Text>{eq?.description || ''}</Text>
+                            <Text>{serializeToString(eq?.description)}</Text>
                           </View>
 
-                          <View style={{ width: '15%', textTransform: 'capitalize' }}>
-                            <Text>{eq?.category ? eq?.category.toLowerCase() : ''}</Text>
-                          </View>
-
-                          <View style={{ width: '14%' }}>
-                            <Text>{eq?.make || ''}</Text>
-                          </View>
-                          <View style={{ width: '14%' }}>
-                            <Text>{eq?.model || ''}</Text>
-                          </View>
-
-                          <View style={{ width: '14%' }}>
-                            <Text>{eq?.serialNumber || ''}</Text>
-                          </View>
-
-                          <View style={{ width: '11%' }}>
-                            <Text>{range}</Text>
+                          <View style={{ width: '22%', textTransform: 'capitalize' }}>
+                            <Text>{serializeToString(eq?.category.toLowerCase())}</Text>
                           </View>
 
                           <View style={{ width: '10%' }}>
-                            <Text>{eq?.tolerance || ''}</Text>
+                            <Text>{serializeToString(eq?.make)}</Text>
+                          </View>
+                          <View style={{ width: '10%' }}>
+                            <Text>{serializeToString(eq?.model)}</Text>
+                          </View>
+
+                          <View style={{ width: '14%' }}>
+                            <Text>{serializeToString(eq?.serialNumber)}</Text>
+                          </View>
+
+                          <View style={{ width: '12%' }}>
+                            <Text>{serializeToString(range)}</Text>
+                          </View>
+
+                          <View style={{ width: '10%' }}>
+                            <Text>{serializeToString(eq?.tolerance)}</Text>
                           </View>
                         </View>
                       );
@@ -556,9 +582,11 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                       marginBottom: 6,
                     }}
                   >
-                    <Text>Total ({category.toLowerCase()}):</Text>
                     <Text style={{ fontFamily: 'TimesNewRomanBold' }}>
-                      {equipmentPerCategory.length}
+                      Total ({category.toLowerCase()}):
+                    </Text>
+                    <Text style={{ fontFamily: 'TimesNewRomanBold' }}>
+                      [ {equipmentPerCategory.length} ]
                     </Text>
                   </View>
                 </View>
@@ -597,14 +625,14 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
             <Text>Equipment</Text>
           </View>
 
-          <View style={{ width: '15%' }}>
+          <View style={{ width: '22%' }}>
             <Text>Category</Text>
           </View>
 
-          <View style={{ width: '14%' }}>
+          <View style={{ width: '10%' }}>
             <Text>Make</Text>
           </View>
-          <View style={{ width: '14%' }}>
+          <View style={{ width: '10%' }}>
             <Text>Model</Text>
           </View>
 
@@ -612,7 +640,7 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
             <Text>Serial No</Text>
           </View>
 
-          <View style={{ width: '11%' }}>
+          <View style={{ width: '12%' }}>
             <Text>Calibration</Text>
             <Text>Points/Range</Text>
           </View>
@@ -654,30 +682,30 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                           }}
                         >
                           <View style={{ width: '22%' }}>
-                            <Text>{eq?.description || ''}</Text>
+                            <Text>{serializeToString(eq?.description)}</Text>
                           </View>
 
-                          <View style={{ width: '15%', textTransform: 'capitalize' }}>
-                            <Text>{eq?.category ? eq?.category.toLowerCase() : ''}</Text>
-                          </View>
-
-                          <View style={{ width: '14%' }}>
-                            <Text>{eq?.make || ''}</Text>
-                          </View>
-                          <View style={{ width: '14%' }}>
-                            <Text>{eq?.model || ''}</Text>
-                          </View>
-
-                          <View style={{ width: '14%' }}>
-                            <Text>{eq?.serialNumber || ''}</Text>
-                          </View>
-
-                          <View style={{ width: '11%' }}>
-                            <Text>{range}</Text>
+                          <View style={{ width: '22%', textTransform: 'capitalize' }}>
+                            <Text>{serializeToString(eq?.category.toLowerCase())}</Text>
                           </View>
 
                           <View style={{ width: '10%' }}>
-                            <Text>{eq?.tolerance || ''}</Text>
+                            <Text>{serializeToString(eq?.make)}</Text>
+                          </View>
+                          <View style={{ width: '10%' }}>
+                            <Text>{serializeToString(eq?.model)}</Text>
+                          </View>
+
+                          <View style={{ width: '14%' }}>
+                            <Text>{serializeToString(eq?.serialNumber)}</Text>
+                          </View>
+
+                          <View style={{ width: '12%' }}>
+                            <Text>{serializeToString(range)}</Text>
+                          </View>
+
+                          <View style={{ width: '10%' }}>
+                            <Text>{serializeToString(eq?.tolerance)}</Text>
                           </View>
                         </View>
                       );
@@ -695,9 +723,11 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                       marginBottom: 6,
                     }}
                   >
-                    <Text>Total ({category.toLowerCase()}):</Text>
                     <Text style={{ fontFamily: 'TimesNewRomanBold' }}>
-                      {equipmentPerCategory.length}
+                      Total ({category.toLowerCase()}):
+                    </Text>
+                    <Text style={{ fontFamily: 'TimesNewRomanBold' }}>
+                      [ {equipmentPerCategory.length} ]
                     </Text>
                   </View>
                 </View>
@@ -748,8 +778,13 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
               <Text>:</Text>
             </View>
 
-            <View style={styles.blockContentRight}>
-              <Text>{job?.remark || ''}</Text>
+            <View
+              style={[
+                styles.blockContentRight,
+                { flexDirection: 'column', justifyContent: 'center', alignItems: 'start' },
+              ]}
+            >
+              {prewrap(job?.remark)}
             </View>
           </View>
 
@@ -850,7 +885,7 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
         </View>
 
         {/* //* footer */}
-        <View fixed style={styles.footer}>
+        <View style={styles.footer}>
           <View
             style={{
               width: '80%',

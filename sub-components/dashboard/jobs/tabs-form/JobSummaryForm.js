@@ -600,7 +600,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
           </Row>
 
           <hr className='my-4' />
-          <h4 className='mb-3'>Customer</h4>
+          <h4 className='mb-0'>Customer</h4>
           <p className='text-muted fs-6'>Basic customer details</p>
 
           <Row>

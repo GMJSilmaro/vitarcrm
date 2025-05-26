@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import { BriefcaseFill, House, PencilFill, ShieldCheck } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
+import { FaArrowLeft } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 const EditJob = () => {
@@ -173,11 +174,27 @@ const EditJob = () => {
         ]}
         actionButtons={[
           {
-            text: 'Validate Job',
-            variant: 'light',
-            icon: <ShieldCheck size={14} />,
-            onClick: (args) => handleUpdateToValidated(jobId, args.setIsLoading),
+            text: 'Back to Job List',
+            icon: <FaArrowLeft size={16} />,
+            variant:
+              (auth.role === 'admin' || auth.role === 'supervisor') &&
+              job &&
+              job.status !== 'validated'
+                ? 'outline-primary'
+                : 'light',
+            tooltip: 'Back to Job List',
+            onClick: () => router.push('/jobs'),
           },
+          ...(job && job.status !== 'validated'
+            ? [
+                {
+                  text: 'Validate Job',
+                  variant: 'light',
+                  icon: <ShieldCheck size={14} />,
+                  onClick: (args) => handleUpdateToValidated(jobId, args.setIsLoading),
+                },
+              ]
+            : []),
         ]}
       />
 

@@ -41,7 +41,7 @@ export const equipmentSchema = z.object({
     }),
 });
 
-export const ReferenceEquipmentSchema = z.object({
+export const referenceEquipmentSchema = z.object({
   equipments: z
     .array(
       z.record(z.string(), z.any()).transform((formData) => {
@@ -110,7 +110,8 @@ export const summarySchema = z.object({
       }
       return null;
     })
-    .nullish(),
+    .nullish()
+    .default(null),
   location: z
     .record(z.string(), z.any(), {
       message: 'Please select location',
@@ -241,6 +242,20 @@ export const scheduleSchema = z
     }
   );
 
+const documentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  url: z.string(),
+  type: z.string(),
+  size: z.number(),
+  uploadedAt: z.any(),
+  path: z.string(),
+});
+
+export const documentsSchema = z.object({
+  documents: z.array(documentSchema).default([]),
+});
+
 export const cmrSchema = z.object({
   pic: z.string().min(1, { message: 'P.I.C is required' }),
   recalibrationInterval: z.string().min(1, { message: 'Recalibration Interval is required' }),
@@ -263,5 +278,6 @@ export const jobSchema = z
   .merge(summarySchema)
   .merge(customerEquipmentSchema)
   .merge(tasksSchema)
-  .merge(ReferenceEquipmentSchema)
+  .merge(referenceEquipmentSchema)
+  .merge(documentsSchema)
   .merge(scheduleSchema._def.schema._def.schema);

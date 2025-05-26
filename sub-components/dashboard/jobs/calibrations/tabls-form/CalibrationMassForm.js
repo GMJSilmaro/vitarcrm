@@ -154,7 +154,7 @@ const CalibrationMassForm = ({ data, isLoading, handleNext, handlePrevious }) =>
             Previous
           </Button>
 
-          <Button type='button' className='mt-2' onClick={handleNext}>
+          <Button type='button' className='mt-2' onClick={handleNext} disabled={isLoading}>
             {isLoading ? (
               <>
                 <Spinner

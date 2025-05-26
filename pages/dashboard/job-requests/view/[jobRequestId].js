@@ -2,7 +2,9 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import CmrSummary from '@/sub-components/dashboard/job-requests/view/CmrSummary';
 import CustomerEquipment from '@/sub-components/dashboard/job-requests/view/CustomerEquipment';
+import Documents from '@/sub-components/dashboard/job-requests/view/Documents';
 import SummaryTab from '@/sub-components/dashboard/job-requests/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/job-requests/view/TaskTab';
 import { GeeksSEO } from '@/widgets';
@@ -38,6 +40,7 @@ const JobRequestDetails = () => {
   const [customer, setCustomer] = useState({ data: {}, isLoading: true, isError: false });
   const [contact, setContact] = useState();
   const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
+  const [customerEquipments, setCustomerEquipments] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
 
   const handleApprovedJobRequest = (id, setIsLoading) => {
     try {
@@ -214,6 +217,41 @@ const JobRequestDetails = () => {
       });
   }, [jobRequest]);
 
+  //* query customer equipments
+  useEffect(() => {
+    if (jobRequest?.customerEquipments?.length < 1 || !jobRequest?.customer?.id) {
+      setCustomerEquipments({ data: [], isLoading: false, isError: false });
+      return;
+    }
+
+    const customerEquipmentsIds = jobRequest?.customerEquipments?.map((ce) => ce.id) || [''];
+
+    Promise.all([
+      ...customerEquipmentsIds
+        .filter(Boolean)
+        .map((id) => getDoc(doc(db, 'customerEquipments', id))),
+    ])
+      .then(([...resultsSnapshot]) => {
+        const data = [];
+
+        for (const result of resultsSnapshot) {
+          if (result.exists()) {
+            data.push({ id: result.id, ...result.data() });
+          }
+        }
+
+        setCustomerEquipments({
+          data,
+          isLoading: false,
+          isError: false,
+        });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setCustomerEquipments({ data: [], isLoading: false, isError: true });
+      });
+  }, [jobRequest]);
+
   if (isLoading) {
     return (
       <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
@@ -322,6 +360,20 @@ const JobRequestDetails = () => {
 
             <Tab eventKey='2' title='Additional Instructions'>
               <TaskTab job={jobRequest} />
+            </Tab>
+
+            <Tab eventKey='3' title='Documents'>
+              <Documents jobRequest={jobRequest} />
+            </Tab>
+
+            <Tab eventKey='4' title='CMR'>
+              <CmrSummary
+                jobRequest={jobRequest}
+                customer={customer}
+                contact={contact}
+                location={location}
+                customerEquipments={customerEquipments}
+              />
             </Tab>
           </Tabs>
         </Card.Body>

@@ -2,7 +2,7 @@ import Cookies from 'js-cookie';
 import Link from 'next/link';
 
 import { memo } from 'react';
-import { Dropdown, Image } from 'react-bootstrap';
+import { Badge, Dropdown, Image } from 'react-bootstrap';
 import { BoxArrowRight, Gear, Person } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import { useLogo } from '@/contexts/LogoContext';
@@ -203,29 +203,27 @@ const UserLayoutHeader = ({ user }) => {
   return (
     <div className='px-5 py-3 d-flex justify-content-between border boder-bottom'>
       {/* <Image src={logo} alt='Company Logo' style={{ height: '80px', width: 'auto' }} /> */}
-      <div className='pe-3 d-flex align-items-center'>
+      <div className='pe-3 d-flex align-items-center '>
         <TodayDate />
       </div>
 
-      <div className='d-flex gap-2 align-items-center'>
-        <div className='d-flex flex-column'>
-          {user && (
-            <>
-              <h4 className='mb-0'>{user?.firstName || ''}</h4>
-              <span className='text-muted'>ID: {user?.workerId || ''}</span>
-            </>
-          )}
-        </div>
-
+      <div className='d-flex gap-3 align-items-center'>
         <NotificationMenu />
 
         <Dropdown className='ms-2'>
           <Dropdown.Toggle
             as='a'
-            className='rounded-circle d-inline-flex'
-            style={{ width: '45px', height: '45px' }}
+            className='custom-dropdown d-flex flex-column justify-content-center align-items-center gap-2'
           >
-            <UserAvatar userDetails={user} />
+            <div className='rounded-circle d-inline-flex' style={{ width: '45px', height: '45px' }}>
+              <UserAvatar userDetails={user} />
+            </div>
+
+            {user && (
+              <Badge bg='secondary' className='text-capitalize'>
+                {user.role}
+              </Badge>
+            )}
           </Dropdown.Toggle>
 
           <Dropdown.Menu
@@ -233,6 +231,27 @@ const UserLayoutHeader = ({ user }) => {
             align='end'
             aria-labelledby='dropdownUser'
           >
+            <Dropdown.Item>
+              {user && (
+                <div className='w-100 d-flex flex-column justify-content-center align-items-center gap-1'>
+                  <div className='lh-lg d-flex flex-column justify-content-center align-items-center flex-wrap'>
+                    <h5 className='mb-0 text-wrap text-center'>{user.fullName}</h5>
+                    <p
+                      className='mb-0 fs-6 text-wrap text-center fw-bold'
+                      style={{ color: '#1e40a6' }}
+                    >
+                      #{user?.workerId || ''}
+                    </p>
+                    <p className='mb-0 text-muted fs-6 text-wrap text-center'>{user.email}</p>
+                  </div>
+
+                  <Badge bg='secondary' className='text-capitalize'>
+                    {user.role}
+                  </Badge>
+                </div>
+              )}
+            </Dropdown.Item>
+            <Dropdown.Divider />
             <Dropdown.Item as={Link} href='#'>
               <Person size={16} className='me-2' /> Profile
             </Dropdown.Item>

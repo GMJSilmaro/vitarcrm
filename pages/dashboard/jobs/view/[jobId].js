@@ -6,6 +6,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
+import Documents from '@/sub-components/dashboard/jobs/view/Documents';
 import ReferenceEquipment from '@/sub-components/dashboard/jobs/view/ReferenceEquipment';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
@@ -327,11 +328,7 @@ const JobDetails = () => {
       return;
     }
 
-    const q = query(
-      collection(db, 'jobCalibrations'),
-      where('jobId', '==', jobId),
-      where('status', 'in', ['completed', 'approval'])
-    );
+    const q = query(collection(db, 'jobCalibrations'), where('jobId', '==', jobId));
 
     getDocs(q)
       .then((snapshot) => {
@@ -429,11 +426,18 @@ const JobDetails = () => {
           {
             text: 'Back to Job List',
             icon: <FaArrowLeft size={16} />,
-            variant: 'outline-primary',
+            variant:
+              (auth.role === 'admin' || auth.role === 'supervisor') &&
+              job &&
+              job.status !== 'validated'
+                ? 'outline-primary'
+                : 'light',
             tooltip: 'Back to Job List',
             onClick: () => router.push('/jobs'),
           },
-          ...(auth.role === 'admin' || auth.role === 'supervisor'
+          ...((auth.role === 'admin' || auth.role === 'supervisor') &&
+          job &&
+          job.status !== 'validated'
             ? [
                 {
                   text: 'Validate Job',
@@ -479,8 +483,12 @@ const JobDetails = () => {
               <CalibrationTab job={job} />
             </Tab>
 
+            <Tab eventKey='6' title='Documents'>
+              <Documents job={job} />
+            </Tab>
+
             {calibrations.data.length > 0 && (
-              <Tab eventKey='6' title='CMR'>
+              <Tab eventKey='7' title='CMR'>
                 <Cmr
                   job={job}
                   customer={customer}

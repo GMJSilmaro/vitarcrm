@@ -34,6 +34,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { GeeksSEO } from '@/widgets';
 import PageHeader from '@/components/common/PageHeader';
 
+const JOB_STATUS_COLOR = {
+  confirmed: 'info',
+  'in progress': 'primary',
+  completed: 'success',
+  cancelled: 'warning',
+  rejected: 'danger',
+  validated: 'purple',
+};
+
 const TechnicianSchedule = () => {
   const router = useRouter();
   const auth = useAuth();
@@ -92,6 +101,8 @@ const TechnicianSchedule = () => {
   };
 
   const eventRendered = (args) => {
+    const status = args.data.Job.status;
+    args.element.classList.add(`bg-${JOB_STATUS_COLOR[status] || 'secondary'}`);
     args.element.style.borderRadius = '4px';
   };
 
@@ -143,15 +154,7 @@ const TechnicianSchedule = () => {
     if (elementType === 'cell') return null;
 
     const getStatusColor = (status) => {
-      const statusMap = {
-        confirmed: 'info',
-        completed: 'success',
-        created: 'warning',
-        'in progress': 'primary',
-        cancelled: 'danger',
-      };
-
-      return statusMap[status] || 'secondary';
+      return JOB_STATUS_COLOR[status] || 'secondary';
     };
 
     return (
@@ -379,38 +382,54 @@ const TechnicianSchedule = () => {
 
         <Card className='shadow-sm'>
           <Card.Body>
-            <ScheduleComponent
-              ref={calendarRef}
-              className='overflow-auto'
-              width='100%'
-              height='84vh'
-              currentView='Month'
-              startHour='00:00'
-              endHour='24:00'
-              selectedDate={new Date()}
-              eventRendered={eventRendered}
-              eventSettings={eventSettings}
-              popupOpen={handlePopupOpen}
-              eventDoubleClick={handleEventDoubleClick}
-              // select={handleSelected}
-              quickInfoTemplates={{
-                header: quickInfoHeaderTemplate,
-                content: quickInfoContentTemplate,
-                footer: quickInfoFooterTemplate,
-              }}
-              allowDragAndDrop={false}
-              allowResizing={false}
-              allowMultiDrag={false}
-            >
-              <ViewsDirective>
-                <ViewDirective option='Month' eventTemplate={monthWeekDayEventTemplate} />
-                <ViewDirective option='Week' eventTemplate={monthWeekDayEventTemplate} />
-                <ViewDirective option='Day' eventTemplate={monthWeekDayEventTemplate} />
-                <ViewDirective option='Agenda' />
-              </ViewsDirective>
+            <div className='d-flex flex-column h-100 gap-3'>
+              <div className='d-flex gap-4 flex-wrap align-align-items-center'>
+                {Object.entries(JOB_STATUS_COLOR).map(([key, value], i) => (
+                  <div className='d-flex align-items-center gap-2 fs-5 fw-medium'>
+                    <div
+                      key={`${i}-${key}`}
+                      className={`bg-${value}`}
+                      style={{ width: '20px', height: '20px', borderRadius: '50%' }}
+                    ></div>
 
-              <Inject services={[Month, Week, Day, Agenda]} />
-            </ScheduleComponent>
+                    <span className='text-capitalize'>{key}</span>
+                  </div>
+                ))}
+              </div>
+
+              <ScheduleComponent
+                ref={calendarRef}
+                className='overflow-auto'
+                width='100%'
+                height='84vh'
+                currentView='Month'
+                startHour='00:00'
+                endHour='24:00'
+                selectedDate={new Date()}
+                eventRendered={eventRendered}
+                eventSettings={eventSettings}
+                popupOpen={handlePopupOpen}
+                eventDoubleClick={handleEventDoubleClick}
+                // select={handleSelected}
+                quickInfoTemplates={{
+                  header: quickInfoHeaderTemplate,
+                  content: quickInfoContentTemplate,
+                  footer: quickInfoFooterTemplate,
+                }}
+                allowDragAndDrop={false}
+                allowResizing={false}
+                allowMultiDrag={false}
+              >
+                <ViewsDirective>
+                  <ViewDirective option='Month' eventTemplate={monthWeekDayEventTemplate} />
+                  <ViewDirective option='Week' eventTemplate={monthWeekDayEventTemplate} />
+                  <ViewDirective option='Day' eventTemplate={monthWeekDayEventTemplate} />
+                  <ViewDirective option='Agenda' />
+                </ViewsDirective>
+
+                <Inject services={[Month, Week, Day, Agenda]} />
+              </ScheduleComponent>
+            </div>
           </Card.Body>
         </Card>
       </div>

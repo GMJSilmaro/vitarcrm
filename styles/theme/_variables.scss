@@ -29,7 +29,6 @@ $grays: map-merge(
     '800': $gray-800,
     '900': $gray-900,
     '1000': $gray-1000,
-
     'white': $white,
   ),
   $grays
@@ -54,6 +53,7 @@ $light-danger: #fad9d8 !default; // NEW
 $light-warning: #ffeeda !default; // NEW
 $light-info: #e1f6ff !default; // NEW
 $light-dark: #d1cfd8 !default; // NEW
+$light-purple: #e9ddfc !default; // NEW
 
 // Dark color
 $dark-primary: #593cc1 !default; // NEW
@@ -62,6 +62,7 @@ $dark-success: #139a74 !default; // NEW
 $dark-danger: #ae302e !default; // NEW
 $dark-warning: #c28135 !default; // NEW
 $dark-info: #51a0c2 !default; // NEW
+$dark-purple: #7641d3 !default; // NEW
 $white: $white !default;
 
 $theme-colors: (
@@ -83,12 +84,14 @@ $theme-colors: (
   'light-secondary': $light-secondary,
   'light-success': $light-success,
   'light-dark': $light-dark,
+  'light-purple': $light-purple,
   'dark-primary': $dark-primary,
   'dark-warning': $dark-warning,
   'dark-info': $dark-info,
   'dark-danger': $dark-danger,
   'dark-success': $dark-success,
   'dark-secondary': $dark-secondary,
+  'dark-purple': $dark-purple,
 );
 
 // theme soft colors map
@@ -106,6 +109,7 @@ $theme-soft-colors: map-merge(
     'danger-soft': rgba($danger, $soft-alpha),
     'light-soft': rgba($light, $soft-alpha),
     'dark-soft': rgba($dark, $soft-alpha),
+    'purple-soft': rgba($purple, $soft-alpha),
   ),
   $theme-soft-colors
 );
@@ -382,20 +386,16 @@ $list-group-action-active-bg: var(--#{$prefix}gray-100);
 // Box Shadow
 $box-shadow-sm: 0px 1px 3px rgba(17, 24, 39, 0.09) !default;
 $box-shadow: 0px 3px 6px rgba(17, 24, 39, 0.1) !default;
-$box-shadow-lg: 0 6px 8px 0 rgba(17, 24, 39, 0.08),
-  0 0 0 1px rgba(17, 24, 39, 0.04) !default;
+$box-shadow-lg: 0 6px 8px 0 rgba(17, 24, 39, 0.08), 0 0 0 1px rgba(17, 24, 39, 0.04) !default;
 
 // Smooth Box Shadow
-$box-shadow-smooth-sm: 0px 2px 4px rgba(0, 0, 20, 0.08),
-  0px 1px 2px rgba(0, 0, 20, 0.08) !default;
-$box-shadow-smooth-md: 0 1px 2px rgba(21, 30, 40, 0.07),
-  0 2px 4px rgba(21, 30, 40, 0.07), 0 4px 8px rgba(21, 30, 40, 0.07),
-  0 8px 16px rgba(21, 30, 40, 0.07), 0 16px 32px rgba(21, 30, 40, 0.07),
-  0 32px 64px rgba(21, 30, 40, 0.07) !default;
-$box-shadow-smooth-lg: 0 1px 1px rgba(21, 30, 40, 0.11),
-  0 2px 2px rgba(21, 30, 40, 0.11), 0 4px 4px rgba(21, 30, 40, 0.11),
-  0 8px 8px rgba(21, 30, 40, 0.11), 0 16px 16px rgba(21, 30, 40, 0.11),
-  0 32px 32px rgba(21, 30, 40, 0.11) !default;
+$box-shadow-smooth-sm: 0px 2px 4px rgba(0, 0, 20, 0.08), 0px 1px 2px rgba(0, 0, 20, 0.08) !default;
+$box-shadow-smooth-md: 0 1px 2px rgba(21, 30, 40, 0.07), 0 2px 4px rgba(21, 30, 40, 0.07),
+  0 4px 8px rgba(21, 30, 40, 0.07), 0 8px 16px rgba(21, 30, 40, 0.07),
+  0 16px 32px rgba(21, 30, 40, 0.07), 0 32px 64px rgba(21, 30, 40, 0.07) !default;
+$box-shadow-smooth-lg: 0 1px 1px rgba(21, 30, 40, 0.11), 0 2px 2px rgba(21, 30, 40, 0.11),
+  0 4px 4px rgba(21, 30, 40, 0.11), 0 8px 8px rgba(21, 30, 40, 0.11),
+  0 16px 16px rgba(21, 30, 40, 0.11), 0 32px 32px rgba(21, 30, 40, 0.11) !default;
 
 // Hr
 
@@ -462,8 +462,8 @@ $img-4by3-sm: 4rem;
 $img-4by3-xs: 2.75rem;
 
 // Social buttons
-$social-btn-transition: border-color 0.25s ease-in-out,
-  background-color 0.25s ease-in-out, color 0.25s ease-in-out !default;
+$social-btn-transition: border-color 0.25s ease-in-out, background-color 0.25s ease-in-out,
+  color 0.25s ease-in-out !default;
 $social-btn-size: 2.25rem !default;
 $social-btn-size-sm: 1.75rem !default;
 $social-btn-size-lg: 2.75rem !default;
@@ -536,9 +536,7 @@ $table-bg: transparent !default;
 $accordion-bg: $card-bg !default;
 $accordion-border-color: var(--#{$prefix}border-color) !default;
 $accordion-button-active-bg: var(--#{$prefix}border-color);
-$accordion-button-active-color: var(
-  --#{$prefix}accordion-button-active-color
-) !default;
+$accordion-button-active-color: var(--#{$prefix}accordion-button-active-color) !default;
 
 // tooltip
 $tooltip-color: var(--#{$prefix}gray-400);

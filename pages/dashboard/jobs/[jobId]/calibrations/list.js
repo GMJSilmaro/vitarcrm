@@ -7,6 +7,8 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import { CATEGORY, STATUS } from '@/schema/calibration';
+import { titleCase } from '@/utils/common';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
 import {
@@ -29,6 +31,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Dropdown, Form, OverlayTrigger, Spinner } from 'react-bootstrap';
@@ -103,10 +106,10 @@ const JobCalibration = () => {
           const status = row?.original?.status;
 
           const colors = {
-            completed: 'success',
+            validate: 'success',
             rejected: 'danger',
             resubmission: 'warning',
-            approval: 'purple',
+            completed: 'purple',
           };
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
@@ -416,11 +419,11 @@ const JobCalibration = () => {
                       <Dropdown.Menu show style={{ zIndex: 999 }}>
                         <Dropdown.Item
                           onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'completed', calibratedBy);
+                            handleUpdateCalibrationStatus(id, 'validate', calibratedBy);
                           }}
                         >
                           <CheckCircle className='me-2' size={16} />
-                          Completed
+                          Validate
                         </Dropdown.Item>
 
                         <Dropdown.Item
@@ -433,11 +436,11 @@ const JobCalibration = () => {
                         </Dropdown.Item>
                         <Dropdown.Item
                           onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'approval', calibratedBy);
+                            handleUpdateCalibrationStatus(id, 'completed', calibratedBy);
                           }}
                         >
                           <ShieldCheck className='me-2' size={16} />
-                          Approval
+                          Completed
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     }
@@ -472,10 +475,10 @@ const JobCalibration = () => {
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'Calibration ID',
+        label: 'ID',
         columnId: 'id',
         type: 'text',
-        placeholder: 'Search by calibration id...',
+        placeholder: 'Search by id...',
       },
       {
         label: 'Certificate No.',
@@ -486,8 +489,14 @@ const JobCalibration = () => {
       {
         label: 'Category',
         columnId: 'category',
-        type: 'text',
-        placeholder: 'Search by category...',
+        type: 'select',
+        options: [
+          { label: 'All Category', value: '' },
+          ...CATEGORY.map((c) => ({
+            label: titleCase(c),
+            value: c,
+          })),
+        ],
       },
       {
         label: 'Status',
@@ -495,9 +504,10 @@ const JobCalibration = () => {
         type: 'select',
         options: [
           { label: 'All Status', value: '' },
-          { label: 'Completed', value: 'completed' },
-          { label: 'Rejected', value: 'rejected' },
-          { label: 'Approval', value: 'approval' },
+          ...STATUS.map((s) => ({
+            label: titleCase(s),
+            value: s,
+          })),
         ],
       },
       {
@@ -599,7 +609,7 @@ const JobCalibration = () => {
         ]}
         actionButtons={[
           {
-            text: `Create calibration for Job #${jobId}`,
+            text: `Add calibration for Job #${jobId}`,
             icon: <Plus size={16} />,
             variant: 'light',
             onClick: () => router.push(`/jobs/${jobId}/calibrations/create`),

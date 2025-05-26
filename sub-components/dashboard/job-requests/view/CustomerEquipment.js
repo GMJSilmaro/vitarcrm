@@ -46,10 +46,6 @@ const CustomerEquipment = ({ jobRequest, customer }) => {
 
   const columns = useMemo(() => {
     return [
-      columnHelper.accessor('id', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
-        size: 100,
-      }),
       columnHelper.accessor('description', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
       }),
@@ -88,8 +84,12 @@ const CustomerEquipment = ({ jobRequest, customer }) => {
         id: 'range max',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Range (Max)' />,
       }),
-      columnHelper.accessor('uom', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='UOM' />,
+      columnHelper.accessor('tolerance', {
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Tolerance' />,
+      }),
+      columnHelper.accessor((row) => row?.uom || '', {
+        id: 'unit',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Unit' />,
       }),
       columnHelper.accessor('notes', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Notes' />,
@@ -99,12 +99,6 @@ const CustomerEquipment = ({ jobRequest, customer }) => {
 
   const filterFields = useMemo(() => {
     return [
-      {
-        label: 'Equipment ID',
-        columnId: 'id',
-        type: 'text',
-        placeholder: 'Search by equipment id...',
-      },
       {
         label: 'Description',
         columnId: 'description',
@@ -142,10 +136,16 @@ const CustomerEquipment = ({ jobRequest, customer }) => {
         placeholder: 'Search by range max...',
       },
       {
-        label: 'UOM',
-        columnId: 'uom',
+        label: 'Tolerance',
+        columnId: 'tolerance',
         type: 'text',
-        placeholder: 'Search by uom...',
+        placeholder: 'Search by tolerance...',
+      },
+      {
+        label: 'Unit',
+        columnId: 'unit',
+        type: 'text',
+        placeholder: 'Search by unit...',
       },
       {
         label: 'Notes',

@@ -564,31 +564,8 @@ const JobSchedulingForm = ({
               Previous
             </Button>
 
-            <Button type='button' onClick={handleNext} disabled={isLoading}>
-              {calibrations?.data?.length > 0 ? (
-                'Next'
-              ) : (
-                <>
-                  {isLoading ? (
-                    <>
-                      <Spinner
-                        as='span'
-                        animation='border'
-                        size='sm'
-                        role='status'
-                        aria-hidden='true'
-                        className='me-2'
-                      />
-                      {data ? 'Updating' : 'Creating'}...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={14} className='me-2' />
-                      {data ? 'Update' : 'Create'} {' Job'}
-                    </>
-                  )}
-                </>
-              )}
+            <Button disabled={isLoading} type='button' onClick={handleNext}>
+              Next
             </Button>
           </div>
         </Card.Body>

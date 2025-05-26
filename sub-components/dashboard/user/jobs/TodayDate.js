@@ -14,7 +14,7 @@ const TodayDate = () => {
 
   return (
     <div className='d-flex align-items-center gap-3 today-date'>
-      <span className='fw-bold' style={{ fontSize: 28, color: '#1e40a6' }}>
+      <span className='fw-bold' style={{ fontSize: 24, color: '#1e40a6' }}>
         {time}
       </span>
     </div>

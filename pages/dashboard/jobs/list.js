@@ -26,6 +26,7 @@ import {
   PersonFill,
   PersonLinesFill,
   Plus,
+  PlusSquare,
   ShieldCheck,
   ThreeDotsVertical,
   Trash,
@@ -45,7 +46,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db, storage } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import DataTable from '@/components/common/DataTable';
 import { format, formatDistanceStrict } from 'date-fns';
@@ -59,6 +60,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import _ from 'lodash';
 import { useNotifications } from '@/hooks/useNotifications';
+import { deleteObject, listAll, ref } from 'firebase/storage';
 
 const JobList = () => {
   const router = useRouter();
@@ -182,10 +184,9 @@ const JobList = () => {
         cell: ({ row }) => {
           const colors = {
             confirmed: 'info',
-            completed: 'success',
-            created: 'warning',
             'in progress': 'primary',
-            cancelled: 'danger',
+            completed: 'success',
+            cancelled: 'warning',
             rejected: 'danger',
             validated: 'purple',
           };
@@ -382,9 +383,26 @@ const JobList = () => {
                   const jobHeaderRef = doc(db, 'jobHeaders', id);
                   const jobDetailsRef = doc(db, 'jobDetails', id);
 
+                  const deleteFiles = async () => {
+                    try {
+                      const storageRef = ref(storage, `jobs/${id}/documents`);
+                      const res = await listAll(storageRef);
+
+                      //* delete all files
+                      const deletePromises = res.items.map((itemRef) => deleteObject(itemRef));
+
+                      await Promise.all(deletePromises);
+
+                      console.log('deleted files from path: ', `job/${id}/documents`);
+                    } catch (error) {
+                      console.error(err, 'Failed to delete related documents/files:');
+                    }
+                  };
+
                   await Promise.all([
                     deleteDoc(jobHeaderRef),
                     deleteDoc(jobDetailsRef),
+                    deleteFiles(),
                     //* create notification when job is removed
                     notifications.create({
                       module: 'job',
@@ -607,8 +625,8 @@ const JobList = () => {
                       )}
 
                       <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
-                        <CardList className='me-2' size={16} />
-                        Start Calibrate
+                        <PlusSquare className='me-2' size={16} />
+                        Add Calibration
                       </Dropdown.Item>
                     </>
                   )}
@@ -701,6 +719,7 @@ const JobList = () => {
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
       columnPinning: { right: ['actions'] },
+      sorting: [{ id: 'date', desc: true }],
     },
   });
 
@@ -764,12 +783,16 @@ const JobList = () => {
           },
         ]}
         actionButtons={[
-          {
-            text: 'Create Job',
-            icon: <Plus size={20} />,
-            variant: 'light',
-            onClick: () => router.push('/jobs/create'),
-          },
+          ...(auth.role === 'admin' || auth.role === 'supervisor'
+            ? [
+                {
+                  text: 'Create Job',
+                  icon: <Plus size={20} />,
+                  variant: 'light',
+                  onClick: () => router.push('/jobs/create'),
+                },
+              ]
+            : []),
         ]}
       />
 

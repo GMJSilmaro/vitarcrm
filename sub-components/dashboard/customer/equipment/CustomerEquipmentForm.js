@@ -290,14 +290,14 @@ const CustomerEquipmentForm = ({ data }) => {
               </Form.Group>
 
               <Form.Group as={Col} md={3}>
-                <Form.Label htmlFor='uom'>Unit of Measure</Form.Label>
+                <Form.Label htmlFor='uom'>Unit</Form.Label>
 
                 <Controller
                   name='uom'
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} id='uom' placeholder='Enter Unit of Measure' />
+                      <Form.Control {...field} id='uom' placeholder='Enter Unit' />
 
                       {formErrors && formErrors.uom?.message && (
                         <Form.Text className='text-danger'>{formErrors.uom?.message}</Form.Text>

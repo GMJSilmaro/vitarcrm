@@ -250,10 +250,6 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
         },
         enableSorting: false,
       }),
-      columnHelper.accessor('id', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
-        size: 100,
-      }),
       columnHelper.accessor('description', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,
       }),
@@ -295,8 +291,9 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
       columnHelper.accessor('tolerance', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Tolerance' />,
       }),
-      columnHelper.accessor('uom', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='UOM' />,
+      columnHelper.accessor((row) => row?.uom || '', {
+        id: 'unit',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Unit' />,
       }),
       columnHelper.accessor('notes', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Notes' />,
@@ -514,12 +511,6 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
   const filterFields = useMemo(() => {
     return [
       {
-        label: 'Equipment ID',
-        columnId: 'id',
-        type: 'text',
-        placeholder: 'Search by equipment id...',
-      },
-      {
         label: 'Description',
         columnId: 'description',
         type: 'text',
@@ -562,10 +553,10 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
         placeholder: 'Search by tolerance...',
       },
       {
-        label: 'UOM',
-        columnId: 'uom',
+        label: 'Unit',
+        columnId: 'unit',
         type: 'text',
-        placeholder: 'Search by uom...',
+        placeholder: 'Search by unit...',
       },
       {
         label: 'Notes',
@@ -917,18 +908,14 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
                               </Form.Group>
 
                               <Form.Group as={Col} md={3}>
-                                <Form.Label htmlFor='uom'>Unit of Measure</Form.Label>
+                                <Form.Label htmlFor='uom'>Unit</Form.Label>
 
                                 <Controller
                                   name='uom'
                                   control={customerEquipmentForm.control}
                                   render={({ field }) => (
                                     <>
-                                      <Form.Control
-                                        {...field}
-                                        id='uom'
-                                        placeholder='Enter Unit of Measure'
-                                      />
+                                      <Form.Control {...field} id='uom' placeholder='Enter Unit' />
 
                                       {customerEquipmentFormErrors &&
                                         customerEquipmentFormErrors.uom?.message && (

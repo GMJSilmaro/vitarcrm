@@ -1,5 +1,6 @@
 import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrationPDF1';
 import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
+import { db } from '@/firebase';
 import {
   TEST_LOADS,
   TRACEABILITY_ACCREDITATION_BODY,
@@ -11,15 +12,10 @@ import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
 import { countDecimals } from '@/utils/common';
 import { usePDF } from '@react-pdf/renderer';
 import { add, format } from 'date-fns';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { ceil, divide, multiply, round } from 'mathjs';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { Button, Card, Spinner, Table } from 'react-bootstrap';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Card, Image, Spinner, Table } from 'react-bootstrap';
 import { Calendar4, Download, Printer } from 'react-bootstrap-icons';
 
 const CertificateOfCalibration = ({ calibration, instruments }) => {
@@ -27,27 +23,25 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
 
   const [instance, updateInstance] = usePDF();
 
+  const [calibrateBy, setCalibrateBy] = useState({ data: {}, isLoading: true, isError: false });
+  const [approvedSignatory, setApprovedSignatory] = useState({data: {}, isLoading: true, isError: false}); //prettier-ignore
+
   const handleGetLocationValue = useCallback(() => {
     if (calibration.location) {
       const locationData = calibration.location;
       let value = locationData.siteName || '';
 
       if (locationData?.addresses && locationData?.addresses?.length > 0) {
-        const defaultAddress = locationData.addresses.find(
-          (address) => address.isDefault
-        );
+        const defaultAddress = locationData.addresses.find((address) => address.isDefault);
 
         if (defaultAddress) {
           if (defaultAddress?.street1) value += ` ${defaultAddress.street1}`;
-          else if (defaultAddress?.street2)
-            value += ` ${defaultAddress.street2}`;
-          else if (defaultAddress?.street3)
-            value += ` ${defaultAddress.street3}`;
+          else if (defaultAddress?.street2) value += ` ${defaultAddress.street2}`;
+          else if (defaultAddress?.street3) value += ` ${defaultAddress.street3}`;
 
           if (defaultAddress?.city) value += ` ${defaultAddress.city}`;
           if (defaultAddress?.province) value += ` ${defaultAddress.province}`;
-          if (defaultAddress?.postalCode)
-            value += ` ${defaultAddress.postalCode}`;
+          if (defaultAddress?.postalCode) value += ` ${defaultAddress.postalCode}`;
           if (defaultAddress?.country) value += ` ${defaultAddress.country}`;
         }
       }
@@ -114,21 +108,14 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
   const cocInstruments = useMemo(() => {
     if (!instruments.data || instruments.data.length < 1) return [];
     const selectedInstruments = calibration?.cocInstruments || [];
-    return instruments.data.filter((instrument) =>
-      selectedInstruments.includes(instrument.id)
-    );
+    return instruments.data.filter((instrument) => selectedInstruments.includes(instrument.id));
   }, [calibration, instruments.data]);
 
   const convertValueBasedOnUnit = useCallback(
     (value) => {
       const unit = unitUsedForCOC;
 
-      if (
-        typeof value === 'string' ||
-        value === undefined ||
-        value === null ||
-        isNaN(value)
-      ) {
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
         return '';
       }
 
@@ -152,20 +139,14 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
 
   const convertExpandedUncertaintyBasedOnUnit = useCallback(
     (value) => {
-      if (
-        typeof value === 'string' ||
-        value === undefined ||
-        value === null ||
-        isNaN(value)
-      ) {
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
         return '';
       }
 
       const unit = unitUsedForCOC;
       const factor = unit === 'gram' ? 1 : 0.001;
       const scaledResolution = resolution * factor;
-      const result =
-        ceil((value * factor) / scaledResolution) * scaledResolution;
+      const result = ceil((value * factor) / scaledResolution) * scaledResolution;
 
       switch (unit) {
         case 'gram': {
@@ -222,10 +203,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
   const traceability = useMemo(() => {
     if (!calibration?.traceabilityType) return '';
 
-    if (
-      calibration?.traceabilityType === '1' ||
-      calibration?.traceabilityType === '2'
-    ) {
+    if (calibration?.traceabilityType === '1' || calibration?.traceabilityType === '2') {
       return TRACEABILITY_MAP?.[calibration?.traceabilityType] || '';
     }
 
@@ -241,9 +219,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       let accreditationNos = '';
       if (selectedTraceabilityCalibrationLab.length >= 2) {
         const lastAccreditationNo = selectedAccreditationNos.pop();
-        accreditationNos = `${selectedAccreditationNos.join(
-          ', '
-        )} and ${lastAccreditationNo}`;
+        accreditationNos = `${selectedAccreditationNos.join(', ')} and ${lastAccreditationNo}`;
       } else {
         accreditationNos = selectedAccreditationNos[0];
       }
@@ -275,19 +251,71 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     }
   }, [instance.url, iframeRef]);
 
+  //* set calibratedBy and approvedSignatory
   useEffect(() => {
-    if (!instruments.isLoading && instruments.data.length > 0 && calibration) {
+    if (
+      calibration?.calibratedBy &&
+      calibration?.calibratedBy?.id &&
+      calibration?.approvedSignatory &&
+      calibration?.approvedSignatory?.id
+    ) {
+      console.log('zzzzz', {
+        calibratedById: calibration.calibratedBy.id,
+        approvedSignatoryId: calibration.approvedSignatory.id,
+      });
+
+      getDocs(
+        query(
+          collection(db, 'users'),
+          where('workerId', 'in', [
+            calibration?.calibratedBy?.id ?? '',
+            calibration?.approvedSignatory?.id ?? '',
+          ])
+        )
+      )
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            const docs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            const calibrateByData = docs.find((doc) => doc.workerId === calibration.calibratedBy.id); //prettier-ignore
+            const approvedSignatoryData = docs.find((doc) => doc.workerId === calibration.approvedSignatory.id); //prettier-ignore
+
+            console.log({ calibrateByData, approvedSignatoryData });
+
+            if (calibrateByData) setCalibrateBy({ data: calibrateByData, isLoading: false, isError: false }); //prettier-ignore
+            if (approvedSignatoryData)  setApprovedSignatory({ data: approvedSignatoryData,isLoading: false, isError: false,}); //prettier-ignore
+          }
+        })
+        .catch((err) => {
+          console.error(err.message);
+          setCalibrateBy({ data: {}, isLoading: false, isError: true });
+          setApprovedSignatory({ data: {}, isLoading: false, isError: true });
+        });
+    } else {
+      setCalibrateBy({ data: {}, isLoading: false, isError: false });
+      setApprovedSignatory({ data: {}, isLoading: false, isError: false });
+    }
+  }, [calibration]);
+
+  useEffect(() => {
+    if (
+      !instruments.isLoading &&
+      instruments.data.length > 0 &&
+      calibrateBy.data &&
+      approvedSignatory.data &&
+      calibration
+    ) {
       //* trigger re-render for pdf
       updateInstance(
-        <CertificateOfCalibrationPDF2
-          calibration={calibration}
-          instruments={instruments}
-        />
+        <CertificateOfCalibrationPDF2 calibration={calibration} instruments={instruments} calibratedBy={calibrateBy} approvedSignatory={approvedSignatory} /> //prettier-ignore
       );
       console.log('trigger re-render for pdf', instruments);
     }
   }, [
     instruments.isLoading,
+    calibrateBy.isLoading,
+    approvedSignatory.isLoading,
+    JSON.stringify(calibrateBy.data),
+    JSON.stringify(approvedSignatory.data),
     JSON.stringify(calibration),
     JSON.stringify(instruments.data),
   ]);
@@ -315,8 +343,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
           <div>
             <h4 className='mb-0'>Certificate of Calibration</h4>
             <p className='text-muted fs-6 mb-0'>
-              Certicate generated based on the resuts and can be
-              downloaded/print here.
+              Certicate generated based on the resuts and can be downloaded/print here.
             </p>
           </div>
 
@@ -329,10 +356,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             <iframe ref={iframeRef} style={{ display: 'none' }} />
 
             {instance.url && calibration.id && (
-              <Button
-                variant='outline-primary'
-                onClick={() => downloadPDF(calibration.id)}
-              >
+              <Button variant='outline-primary' onClick={() => downloadPDF(calibration.id)}>
                 <Download size={18} className='me-2' />
                 Download
               </Button>
@@ -342,11 +366,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       </Card.Header>
 
       <Card.Body>
-        <Table
-          className='w-75 mx-auto text-center fs-6 align-middle mt-3 mb-5'
-          bordered
-          responsive
-        >
+        <Table className='w-75 mx-auto text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
           <tbody>
             <tr>
               <th>CERTIFICATE NO.</th>
@@ -417,9 +437,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             </tr>
             <tr>
               <th>Serial No.</th>
-              <td colSpan={5}>
-                {calibration?.description?.serialNumber || ''}
-              </td>
+              <td colSpan={5}>{calibration?.description?.serialNumber || ''}</td>
             </tr>
             <tr>
               <th>Range</th>
@@ -451,14 +469,12 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <td colSpan={5} className='px-5 py-3'>
                 <div className='d-flex justify-content-center align-items-center flex-column flex-wrap gap-3'>
                   <div className='text-center'>
-                    The result of calibration shown relates only to the
-                    instrument being calibrated as described above.
+                    The result of calibration shown relates only to the instrument being calibrated
+                    as described above.
                   </div>
 
                   <div className='d-flex flex-column align-items-start'>
-                    <span className='fw-bold'>
-                      Instrument Condition When Received:
-                    </span>
+                    <span className='fw-bold'>Instrument Condition When Received:</span>
 
                     <div className='w-100 d-flex flex-column gap-1 justify-content-center align-items-center'>
                       <p className='mt-1 text-center d-inline-block mb-0 w-100'>
@@ -471,14 +487,11 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                   </div>
 
                   <div className='d-flex flex-column align-items-center'>
-                    <span className='fw-bold'>
-                      Instrument Condition When Returned:
-                    </span>
+                    <span className='fw-bold'>Instrument Condition When Returned:</span>
 
                     <div className='w-100 d-flex flex-column gap-1 justify-content-center'>
                       <p className='mt-1 text-center d-inline-block mb-0 w-100'>
-                        <span className='me-2'>•</span> Calibrated and tested
-                        serviceable
+                        <span className='me-2'>•</span> Calibrated and tested serviceable
                       </p>
                     </div>
                   </div>
@@ -530,16 +543,14 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             <tr>
               <td></td>
               <td colSpan={5}>
-                The instrument has been calibrated on site under the
-                environmental condition as stated above.
+                The instrument has been calibrated on site under the environmental condition as
+                stated above.
               </td>
             </tr>
 
             <tr>
               <th>Reference Method</th>
-              <td colSpan={5}>
-                The calibration was based upon Calibration Procedure CP-(M)A.
-              </td>
+              <td colSpan={5}>The calibration was based upon Calibration Procedure CP-(M)A.</td>
             </tr>
 
             <tr>
@@ -556,9 +567,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               <th>Due Date</th>
             </tr>
 
-            {(instruments.data.length < 1 &&
-              !instruments.isLoading &&
-              !instruments.isError) ||
+            {(instruments.data.length < 1 && !instruments.isLoading && !instruments.isError) ||
               (cocInstruments.length < 1 && (
                 <tr>
                   <td colSpan={6}>
@@ -599,9 +608,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                   <td>{instrument?.traceability || ''}</td>
                   <td>{instrument?.certificateNo || ''}</td>
                   <td>
-                    {instrument?.dueDate
-                      ? format(new Date(instrument?.dueDate), 'dd-MM-yyyy')
-                      : ''}
+                    {instrument?.dueDate ? format(new Date(instrument?.dueDate), 'dd-MM-yyyy') : ''}
                   </td>
                 </tr>
               ))}
@@ -613,8 +620,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             <div>
               <h4 className='mb-0'>Result of Caliberation</h4>
               <p className='text-muted fs-6 mb-0'>
-                The result of calibration shown only relates to the range
-                calibrated.
+                The result of calibration shown only relates to the range calibrated.
               </p>
             </div>
           </div>
@@ -624,11 +630,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
           <div className='mt-4 w-75 mx-auto'>
             <h5 className='mb-0'>Accuracy Test</h5>
 
-            <Table
-              className='text-center fs-6 align-middle mt-3 mb-5'
-              bordered
-              responsive
-            >
+            <Table className='text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
               <thead>
                 <tr>
                   <th>
@@ -651,18 +653,14 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                 {calibrationPointNo &&
                   Array.from({ length: calibrationPointNo }).map((_, i) => (
                     <tr key={i}>
-                      <td>
-                        {convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}
-                      </td>
+                      <td>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</td>
                       <td>
                         {renderCorrectionValueWithSymbol(
                           convertValueBasedOnUnit(corrections?.[i] ?? 0)
                         )}
                       </td>
                       <td>
-                        {convertExpandedUncertaintyBasedOnUnit(
-                          expandedUncertainties?.[i] ?? 0
-                        )}
+                        {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
                       </td>
                       <td>{coverageFactors?.[i] || 0}</td>
                     </tr>
@@ -674,11 +672,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
           <div className='w-75 mx-auto'>
             <h5 className=' mb-0'>Repeatability Test</h5>
 
-            <Table
-              className='text-center fs-6 align-middle mt-3 mb-5'
-              bordered
-              responsive
-            >
+            <Table className='text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
               <thead>
                 <tr>
                   <th>
@@ -688,33 +682,22 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                     Standard Deviation <br />({unitUsedForCOCAcronym})
                   </th>
                   <th>
-                    Maximum Difference Between Readings <br />(
-                    {unitUsedForCOCAcronym})
+                    Maximum Difference Between Readings <br />({unitUsedForCOCAcronym})
                   </th>
                 </tr>
               </thead>
 
               <tbody>
                 <tr>
-                  <td>
-                    {convertValueBasedOnUnit(
-                      divide(rangeMaxCalibration, 2) ?? 0
-                    )}
-                  </td>
+                  <td>{convertValueBasedOnUnit(divide(rangeMaxCalibration, 2) ?? 0)}</td>
                   <td>{convertValueBasedOnUnit(rtestStd?.[0] ?? 0)}</td>
-                  <td>
-                    {convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[0])}
-                  </td>
+                  <td>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[0])}</td>
                 </tr>
 
                 <tr>
                   <td>{convertValueBasedOnUnit(rangeMaxCalibration) ?? 0}</td>
                   <td>{convertValueBasedOnUnit(rtestStd?.[1]) ?? 0}</td>
-                  <td>
-                    {convertValueBasedOnUnit(
-                      rtestMaxDiffBetweenReadings?.[1] ?? 0
-                    )}
-                  </td>
+                  <td>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[1] ?? 0)}</td>
                 </tr>
               </tbody>
             </Table>
@@ -732,11 +715,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                 <thead>
                   <tr>
                     <th>Test Load</th>
-                    <th>
-                      {convertValueBasedOnUnit(
-                        calibration?.data?.etest?.testLoad ?? 0
-                      )}
-                    </th>
+                    <th>{convertValueBasedOnUnit(calibration?.data?.etest?.testLoad ?? 0)}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -751,9 +730,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                           <div className='d-flex flex-column align-items-center gap-2'>
                             <div className='text-center fw-bold'>Max Error</div>
                             <div className='text-center'>
-                              {convertValueBasedOnUnit(
-                                calibration?.data?.etest?.maxError ?? 0
-                              )}
+                              {convertValueBasedOnUnit(calibration?.data?.etest?.maxError ?? 0)}
                             </div>
                           </div>
                         </td>
@@ -765,42 +742,50 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
 
               <div className='d-flex justify-content-center align-items-center mt-1 gap-5'>
                 {calibration?.typeOfBalance && (
-                  <img
-                    src={`/images/balance-type-${calibration?.typeOfBalance}.png`}
-                    width={100}
-                  />
+                  <img src={`/images/balance-type-${calibration?.typeOfBalance}.png`} width={100} />
                 )}
               </div>
             </div>
 
             <p className='text-muted text-center fst-italic'>
-              "The expanded uncertainties and it's coverage factors for the
-              calibration results above are based on an estimated confidence
-              probability of not less than 95%."
+              "The expanded uncertainties and it's coverage factors for the calibration results
+              above are based on an estimated confidence probability of not less than 95%."
             </p>
 
             <p className='text-muted fs-6 text-center'>
-              Note : The result of calibration is obtained after the balance is
-              leveled. If the balance is moved to different location, user
-              should always ensure that the balance is leveled, where
-              appropriate using the bubble level that is usually attached to the
+              Note : The result of calibration is obtained after the balance is leveled. If the
+              balance is moved to different location, user should always ensure that the balance is
+              leveled, where appropriate using the bubble level that is usually attached to the
               frame.
             </p>
             <p className='text-muted fs-6 text-center'>
-              Care should always be taken in the selection of location as all
-              balance will be affected to a greater or lesser extent by
-              draughts, vibration, inadequate support surfaces and temperature
-              changes, whether across the machine or with time.
+              Care should always be taken in the selection of location as all balance will be
+              affected to a greater or lesser extent by draughts, vibration, inadequate support
+              surfaces and temperature changes, whether across the machine or with time.
             </p>
 
             <div className='d-flex justify-content-between my-5'>
               <div
-                className='d-flex flex-column align-items-center gap-2'
+                className='d-flex flex-column justify-content-end align-items-center gap-2'
                 style={{ width: 'fit-content' }}
               >
                 <div className='fw-medium'>Calibrated By</div>
+
+                {calibrateBy?.data?.signature && (
+                  <div className='my-2' style={{ maxWidth: 80 }}>
+                    <Image
+                      className='w-100 h-100'
+                      src={calibrateBy?.data?.signature}
+                      alt='Calibrated By Signature'
+                    />
+                  </div>
+                )}
+
                 <div
-                  className='text-center mt-5 border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0'
+                  className={
+                    `text-center border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0 ` +
+                    `${calibrateBy?.data?.signature ? ' mt-2' : 'mt-5'}`
+                  }
                   style={{ maxWidth: 240 }}
                 >
                   {calibration?.calibratedBy?.name || ''}
@@ -808,12 +793,26 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
               </div>
 
               <div
-                className='d-flex flex-column align-items-center gap-2'
+                className='d-flex flex-column justify-content-end align-items-center gap-2'
                 style={{ width: 'fit-content' }}
               >
                 <div className='fw-medium'>Approved By</div>
+
+                {approvedSignatory?.data?.signature && (
+                  <div className='my-2' style={{ maxWidth: 80 }}>
+                    <Image
+                      className='w-100 h-100'
+                      src={approvedSignatory?.data?.signature}
+                      alt='Approved Signatory Signature'
+                    />
+                  </div>
+                )}
+
                 <div
-                  className='text-center mt-5 border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0'
+                  className={
+                    `text-center border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0 ` +
+                    `${approvedSignatory?.data?.signature ? ' mt-2' : 'mt-5'}`
+                  }
                   style={{ maxWidth: 240 }}
                 >
                   {calibration?.approvedSignatory?.name || ''}
@@ -822,21 +821,20 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             </div>
 
             <p className='fw-bold mt-5 text-center'>
-              The expanded uncertainty is stated as the standard measurement
-              uncertainty multiplied by the coverage factor k, such that the
-              coverage probability corresponds to approximately 95 %.
+              The expanded uncertainty is stated as the standard measurement uncertainty multiplied
+              by the coverage factor k, such that the coverage probability corresponds to
+              approximately 95 %.
             </p>
           </div>
 
           <hr />
 
           <small className='text-center'>
-            This certificate is issued in accordance with the laboratory
-            accreditation requirements of Skim Akreditasi Makmal Malaysia ( SAMM
-            ) of Standards Malaysia which is a signatory to the ILAC MRA.
-            Copyright of this certificate is owned by the issuing laboratory and
-            may not be reproduced other than in full except with the prior
-            written approval of the Head of the issuing laboratory.
+            This certificate is issued in accordance with the laboratory accreditation requirements
+            of Skim Akreditasi Makmal Malaysia ( SAMM ) of Standards Malaysia which is a signatory
+            to the ILAC MRA. Copyright of this certificate is owned by the issuing laboratory and
+            may not be reproduced other than in full except with the prior written approval of the
+            Head of the issuing laboratory.
           </small>
         </div>
       </Card.Body>
