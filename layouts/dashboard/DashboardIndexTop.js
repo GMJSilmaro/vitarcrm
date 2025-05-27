@@ -176,18 +176,18 @@ const DashboardIndexTop = (props) => {
           </Nav>
 
           {/* Mobile Toggle */}
-          {/* <Navbar.Toggle
+          <Navbar.Toggle
             aria-controls='navbarScroll'
             className='ms-3'
             onClick={() => setExpandedMenu(!expandedMenu)}
           >
             <span className='navbar-toggler-icon'></span>
-          </Navbar.Toggle> */}
+          </Navbar.Toggle>
         </Container>
       </Navbar>
 
       {/* Secondary Navigation */}
-      <Navbar expand='lg' className='navbar-light bg-white border-bottom'>
+      <Navbar expand='lg' className='bg-danger navbar-light bg-white border-bottom'>
         <Container fluid>
           <Navbar.Collapse id='navbarScroll' in={expandedMenu}>
             <Nav>{renderDropdownItems(navbarItems)}</Nav>

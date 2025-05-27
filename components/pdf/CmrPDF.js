@@ -281,11 +281,11 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
 
   return (
     <Document
-    // onRender={(props) => {
-    //   //* get total pages stored in a state
-    //   const value = props?._INTERNAL__LAYOUT__DATA_?.children?.length || 0;
-    //   setTotalPages(value);
-    // }}
+      onRender={(props) => {
+        //* get total pages stored in a state
+        const value = props?._INTERNAL__LAYOUT__DATA_?.children?.length || 0;
+        setTotalPages(value);
+      }}
     >
       <Page size='A4' debug={false} style={styles.body} wrap>
         <View fixed style={styles.logoContainer}>
@@ -885,55 +885,64 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
         </View>
 
         {/* //* footer */}
-        <View style={styles.footer}>
-          <View
-            style={{
-              width: '80%',
-              margin: '0 auto',
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            {job?.salesSignature && (
-              <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Image style={{ width: '70px', height: 'auto' }} src={job?.salesSignature} />
-                <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
-                  Laboratory Representative
-                </Text>
-                <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
-                  {labRepresentative?.fullName || ''}
-                </Text>
-              </View>
-            )}
+        <View
+          fixed
+          style={styles.footer}
+          render={({ pageNumber }) =>
+            pageNumber === totalPages && (
+              <View
+                style={{
+                  width: '80%',
+                  margin: '0 auto',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  position: 'relative',
+                }}
+              >
+                {job?.salesSignature && (
+                  <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Image style={{ width: '50px', height: '30px' }} src={job?.salesSignature} />
+                    <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
+                      Laboratory Representative
+                    </Text>
+                    <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
+                      {labRepresentative?.fullName || ''}
+                    </Text>
+                  </View>
+                )}
 
-            {job?.workerSignature && (
-              <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Image style={{ width: '70px', height: 'auto' }} src={job?.workerSignature} />
-                <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>Reviewd By</Text>
-                <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
-                  {worker?.fullName || ''}
-                </Text>
-                <Text style={{ fontSize: 8, textAlign: 'center' }}>
-                  {format(new Date(), 'dd MMMM yyyy')}
-                </Text>
-              </View>
-            )}
+                {job?.workerSignature && (
+                  <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Image style={{ width: '50px', height: '30px' }} src={job?.workerSignature} />
+                    <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
+                      Reviewd By
+                    </Text>
+                    <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
+                      {worker?.fullName || ''}
+                    </Text>
+                    <Text style={{ fontSize: 8, textAlign: 'center' }}>
+                      {format(new Date(), 'dd MMMM yyyy')}
+                    </Text>
+                  </View>
+                )}
 
-            {job?.customerSignature && (
-              <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Image style={{ width: '70px', height: 'auto' }} src={job?.customerSignature} />
-                <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
-                  Customer Chop & Sign
-                </Text>
-                <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
-                  {customer?.data?.customerName || ''}
-                </Text>
+                {job?.customerSignature && (
+                  <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Image style={{ width: '50px', height: '30px' }} src={job?.customerSignature} />
+                    <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
+                      Customer Chop & Sign
+                    </Text>
+                    <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
+                      {customer?.data?.customerName || ''}
+                    </Text>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
-        </View>
+            )
+          }
+        />
       </Page>
     </Document>
   );
