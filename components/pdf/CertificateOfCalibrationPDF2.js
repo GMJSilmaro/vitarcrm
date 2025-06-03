@@ -455,7 +455,13 @@ const CertificateOfCalibrationPDF2 = ({
             </View>
 
             <View style={styles.blockContentRight}>
-              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+              <View
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
                 <Text style={{ paddingRight: 30 }}>
                   {calibration?.dateCalibrated
                     ? format(new Date(calibration.dateCalibrated), 'dd MMMM yyyy')
@@ -553,7 +559,13 @@ const CertificateOfCalibrationPDF2 = ({
             </View>
 
             <View style={styles.blockContentRight}>
-              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+              <View
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
                 <Text>{calibration?.rangeMinCalibration}</Text>
                 <Text style={{ paddingLeft: 20, paddingRight: 20 }}>to</Text>
                 <Text>{calibration?.rangeMaxCalibration}</Text>
@@ -642,7 +654,14 @@ const CertificateOfCalibrationPDF2 = ({
 
             <View style={styles.blockContentRight}>
               <View style={{ display: 'flex', flexDirection: 'row' }}>
-                <View style={{ display: 'flex', flexDirection: 'row', gap: 4, paddingRight: 30 }}>
+                <View
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: 4,
+                    paddingRight: 30,
+                  }}
+                >
                   <Text style={{ paddingRight: 20 }}>Max:</Text>
                   <Text>{calibration?.maxTemperature ?? 0} °C</Text>
                 </View>
@@ -666,7 +685,14 @@ const CertificateOfCalibrationPDF2 = ({
 
             <View style={styles.blockContentRight}>
               <View style={{ display: 'flex', flexDirection: 'row' }}>
-                <View style={{ display: 'flex', flexDirection: 'row', gap: 4, paddingRight: 30 }}>
+                <View
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: 4,
+                    paddingRight: 30,
+                  }}
+                >
                   <Text style={{ paddingRight: 20 }}>Max:</Text>
                   <Text>{calibration?.rangeMaxRHumidity ?? 0} %rh</Text>
                 </View>
@@ -688,7 +714,12 @@ const CertificateOfCalibrationPDF2 = ({
 
           <View style={[styles.block, { marginBottom: 8 }]}>
             <View style={styles.blockContentLeft}>
-              <Text style={{ fontFamily: 'TimesNewRomanBold', textDecoration: 'underline' }}>
+              <Text
+                style={{
+                  fontFamily: 'TimesNewRomanBold',
+                  textDecoration: 'underline',
+                }}
+              >
                 Reference Method
               </Text>
             </View>
@@ -742,7 +773,11 @@ const CertificateOfCalibrationPDF2 = ({
           </View>
 
           <View
-            style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
             break={cocInstruments.length > 6 ? true : false}
           >
             {cocInstruments.length > 0 &&
@@ -875,19 +910,37 @@ const CertificateOfCalibrationPDF2 = ({
                 <Text>({unitUsedForCOCAcronym})</Text>
                 <Text> </Text>
               </View>
-              <View style={{ width: '25%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '25%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
                 <Text>Correction</Text>
                 <Text>({unitUsedForCOCAcronym})</Text>
                 <Text> </Text>
               </View>
-              <View style={{ width: '30%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '30%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
                 <Text>Expanded Uncertainty</Text>
                 <Text>({unitUsedForCOCAcronym})</Text>
                 <Text> </Text>
               </View>
-              <View style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '20%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
                 <Text>Coverage</Text>
                 <Text>
@@ -909,13 +962,31 @@ const CertificateOfCalibrationPDF2 = ({
               <View style={{ width: '25%', textAlign: 'center' }}>
                 <Text> </Text>
               </View>
-              <View style={{ width: '25%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '25%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
               </View>
-              <View style={{ width: '30%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '30%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
               </View>
-              <View style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '20%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
               </View>
             </View>
@@ -933,7 +1004,11 @@ const CertificateOfCalibrationPDF2 = ({
                     <Text>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</Text>
                   </View>
                   <View
-                    style={{ width: '25%', borderLeft: '1px solid #00000', textAlign: 'center' }}
+                    style={{
+                      width: '25%',
+                      borderLeft: '1px solid #00000',
+                      textAlign: 'center',
+                    }}
                   >
                     <Text>
                       {renderCorrectionValueWithSymbol(
@@ -942,14 +1017,22 @@ const CertificateOfCalibrationPDF2 = ({
                     </Text>
                   </View>
                   <View
-                    style={{ width: '30%', borderLeft: '1px solid #00000', textAlign: 'center' }}
+                    style={{
+                      width: '30%',
+                      borderLeft: '1px solid #00000',
+                      textAlign: 'center',
+                    }}
                   >
                     <Text>
                       {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
                     </Text>
                   </View>
                   <View
-                    style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}
+                    style={{
+                      width: '20%',
+                      borderLeft: '1px solid #00000',
+                      textAlign: 'center',
+                    }}
                   >
                     <Text>{coverageFactors?.[i] || 0}</Text>
                   </View>
@@ -967,13 +1050,31 @@ const CertificateOfCalibrationPDF2 = ({
               <View style={{ width: '25%', textAlign: 'center' }}>
                 <Text> </Text>
               </View>
-              <View style={{ width: '25%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '25%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
               </View>
-              <View style={{ width: '30%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '30%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
               </View>
-              <View style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '20%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
               </View>
             </View>
@@ -1008,13 +1109,25 @@ const CertificateOfCalibrationPDF2 = ({
                 <Text>({unitUsedForCOCAcronym})</Text>
                 <Text> </Text>
               </View>
-              <View style={{ width: '30%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '30%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
                 <Text>Standard Deviation</Text>
                 <Text>({unitUsedForCOCAcronym})</Text>
                 <Text> </Text>
               </View>
-              <View style={{ width: '40%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '40%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
                 <Text>Maximum Difference</Text>
                 <Text>Between Readings ({unitUsedForCOCAcronym})</Text>
@@ -1034,11 +1147,23 @@ const CertificateOfCalibrationPDF2 = ({
                 <Text> </Text>
                 <Text>{convertValueBasedOnUnit(divide(rangeMaxCalibration, 2) ?? 0)}</Text>
               </View>
-              <View style={{ width: '30%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '30%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
                 <Text>{convertValueBasedOnUnit(rtestStd?.[0] ?? 0)}</Text>
               </View>
-              <View style={{ width: '40%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '40%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text> </Text>
                 <Text>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[0])}</Text>
               </View>
@@ -1056,11 +1181,23 @@ const CertificateOfCalibrationPDF2 = ({
                 <Text>{convertValueBasedOnUnit(rangeMaxCalibration) ?? 0}</Text>
                 <Text> </Text>
               </View>
-              <View style={{ width: '30%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '30%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text>{convertValueBasedOnUnit(rtestStd?.[1]) ?? 0}</Text>
                 <Text> </Text>
               </View>
-              <View style={{ width: '40%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
+              <View
+                style={{
+                  width: '40%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                }}
+              >
                 <Text>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[1] ?? 0)}</Text>
                 <Text> </Text>
               </View>
@@ -1090,7 +1227,12 @@ const CertificateOfCalibrationPDF2 = ({
               }}
             >
               <View
-                style={{ display: 'flex', flexDirection: 'row', width: '70%', marginRight: 20 }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  width: '70%',
+                  marginRight: 20,
+                }}
               >
                 <View
                   style={{
@@ -1105,7 +1247,6 @@ const CertificateOfCalibrationPDF2 = ({
                       display: 'flex',
                       flexDirection: 'row',
                       alignItems: 'center',
-
                       border: '1px solid #00000',
                       borderRight: 'none',
                     }}
@@ -1115,7 +1256,11 @@ const CertificateOfCalibrationPDF2 = ({
                     </View>
 
                     <View
-                      style={{ width: '50%', borderLeft: '1px solid #00000', textAlign: 'center' }}
+                      style={{
+                        width: '50%',
+                        borderLeft: '1px solid #00000',
+                        textAlign: 'center',
+                      }}
                     >
                       <Text>
                         {convertValueBasedOnUnit(calibration?.data?.etest?.testLoad ?? 0)}
@@ -1168,7 +1313,13 @@ const CertificateOfCalibrationPDF2 = ({
                     padding: 8,
                   }}
                 >
-                  <Text style={{ fontFamily: 'InterBold', fontSize: 8, marginBottom: 4 }}>
+                  <Text
+                    style={{
+                      fontFamily: 'InterBold',
+                      fontSize: 8,
+                      marginBottom: 4,
+                    }}
+                  >
                     Max Error
                   </Text>
                   <Text style={{ fontSize: 8 }}>
@@ -1224,7 +1375,13 @@ const CertificateOfCalibrationPDF2 = ({
               alignItems: 'center',
             }}
           >
-            <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <View
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
               <Text style={{ fontSize: 8 }}>Calibrated By</Text>
 
               {calibratedBy?.data?.signature && (
@@ -1247,7 +1404,13 @@ const CertificateOfCalibrationPDF2 = ({
               </Text>
             </View>
 
-            <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <View
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
               <Text style={{ fontSize: 8 }}>Approved Signatory</Text>
 
               {approvedSignatory?.data?.signature && (

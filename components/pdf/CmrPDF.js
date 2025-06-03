@@ -509,7 +509,13 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
           </View>
         </View>
 
-        <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
           {CATEGORY.map((category) => {
             const equipmentPerCategory =
               customerEquipments.data.length > 0
@@ -544,7 +550,12 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                             <Text>{serializeToString(eq?.description)}</Text>
                           </View>
 
-                          <View style={{ width: '22%', textTransform: 'capitalize' }}>
+                          <View
+                            style={{
+                              width: '22%',
+                              textTransform: 'capitalize',
+                            }}
+                          >
                             <Text>{serializeToString(eq?.category.toLowerCase())}</Text>
                           </View>
 
@@ -650,7 +661,13 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
           </View>
         </View>
 
-        <View style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
           {CATEGORY.map((category) => {
             const equipmentPerCategory =
               completedEquipment.length > 0
@@ -685,7 +702,12 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                             <Text>{serializeToString(eq?.description)}</Text>
                           </View>
 
-                          <View style={{ width: '22%', textTransform: 'capitalize' }}>
+                          <View
+                            style={{
+                              width: '22%',
+                              textTransform: 'capitalize',
+                            }}
+                          >
                             <Text>{serializeToString(eq?.category.toLowerCase())}</Text>
                           </View>
 
@@ -781,7 +803,11 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
             <View
               style={[
                 styles.blockContentRight,
-                { flexDirection: 'column', justifyContent: 'center', alignItems: 'start' },
+                {
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'start',
+                },
               ]}
             >
               {prewrap(job?.remark)}
@@ -901,44 +927,72 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                   position: 'relative',
                 }}
               >
-                {job?.salesSignature && (
-                  <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <View
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                >
+                  {job?.salesSignature && (
                     <Image style={{ width: '50px', height: '30px' }} src={job?.salesSignature} />
-                    <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
-                      Laboratory Representative
-                    </Text>
-                    <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
-                      {labRepresentative?.fullName || ''}
-                    </Text>
-                  </View>
-                )}
+                  )}
+                  <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
+                    Laboratory Representative
+                  </Text>
+                  <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
+                    {labRepresentative?.fullName || ''}
+                  </Text>
+                </View>
 
-                {job?.workerSignature && (
-                  <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <View
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                >
+                  {job?.workerSignature && (
                     <Image style={{ width: '50px', height: '30px' }} src={job?.workerSignature} />
-                    <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
-                      Reviewd By
-                    </Text>
-                    <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
-                      {worker?.fullName || ''}
-                    </Text>
-                    <Text style={{ fontSize: 8, textAlign: 'center' }}>
-                      {format(new Date(), 'dd MMMM yyyy')}
-                    </Text>
-                  </View>
-                )}
+                  )}
+                  <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>Reviewd By</Text>
+                  <Text
+                    style={{
+                      fontSize: 8,
+                      maxWidth: 140,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {worker?.fullName || ''}
+                  </Text>
+                  <Text style={{ fontSize: 8, textAlign: 'center' }}>
+                    {format(new Date(), 'dd MMMM yyyy')}
+                  </Text>
+                </View>
 
-                {job?.customerSignature && (
-                  <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <View
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}
+                >
+                  {job?.customerSignature && (
                     <Image style={{ width: '50px', height: '30px' }} src={job?.customerSignature} />
-                    <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
-                      Customer Chop & Sign
-                    </Text>
-                    <Text style={{ fontSize: 8, maxWidth: 140, textAlign: 'center' }}>
-                      {customer?.data?.customerName || ''}
-                    </Text>
-                  </View>
-                )}
+                  )}
+                  <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
+                    Customer Chop & Sign
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 8,
+                      maxWidth: 140,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {customer?.data?.customerName || ''}
+                  </Text>
+                </View>
               </View>
             )
           }

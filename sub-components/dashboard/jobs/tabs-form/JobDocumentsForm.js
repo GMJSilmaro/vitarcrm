@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
-import { Download, FileEarmarkText, Save, Trash, Upload } from 'react-bootstrap-icons';
+import { Download, Eye, FileEarmarkText, Save, Trash, Upload } from 'react-bootstrap-icons';
 import { useFormContext } from 'react-hook-form';
 import { delay, getFileFromBlobUrl } from '@/utils/common';
 import toast from 'react-hot-toast';
@@ -100,6 +100,15 @@ const JobDocumentsForm = ({
     [jobId, JSON.stringify(documents)]
   );
 
+  const handleView = async (document) => {
+    try {
+      window.open(document.url, '_blank');
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast.error('Failed to view document');
+    }
+  };
+
   //* set document value
   useEffect(() => {
     //** set documents if data exist and no job request
@@ -186,7 +195,9 @@ const JobDocumentsForm = ({
         <div className='d-flex justify-content-between align-items-center'>
           <div>
             <h4 className='mb-0'>Documents</h4>
-            <p className='text-muted fs-6 mb-0'>Upload and manage related document/s.</p>
+            <p className='text-muted fs-6 mb-0'>
+              Upload and manage related document/s e.g (pdf, images)
+            </p>
           </div>
 
           <div className='d-flex gap-2'>
@@ -233,7 +244,7 @@ const JobDocumentsForm = ({
                 </div>
               </div>
             ) : (
-              <div className='my-5' style={{ maxHeight: '400px', overflow: 'auto' }}>
+              <div className='my-5 px-3' style={{ maxHeight: '400px', overflow: 'auto' }}>
                 {documents.map((doc, index) => (
                   <div
                     key={index}
@@ -251,6 +262,13 @@ const JobDocumentsForm = ({
                     </div>
 
                     <div className='d-flex align-items-center gap-3'>
+                      <Button
+                        variant='link'
+                        className='p-0 text-primary'
+                        onClick={() => handleView(doc)}
+                      >
+                        <Eye size={16} />
+                      </Button>
                       <Button
                         variant='link'
                         className='p-0 text-primary'

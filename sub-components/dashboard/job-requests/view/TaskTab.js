@@ -18,7 +18,8 @@ const TaskTab = ({ job }) => {
   const columns = useMemo(() => {
     return [
       columnHelper.accessor('name', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Name' />,
+        id: 'title',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Title' />,
       }),
       columnHelper.accessor('description', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Description' />,

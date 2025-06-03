@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Accordion, Button, Card, Form, Tab, Table, Tabs } from 'react-bootstrap';
 import {
+  calibrationChecklistSchema,
   cmrSchema,
   customerEquipmentSchema,
   documentsSchema,
@@ -45,6 +46,7 @@ import JobCmrForm from './tabs-form/JobCmrForm';
 import JobDocumentsForm from './tabs-form/JobDocumentsForm';
 import { getFileFromBlobUrl } from '@/utils/common';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import JobCalibrationChecklistForm from './tabs-form/JobCalibrationChecklistForm';
 
 const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const auth = useAuth();
@@ -63,6 +65,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
     referenceEquipmentSchema,
     scheduleSchema,
     documentsSchema,
+    calibrationChecklistSchema,
   ]);
 
   const [finalSchema, setFinalSchema] = useState(jobSchema);
@@ -83,6 +86,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
       workers: [],
       equipments: [],
       customerEquipments: [],
+      checklistEquipments: [],
       documents: [],
     },
     resolver: zodResolver(schema),
@@ -176,7 +180,18 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
       try {
         setIsLoading(true);
-        const { jobId, equipments, customerEquipments, ...jobHeaders } = formData;
+
+        const {
+          jobId,
+          equipments,
+          customerEquipments,
+          takenByBefore,
+          takenByAfter,
+          verifiedByBefore,
+          verifiedByAfter,
+          checklistEquipments,
+          ...jobHeaders
+        } = formData;
 
         //* new job date
         const startDate = new Date(`${jobHeaders.startDate}T${jobHeaders.startTime}:00`);
@@ -368,6 +383,11 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
                 isReturnedEquipment: false,
                 equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
                 customerEquipments,
+                takenByBefore,
+                takenByAfter,
+                verifiedByBefore,
+                verifiedByAfter,
+                checklistEquipments,
                 ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
@@ -571,7 +591,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
               />
             </Tab>
 
-            <Tab eventKey='4' title='Job Scheduling'>
+            <Tab eventKey='4' title='Schedule'>
               <JobSchedulingForm
                 data={data}
                 isLoading={isLoading}
@@ -581,7 +601,17 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
               />
             </Tab>
 
-            <Tab eventKey='5' title='Documents'>
+            <Tab eventKey='5' title='Calibration Checklist'>
+              <JobCalibrationChecklistForm
+                data={data}
+                isLoading={isLoading}
+                handleNext={handleNext}
+                handlePrevious={handlePrevious}
+                toDuplicateJob={toDuplicateJob}
+              />
+            </Tab>
+
+            <Tab eventKey='6' title='Documents'>
               <JobDocumentsForm
                 data={data}
                 isLoading={isLoading}
@@ -593,7 +623,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
             </Tab>
 
             {calibrations.data.length > 0 && (
-              <Tab eventKey='6' title='CMR'>
+              <Tab eventKey='7' title='CMR'>
                 <JobCmrForm
                   data={data}
                   isLoading={isLoading}

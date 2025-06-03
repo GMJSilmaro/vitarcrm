@@ -91,7 +91,7 @@ const JobCalibration = () => {
           const status = row?.original?.status;
 
           const colors = {
-            validate: 'success',
+            'for validation': 'success',
             rejected: 'danger',
             resubmission: 'warning',
             completed: 'purple',

@@ -529,7 +529,7 @@ const QuickMenu = ({ children }) => {
               modal.querySelector('.progress-bar').style.width = '30%';
               modal.querySelector('.text-muted').textContent =
                 'Disconnecting from VITAR services...';
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+              await new Promise((resolve) => setTimeout(resolve, 400));
 
               // Perform logout API call with error handling
               try {
@@ -558,7 +558,7 @@ const QuickMenu = ({ children }) => {
               // Update progress - 60%
               modal.querySelector('.progress-bar').style.width = '60%';
               modal.querySelector('.text-muted').textContent = 'Revoking access tokens...';
-              await new Promise((resolve) => setTimeout(resolve, 800));
+              await new Promise((resolve) => setTimeout(resolve, 400));
 
               // Clear cookies with proper options
               const cookiesToClear = ['customToken', 'uid', 'email', 'workerId', 'LAST_ACTIVITY'];
@@ -580,7 +580,7 @@ const QuickMenu = ({ children }) => {
               // Update progress - 90%
               modal.querySelector('.progress-bar').style.width = '90%';
               modal.querySelector('.text-muted').textContent = 'Finalizing sign out...';
-              await new Promise((resolve) => setTimeout(resolve, 700));
+              await new Promise((resolve) => setTimeout(resolve, 400));
 
               // Show success state
               modal.querySelector('.swal2-title').innerHTML =
@@ -612,7 +612,7 @@ const QuickMenu = ({ children }) => {
                   clearInterval(countdownInterval);
                   window.location.href = '/sign-in';
                 }
-              }, 1000);
+              }, 500);
             } catch (error) {
               console.error('Error during sign out process:', error);
 
@@ -632,7 +632,7 @@ const QuickMenu = ({ children }) => {
               // Redirect after a short delay
               setTimeout(() => {
                 window.location.href = '/sign-in';
-              }, 2000);
+              }, 400);
             }
           },
         });

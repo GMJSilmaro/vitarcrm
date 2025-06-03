@@ -47,6 +47,7 @@ const CalibrateSummaryForm = ({
   handleClearCache,
   isLoadingCache,
   isLoadingClearCache,
+  calibratedCustomerEquipmentIds,
 }) => {
   const router = useRouter();
   const { workerId } = router.query;
@@ -914,7 +915,12 @@ const CalibrateSummaryForm = ({
                       inputId='description'
                       instanceId='description'
                       onChange={(option) => field.onChange(option)}
-                      options={customerEquipmentsOptions.data}
+                      options={
+                        customerEquipmentsOptions?.data?.filter((option) => {
+                          if (data && data?.description?.id === option.id) return true;
+                          return !calibratedCustomerEquipmentIds.includes(option.id);
+                        }) || []
+                      }
                       placeholder={
                         customerEquipmentsOptions.isLoading
                           ? 'Loading equipments...'

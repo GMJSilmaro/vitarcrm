@@ -1,8 +1,8 @@
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
-import { Download, FileEarmarkText, Save, Trash, Upload } from 'react-bootstrap-icons';
+import { Button, Card, Col, Modal, Row, Spinner } from 'react-bootstrap';
+import { Download, Eye, FileEarmarkText, Save, Trash, Upload } from 'react-bootstrap-icons';
 import { useFormContext } from 'react-hook-form';
 import { delay } from '@/utils/common';
 import toast from 'react-hot-toast';
@@ -92,6 +92,15 @@ const JobRequestDocumentsForm = ({ data, isLoading, handleNext, handlePrevious }
     [jobRequestId, JSON.stringify(documents)]
   );
 
+  const handleView = async (document) => {
+    try {
+      window.open(document.url, '_blank');
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast.error('Failed to view document');
+    }
+  };
+
   //* set documents if data exist
   useEffect(() => {
     if (data && data?.documents && Array.isArray(data.documents)) {
@@ -105,7 +114,9 @@ const JobRequestDocumentsForm = ({ data, isLoading, handleNext, handlePrevious }
         <div className='d-flex justify-content-between align-items-center'>
           <div>
             <h4 className='mb-0'>Documents</h4>
-            <p className='text-muted fs-6 mb-0'>Upload and manage related document/s.</p>
+            <p className='text-muted fs-6 mb-0'>
+              Upload and manage related document/s e.g (pdf, images)
+            </p>
           </div>
 
           <div className='d-flex gap-2'>
@@ -152,7 +163,7 @@ const JobRequestDocumentsForm = ({ data, isLoading, handleNext, handlePrevious }
                 </div>
               </div>
             ) : (
-              <div className='my-5' style={{ maxHeight: '400px', overflow: 'auto' }}>
+              <div className='my-5 px-3' style={{ maxHeight: '400px', overflow: 'auto' }}>
                 {documents.map((doc, index) => (
                   <div
                     key={index}
@@ -170,6 +181,13 @@ const JobRequestDocumentsForm = ({ data, isLoading, handleNext, handlePrevious }
                     </div>
 
                     <div className='d-flex align-items-center gap-3'>
+                      <Button
+                        variant='link'
+                        className='p-0 text-primary'
+                        onClick={() => handleView(doc)}
+                      >
+                        <Eye size={16} />
+                      </Button>
                       <Button
                         variant='link'
                         className='p-0 text-primary'
