@@ -76,7 +76,7 @@ const CalibrationTab = ({ job }) => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         cell: ({ row }) => {
           const colors = {
-            validate: 'success',
+            'for validation': 'success',
             rejected: 'danger',
             resubmission: 'warning',
             completed: 'purple',

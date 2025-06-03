@@ -71,7 +71,7 @@ const JobRequestTaskForm = ({ data, isLoading, handleNext, handlePrevious }) => 
                   <tr>
                     <th className='text-center'>Action</th>
                     <th className='text-center'>
-                      <RequiredLabel label='Name' />
+                      <RequiredLabel label='Title' />
                     </th>
                     <th className='text-center'>
                       <RequiredLabel label='Description' />
@@ -104,7 +104,7 @@ const JobRequestTaskForm = ({ data, isLoading, handleNext, handlePrevious }) => 
                                 className='d-flex align-items-center justify-content-center'
                                 {...field}
                                 type='text'
-                                placeholder="Enter instruction's name"
+                                placeholder="Enter instruction's title"
                               />
 
                               {formErrors && formErrors.tasks?.[i]?.name?.message && (

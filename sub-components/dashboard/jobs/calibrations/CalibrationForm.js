@@ -28,7 +28,7 @@ import useMounted from '@/hooks/useMounted';
 import { format } from 'date-fns';
 import { useNotifications } from '@/hooks/useNotifications';
 
-const CalibrationForm = ({ data, isAdmin = true }) => {
+const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
   const auth = useAuth();
   const isMounted = useMounted();
 
@@ -70,6 +70,12 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
   });
 
   const formErrors = form.formState.errors;
+
+  const calibratedCustomerEquipmentIds = useMemo(() => {
+    if (!calibrations) return [];
+
+    return calibrations?.data?.map((c) => c?.description?.id || '').filter(Boolean) || [];
+  }, [calibrations]);
 
   const hasDuplicate = (array) => {
     const seen = new Set();
@@ -520,7 +526,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
     }
   }, [JSON.stringify(form.watch()), auth, data, isLoadingCache]);
 
-  console.log({ data });
+  console.log({ data, jobCalibrations: calibrations, calibratedCustomerEquipmentIds });
 
   return (
     <>
@@ -544,6 +550,7 @@ const CalibrationForm = ({ data, isAdmin = true }) => {
                 handleClearCache={handleClearCache}
                 isLoadingCache={isLoadingCache}
                 isLoadingClearCache={isLoadingClearCache}
+                calibratedCustomerEquipmentIds={calibratedCustomerEquipmentIds}
               />
             </Tab>
 

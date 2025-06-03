@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { useMemo } from 'react';
 import { Button, Card, Col, Row } from 'react-bootstrap';
-import { Download, FileEarmarkText } from 'react-bootstrap-icons';
+import { Download, Eye, FileEarmarkText } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 
 const Documents = ({ job }) => {
@@ -31,12 +31,21 @@ const Documents = ({ job }) => {
     window.URL.revokeObjectURL(blobUrl); //* Clean up
   };
 
+  const handleView = async (document) => {
+    try {
+      window.open(document.url, '_blank');
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast.error('Failed to view document');
+    }
+  };
+
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
         <div>
           <h4 className='mb-0'>Documents</h4>
-          <p className='text-muted fs-6 mb-0'>Uploaded job related documents.</p>
+          Upload and manage related document/s e.g (pdf, images)
         </div>
       </Card.Header>
 
@@ -54,7 +63,7 @@ const Documents = ({ job }) => {
                 </div>
               </div>
             ) : (
-              <div className='my-5' style={{ maxHeight: '400px', overflow: 'auto' }}>
+              <div className='my-5 px-3' style={{ maxHeight: '400px', overflow: 'auto' }}>
                 {documents.map((doc, index) => (
                   <div
                     key={index}
@@ -72,6 +81,13 @@ const Documents = ({ job }) => {
                     </div>
 
                     <div className='d-flex align-items-center gap-3'>
+                      <Button
+                        variant='link'
+                        className='p-0 text-primary'
+                        onClick={() => handleView(doc)}
+                      >
+                        <Eye size={16} />
+                      </Button>
                       <Button
                         variant='link'
                         className='p-0 text-primary'

@@ -15,6 +15,7 @@ import { Eye } from 'react-bootstrap-icons';
 
 const ReferenceEquipment = ({ job, equipments }) => {
   const router = useRouter();
+  const { workerId } = router.query;
 
   const columnHelper = createColumnHelper();
 
@@ -63,33 +64,37 @@ const ReferenceEquipment = ({ job, equipments }) => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Traceability' />,
       }),
-      columnHelper.accessor('actions', {
-        id: 'actions',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          if (!row?.original) return null;
+      ...(!workerId
+        ? [
+            columnHelper.accessor('actions', {
+              id: 'actions',
+              header: ({ column }) => <DataTableColumnHeader column={column} title='Action' />,
+              enableSorting: false,
+              cell: ({ row }) => {
+                if (workerId || !row?.original) return null;
 
-          const category = row.original.category?.toLowerCase();
-          const inventoryId = row.original.inventoryId;
+                const category = row.original.category?.toLowerCase();
+                const inventoryId = row.original.inventoryId;
 
-          return (
-            <Button
-              variant='primary'
-              size='sm'
-              className='d-flex align-items-center gap-1'
-              onClick={() => {
-                router.push(`/reference-equipment/${category}/view/${inventoryId}`);
-              }}
-            >
-              <Eye className='me-1' size={14} />
-              <span>View</span>
-            </Button>
-          );
-        },
-      }),
+                return (
+                  <Button
+                    variant='primary'
+                    size='sm'
+                    className='d-flex align-items-center gap-1'
+                    onClick={() => {
+                      router.push(`/reference-equipment/${category}/view/${inventoryId}`);
+                    }}
+                  >
+                    <Eye className='me-1' size={14} />
+                    <span>View</span>
+                  </Button>
+                );
+              },
+            }),
+          ]
+        : []),
     ];
-  }, []);
+  }, [workerId]);
 
   const table = useReactTable({
     data: equipments.data,

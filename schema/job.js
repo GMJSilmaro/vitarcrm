@@ -124,7 +124,7 @@ export const summarySchema = z.object({
 });
 
 export const taskSchema = z.object({
-  name: z.string().min(1, { message: 'Task name is required.' }),
+  name: z.string().min(1, { message: 'Task title is required.' }),
   description: z.string().min(1, { message: 'Task description is required.' }),
   isCompleted: z.boolean().default(false),
   isPriority: z.boolean().default(false),
@@ -242,6 +242,47 @@ export const scheduleSchema = z
     }
   );
 
+const checklistEquipmentSchema = z.object({
+  id: z.string(),
+  tagId: z.string(),
+  description: z.string(),
+  acceptance: z.string().default(''),
+  resultBefore: z.string().default(''),
+  resultAfter: z.string().default(''),
+});
+
+export const calibrationChecklistSchema = z.object({
+  takenByBefore: z.union([
+    z.string().default(''),
+    z.record(z.string(), z.any()).transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return '';
+    }),
+  ]),
+  takenByAfter: z.union([
+    z.string().default(''),
+    z.record(z.string(), z.any()).transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return '';
+    }),
+  ]),
+  verifiedByBefore: z.union([
+    z.string().default(''),
+    z.record(z.string(), z.any()).transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return '';
+    }),
+  ]),
+  verifiedByAfter: z.union([
+    z.string().default(''),
+    z.record(z.string(), z.any()).transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return '';
+    }),
+  ]),
+  checklistEquipments: z.array(checklistEquipmentSchema).default([]),
+});
+
 const documentSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -279,5 +320,6 @@ export const jobSchema = z
   .merge(customerEquipmentSchema)
   .merge(tasksSchema)
   .merge(referenceEquipmentSchema)
-  .merge(documentsSchema)
-  .merge(scheduleSchema._def.schema._def.schema);
+  .merge(scheduleSchema._def.schema._def.schema)
+  .merge(calibrationChecklistSchema)
+  .merge(documentsSchema);

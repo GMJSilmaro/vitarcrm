@@ -106,6 +106,7 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
               name: user.fullName,
               value: user.workerId,
               label: user.fullName,
+              role: user.role,
             })),
             isLoading: false,
             isError: false,
@@ -409,7 +410,12 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
                       inputId='supervisor'
                       instanceId='supervisor'
                       onChange={(option) => field.onChange(option)}
-                      options={usersOptions.data}
+                      options={
+                        usersOptions?.data?.filter(
+                          (user) => user.role === 'supervisor' || user.role === 'admin'
+                        ) || []
+                      }
+                      isLoading={usersOptions.isLoading}
                       placeholder={
                         usersOptions.isLoading ? 'Loading users...' : "Search by user's name"
                       }

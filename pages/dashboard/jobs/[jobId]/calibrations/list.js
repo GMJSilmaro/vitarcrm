@@ -106,7 +106,7 @@ const JobCalibration = () => {
           const status = row?.original?.status;
 
           const colors = {
-            validate: 'success',
+            'for validation': 'success',
             rejected: 'danger',
             resubmission: 'warning',
             completed: 'purple',
@@ -419,11 +419,11 @@ const JobCalibration = () => {
                       <Dropdown.Menu show style={{ zIndex: 999 }}>
                         <Dropdown.Item
                           onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'validate', calibratedBy);
+                            handleUpdateCalibrationStatus(id, 'for validation', calibratedBy);
                           }}
                         >
                           <CheckCircle className='me-2' size={16} />
-                          Validate
+                          For Validation
                         </Dropdown.Item>
 
                         <Dropdown.Item

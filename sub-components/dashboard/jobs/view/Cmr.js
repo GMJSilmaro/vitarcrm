@@ -532,7 +532,7 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
           </div>
         </Card.Header>
 
-        <div className='d-flex flex-wrap justify-content-center align-items-center w-75 mx-auto column-gap-5'>
+        <div className='d-flex flex-wrap justify-content-center align-items-end w-75 mx-auto column-gap-5'>
           <div
             className='d-flex flex-column justify-content-center align-items-center'
             style={{ maxWidth: '300px' }}

@@ -76,7 +76,7 @@ export const summarySchema = z.object({
 });
 
 export const taskSchema = z.object({
-  name: z.string().min(1, { message: 'Task name is required.' }),
+  name: z.string().min(1, { message: 'Task title is required.' }),
   description: z.string().min(1, { message: 'Task description is required.' }),
   isCompleted: z.boolean().default(false),
   isPriority: z.boolean().default(false),

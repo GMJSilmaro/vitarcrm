@@ -6,7 +6,7 @@ import DimensionalDetails from './DimensionalDetails';
 import VolumetricDetails from './VolumetricDetails';
 
 export const CategoryDetails = {
-  MECHANICAL: MechanicalDetails,
+  MASS: MechanicalDetails,
   PRESSURE: PressureDetails,
   'TEMPERATURE & HUMIDITY': TemperatureDetails,
   ELECTRICAL: ElectricalDetails,

@@ -3,10 +3,12 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import CalibrationChecklist from '@/sub-components/dashboard/jobs/view/CalibrationChecklist';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
 import Documents from '@/sub-components/dashboard/jobs/view/Documents';
+import ReferenceEquipment from '@/sub-components/dashboard/jobs/view/ReferenceEquipment';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
@@ -49,6 +51,7 @@ const JobDetails = () => {
   const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
   const [customerEquipments, setCustomerEquipments] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
+  const [users, setUsers] = useState({ data: [], isLoading: true, isError: false });
 
   const [isStartingJob, setIsStartingJob] = useState(false);
   const [isStoppingJob, setIsStoppingJob] = useState(false);
@@ -413,11 +416,7 @@ const JobDetails = () => {
       return;
     }
 
-    const q = query(
-      collection(db, 'jobCalibrations'),
-      where('jobId', '==', jobId),
-      where('status', 'in', ['completed', 'approval'])
-    );
+    const q = query(collection(db, 'jobCalibrations'), where('jobId', '==', jobId));
 
     getDocs(q)
       .then((snapshot) => {
@@ -442,6 +441,35 @@ const JobDetails = () => {
         setCalibrations({ data: [], isLoading: false, isError: true });
       });
   }, [jobId]);
+
+  //* query users
+  useEffect(() => {
+    const q = query(collection(db, 'users'));
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const userData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setUsers({
+            data: userData,
+            isLoading: false,
+            isError: false,
+          });
+          return;
+        }
+
+        setUsers({
+          data: [],
+          isLoading: false,
+          isError: false,
+        });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setUsers({ data: [], isLoading: false, isError: true });
+      });
+  }, []);
 
   if (isLoading) {
     return (
@@ -555,28 +583,36 @@ const JobDetails = () => {
                 />
               </Tab>
 
-              <Tab eventKey='1' title='Additional Instructions'>
+              <Tab eventKey='1' title='Calibration Items'>
+                <CustomerEquipment job={job} customer={customer} />
+              </Tab>
+
+              <Tab eventKey='2' title='Additional Instructions'>
                 <TaskTab job={job} />
               </Tab>
 
-              <Tab eventKey='3' title='Customer Equipment'>
-                <CustomerEquipment job={job} customer={customer} />
+              <Tab eventKey='3' title='Reference Equipment'>
+                <ReferenceEquipment job={job} equipments={equipments} />
               </Tab>
 
               <Tab eventKey='4' title='Schedule'>
                 <SchedulingTab job={job} />
               </Tab>
 
-              <Tab eventKey='5' title='Calibrations'>
+              <Tab eventKey='5' title='Calibration Checklist'>
+                <CalibrationChecklist job={job} customer={customer} users={users} />
+              </Tab>
+
+              <Tab eventKey='6' title='Calibrations'>
                 <CalibrationTab job={job} />
               </Tab>
 
-              <Tab eventKey='6' title='Documents'>
+              <Tab eventKey='7' title='Documents'>
                 <Documents job={job} />
               </Tab>
 
               {calibrations.data.length > 0 && (
-                <Tab eventKey='7' title='CMR'>
+                <Tab eventKey='8' title='CMR'>
                   <Cmr
                     job={job}
                     customer={customer}

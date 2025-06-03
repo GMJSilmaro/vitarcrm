@@ -23,6 +23,9 @@ const EditCalibrations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
+
+  //* query calibartion
   useEffect(() => {
     if (calibrateId) {
       const calibrationRef = doc(db, 'jobCalibrations', calibrateId);
@@ -48,6 +51,39 @@ const EditCalibrations = () => {
         });
     }
   }, [calibrateId]);
+
+  //* query job calibrations for job
+  useEffect(() => {
+    if (!jobId) {
+      setCalibrations({ data: [], isLoading: false, isError: false });
+      return;
+    }
+    const q = query(collection(db, 'jobCalibrations'), where('jobId', '==', jobId));
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const calibrationData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setCalibrations({
+            data: calibrationData,
+            isLoading: false,
+            isError: false,
+          });
+          return;
+        }
+
+        setCalibrations({
+          data: [],
+          isLoading: false,
+          isError: false,
+        });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setCalibrations({ data: [], isLoading: false, isError: true });
+      });
+  }, [jobId]);
 
   if (isLoading) {
     return (
@@ -137,7 +173,7 @@ const EditCalibrations = () => {
         <Col sm={12}>
           <Card className='shadow-sm'>
             <Card.Body>
-              <CalibrationForm data={calibration} />
+              <CalibrationForm data={calibration} calibrations={calibrations} />
             </Card.Body>
           </Card>
         </Col>

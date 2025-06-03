@@ -184,7 +184,7 @@ const SignIn = () => {
             // Continue with your loading messages and success state
             // Simulate connection steps with proper error handling
             for (let i = 1; i < loadingMessages.length; i++) {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+              await new Promise((resolve) => setTimeout(resolve, 400));
 
               modal.querySelector('.swal2-title').innerHTML = loadingMessages[i].title;
               modal.querySelector('.swal2-html-container').innerHTML = `
