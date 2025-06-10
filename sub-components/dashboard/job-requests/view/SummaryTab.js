@@ -11,15 +11,18 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { orderBy } from 'lodash';
+import _, { orderBy } from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import {
+  Activity,
   Building,
+  Calendar,
   Clock,
   Envelope,
   EnvelopePaper,
+  ExclamationCircle,
   ExclamationCircleFill,
   Eye,
   Geo,
@@ -63,6 +66,30 @@ const SummaryTab = ({ jobRequest, customer, contact, location }) => {
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        {jobRequest &&
+          (jobRequest?.status === 'request-cancelled' ||
+            jobRequest?.status === 'request-resubmit') && (
+            <Alert
+              className='mb-5 d-flex align-items-center gap-2'
+              style={{ width: 'fit-content' }}
+              variant='danger'
+            >
+              <ExclamationCircle className='flex-shrink-0 me-1' size={20} />{' '}
+              <div>
+                Job request status is{' '}
+                <span className='fw-bold'>{_.startCase(jobRequest?.status)}. </span>
+                {jobRequest?.reasonMessage ? (
+                  <span>
+                    Reason/message is "<span className='fw-bold'>{jobRequest?.reasonMessage}</span>
+                    ."
+                  </span>
+                ) : (
+                  ''
+                )}
+              </div>
+            </Alert>
+          )}
+
         <div className='d-flex justify-content-between align-items-center'>
           <div>
             <h5 className='mb-0'>Job Request</h5>
@@ -115,6 +142,22 @@ const SummaryTab = ({ jobRequest, customer, contact, location }) => {
                 <div className='text-secondary fs-6'>Created By:</div>
                 <div className='text-primary-label fw-semibold'>
                   {jobRequest?.createdBy?.displayName || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+          <Col md={3}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Activity size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>status:</div>
+                <div className='text-primary-label fw-semibold'>
+                  {jobRequest?.status ? _.startCase(jobRequest?.status) : 'N/A'}
                 </div>
               </div>
             </div>
@@ -406,7 +449,7 @@ const SummaryTab = ({ jobRequest, customer, contact, location }) => {
                     <Map size={20} />
                   </div>
                   <div>
-                    <div className='text-secondary fs-6'>Province:</div>
+                    <div className='text-secondary fs-6'>State:</div>
                     <div className='text-primary-label fw-semibold'>
                       {defaultLocation?.province || 'N/A'}
                     </div>
@@ -512,6 +555,87 @@ const SummaryTab = ({ jobRequest, customer, contact, location }) => {
                 <div className='text-secondary fs-6'>Updated By:</div>
                 <div className='text-primary-label fw-semibold'>
                   {jobRequest?.updatedBy?.displayName || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+
+      <Card.Header className='bg-transparent border-0 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h5 className='mb-0'>Schedule</h5>
+            <small className='text-muted'>Details about the requested job schedule.</small>
+          </div>
+        </div>
+      </Card.Header>
+
+      <Card.Body>
+        <Row className='row-gap-3'>
+          <Col md={3} className='d-flex flex-column gap-3'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Calendar size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Start Date:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {jobRequest?.startDate || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={3} className='d-flex flex-column gap-3'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Clock size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Start Time:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {jobRequest?.startTime || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={3} className='d-flex flex-column gap-3'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Calendar size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>End Date:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {jobRequest?.endDate || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={3} className='d-flex flex-column gap-3'>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Clock size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>End Time:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {jobRequest?.endTime || 'N/A'}
                 </div>
               </div>
             </div>

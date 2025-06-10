@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Col,
+  Form,
+  OverlayTrigger,
+  Row,
+  Tooltip,
+} from 'react-bootstrap';
 import { useFormContext, Controller } from 'react-hook-form';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
@@ -8,6 +18,8 @@ import { collection, doc, getDoc, getDocs, onSnapshot, query } from 'firebase/fi
 import Select from '@/components/Form/Select';
 import { useRouter } from 'next/router';
 import _ from 'lodash';
+import { ExclamationCircle } from 'react-bootstrap-icons';
+import { format } from 'date-fns';
 
 const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
   const router = useRouter();
@@ -299,6 +311,29 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
     <>
       <Card className='shadow-none'>
         <Card.Body className='pb-0'>
+          {data &&
+            (data?.status === 'request-cancelled' || data?.status === 'request-resubmit') && (
+              <Alert
+                className='mb-5 d-flex align-items-center gap-2'
+                style={{ width: 'fit-content' }}
+                variant='danger'
+              >
+                <ExclamationCircle className='flex-shrink-0 me-1' size={20} />{' '}
+                <div>
+                  Job request status is "
+                  <span className='fw-bold'>{_.startCase(data?.status)}." </span>
+                  {data?.reasonMessage ? (
+                    <span>
+                      Reason/message is "<span className='fw-bold'>{data?.reasonMessage}</span>
+                      ."
+                    </span>
+                  ) : (
+                    ''
+                  )}
+                </div>
+              </Alert>
+            )}
+
           <Row className='mb-3'>
             <Form.Group as={Col} md={6}>
               <Form.Label>Job Request ID</Form.Label>
@@ -309,7 +344,7 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
               <Form.Label>Status</Form.Label>
               <Form.Control
                 type='text'
-                value={_.capitalize(form.watch('status'))}
+                value={_.startCase(form.watch('status'))}
                 readOnly
                 disabled
               />
@@ -673,7 +708,7 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
               />
             </Form.Group>
             <Form.Group as={Col} md='4'>
-              <Form.Label>Province</Form.Label>
+              <Form.Label>State</Form.Label>
               <Form.Control
                 required
                 type='text'
@@ -697,6 +732,105 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
                 }
                 readOnly
                 disabled
+              />
+            </Form.Group>
+          </Row>
+
+          <hr className='my-4' />
+          <h4 className='mb-0'>Schedule</h4>
+          <p className='text-muted fs-6'>Requested job schedule</p>
+
+          <Row>
+            <Form.Group as={Col} md='3'>
+              <Form.Label htmlFor='startDate'>Start Date</Form.Label>
+
+              <Controller
+                name='startDate'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Form.Control
+                      {...field}
+                      id='startDate'
+                      type='date'
+                      min={format(new Date(), 'yyyy-MM-dd')}
+                    />
+
+                    {formErrors && formErrors.startDate?.message && (
+                      <Form.Text className='text-danger'>{formErrors.startDate?.message}</Form.Text>
+                    )}
+                  </>
+                )}
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md='3'>
+              <Form.Label htmlFor='startTime'>Start Time</Form.Label>
+
+              <Controller
+                name='startTime'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Form.Control
+                      {...field}
+                      disabled={!form.watch('startDate')}
+                      id='startTime'
+                      type='time'
+                    />
+
+                    {formErrors && formErrors.startTime?.message && (
+                      <Form.Text className='text-danger'>{formErrors.startTime?.message}</Form.Text>
+                    )}
+                  </>
+                )}
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md='3'>
+              <Form.Label htmlFor='endDate'>End Date</Form.Label>
+
+              <Controller
+                name='endDate'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Form.Control
+                      {...field}
+                      disabled={!form.watch('startDate') || !form.watch('startTime')}
+                      type='date'
+                      id='endDate'
+                      min={format(new Date(), 'yyyy-MM-dd')}
+                    />
+
+                    {formErrors && formErrors.endDate?.message && (
+                      <Form.Text className='text-danger'>{formErrors.endDate?.message}</Form.Text>
+                    )}
+                  </>
+                )}
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md='3'>
+              <Form.Label htmlFor='endTime'>End Time</Form.Label>
+
+              <Controller
+                name='endTime'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Form.Control
+                      {...field}
+                      disabled={!form.watch('endDate')}
+                      id='endTime'
+                      type='time'
+                    />
+
+                    {formErrors && formErrors.endTime?.message && (
+                      <Form.Text className='text-danger'>{formErrors.endTime?.message}</Form.Text>
+                    )}
+                  </>
+                )}
               />
             </Form.Group>
           </Row>

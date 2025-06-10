@@ -10,6 +10,8 @@ import { Button, Card, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BoxSeam,
+  BoxSeamFill,
+  Eye,
   HouseDoorFill,
   ListColumns,
   PencilFill,
@@ -97,8 +99,8 @@ function EditCuswd() {
       <ContentHeader
         title='Edit Correction, Uncertainty of the Standard Weight & Drift'
         description='Edit correction, uncertainty of the standard weight & drift information'
-        badgeText='Reference Data Management'
-        badgeText2='Edit References Data'
+        badgeText='Calibration References Data Management'
+        badgeText2='Edit Reference Data'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -113,7 +115,7 @@ function EditCuswd() {
           {
             text: 'Mass',
             link: '/calibration-references/mass/cuswd',
-            icon: <BoxSeam className='me-2' size={14} />,
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'CUSWD',
@@ -129,10 +131,17 @@ function EditCuswd() {
         ]}
         actionButtons={[
           {
-            text: `Back to CUSWD List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push('/calibration-references/mass/cuswd'),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'View CUSWD',
+            icon: Eye,
+            onClick: () => router.push(`/calibration-references/mass/cuswd/view/${refId}`),
           },
         ]}
       />

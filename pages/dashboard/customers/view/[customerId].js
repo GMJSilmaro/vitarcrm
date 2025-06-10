@@ -8,7 +8,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Card, Col, Row, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { Activity, Calendar, Exclamation } from 'react-bootstrap-icons';
+import {
+  Activity,
+  ArrowLeftShort,
+  Calendar,
+  Exclamation,
+  EyeFill,
+  HouseFill,
+  PencilSquare,
+  PeopleFill,
+} from 'react-bootstrap-icons';
 import { FaArrowLeft } from 'react-icons/fa';
 
 const CustomerDetails = () => {
@@ -93,30 +102,36 @@ const CustomerDetails = () => {
         title={`View Details for ${customer.customerName}`}
         description='View comprehensive customer details including overview, contacts, locations, equipments and job histories.'
         badgeText='Customer Management'
-        badgeText2='Customers'
+        badgeText2='View Customer'
         breadcrumbItems={[
           {
             text: 'Dashboard',
             link: '/',
-            icon: <i className='fe fe-home' style={{ marginRight: '8px' }} />,
+            icon: <HouseFill className='me-2' size={14} />,
           },
           {
-            text: 'Customer List',
+            text: 'Customers',
             link: '/customers',
-            icon: <i className='fe fe-users' style={{ marginRight: '8px' }} />,
+            icon: <PeopleFill className='me-2' size={14} />,
           },
           {
             text: `View ${customer.id}`,
-            icon: <i className='fe fe-user' style={{ marginRight: '8px' }} />,
+            icon: <EyeFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: 'Back to Customers List',
-            icon: <FaArrowLeft size={16} />,
-            variant: 'light',
-            tooltip: 'Back to Customers List',
-            onClick: () => router.push('/customers'),
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push(`/customers`),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit Customer',
+            icon: PencilSquare,
+            onClick: () => router.push(`/customers/edit-customer/${customer.id}`),
           },
         ]}
       />

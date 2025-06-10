@@ -10,9 +10,12 @@ import { Button, Card, Spinner, Table } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BoxSeam,
+  BoxSeamFill,
+  EyeFill,
   HouseDoorFill,
   InfoSquareFill,
   ListColumns,
+  PencilSquare,
   Table as TableIcon,
 } from 'react-bootstrap-icons';
 
@@ -99,8 +102,8 @@ const CuswdDetails = () => {
       <ContentHeader
         title={`View Details for Correction, Uncertainty of the Standard Weight & Drift #${cuswd.id}`}
         description='View comprehensive details of reference data'
-        badgeText='Reference Data Management'
-        badgeText2='References Data'
+        badgeText='Calibration References Data Management'
+        badgeText2='View Reference Data'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -115,7 +118,7 @@ const CuswdDetails = () => {
           {
             text: 'Mass',
             link: '/calibration-references/mass/cuswd',
-            icon: <BoxSeam className='me-2' size={14} />,
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'CUSWD',
@@ -125,15 +128,22 @@ const CuswdDetails = () => {
           ,
           {
             text: refId,
-            icon: <InfoSquareFill className='me-2' size={14} />,
+            icon: <EyeFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: `Back to CUSWD List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push('/calibration-references/mass/cuswd'),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit CUSWD',
+            icon: PencilSquare,
+            onClick: () => router.push(`/calibration-references/mass/cuswd/edit-cuswd/${refId}`),
           },
         ]}
       />

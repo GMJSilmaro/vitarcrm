@@ -153,9 +153,9 @@ const SiteList = () => {
           return 'N/A';
         },
         {
-          id: 'province city postal code',
+          id: 'state city postal code',
           header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Province/City/Postal Code' />
+            <DataTableColumnHeader column={column} title='State/City/Postal Code' />
           ),
           cell: ({ row }) => {
             const defaultAddress = row.original.addresses.find((address) => address.isDefault);
@@ -298,10 +298,10 @@ const SiteList = () => {
         placeholder: 'Search by main/default address 3...',
       },
       {
-        label: 'Province/City/Postal Code',
-        columnId: 'province city postal code',
+        label: 'State/City/Postal Code',
+        columnId: 'state city postal code',
         type: 'text',
-        placeholder: 'Search by province/city/postal code...',
+        placeholder: 'Search by state/city/postal code...',
       },
       {
         label: 'Country',
@@ -366,7 +366,7 @@ const SiteList = () => {
         description='Create, manage and tract all your sites in one centralize dashboard'
         infoText='Track site details, addresses, and site-specific information'
         badgeText='Site Management'
-        badgeText2='Sites'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -374,7 +374,7 @@ const SiteList = () => {
             icon: <HouseDoorFill className='me-2' style={{ fontSize: '14px' }} />,
           },
           {
-            text: 'Site List',
+            text: 'Sites',
             link: '/sites',
             icon: <BuildingFill className='me-2' size={14} />,
           },

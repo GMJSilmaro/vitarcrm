@@ -1,14 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useId, useMemo } from 'react';
 import { Button, Card, Form, OverlayTrigger, Row, Table, Tooltip } from 'react-bootstrap';
 import { Plus, Trash } from 'react-bootstrap-icons';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
+import { v4 as uuidv4 } from 'uuid';
 
 const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => {
   const form = useFormContext();
 
   const formErrors = form.formState.errors;
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     name: 'tasks',
     control: form.control,
   });
@@ -59,11 +60,7 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => 
                 </p>
               </div>
 
-              <Button
-                variant='primary'
-                onClick={handleAddTask}
-                disabled={form.watch('jobRequestId')}
-              >
+              <Button variant='primary' onClick={handleAddTask}>
                 <Plus size={14} className='me-2' /> Add Additional Instruction
               </Button>
             </div>
@@ -98,7 +95,6 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => 
                     <tr key={i}>
                       <td className='text-center'>
                         <Button
-                          disabled={form.watch('jobRequestId')}
                           className='p-2'
                           variant='danger'
                           size='sm'
@@ -115,7 +111,6 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => 
                           render={({ field }) => (
                             <>
                               <Form.Control
-                                disabled={form.watch('jobRequestId')}
                                 className='d-flex align-items-center justify-content-center'
                                 {...field}
                                 type='text'
@@ -139,7 +134,6 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => 
                           render={({ field }) => (
                             <>
                               <Form.Control
-                                disabled={form.watch('jobRequestId')}
                                 className='d-flex align-items-center justify-content-center'
                                 {...field}
                                 as='textarea'
@@ -162,7 +156,6 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => 
                           control={form.control}
                           render={({ field }) => (
                             <Form.Check
-                              disabled={form.watch('jobRequestId')}
                               className='d-flex align-items-center justify-content-center'
                               {...field}
                               checked={field.value}
@@ -178,10 +171,16 @@ const TaskForm = ({ isLoading, handleNext, handlePrevious, toDuplicateJob }) => 
                           control={form.control}
                           render={({ field }) => (
                             <Form.Check
-                              disabled={form.watch('jobRequestId')}
                               className='d-flex align-items-center justify-content-center'
                               {...field}
                               checked={field.value}
+                              onChange={(e) => {
+                                const tasks = form.getValues('tasks');
+                                tasks[i].isPriority = e.target.checked;
+
+                                const sortedTasks = [...tasks].sort((a, b) => b.isPriority - a.isPriority); // prettier-ignore
+                                replace(sortedTasks);
+                              }}
                               type='checkbox'
                             />
                           )}

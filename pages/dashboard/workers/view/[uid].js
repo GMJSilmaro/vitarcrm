@@ -12,9 +12,10 @@ import { Badge, Button, Card, Image, Spinner, Tab, Tabs } from 'react-bootstrap'
 import {
   ArrowLeftShort,
   Envelope,
+  EyeFill,
   HouseDoorFill,
-  InfoSquareFill,
   Pencil,
+  PencilSquare,
   PeopleFill,
   Telephone,
 } from 'react-bootstrap-icons';
@@ -104,7 +105,7 @@ const UserDetails = () => {
         title={`View Details for ${user.fullName}`}
         description='View comprehensive details of the technician including personal info, contacts, skills & experties, assignments and performance history'
         badgeText='Technician Management'
-        badgeText2='Technician'
+        badgeText2='View Technician'
         breadcrumbItems={[
           {
             icon: <HouseDoorFill className='me-2' size={14} />,
@@ -117,16 +118,23 @@ const UserDetails = () => {
             icon: <PeopleFill className='me-2' size={14} />,
           },
           {
-            icon: <InfoSquareFill className='me-2' size={14} />,
+            icon: <EyeFill className='me-2' size={14} />,
             text: uid,
           },
         ]}
         actionButtons={[
           {
-            text: `Back to Technician List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push(`/workers`),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit Technician',
+            icon: PencilSquare,
+            onClick: () => router.push(`/workers/edit-workers/${uid}`),
           },
         ]}
       />

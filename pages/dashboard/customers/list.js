@@ -24,8 +24,10 @@ import {
   Eye,
   GeoAltFill,
   House,
+  HouseFill,
   PencilSquare,
   People,
+  PeopleFill,
   Plus,
   ThreeDotsVertical,
   Trash,
@@ -300,25 +302,25 @@ const CustomerList = () => {
       <GeeksSEO title='Customers - VITAR Group | Portal' />
 
       <ContentHeader
-        title='Customers List'
+        title='Customer List'
         description='Manage and track all your customers in one centralized dashboard'
         infoText='Track customer details, addresses, and customer-specific information'
         badgeText='Customer Management'
-        badgeText2='Customers'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
-            icon: <House className='me-2' size={14} />,
             text: 'Dashboard',
             link: '/dashboard',
+            icon: <HouseFill className='me-2' size={14} />,
           },
           {
-            icon: <People className='me-2' size={14} />,
+            icon: <PeopleFill className='me-2' size={14} />,
             text: 'Customers',
           },
         ]}
         actionButtons={[
           {
-            text: 'Create New Customer',
+            text: 'Create Customer',
             icon: <Plus size={16} />,
             variant: 'light',
             tooltip: 'Add a new customer',

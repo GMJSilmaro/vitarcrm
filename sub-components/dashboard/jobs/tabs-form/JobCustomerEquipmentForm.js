@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { CATEGORY } from '@/schema/customerEquipment';
 import { customerEquipmentSchema } from '@/schema/customerEquipment';
-import { globalSearchFilter } from '@/utils/datatable';
+import { dateFilter, dateSort, globalSearchFilter } from '@/utils/datatable';
 import { getFormDefaultValues } from '@/utils/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -22,6 +22,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import {
   collection,
   deleteDoc,
@@ -276,12 +277,12 @@ const JobCustomerEquipmentForm = ({
           );
         },
       }),
-      columnHelper.accessor('make', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
-      }),
-      columnHelper.accessor('model', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Model' />,
-      }),
+      // columnHelper.accessor('make', {
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
+      // }),
+      // columnHelper.accessor('model', {
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Model' />,
+      // }),
       columnHelper.accessor('serialNumber', {
         id: 'serial number',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Serial Number' />,
@@ -301,6 +302,50 @@ const JobCustomerEquipmentForm = ({
         id: 'unit',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Unit' />,
       }),
+      columnHelper.accessor(
+        (row) => (row.original?.dueDate ? format(row.original.dueDate, 'dd-MM-yyyy') : ''),
+        {
+          id: 'due date',
+          header: ({ column }) => <DataTableColumnHeader column={column} title='Due Date' />,
+          cell: ({ row }) => {
+            const dueDate = row.original?.dueDate;
+            if (!dueDate) return null;
+            return <div>{format(dueDate, 'dd-MM-yyyy')}</div>;
+          },
+          filterFn: (row, columnId, filterValue, addMeta) => {
+            const dueDate = row.original?.dueDate;
+            const filterDateValue = new Date(filterValue);
+            return dateFilter(dueDate, filterDateValue);
+          },
+          sortingFn: (rowA, rowB, columnId) => {
+            const rowADueDate = rowA.original?.dueDate;
+            const rowBDueDate = rowB.original?.dueDate;
+            return dateSort(rowADueDate, rowBDueDate);
+          },
+        }
+      ),
+      columnHelper.accessor(
+        (row) => (row.original?.calDate ? format(row.original.calDate, 'dd-MM-yyyy') : ''),
+        {
+          id: 'cal date',
+          header: ({ column }) => <DataTableColumnHeader column={column} title='Cal Date' />,
+          cell: ({ row }) => {
+            const calDate = row.original?.calDate;
+            if (!calDate) return null;
+            return <div>{format(calDate, 'dd-MM-yyyy')}</div>;
+          },
+          filterFn: (row, columnId, filterValue, addMeta) => {
+            const calDate = row.original?.calDate;
+            const filterDateValue = new Date(filterValue);
+            return dateFilter(calDate, filterDateValue);
+          },
+          sortingFn: (rowA, rowB, columnId) => {
+            const rowACalDate = rowA.original?.calDate;
+            const rowBCalDate = rowB.original?.calDate;
+            return dateSort(rowACalDate, rowBCalDate);
+          },
+        }
+      ),
       columnHelper.accessor('notes', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Notes' />,
       }),
@@ -320,7 +365,17 @@ const JobCustomerEquipmentForm = ({
               (category) => category.value === rowData.category
             );
 
-            customerEquipmentForm.reset({ ...rowData, category: selectedCategory || '' });
+            const tolerance = rowData.tolerance ? rowData?.tolerance : '';
+            const dueDate = rowData?.dueDate ? rowData?.dueDate : '';
+            const calDate = rowData?.calDate ? rowData?.calDate : '';
+
+            customerEquipmentForm.reset({
+              ...rowData,
+              tolerance,
+              dueDate,
+              calDate,
+              category: selectedCategory || '',
+            });
             setActiveKey('add-edit');
           };
 
@@ -523,18 +578,18 @@ const JobCustomerEquipmentForm = ({
         type: 'text',
         placeholder: 'Search by description...',
       },
-      {
-        label: 'Make',
-        columnId: 'make',
-        type: 'text',
-        placeholder: 'Search by make...',
-      },
-      {
-        label: 'Model',
-        columnId: 'model',
-        type: 'text',
-        placeholder: 'Search by model...',
-      },
+      // {
+      //   label: 'Make',
+      //   columnId: 'make',
+      //   type: 'text',
+      //   placeholder: 'Search by make...',
+      // },
+      // {
+      //   label: 'Model',
+      //   columnId: 'model',
+      //   type: 'text',
+      //   placeholder: 'Search by model...',
+      // },
       {
         label: 'Serial Number',
         columnId: 'serial number',
@@ -989,20 +1044,35 @@ const JobCustomerEquipmentForm = ({
                                   name='tolerance'
                                   control={customerEquipmentForm.control}
                                   render={({ field }) => (
-                                    <>
-                                      <Form.Control
-                                        {...field}
-                                        id='tolerance'
-                                        placeholder='Enter tolerance'
-                                      />
+                                    <Form.Control
+                                      {...field}
+                                      id='tolerance'
+                                      placeholder='Enter tolerance'
+                                    />
+                                  )}
+                                />
+                              </Form.Group>
 
-                                      {customerEquipmentFormErrors &&
-                                        customerEquipmentFormErrors.tolerance?.message && (
-                                          <Form.Text className='text-danger'>
-                                            {customerEquipmentFormErrors.tolerance?.message}
-                                          </Form.Text>
-                                        )}
-                                    </>
+                              <Form.Group as={Col} md={3}>
+                                <Form.Label htmlFor='dueDate'>Due Date</Form.Label>
+
+                                <Controller
+                                  name='dueDate'
+                                  control={customerEquipmentForm.control}
+                                  render={({ field }) => (
+                                    <Form.Control {...field} id='dueDate' type='date' />
+                                  )}
+                                />
+                              </Form.Group>
+
+                              <Form.Group as={Col} md={3}>
+                                <Form.Label htmlFor='calDate'>Cal Date</Form.Label>
+
+                                <Controller
+                                  name='calDate'
+                                  control={customerEquipmentForm.control}
+                                  render={({ field }) => (
+                                    <Form.Control {...field} id='calDate' type='date' />
                                   )}
                                 />
                               </Form.Group>
@@ -1014,22 +1084,13 @@ const JobCustomerEquipmentForm = ({
                                   name='notes'
                                   control={customerEquipmentForm.control}
                                   render={({ field }) => (
-                                    <>
-                                      <Form.Control
-                                        {...field}
-                                        id='notes'
-                                        as='textarea'
-                                        rows={1}
-                                        placeholder='Enter notes'
-                                      />
-
-                                      {customerEquipmentFormErrors &&
-                                        customerEquipmentFormErrors.notes?.message && (
-                                          <Form.Text className='text-danger'>
-                                            {customerEquipmentFormErrors.notes?.message}
-                                          </Form.Text>
-                                        )}
-                                    </>
+                                    <Form.Control
+                                      {...field}
+                                      id='notes'
+                                      as='textarea'
+                                      rows={1}
+                                      placeholder='Enter notes'
+                                    />
                                   )}
                                 />
                               </Form.Group>

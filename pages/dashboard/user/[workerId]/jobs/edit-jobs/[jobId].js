@@ -2,14 +2,16 @@ import PageHeader from '@/components/common/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import { STATUS_COLOR } from '@/schema/job';
 import JobForm from '@/sub-components/dashboard/jobs/JobForm';
 import { GeeksSEO } from '@/widgets';
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import _ from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Spinner } from 'react-bootstrap';
-import { ArrowLeftShort, CheckCircle } from 'react-bootstrap-icons';
+import { ArrowLeftShort, CheckCircle, Eye, Stop } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
@@ -30,7 +32,7 @@ const EditJob = () => {
 
     Swal.fire({
       title: 'Finished Job?',
-      text: 'Are you sure you want you want to mark the job as "Completed"?',
+      text: 'Are you sure you want you want to mark the job as "Job Validation"?',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Confirm',
@@ -51,7 +53,7 @@ const EditJob = () => {
           await runTransaction(db, async (transaction) => {
             try {
               transaction.update(jobHeaderRef, {
-                status: 'completed',
+                status: 'job-validation',
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
               });
@@ -71,14 +73,14 @@ const EditJob = () => {
           await notifications.create({
             module: 'job',
             target: ['admin', 'supervisor'],
-            title: 'Job completed',
-            message: `Job (#${id}) has been marked as "Completed" by ${auth.currentUser.displayName}.`,
+            title: 'Job finished',
+            message: `Job (#${id}) has been finished by ${auth.currentUser.displayName}.`,
             data: {
               redirectUrl: `/jobs/view/${id}`,
             },
           });
 
-          toast.success('Job has been completed successfully.', { position: 'top-right' });
+          toast.success('Job has been finished successfully.', { position: 'top-right' });
           setIsLoading(false);
 
           //* reload page after 2 seconds
@@ -170,32 +172,36 @@ const EditJob = () => {
         <PageHeader
           title={`Edit Job #${job.id}`}
           subtitle='Edit job details'
-          action={
-            <div className='d-flex align-items-center gap-2'>
-              <Button
-                variant={job.status === 'in progress' ? 'outline-light' : 'light'}
-                onClick={() => router.push(`/user/${workerId}`)}
-              >
-                <ArrowLeftShort size={20} className='me-2' />
-                Go Back
-              </Button>
-
-              {job.status === 'in progress' && (
-                <Button
-                  disabled={isStoppingJob}
-                  variant='light'
-                  onClick={() => stopJob(jobId, setIsStoppingJob)}
-                >
-                  {isStoppingJob ? (
-                    <Spinner animation='border' size='sm' className='me-2' />
-                  ) : (
-                    <CheckCircle size={20} className='me-2' />
-                  )}
-                  Close Job
-                </Button>
-              )}
-            </div>
-          }
+          customBadges={[
+            {
+              label: _.startCase(job?.status),
+              color: STATUS_COLOR[job?.status] || 'secondary',
+            },
+          ]}
+          actionButtons={[
+            {
+              text: 'Back',
+              icon: <ArrowLeftShort size={20} />,
+              variant: 'outline-primary',
+              onClick: () => router.push(`/user/${workerId}`),
+            },
+          ]}
+          dropdownItems={[
+            {
+              label: 'View Job',
+              icon: Eye,
+              onClick: () => router.push(`/user/${workerId}/jobs/view/${jobId}`),
+            },
+            ...(job?.status === 'job-in-progress'
+              ? [
+                  {
+                    label: 'Close Job',
+                    icon: Stop,
+                    onClick: (args) => stopJob(jobId, args.setIsLoading),
+                  },
+                ]
+              : []),
+          ]}
         />
 
         <Card className='shadow-sm'>

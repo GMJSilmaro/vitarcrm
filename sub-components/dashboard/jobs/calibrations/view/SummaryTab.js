@@ -1,6 +1,6 @@
 import { add, format, isValid } from 'date-fns';
 import { useCallback, useMemo } from 'react';
-import { Card, Col, Row } from 'react-bootstrap';
+import { Alert, Card, Col, Row } from 'react-bootstrap';
 import {
   Activity,
   Building,
@@ -10,6 +10,7 @@ import {
   CardHeading,
   CheckCircle,
   Clock,
+  ExclamationCircle,
   Geo,
   Hash,
   Person,
@@ -67,6 +68,28 @@ const SummaryTab = ({ calibration }) => {
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        {calibration && calibration?.status === 'data-rejected' && (
+          <Alert
+            className='mb-5 d-flex align-items-center gap-2'
+            style={{ width: 'fit-content' }}
+            variant='danger'
+          >
+            <ExclamationCircle className='flex-shrink-0 me-1' size={20} />{' '}
+            <div>
+              Calibration status is "
+              <span className='fw-bold'>{_.startCase(calibration?.status)}." </span>
+              {calibration?.reasonMessage ? (
+                <span>
+                  Reason/message is "<span className='fw-bold'>{calibration?.reasonMessage}</span>
+                  ."
+                </span>
+              ) : (
+                ''
+              )}
+            </div>
+          </Alert>
+        )}
+
         <div className='d-flex justify-content-between align-items-center'>
           <div>
             <h4 className='mb-0'>Job</h4>
@@ -199,7 +222,7 @@ const SummaryTab = ({ calibration }) => {
               <div>
                 <div className='text-secondary fs-6'>Status:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.status || 'N/A'}
+                  {calibration?.status ? _.startCase(calibration?.status) : 'N/A'}
                 </div>
               </div>
             </div>

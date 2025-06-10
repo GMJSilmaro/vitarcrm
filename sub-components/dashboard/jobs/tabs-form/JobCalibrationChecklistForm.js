@@ -476,7 +476,7 @@ const JobCalibrationChecklistForm = ({
         </Row>
 
         <hr className='my-4' />
-        <h4 className='mb-0'>Verified By Lab in-charger</h4>
+        <h4 className='mb-0'>Verified By Lab In-charge</h4>
         <p className='text-muted fs-6'>
           Details about checklist's verified by lab in-charger before and after calibration.
         </p>

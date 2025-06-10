@@ -10,9 +10,14 @@ import { Button, Card, Spinner, Table } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BoxSeam,
+  BoxSeamFill,
+  Eye,
+  EyeFill,
   HouseDoorFill,
   InfoSquareFill,
   ListColumns,
+  PencilFill,
+  PencilSquare,
   Table as TableIcon,
 } from 'react-bootstrap-icons';
 
@@ -97,8 +102,8 @@ const MpeDetails = () => {
       <ContentHeader
         title={`View Details for MPE #${mpe.id}`}
         description='View comprehensive details of reference data'
-        badgeText='Reference Data Management'
-        badgeText2='References Data'
+        badgeText='Calibration References Data Management'
+        badgeText2='View Reference Data'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -113,7 +118,7 @@ const MpeDetails = () => {
           {
             text: 'Mass',
             link: '/calibration-references/mass/mpe',
-            icon: <BoxSeam className='me-2' size={14} />,
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'MPE',
@@ -123,15 +128,22 @@ const MpeDetails = () => {
           ,
           {
             text: refId,
-            icon: <InfoSquareFill className='me-2' size={14} />,
+            icon: <EyeFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: `Back to MPE List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push('/calibration-references/mass/mpe'),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit MPE',
+            icon: PencilSquare,
+            onClick: () => router.push(`/calibration-references/mass/mpe/edit-mpe/${refId}`),
           },
         ]}
       />

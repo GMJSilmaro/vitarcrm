@@ -8,12 +8,22 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner, Tooltip } from 'react-bootstrap';
+import {
+  Badge,
+  Button,
+  Card,
+  Dropdown,
+  Form,
+  OverlayTrigger,
+  Spinner,
+  Tooltip,
+} from 'react-bootstrap';
 import {
   ArrowRepeat,
   ArrowReturnLeft,
   BriefcaseFill,
   Building,
+  CalendarWeek,
   CardList,
   CheckCircle,
   Copy,
@@ -39,12 +49,14 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   increment,
   onSnapshot,
   query,
   runTransaction,
   serverTimestamp,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 import { db, storage } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
@@ -58,9 +70,11 @@ import DataTableFilter from '@/components/common/DataTableFilter';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import _ from 'lodash';
+import _, { set } from 'lodash';
 import { useNotifications } from '@/hooks/useNotifications';
 import { deleteObject, listAll, ref } from 'firebase/storage';
+import { PRIORITY_LEVELS_COLOR, SCOPE_TYPE_COLOR, STATUS, STATUS_COLOR } from '@/schema/job';
+import withReactContent from 'sweetalert2-react-content';
 
 const JobList = () => {
   const router = useRouter();
@@ -135,14 +149,11 @@ const JobList = () => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Scope' />,
         cell: ({ row }) => {
-          const colors = {
-            lab: 'info',
-            site: 'warning',
-          };
+          const scope = row?.original?.scope;
 
           return (
-            <Badge className='text-capitalize' bg={colors[row.original.scope] || 'secondary'}>
-              {row.original.scope}
+            <Badge className='text-capitalize' bg={SCOPE_TYPE_COLOR[scope] || 'secondary'}>
+              {scope}
             </Badge>
           );
         },
@@ -151,14 +162,11 @@ const JobList = () => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Priority' />,
         cell: ({ row }) => {
-          const colors = {
-            normal: 'secondary',
-            urgent: 'warning',
-          };
+          const priority = row?.original?.priority;
 
           return (
-            <Badge className='text-capitalize' bg={colors[row.original.priority] || 'secondary'}>
-              {row.original.priority}
+            <Badge className='text-capitalize' bg={PRIORITY_LEVELS_COLOR[priority] || 'secondary'}>
+              {priority}
             </Badge>
           );
         },
@@ -182,18 +190,18 @@ const JobList = () => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         cell: ({ row }) => {
-          const colors = {
-            confirmed: 'info',
-            'in progress': 'primary',
-            completed: 'success',
-            cancelled: 'warning',
-            rejected: 'danger',
-            validated: 'purple',
-          };
+          const status = row?.original?.status;
+
           return (
-            <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
-              {row.original.status}
-            </Badge>
+            <div className='d-flex flex-column justify-content-center align-items-center gap-2'>
+              <Badge bg={STATUS_COLOR[status] || 'secondary'}>{_.startCase(status)}</Badge>
+
+              {status === 'job-cancel' && (
+                <span className='fw-medium fst-italic'>
+                  "{row?.original?.reasonMessage || 'N/A'}"
+                </span>
+              )}
+            </div>
           );
         },
       }),
@@ -328,15 +336,25 @@ const JobList = () => {
           );
         },
       }),
+      columnHelper.accessor((row) => row.jobRequest?.createdBy?.displayName || '', {
+        id: 'sales person',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Sales Person' />,
+        cell: ({ row }) => {
+          const salesPerson = row.original.jobRequest?.createdBy?.displayName || '';
+          return <div>{salesPerson}</div>;
+        },
+      }),
       columnHelper.accessor((row) => row.createdBy?.displayName || 'N/A', {
         id: 'created by',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Created By' />,
         cell: ({ row }) => {
           const displayName = row.original.createdBy?.displayName || 'N/A';
+          const createdAt = row.original.createdAt.toDate();
+
           return (
-            <div>
-              <PersonFill size={14} className='text-primary me-2' />
+            <div className='d-flex flex-column justify-content-center align-items-center gap-2'>
               <span>{displayName}</span>
+              <span>{format(createdAt, 'dd-MM-yyyy')}</span>
             </div>
           );
         },
@@ -349,7 +367,7 @@ const JobList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, details, status } = row.original;
+          const { id, details, status, workers } = row.original;
 
           const handleViewJob = (id) => {
             router.push(`/jobs/view/${id}`);
@@ -361,6 +379,70 @@ const JobList = () => {
 
           const handleDuplicateJob = (id) => {
             router.push(`/jobs/duplicate/${id}`);
+          };
+
+          const handleRescheduleJob = async (id, status, workers) => {
+            Swal.fire({
+              title: `Reschedule Job - Job #${id}`,
+              text: `Are you sure you want to reschedule this job?`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  if (status !== 'job-reschedule') {
+                    const jobHeaderRef = doc(db, 'jobHeaders', id);
+
+                    const workerIds = workers.map((worker) => worker?.id).filter(Boolean);
+
+                    const workerSnapshot = await getDocs(
+                      query(collection(db, 'users'), where('workerId', 'in', workerIds))
+                    );
+
+                    const workerUids = workerSnapshot.empty
+                      ? []
+                      : workerSnapshot.docs.map((doc) => doc.id);
+
+                    await Promise.all([
+                      updateDoc(jobHeaderRef, {
+                        status: 'job-reschedule',
+                        updatedAt: serverTimestamp(),
+                        updatedBy: auth.currentUser,
+                      }),
+                      //* create notification for admin and supervisor when updated a job status
+                      notifications.create({
+                        module: 'job',
+                        target: ['admin', 'supervisor', ...workerUids],
+                        title: 'Job rescheduled',
+                        message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase('job-reschedule')}".`, //prettier-ignore
+                        data: {
+                          redirectUrl: `/jobs/view/${id}`,
+                        },
+                      }),
+                    ]);
+                  }
+
+                  setIsLoading(false);
+                  toast.success('Job rescheduled successfully', { position: 'top-right' });
+
+                  setTimeout(() => {
+                    router.push(`/jobs/duplicate/${id}?tab=4`);
+                  }, 1000);
+                } catch (error) {
+                  console.error('Error rescheduling job:', error);
+                  toast.error('Error rescheduling job: ' + error.message, { position: 'top-right' }); //prettier-ignore
+                  setIsLoading(false);
+                }
+              }
+            });
           };
 
           const handleDeleteJob = (id) => {
@@ -427,6 +509,79 @@ const JobList = () => {
           };
 
           const handleUpdateJobStatus = (id, status) => {
+            if (status === 'job-cancel') {
+              withReactContent(Swal)
+                .fire({
+                  title: `Job Status Update - Job #${id}`,
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonText: 'Confirm',
+                  cancelButtonText: 'Cancel',
+                  customClass: {
+                    confirmButton: 'btn btn-primary rounded',
+                    cancelButton: 'btn btn-secondary rounded',
+                  },
+                  html: (
+                    <div className='d-flex flex-column gap-4'>
+                      <div
+                        style={{ color: '#545454' }}
+                      >{`Are you sure you want to update the job status to "${_.startCase(
+                        status
+                      )}"?`}</div>
+
+                      <div>
+                        <Form.Control
+                          id={`job-status-update-${id}`}
+                          type='text'
+                          as='textarea'
+                          rows={4}
+                          placeholder='Enter a message/reason'
+                        />
+                      </div>
+                    </div>
+                  ),
+                  preConfirm: () => {
+                    return document.getElementById(`job-status-update-${id}`).value;
+                  },
+                })
+                .then(async ({ value, isConfirmed }) => {
+                  if (isConfirmed) {
+                    try {
+                      setIsLoading(true);
+
+                      const jobHeaderRef = doc(db, 'jobHeaders', id);
+
+                      await Promise.all([
+                        updateDoc(jobHeaderRef, {
+                          status,
+                          reasonMessage: value,
+                          updatedAt: serverTimestamp(),
+                          updatedBy: auth.currentUser,
+                        }),
+                        //* create notification for admin and supervisor when updated a job status
+                        notifications.create({
+                          module: 'job',
+                          target: ['admin', 'supervisor'],
+                          title: 'Job status updated',
+                          message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                          data: {
+                            redirectUrl: `/jobs/view/${id}`,
+                          },
+                        }),
+                      ]);
+
+                      toast.success('Job status updated successfully', { position: 'top-right' });
+                      setIsLoading(false);
+                    } catch (error) {
+                      console.error('Error updating job status:', error);
+                      toast.error('Error updating job status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+                      setIsLoading(false);
+                    }
+                  }
+                });
+              return;
+            }
+
             Swal.fire({
               title: `Job Status Update - Job #${id}`,
               text: `Are you sure you want to update the job status to "${_.startCase(status)}"?`,
@@ -448,6 +603,7 @@ const JobList = () => {
                   await Promise.all([
                     updateDoc(jobHeaderRef, {
                       status,
+                      reasonMessage: null,
                       updatedAt: serverTimestamp(),
                       updatedBy: auth.currentUser,
                     }),
@@ -548,8 +704,7 @@ const JobList = () => {
             <OverlayTrigger
               rootClose
               trigger='click'
-              placement='left'
-              offset={[0, 20]}
+              placement='left-start'
               overlay={
                 <Dropdown.Menu show style={{ zIndex: 999 }}>
                   <Dropdown.Item onClick={() => handleViewJob(id)}>
@@ -573,6 +728,15 @@ const JobList = () => {
                         Duplicate Job
                       </Dropdown.Item>
 
+                      {(status === 'job-confirm' ||
+                        status === 'job-in-progress' ||
+                        status === 'job-reschedule') && (
+                        <Dropdown.Item onClick={() => handleRescheduleJob(id, status, workers)}>
+                          <CalendarWeek className='me-2' size={16} />
+                          Reschedule Job
+                        </Dropdown.Item>
+                      )}
+
                       <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
                         <ArrowReturnLeft className='me-2' size={16} />
                         Return Equipment
@@ -581,32 +745,28 @@ const JobList = () => {
                       <OverlayTrigger
                         rootClose
                         trigger='click'
-                        placement='right-end'
+                        placement='left'
                         overlay={
                           <Dropdown.Menu show style={{ zIndex: 999 }}>
-                            {/* <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'in progress')}>
-                          <Hourglass className='me-2' size={16} />
-                          In Progress
-                        </Dropdown.Item> */}
-                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'confirmed')}>
+                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'job-confirm')}>
                               <Flag className='me-2' size={16} />
-                              Confirmed
+                              Job Confirm
                             </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'completed')}>
+                            <Dropdown.Item
+                              onClick={() => handleUpdateJobStatus(id, 'job-validation')}
+                            >
                               <CheckCircle className='me-2' size={16} />
-                              Completed
+                              Job Validation
                             </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'cancelled')}>
+                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'job-cancel')}>
                               <XCircle className='me-2' size={16} />
-                              Cancelled
+                              Job Cancel
                             </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'rejected')}>
-                              <HandThumbsDown className='me-2' size={16} />
-                              Rejected
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'validated')}>
+                            <Dropdown.Item
+                              onClick={() => handleUpdateJobStatus(id, 'job-complete')}
+                            >
                               <ShieldCheck className='me-2' size={16} />
-                              Validated
+                              Job Complete
                             </Dropdown.Item>
                           </Dropdown.Menu>
                         }
@@ -617,7 +777,7 @@ const JobList = () => {
                         </Dropdown.Item>
                       </OverlayTrigger>
 
-                      {status !== 'created' && status !== 'confirmed' && (
+                      {status !== 'job-confirm' && (
                         <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations`)}>
                           <Eye className='me-2' size={16} />
                           View Calibrations
@@ -626,7 +786,7 @@ const JobList = () => {
 
                       <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
                         <PlusSquare className='me-2' size={16} />
-                        Add Calibration
+                        Start Calibration
                       </Dropdown.Item>
                     </>
                   )}
@@ -689,11 +849,7 @@ const JobList = () => {
         type: 'select',
         options: [
           { label: 'All Status', value: '' },
-          { label: 'Created', value: 'created' },
-          { label: 'Confirmed', value: 'confirmed' },
-          { label: 'In Progress', value: 'in progress' },
-          { label: 'Completed', value: 'completed' },
-          { label: 'Cancelled', value: 'cancelled' },
+          ...STATUS.map((s) => ({ label: _.startCase(s), value: s })),
         ],
       },
       {
@@ -701,6 +857,12 @@ const JobList = () => {
         columnId: 'created by',
         type: 'text',
         placeholder: 'Search by created by...',
+      },
+      {
+        label: 'Sales Person',
+        columnId: 'sales person',
+        type: 'text',
+        placeholder: 'Search by sales person...',
       },
       {
         label: 'Date',
@@ -718,6 +880,7 @@ const JobList = () => {
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
+      columnVisibility: { date: false },
       columnPinning: { right: ['actions'] },
       sorting: [{ id: 'date', desc: true }],
     },
@@ -726,6 +889,7 @@ const JobList = () => {
   useEffect(() => {
     const q = query(collection(db, 'jobHeaders'));
 
+    //TODO: Optimize query
     const unsubscribe = onSnapshot(
       q,
       async (snapshop) => {
@@ -734,14 +898,24 @@ const JobList = () => {
           for (const jobDoc of snapshop.docs) {
             const id = jobDoc.id;
             const data = jobDoc.data();
+            const jobRequestId = data?.jobRequestId;
 
-            const jobDetailsDoc = await getDoc(doc(db, 'jobDetails', id));
-            const jobDetailsData = jobDetailsDoc.exists() ? jobDetailsDoc.data() : null;
+            const jobDetailsDocPromise = getDoc(doc(db, 'jobDetails', id));
+            const jobRequestDocPromise = jobRequestId ?  getDoc(doc(db, 'jobRequests', jobRequestId)) : null; // prettier-ignore
+
+            const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
+              jobDetailsDocPromise,
+              jobRequestDocPromise,
+            ]);
+
+            const jobDetailsData = jobDetailsDoc.exists() ? jobDetailsDoc.data() : null; // prettier-ignore
+            const jobRequestData = jobRequestDoc && jobRequestDoc.exists() ? jobRequestDoc.data() : null; // prettier-ignore
 
             rows.push({
               id,
               ...data,
               details: jobDetailsData,
+              jobRequest: jobRequestData,
             });
           }
 
@@ -760,6 +934,63 @@ const JobList = () => {
     return () => unsubscribe();
   }, []);
 
+  //* Optimize idea query
+  // useEffect(() => {
+  //   const q = query(collection(db, 'jobHeaders'));
+
+  //   const unsubscribe = onSnapshot(
+  //     q,
+  //     async (snapshot) => {
+  //       if (snapshot.empty) {
+  //         setJobs({ data: [], isLoading: false, isError: false });
+  //         return;
+  //       }
+
+  //       const jobDocs = snapshot.docs.map((doc) => ({
+  //         id: doc.id,
+  //         ...doc.data(),
+  //       }));
+
+  //       const promises = jobDocs.map(async (job) => {
+  //         try {
+  //           const jobDetailsPromise = getDoc(doc(db, 'jobDetails', job.id));
+  //           const jobRequestPromise = job.jobRequestId
+  //             ? getDoc(doc(db, 'jobRequests', job.jobRequestId))
+  //             : Promise.resolve(null);
+
+  //           const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
+  //             jobDetailsPromise,
+  //             jobRequestPromise,
+  //           ]);
+
+  //           return {
+  //             ...job,
+  //             details: jobDetailsDoc.exists() ? jobDetailsDoc.data() : null,
+  //             jobRequest: jobRequestDoc?.exists() ? jobRequestDoc.data() : null,
+  //           };
+  //         } catch (err) {
+  //           console.warn(`Failed to fetch details for job ${job.id}:`, err);
+  //           return null; // Skip this job
+  //         }
+  //       });
+
+  //       const settledResults = await Promise.allSettled(promises);
+
+  //       const validJobs = settledResults
+  //         .filter((result) => result.status === 'fulfilled' && result.value !== null)
+  //         .map((result) => result.value);
+
+  //       setJobs({ data: validJobs, isLoading: false, isError: false });
+  //     },
+  //     (err) => {
+  //       console.error(err.message);
+  //       setJobs({ data: [], isLoading: false, isError: true });
+  //     }
+  //   );
+
+  //   return () => unsubscribe();
+  // }, []);
+
   return (
     <>
       <GeeksSEO title='Jobs- VITAR Group | Portal' />
@@ -769,7 +1000,7 @@ const JobList = () => {
         description='Create, manage and tract all your jobs assignments in one centralize dashboard'
         infoText='Manage job assignment and track progress updates'
         badgeText='Job Management'
-        badgeText2='Scheduling'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
             text: 'Dashboard',

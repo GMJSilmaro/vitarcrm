@@ -30,6 +30,8 @@ import {
   Trash,
   Table,
   Gear,
+  GearFill,
+  BoxSeamFill,
 } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -219,8 +221,8 @@ const CKList = () => {
       <ContentHeader
         title='CK'
         description='Create, manage all your calibration references in one centralize dashboard'
-        badgeText='Calibration References'
-        badgeText2='Data Management'
+        badgeText='Calibration References Data Management'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -234,9 +236,9 @@ const CKList = () => {
             icon: <ListColumns className='me-2' size={14} />,
           },
           {
-            text: 'Category',
+            text: 'Mass',
             link: '/#',
-            icon: <Gear className='me-2' size={14} />,
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'CK',

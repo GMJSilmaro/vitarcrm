@@ -4,7 +4,7 @@ import DataTableFilter from '@/components/common/DataTableFilter';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import { db } from '@/firebase';
-import { CATEGORY, STATUS } from '@/schema/calibration';
+import { CATEGORY, STATUS, STATUS_COLOR } from '@/schema/calibration';
 import { titleCase } from '@/utils/common';
 import { globalSearchFilter } from '@/utils/datatable';
 import {
@@ -75,15 +75,11 @@ const CalibrationTab = ({ job }) => {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         cell: ({ row }) => {
-          const colors = {
-            'for validation': 'success',
-            rejected: 'danger',
-            resubmission: 'warning',
-            completed: 'purple',
-          };
+          const status = row?.original?.status;
+
           return (
-            <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
-              {row.original.status}
+            <Badge className='text-capitalize' bg={STATUS_COLOR[status] || 'secondary'}>
+              {_.startCase(status)}
             </Badge>
           );
         },

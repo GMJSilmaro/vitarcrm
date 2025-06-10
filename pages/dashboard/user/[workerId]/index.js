@@ -8,6 +8,7 @@ import {
   ArrowReturnLeft,
   Briefcase,
   Building,
+  CalendarWeek,
   CalendarX,
   CardList,
   CheckCircle,
@@ -65,6 +66,7 @@ import { GeeksSEO } from '@/widgets';
 import { JobTimer } from '@/sub-components/dashboard/user/jobs/JobTimer';
 import PageHeader from '@/components/common/PageHeader';
 import { useNotifications } from '@/hooks/useNotifications';
+import { STATUS_COLOR } from '@/schema/job';
 
 function WorkerDashboard() {
   const router = useRouter();
@@ -87,7 +89,7 @@ function WorkerDashboard() {
       const endTime = job.endTime;
       const start = new Date(`${startDate}T${startTime}:00`);
       const end = new Date(`${endDate}T${endTime}:00`);
-      const pending = job.status !== 'completed' && job.status !== 'validated';
+      const pending = job.status === 'job-confirm';
 
       return (isEqual(start, new Date()) || isAfter(start, new Date()) || isEqual(end, new Date()) || isAfter(end, new Date())) && pending; //prettier-ignore
     }).length;
@@ -98,22 +100,32 @@ function WorkerDashboard() {
       const endDate = job.endDate;
       const endTime = job.endTime;
       const end = new Date(`${endDate}T${endTime}:00`);
-      const pending = job.status === 'create' || job.status === 'confirmed' || job.status === 'cancelled'; //prettier-ignore
+      const pending = job.status === 'job-confirm';
 
       return isBefore(end, new Date()) && pending;
     }).length;
-    const confirmedJobs = jobs.data.filter((job) => job.status === 'confirmed').length;
-    const completedJobs = jobs.data.filter((job) => job.status === 'completed').length;
-    const cancelledJobs = jobs.data.filter((job) => job.status === 'cancelled').length;
-    const rejectedJobs = jobs.data.filter((job) => job.status === 'rejected').length;
-    const validatedJobs = jobs.data.filter((job) => job.status === 'validated').length;
-    const currentJob = jobs.data.find((job) => job.status === 'in progress');
+    const confirmedJobs = jobs.data.filter((job) => job.status === 'job-confirm').length;
+    const inProgressJobs = jobs.data.filter((job) => job.status === 'job-in-progress').length;
+    const jobValidationJobs = jobs.data.filter((job) => job.status === 'job-validation').length;
+    const cancelledJobs = jobs.data.filter((job) => job.status === 'job-cancel').length;
+    const completedJobs = jobs.data.filter((job) => job.status === 'job-complete').length;
+    const rescheduledJobs = jobs.data.filter((job) => job.status === 'job-reschedule').length;
 
     return [
       {
+        id: 'all',
+        value: total,
+        title: 'Total Jobs',
+        icon: Briefcase,
+        color: 'secondary',
+        width: 2,
+        filter: 'all',
+        filterValue: '',
+      },
+      {
         id: 'upcoming-jobs',
         value: upcomingJobs,
-        title: 'Upcoming Jobs',
+        title: 'Upcoming',
         icon: Clock,
         color: 'dark',
         width: 2,
@@ -123,7 +135,7 @@ function WorkerDashboard() {
       {
         id: 'urgent-jobs',
         value: urgentJobs,
-        title: 'Urgent Jobs',
+        title: 'Urgent',
         icon: ExclamationCircle,
         color: 'warning',
         width: 2,
@@ -133,7 +145,7 @@ function WorkerDashboard() {
       {
         id: 'overdue-jobs',
         value: overdueJobs,
-        title: 'Overdue Jobs',
+        title: 'Overdue',
         icon: CalendarX,
         color: 'secondary',
         width: 2,
@@ -160,7 +172,16 @@ function WorkerDashboard() {
         filter: 'scope',
         filterValue: 'lab',
       },
-
+      {
+        id: 'in-progress-jobs',
+        value: inProgressJobs,
+        title: 'In Progress',
+        icon: Clock,
+        color: 'primary',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-in-progress',
+      },
       {
         id: 'confirmed-jobs',
         value: confirmedJobs,
@@ -169,72 +190,47 @@ function WorkerDashboard() {
         color: 'info',
         width: 2,
         filter: 'status',
-        filterValue: 'confirmed',
+        filterValue: 'job-confirm',
       },
       {
-        id: 'completed-jobs',
-        value: completedJobs,
-        title: 'Completed Jobs',
+        id: 'for-validation-jobs',
+        value: jobValidationJobs,
+        title: 'For Validation',
         icon: CheckCircle,
         color: 'success',
         width: 2,
         filter: 'status',
-        filterValue: 'completed',
+        filterValue: 'job-validation',
       },
       {
-        id: 'cancelled-jobs',
-        value: cancelledJobs,
-        title: 'Cancelled Jobs',
-        icon: XCircle,
-        color: 'danger',
-        width: 2,
-        filter: 'status',
-        filterValue: 'cancelled',
-      },
-      {
-        id: 'rejected-jobs',
-        value: rejectedJobs,
-        title: 'Rejected Jobs',
-        icon: HandThumbsDown,
-        color: 'danger',
-        width: 2,
-        filter: 'status',
-        filterValue: 'rejected',
-      },
-      {
-        id: 'validated-jobs',
-        value: validatedJobs,
-        title: 'Validated',
+        id: 'completed-jobs',
+        value: completedJobs,
+        title: 'Completed',
         icon: ShieldCheck,
         color: 'purple',
         width: 2,
         filter: 'status',
-        filterValue: 'validated',
+        filterValue: 'job-complete',
       },
       {
-        id: 'all',
-        value: total,
-        title: 'Total Jobs',
-        icon: Briefcase,
-        color: 'secondary',
-        width: 4,
-        filter: 'all',
-        filterValue: '',
-      },
-      {
-        id: 'current-job',
-        value: currentJob
-          ? `${currentJob?.jobId || ''} ${currentJob?.customer?.name || ''}`
-          : 'N/A',
-        title: 'Current Job',
-        icon: ClockHistory,
-        color: 'primary',
-        subtitle: currentJob ? 'In Progress' : '',
-        width: 12,
+        id: 'rescheduled-jobs',
+        value: rescheduledJobs,
+        title: 'Rescheduled',
+        icon: CalendarWeek,
+        color: 'warning',
+        width: 2,
         filter: 'status',
-        filterValue: 'in progress',
-        job: currentJob,
-        workerId,
+        filterValue: 'job-reschedule',
+      },
+      {
+        id: 'cancelled-jobs',
+        value: cancelledJobs,
+        title: 'Cancelled',
+        icon: XCircle,
+        color: 'danger',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-cancel',
       },
     ];
   }, [JSON.stringify(jobs), workerId]);
@@ -333,19 +329,18 @@ function WorkerDashboard() {
         size: 100,
         header: ({ column }) => <DataTableColumnHeader column={column} title='Status' />,
         cell: ({ row }) => {
-          const colors = {
-            confirmed: 'info',
-            completed: 'success',
-            created: 'warning',
-            'in progress': 'primary',
-            cancelled: 'danger',
-            rejected: 'danger',
-            validated: 'purple',
-          };
+          const status = row.original.status;
+
           return (
-            <Badge className='text-capitalize' bg={colors[row.original.status] || 'secondary'}>
-              {row.original.status}
-            </Badge>
+            <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
+              <Badge bg={STATUS_COLOR[status] || 'secondary'}>{_.startCase(status)}</Badge>
+
+              {status === 'job-cancel' && (
+                <span className='fw-medium fst-italic'>
+                  "{row.original.reasonMessage || 'N/A'}"
+                </span>
+              )}
+            </div>
           );
         },
       }),
@@ -502,7 +497,7 @@ function WorkerDashboard() {
           const start = new Date(`${startDate}T${startTime}:00`);
           const end = new Date(`${endDate}T${endTime}:00`);
 
-          const pending = row.original.status !== 'completed' && row.original.status !== 'validated'; //prettier-ignore
+          const pending = row.original.status === 'job-confirm';
 
           return (
             (isEqual(start, filterValue) ||
@@ -518,7 +513,7 @@ function WorkerDashboard() {
           const endDate = row.original.endDate;
           const endTime = row.original.endTime;
           const end = new Date(`${endDate}T${endTime}:00`);
-          const pending = row.original.status === 'create' || row.original.status === 'confirmed' || row.original.status === 'cancelled'; //prettier-ignore
+          const pending = row.original.status === 'job-confirm';
 
           return isBefore(end, filterValue) && pending;
         },
@@ -603,7 +598,7 @@ function WorkerDashboard() {
                   if (jobStatus === 'in progress') {
                     const jobCollectionInProgressRef = query(
                       collection(db, 'jobHeaders'),
-                      where('status', '==', 'in progress'),
+                      where('status', '==', 'job-in-progress'),
                       where('workers', 'array-contains', {
                         id: workerId,
                         name: auth.currentUser.displayName,
@@ -727,7 +722,7 @@ function WorkerDashboard() {
                     View Job
                   </Dropdown.Item>
 
-                  {status !== 'validated' && (
+                  {status !== 'job-complete' && (
                     <Dropdown.Item onClick={() => handleEditJob(id)}>
                       <PencilSquare className='me-2' size={16} />
                       Edit Job
@@ -779,13 +774,15 @@ function WorkerDashboard() {
                     </Dropdown.Item>
                   </OverlayTrigger> */}
 
-                  {status !== 'in progress' && status !== 'completed' && status === 'confirmed' && (
-                    <Dropdown.Item onClick={() => startJob(id, setIsLoading)}>
-                      <Play className='me-2' size={18} /> Initiate Job
-                    </Dropdown.Item>
-                  )}
+                  {status !== 'job-in-progress' &&
+                    status !== 'job-validation' &&
+                    status === 'job-confirm' && (
+                      <Dropdown.Item onClick={() => startJob(id, setIsLoading)}>
+                        <Play className='me-2' size={18} /> Initiate Job
+                      </Dropdown.Item>
+                    )}
 
-                  {status === 'in progress' && (
+                  {status === 'job-in-progress' && (
                     <>
                       <Dropdown.Item onClick={() => stopJob(id, setIsLoading)}>
                         <Stop className='me-2' size={18} /> Complete Job
@@ -797,7 +794,7 @@ function WorkerDashboard() {
                     </>
                   )}
 
-                  {status !== 'created' && status !== 'confirmed' && (
+                  {status !== 'job-confirm' && (
                     <Dropdown.Item
                       onClick={() => router.push(`/user/${workerId}/jobs/${id}/calibrations`)}
                     >
@@ -806,14 +803,14 @@ function WorkerDashboard() {
                     </Dropdown.Item>
                   )}
 
-                  {status === 'in progress' && (
+                  {status === 'job-in-progress' && (
                     <Dropdown.Item
                       onClick={() =>
                         router.push(`/user/${workerId}/jobs/${id}/calibrations/create`)
                       }
                     >
                       <PlusSquare className='me-2' size={16} />
-                      Add Calibration
+                      Start Calibration
                     </Dropdown.Item>
                   )}
                 </Dropdown.Menu>
@@ -923,7 +920,7 @@ function WorkerDashboard() {
 
     Swal.fire({
       title: 'Initiate Job?',
-      text: 'Are you sure you want to mark the job as "in progress"?',
+      text: 'Are you sure you want to mark the job as "Job In Progress"?',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Confirm',
@@ -944,7 +941,7 @@ function WorkerDashboard() {
           await runTransaction(db, async (transaction) => {
             try {
               transaction.update(jobHeaderRef, {
-                status: 'in progress',
+                status: 'job-in-progress',
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
               });
@@ -990,7 +987,7 @@ function WorkerDashboard() {
 
     Swal.fire({
       title: 'Finished Job?',
-      text: 'Are you sure you want you want to mark the job as "completed"?',
+      text: 'Are you sure you want you want to mark the job as "Job Validation"?',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Confirm',
@@ -1011,7 +1008,7 @@ function WorkerDashboard() {
           await runTransaction(db, async (transaction) => {
             try {
               transaction.update(jobHeaderRef, {
-                status: 'completed',
+                status: 'job-validation',
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
               });
@@ -1031,14 +1028,14 @@ function WorkerDashboard() {
           await notifications.create({
             module: 'job',
             target: ['admin', 'supervisor'],
-            title: 'Job completed',
-            message: `Job (#${id}) has been marked as "completed" by ${auth.currentUser.displayName}.`,
+            title: 'Job finished',
+            message: `Job (#${id}) has been finished by ${auth.currentUser.displayName}.`,
             data: {
               redirectUrl: `/jobs/view/${id}`,
             },
           });
 
-          toast.success('Job has been completed successfully.', { position: 'top-right' });
+          toast.success('Job has been finished successfully.', { position: 'top-right' });
           setIsLoading(false);
           console.log('stop timer..');
         } catch (error) {
@@ -1116,43 +1113,13 @@ function WorkerDashboard() {
           subtitle="Welcome back! Here's what's happening with your work."
         />
 
-        {/* //* notifications */}
-        {/* <div className='bg-white rounded p-4'>
-        <h5 className='mb-3'>Recent Notifications</h5>
-        <div className='list-group list-group-flush'>
-          <div className='list-group-item d-flex align-items-center border-0 px-0'>
-            <div className='bg-info-soft p-2 rounded me-3'>
-              <Bell size={16} className='text-info' />
-            </div>
-            <div className='flex-grow-1'>
-              <p className='mb-0'>New job has been assigned</p>
-              <small className='text-muted'>2 hours ago</small>
-            </div>
-            <button className='btn btn-sm btn-light'>View</button>
-          </div>
-
-          <div className='list-group-item d-flex align-items-center border-0 px-0'>
-            <div className='bg-success-soft p-2 rounded me-3'>
-              <Bell size={16} className='text-success' />
-            </div>
-
-            <div className='flex-grow-1'>
-              <p className='mb-0'>Job has been completed</p>
-              <small className='text-muted'>1 hour ago</small>
-            </div>
-            <button className='btn btn-sm btn-light'>View</button>
-          </div>
-        </div>
-      </div> */}
-
         <Row className='row-gap-4'>
           {stats.map((stat, i) => {
             const Icon = stat.icon;
 
-            return stat.id !== 'current-job' ||
-              (stat.id === 'current-job' && stat.value && stat.value !== 'N/A') ? (
+            return (
               <Col
-                md={stat.width}
+                lg={stat.width}
                 key={`${stat.id}-${stat.title}`}
                 style={{ cursor: 'pointer' }}
                 onClick={() => setFilterBasedOnStat(stat)}
@@ -1161,7 +1128,7 @@ function WorkerDashboard() {
                   className={`bg-${
                     activeFilterId !== stat.id ? stat.color : 'primary-subtle'
                   } rounded`}
-                  style={{ height: 5 }}
+                  style={{ height: 8 }}
                 />
 
                 <div
@@ -1172,13 +1139,17 @@ function WorkerDashboard() {
                   <div className='d-flex justify-content-between align-items-center mb-3'>
                     <div className='d-flex align-items-center'>
                       <Icon size={18} className={`text-${stat.color} me-2`} />
-                      <span className='text-muted small'>{stat.title}</span>
+                      <span
+                        className={`small fw-semibold py-1 px-2 text-${stat.color} bg-${stat.color}-soft rounded-3`}
+                      >
+                        {stat.title}
+                      </span>
                     </div>
 
                     <div>
                       {/* {stat.id == 'current-job' && stat.value && stat.value !== 'N/A' && (
-                        <JobTimer job={stat.job} workerId={stat.workerId} auth={auth} />
-                      )} */}
+                      <JobTimer job={stat.job} workerId={stat.workerId} auth={auth} />
+                    )} */}
                     </div>
                   </div>
 
@@ -1192,7 +1163,7 @@ function WorkerDashboard() {
                   )}
                 </div>
               </Col>
-            ) : null;
+            );
           })}
         </Row>
 

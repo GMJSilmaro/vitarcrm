@@ -10,7 +10,7 @@ import {
   ArrowLeftShort,
   BriefcaseFill,
   HouseDoorFill,
-  PlusCircle,
+  PlusCircleFill,
   Speedometer,
 } from 'react-bootstrap-icons';
 
@@ -83,14 +83,14 @@ const CreateCalibration = () => {
           {
             text: 'Create Calibration',
             link: `/jobs/${jobId}/calibrations/create`,
-            icon: <PlusCircle className='me-2' size={14} />,
+            icon: <PlusCircleFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: `Back to Job #${jobId} Calibrations List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back to Job #${jobId} Calibrations`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push(`/jobs/${jobId}/calibrations`),
           },
         ]}

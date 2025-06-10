@@ -33,7 +33,7 @@ const JobSchedulingForm = ({
   const [workersOptions, setWorkersOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
   const [prioritiesOptions] = useState(PRIORITY_LEVELS.map((prority) => ({ value: prority, label: _.capitalize(prority) }))); //prettier-ignore
   const [scopesOptions] = useState(SCOPE_TYPE.map((scope) => ({ value: scope, label: _.capitalize(scope) }))); //prettier-ignore
-  const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.capitalize(status) }))); //prettier-ignore
+  const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.startCase(status) }))); //prettier-ignore
   const [teamOptions] = useState([{ value: 'individual', label: 'Individual' }]);
 
   //* query workers
@@ -132,7 +132,7 @@ const JobSchedulingForm = ({
   //* set status value
   useEffect(() => {
     // form.setValue('team', teamOptions[0]);
-    if (!data) form.setValue('status', statusesOptions[1]);
+    if (!data) form.setValue('status', statusesOptions[0]);
     else {
       const selectedStatus = statusesOptions.find((s) => s.value === data.status);
       form.setValue('status', selectedStatus);
@@ -200,7 +200,7 @@ const JobSchedulingForm = ({
 
       //* set status
       if (statusesOptions.length > 0) {
-        form.setValue('status', statusesOptions[1]);
+        form.setValue('status', statusesOptions[0]);
       }
 
       //* set description

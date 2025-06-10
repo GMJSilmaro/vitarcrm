@@ -2,15 +2,8 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import UserForm from '@/sub-components/dashboard/worker/UserForm';
 import { GeeksSEO } from '@/widgets';
 import { useRouter } from 'next/router';
-import React from 'react';
 import { Card } from 'react-bootstrap';
-import {
-  ArrowLeftShort,
-  HouseDoorFill,
-  People,
-  PeopleFill,
-  PlusCircle,
-} from 'react-bootstrap-icons';
+import { ArrowLeftShort, HouseDoorFill, PeopleFill, PlusCircleFill } from 'react-bootstrap-icons';
 
 const CreateUser = () => {
   const router = useRouter();
@@ -29,7 +22,7 @@ const CreateUser = () => {
           {
             text: 'Dashboard',
             link: '/',
-            icon: <HouseDoorFill className='me-2' />,
+            icon: <HouseDoorFill className='me-2' size={14} />,
           },
           {
             text: 'Technicians',
@@ -38,14 +31,14 @@ const CreateUser = () => {
           },
           {
             text: 'Create Technician',
-            icon: <PlusCircle className='me-2' size={14} />,
+            icon: <PlusCircleFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: `Back to Technician List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push(`/workers`),
           },
         ]}

@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-table';
 import DataTableColumnHeader from '../../../../components/common/DataTableColumnHeader';
 import { useEffect, useMemo, useState } from 'react';
-import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
+import { dateFilter, dateSort, fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import { useRouter } from 'next/router';
 import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
@@ -22,6 +22,7 @@ import DataTableFilter from '@/components/common/DataTableFilter';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import _ from 'lodash';
+import { format } from 'date-fns';
 
 const EquipmentsTab = () => {
   const router = useRouter();
@@ -53,12 +54,12 @@ const EquipmentsTab = () => {
           );
         },
       }),
-      columnHelper.accessor('make', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
-      }),
-      columnHelper.accessor('model', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Model' />,
-      }),
+      // columnHelper.accessor('make', {
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
+      // }),
+      // columnHelper.accessor('model', {
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Model' />,
+      // }),
       columnHelper.accessor('serialNumber', {
         id: 'serial number',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Serial Number' />,
@@ -78,6 +79,50 @@ const EquipmentsTab = () => {
         id: 'unit',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Unit' />,
       }),
+      columnHelper.accessor(
+        (row) => (row.original?.dueDate ? format(row.original.dueDate, 'dd-MM-yyyy') : ''),
+        {
+          id: 'due date',
+          header: ({ column }) => <DataTableColumnHeader column={column} title='Due Date' />,
+          cell: ({ row }) => {
+            const dueDate = row.original?.dueDate;
+            if (!dueDate) return null;
+            return <div>{format(dueDate, 'dd-MM-yyyy')}</div>;
+          },
+          filterFn: (row, columnId, filterValue, addMeta) => {
+            const dueDate = row.original?.dueDate;
+            const filterDateValue = new Date(filterValue);
+            return dateFilter(dueDate, filterDateValue);
+          },
+          sortingFn: (rowA, rowB, columnId) => {
+            const rowADueDate = rowA.original?.dueDate;
+            const rowBDueDate = rowB.original?.dueDate;
+            return dateSort(rowADueDate, rowBDueDate);
+          },
+        }
+      ),
+      columnHelper.accessor(
+        (row) => (row.original?.calDate ? format(row.original.calDate, 'dd-MM-yyyy') : ''),
+        {
+          id: 'cal date',
+          header: ({ column }) => <DataTableColumnHeader column={column} title='Cal Date' />,
+          cell: ({ row }) => {
+            const calDate = row.original?.calDate;
+            if (!calDate) return null;
+            return <div>{format(calDate, 'dd-MM-yyyy')}</div>;
+          },
+          filterFn: (row, columnId, filterValue, addMeta) => {
+            const calDate = row.original?.calDate;
+            const filterDateValue = new Date(filterValue);
+            return dateFilter(calDate, filterDateValue);
+          },
+          sortingFn: (rowA, rowB, columnId) => {
+            const rowACalDate = rowA.original?.calDate;
+            const rowBCalDate = rowB.original?.calDate;
+            return dateSort(rowACalDate, rowBCalDate);
+          },
+        }
+      ),
       columnHelper.accessor('notes', {
         header: ({ column }) => <DataTableColumnHeader column={column} title='Notes' />,
       }),
@@ -177,18 +222,18 @@ const EquipmentsTab = () => {
         type: 'text',
         placeholder: 'Search by description...',
       },
-      {
-        label: 'Make',
-        columnId: 'make',
-        type: 'text',
-        placeholder: 'Search by make...',
-      },
-      {
-        label: 'Model',
-        columnId: 'model',
-        type: 'text',
-        placeholder: 'Search by model...',
-      },
+      // {
+      //   label: 'Make',
+      //   columnId: 'make',
+      //   type: 'text',
+      //   placeholder: 'Search by make...',
+      // },
+      // {
+      //   label: 'Model',
+      //   columnId: 'model',
+      //   type: 'text',
+      //   placeholder: 'Search by model...',
+      // },
       {
         label: 'Serial Number',
         columnId: 'serial number',

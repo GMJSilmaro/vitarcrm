@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { Calendar, Clock, ExclamationOctagon, Hash, People, Person } from 'react-bootstrap-icons';
 const { Row, Col, Card } = require('react-bootstrap');
 
@@ -76,8 +77,8 @@ const SchedulingTab = ({ job }) => {
                   </div>
                   <div>
                     <div className='text-secondary fs-6'>Status:</div>
-                    <div className='text-primary-label fw-semibold text-capitalize'>
-                      {job?.status || 'N/A'}
+                    <div className='text-primary-label fw-semibold'>
+                      {job?.status ? _.startCase(job?.status) : 'N/A'}
                     </div>
                   </div>
                 </div>

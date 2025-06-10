@@ -31,6 +31,7 @@ import {
   Table,
   Gear,
   BoxSeam,
+  BoxSeamFill,
 } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -534,8 +535,8 @@ const CUSWDList = () => {
       <ContentHeader
         title='Correction, Uncertainty of the Standard Weight & Drift'
         description='Create, manage all your calibration references in one centralize dashboard'
-        badgeText='Calibration References'
-        badgeText2='Reference Data Management'
+        badgeText='Calibration References Data Management'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -549,8 +550,8 @@ const CUSWDList = () => {
           },
           {
             text: 'Mass',
-            link: '/calibration-references/mass/cuswd',
-            icon: <BoxSeam className='me-2' size={14} />,
+            link: '/#',
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'Correction, Uncertainty of the Standard Weight & Drift',

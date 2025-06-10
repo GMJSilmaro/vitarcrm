@@ -50,6 +50,7 @@ import toast from 'react-hot-toast';
 import withReactContent from 'sweetalert2-react-content';
 import { useNotifications } from '@/hooks/useNotifications';
 import { deleteObject, listAll, ref } from 'firebase/storage';
+import { STATUS, STATUS_COLOR } from '@/schema/job-request';
 
 const JobRequestList = () => {
   const router = useRouter();
@@ -118,22 +119,13 @@ const JobRequestList = () => {
         cell: ({ row }) => {
           const status = row?.original?.status;
 
-          const colors = {
-            created: 'warning',
-            approved: 'success',
-            cancelled: 'danger',
-            incomplete: 'secondary',
-          };
-
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
-              <Badge className='text-capitalize' bg={colors[status] || 'secondary'}>
-                {status}
-              </Badge>
+              <Badge bg={STATUS_COLOR[status] || 'secondary'}>{_.startCase(status)}</Badge>
 
-              {(status === 'cancelled' || status === 'incomplete') && (
+              {(status === 'request-cancelled' || status === 'request-resubmit') && (
                 <span className='fw-medium fst-italic'>
-                  "{row.original.cancelledMessage || 'N/A'}"
+                  "{row.original.reasonMessage || 'N/A'}"
                 </span>
               )}
             </div>
@@ -173,7 +165,6 @@ const JobRequestList = () => {
         enableSorting: false,
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
-          const [cancelledMessage, setCancelledMessage] = useState('');
 
           const { id } = row.original;
 
@@ -248,7 +239,7 @@ const JobRequestList = () => {
           };
 
           const handleUpdateJobRequestStatus = (id, status) => {
-            if (status === 'cancelled' || status === 'incomplete') {
+            if (status === 'request-cancelled' || status === 'request-resubmit') {
               withReactContent(Swal)
                 .fire({
                   title: `Job Request Status Update - Job Request #${id}`,
@@ -274,7 +265,7 @@ const JobRequestList = () => {
                           type='text'
                           as='textarea'
                           rows={4}
-                          placeholder='Enter a message/reason for the cancelled job request..'
+                          placeholder='Enter a message/reason'
                         />
                       </div>
                     </div>
@@ -294,7 +285,7 @@ const JobRequestList = () => {
                       await Promise.all([
                         updateDoc(jobRequestRef, {
                           status,
-                          cancelledMessage: value,
+                          reasonMessage: value,
                           updatedAt: serverTimestamp(),
                           updatedBy: auth.currentUser,
                         }),
@@ -347,7 +338,7 @@ const JobRequestList = () => {
                   await Promise.all([
                     updateDoc(jobRequestRef, {
                       status,
-                      cancelledMessage: null,
+                      reasonMessage: null,
                       updatedAt: serverTimestamp(),
                       updatedBy: auth.currentUser,
                     }),
@@ -368,7 +359,7 @@ const JobRequestList = () => {
                   });
                   setIsLoading(false);
 
-                  if (status === 'approved') {
+                  if (status === 'request-approved') {
                     setTimeout(() => {
                       window.location.assign(`/jobs/create?jobRequestId=${id}`);
                     }, 1500);
@@ -406,26 +397,26 @@ const JobRequestList = () => {
                     <OverlayTrigger
                       rootClose
                       trigger='click'
-                      placement='right-end'
+                      placement='left'
                       overlay={
                         <Dropdown.Menu show style={{ zIndex: 999 }}>
                           <Dropdown.Item
-                            onClick={() => handleUpdateJobRequestStatus(id, 'approved')}
+                            onClick={() => handleUpdateJobRequestStatus(id, 'request-approved')}
                           >
                             <HandThumbsUp className='me-2' size={16} />
-                            Approved
+                            Request Approved
                           </Dropdown.Item>
                           <Dropdown.Item
-                            onClick={() => handleUpdateJobRequestStatus(id, 'cancelled')}
+                            onClick={() => handleUpdateJobRequestStatus(id, 'request-cancelled')}
                           >
                             <HandThumbsDown className='me-2' size={16} />
-                            Cancelled
+                            Request Cancelled
                           </Dropdown.Item>
                           <Dropdown.Item
-                            onClick={() => handleUpdateJobRequestStatus(id, 'incomplete')}
+                            onClick={() => handleUpdateJobRequestStatus(id, 'request-resubmit')}
                           >
                             <CircleHalf className='me-2' size={16} />
-                            Incomplete
+                            Request Resubmit
                           </Dropdown.Item>
                         </Dropdown.Menu>
                       }
@@ -467,9 +458,7 @@ const JobRequestList = () => {
         type: 'select',
         options: [
           { label: 'All Status', value: '' },
-          { label: 'Created', value: 'created' },
-          { label: 'Cancelled', value: 'cancelled' },
-          { label: 'Incomplete', value: 'incomplete' },
+          ...STATUS.map((s) => ({ label: _.startCase(s), value: s })).filter(o => o.value !== 'request-approved'), // prettier-ignore
         ],
       },
 
@@ -506,10 +495,7 @@ const JobRequestList = () => {
   });
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'jobRequests'),
-      where('status', 'not-in', ['approved', 'cancelled'])
-    );
+    const q = query(collection(db, 'jobRequests'), where('status', 'not-in', ['request-approved']));
 
     const unsubscribe = onSnapshot(
       q,
@@ -546,8 +532,8 @@ const JobRequestList = () => {
         title='Job Request List'
         description='Create, manage and tract all your jobs requests in one centralize dashboard'
         infoText='Manage job requests, view job request and update status'
-        badgeText='Job Requests Management'
-        badgeText2='Job Requests'
+        badgeText='Job Request Management'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
             text: 'Dashboard',

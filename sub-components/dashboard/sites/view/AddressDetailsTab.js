@@ -62,7 +62,7 @@ const AddressDetailsTab = ({ site }) => {
                           </Col>
 
                           <Col lg={4}>
-                            <div className='text-secondary fs-6'>Province:</div>
+                            <div className='text-secondary fs-6'>State:</div>
                             <div className='text-primary-label fw-semibold'>
                               {address.province || 'N/A'}
                             </div>

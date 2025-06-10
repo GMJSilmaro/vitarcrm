@@ -7,7 +7,7 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
-import { CATEGORY, STATUS } from '@/schema/calibration';
+import { CATEGORY, STATUS, STATUS_COLOR } from '@/schema/calibration';
 import { titleCase } from '@/utils/common';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
@@ -105,21 +105,15 @@ const JobCalibration = () => {
         cell: ({ row }) => {
           const status = row?.original?.status;
 
-          const colors = {
-            'for validation': 'success',
-            rejected: 'danger',
-            resubmission: 'warning',
-            completed: 'purple',
-          };
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
-              <Badge className='text-capitalize' bg={colors[status] || 'secondary'}>
-                {status}
+              <Badge className='text-capitalize' bg={STATUS_COLOR[status] || 'secondary'}>
+                {_.startCase(status)}
               </Badge>
 
-              {status === 'rejected' && (
+              {status === 'data-rejected' && (
                 <span className='fw-medium fst-italic'>
-                  "{row.original.rejectedMessage || 'N/A'}"
+                  "{row.original.reasonMessage || 'N/A'}"
                 </span>
               )}
             </div>
@@ -259,7 +253,7 @@ const JobCalibration = () => {
           };
 
           const handleUpdateCalibrationStatus = (id, status, calibratedBy) => {
-            if (status === 'rejected') {
+            if (status === 'data-rejected') {
               withReactContent(Swal)
                 .fire({
                   title: `Calibration Status Update - Calibration #${id}`,
@@ -305,7 +299,7 @@ const JobCalibration = () => {
                       await Promise.all([
                         updateDoc(calibrationRef, {
                           status,
-                          rejectedMessage: value,
+                          reasonMessage: value,
                           updatedAt: serverTimestamp(),
                           updatedBy: auth.currentUser,
                         }),
@@ -360,6 +354,7 @@ const JobCalibration = () => {
                   await Promise.all([
                     updateDoc(jobCalibrationRef, {
                       status,
+                      reasonMessage: null,
                       updatedAt: serverTimestamp(),
                       updatedBy: auth.currentUser,
                     }),
@@ -414,33 +409,33 @@ const JobCalibration = () => {
                   <OverlayTrigger
                     rootClose
                     trigger='click'
-                    placement='right-end'
+                    placement='left'
                     overlay={
                       <Dropdown.Menu show style={{ zIndex: 999 }}>
                         <Dropdown.Item
                           onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'for validation', calibratedBy);
+                            handleUpdateCalibrationStatus(id, 'data-validation', calibratedBy);
                           }}
                         >
                           <CheckCircle className='me-2' size={16} />
-                          For Validation
+                          Data Validation
                         </Dropdown.Item>
 
                         <Dropdown.Item
                           onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'rejected', calibratedBy);
+                            handleUpdateCalibrationStatus(id, 'data-rejected', calibratedBy);
                           }}
                         >
                           <HandThumbsDown className='me-2' size={16} />
-                          Rejected
+                          Data Rejected
                         </Dropdown.Item>
                         <Dropdown.Item
                           onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'completed', calibratedBy);
+                            handleUpdateCalibrationStatus(id, 'cert-complete', calibratedBy);
                           }}
                         >
                           <ShieldCheck className='me-2' size={16} />
-                          Completed
+                          Cert Complete
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     }
@@ -505,7 +500,7 @@ const JobCalibration = () => {
         options: [
           { label: 'All Status', value: '' },
           ...STATUS.map((s) => ({
-            label: titleCase(s),
+            label: _.startCase(s),
             value: s,
           })),
         ],
@@ -588,8 +583,8 @@ const JobCalibration = () => {
         title={`Job #${jobId} Calibrations List`}
         description='Create, manage and tract all your jobs calibrations in once centralize dashboard'
         infoText='Manage job calibrations, view results and Reprint Certificates'
-        badgeText='Job Calibration Management'
-        badgeText2='Calibration'
+        badgeText='Calibration Management'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -610,7 +605,7 @@ const JobCalibration = () => {
         actionButtons={[
           {
             text: `Add calibration for Job #${jobId}`,
-            icon: <Plus size={16} />,
+            icon: <Plus size={20} />,
             variant: 'light',
             onClick: () => router.push(`/jobs/${jobId}/calibrations/create`),
           },

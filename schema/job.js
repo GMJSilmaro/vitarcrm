@@ -1,16 +1,31 @@
 import { z } from 'zod';
 
 export const PRIORITY_LEVELS = ['normal', 'urgent'];
+export const PRIORITY_LEVELS_COLOR = {
+  normal: 'secondary',
+  urgent: 'warning',
+};
 export const SCOPE_TYPE = ['lab', 'site'];
+export const SCOPE_TYPE_COLOR = {
+  lab: 'info',
+  site: 'warning',
+};
 export const STATUS = [
-  'created',
-  'confirmed',
-  'in progress',
-  'completed',
-  'cancelled',
-  'rejected',
-  'validated',
+  'job-confirm',
+  'job-in-progress',
+  'job-validation',
+  'job-cancel',
+  'job-complete',
+  'job-reschedule',
 ];
+export const STATUS_COLOR = {
+  'job-confirm': 'info',
+  'job-in-progress': 'primary',
+  'job-validation': 'success',
+  'job-cancel': 'danger',
+  'job-complete': 'purple',
+  'job-reschedule': 'warning',
+};
 
 //* Role
 //* - Admin
@@ -125,7 +140,7 @@ export const summarySchema = z.object({
 
 export const taskSchema = z.object({
   name: z.string().min(1, { message: 'Task title is required.' }),
-  description: z.string().min(1, { message: 'Task description is required.' }),
+  description: z.string().default(''),
   isCompleted: z.boolean().default(false),
   isPriority: z.boolean().default(false),
 });

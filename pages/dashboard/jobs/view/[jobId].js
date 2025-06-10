@@ -1,8 +1,8 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
-import CmrPDF from '@/components/pdf/CmrPDF';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import { STATUS_COLOR } from '@/schema/job';
 import CalibrationChecklist from '@/sub-components/dashboard/jobs/view/CalibrationChecklist';
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
@@ -13,25 +13,29 @@ import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
 import TaskTab from '@/sub-components/dashboard/jobs/view/TaskTab';
 import { GeeksSEO } from '@/widgets';
-import { PDFViewer } from '@react-pdf/renderer';
 import {
   collection,
   doc,
   getDoc,
   getDocs,
-  onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   updateDoc,
   where,
 } from 'firebase/firestore';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { BriefcaseFill, ShieldCheck } from 'react-bootstrap-icons';
+import {
+  ArrowLeftShort,
+  BriefcaseFill,
+  EyeFill,
+  HouseFill,
+  PencilSquare,
+  ShieldCheck,
+} from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
-import { FaArrowLeft } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 const JobDetails = () => {
@@ -55,12 +59,12 @@ const JobDetails = () => {
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
   const [users, setUsers] = useState({ data: [], isLoading: true, isError: false });
 
-  const handleUpdateToValidated = async (id, setIsLoading) => {
+  const handleUpdateToComplete = async (id, setIsLoading) => {
     if (!id) return;
 
     Swal.fire({
       title: `Job Status Update - Job #${id}`,
-      text: `Are you sure you want to update the job status to "Validated"?`,
+      text: `Are you sure you want to update the job status to "Job Complete"?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Confirm',
@@ -78,7 +82,7 @@ const JobDetails = () => {
 
           await Promise.all([
             updateDoc(jobHeaderRef, {
-              status: 'validated',
+              status: 'job-complete',
               updatedAt: serverTimestamp(),
               updatedBy: auth.currentUser,
             }),
@@ -87,7 +91,7 @@ const JobDetails = () => {
               module: 'job',
               target: ['admin', 'supervisor'],
               title: 'Job status updated',
-              message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "Validated".`, //prettier-ignore
+              message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "Job Complete".`, //prettier-ignore
               data: {
                 redirectUrl: `/jobs/view/${id}`,
               },
@@ -436,12 +440,12 @@ const JobDetails = () => {
         title={`View Details for Job #${job.id}`}
         description='View comprehensive job details including job summary, tasks and schedules'
         badgeText='Job Management'
-        badgeText2='Jobs'
+        badgeText2='View Job'
         breadcrumbItems={[
           {
             text: 'Dashboard',
             link: '/',
-            icon: <i className='fe fe-home' style={{ marginRight: '8px' }} />,
+            icon: <HouseFill className='me-2' size={14} />,
           },
           {
             text: 'Job List',
@@ -450,31 +454,40 @@ const JobDetails = () => {
           },
           {
             text: `View ${job.id}`,
-            icon: <i className='fe fe-user' style={{ marginRight: '8px' }} />,
+            icon: <EyeFill className='me-2' size={14} />,
+          },
+        ]}
+        customBadges={[
+          {
+            label: _.startCase(job?.status),
+            color: STATUS_COLOR[job?.status] || 'secondary',
           },
         ]}
         actionButtons={[
           {
-            text: 'Back to Job List',
-            icon: <FaArrowLeft size={16} />,
-            variant:
-              (auth.role === 'admin' || auth.role === 'supervisor') &&
-              job &&
-              job.status !== 'validated'
-                ? 'outline-primary'
-                : 'light',
-            tooltip: 'Back to Job List',
-            onClick: () => router.push('/jobs'),
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push(`/jobs`),
           },
-          ...((auth.role === 'admin' || auth.role === 'supervisor') &&
-          job &&
-          job.status !== 'validated'
+        ]}
+        dropdownItems={[
+          ...(auth.role === 'admin' || auth.role === 'supervisor'
             ? [
                 {
-                  text: 'Validate Job',
-                  variant: 'light',
-                  icon: <ShieldCheck size={14} />,
-                  onClick: (args) => handleUpdateToValidated(jobId, args.setIsLoading),
+                  label: 'Edit Job',
+                  icon: PencilSquare,
+                  onClick: () => router.push(`/jobs/edit-jobs/${jobId}`),
+                },
+              ]
+            : []),
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && job && job.status === 'job-validation'
+            ? [
+                {
+                  label: 'Validate Job',
+                  icon: ShieldCheck,
+                  onClick: (args) => handleUpdateToComplete(jobId, args.setIsLoading),
                 },
               ]
             : []),

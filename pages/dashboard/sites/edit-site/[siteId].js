@@ -6,7 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Card, Spinner } from 'react-bootstrap';
-import { BuildingFill, HouseFill, PencilFill, Plus } from 'react-bootstrap-icons';
+import { ArrowLeftShort, BuildingFill, Eye, HouseFill, PencilFill } from 'react-bootstrap-icons';
 
 const EditSite = () => {
   const router = useRouter();
@@ -97,10 +97,17 @@ const EditSite = () => {
         ]}
         actionButtons={[
           {
-            text: 'Create Site',
-            icon: <Plus className='flex-shrink-0' size={24} />,
-            variant: 'light',
-            onClick: () => router.push('/sites/create'),
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push('/sites'),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'View Site',
+            icon: Eye,
+            onClick: () => router.push(`/sites/view/${siteId}`),
           },
         ]}
       />

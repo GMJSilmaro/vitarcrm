@@ -541,7 +541,7 @@ const TechnicianList = () => {
         description='Manage and track all your workers in one centralized dashboard'
         infoText='Track worker availability, skills, and performance metrics'
         badgeText='Technician Management'
-        badgeText2='Workforce'
+        badgeText2='Listing'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -556,7 +556,7 @@ const TechnicianList = () => {
         ]}
         actionButtons={[
           {
-            text: 'Add New Technician',
+            text: 'Create Technician',
             icon: <Plus size={20} />,
             variant: 'light',
             onClick: () => router.push('/workers/create'),

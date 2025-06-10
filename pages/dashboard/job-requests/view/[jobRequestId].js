@@ -2,6 +2,7 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import { STATUS_COLOR } from '@/schema/job-request';
 import CmrSummary from '@/sub-components/dashboard/job-requests/view/CmrSummary';
 import CustomerEquipment from '@/sub-components/dashboard/job-requests/view/CustomerEquipment';
 import Documents from '@/sub-components/dashboard/job-requests/view/Documents';
@@ -18,12 +19,19 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
-import { BriefcaseFill, HandThumbsUp } from 'react-bootstrap-icons';
+import {
+  ArrowLeftShort,
+  BriefcaseFill,
+  EyeFill,
+  HandThumbsUp,
+  HouseFill,
+  PencilSquare,
+} from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
-import { FaArrowLeft } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 const JobRequestDetails = () => {
@@ -37,9 +45,17 @@ const JobRequestDetails = () => {
   const [error, setError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('0');
-  const [customer, setCustomer] = useState({ data: {}, isLoading: true, isError: false });
+  const [customer, setCustomer] = useState({
+    data: {},
+    isLoading: true,
+    isError: false,
+  });
   const [contact, setContact] = useState();
-  const [location, setLocation] = useState({ data: {}, isLoading: true, isError: false });
+  const [location, setLocation] = useState({
+    data: {},
+    isLoading: true,
+    isError: false,
+  });
   const [customerEquipments, setCustomerEquipments] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
 
   const handleApprovedJobRequest = (id, setIsLoading) => {
@@ -64,8 +80,8 @@ const JobRequestDetails = () => {
 
             await Promise.all([
               updateDoc(jobRequestRef, {
-                status: 'approved',
-                cancelledMessage: null,
+                status: 'request-approved',
+                reasonMessage: null,
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
               }),
@@ -139,7 +155,9 @@ const JobRequestDetails = () => {
 
     Promise.all([
       getDoc(doc(db, 'customers', jobRequest?.customer?.id)),
-      jobRequest?.contact?.id ? getDoc(doc(db, 'contacts', jobRequest?.contact?.id)) : undefined,
+      jobRequest?.contact?.id
+        ? getDoc(doc(db, 'contacts', jobRequest?.contact?.id))
+        : undefined,
       getDocs(
         query(
           collection(db, 'customerEquipments'),
@@ -147,32 +165,34 @@ const JobRequestDetails = () => {
         )
       ),
     ])
-      .then(([customerSnapshot, contactSnapshot, customerEquipmentSnapshot]) => {
-        const customerData = customerSnapshot.data();
-        const customerEquipmentSnapshotData = !customerEquipmentSnapshot.empty ? customerEquipmentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
+      .then(
+        ([customerSnapshot, contactSnapshot, customerEquipmentSnapshot]) => {
+          const customerData = customerSnapshot.data();
+          const customerEquipmentSnapshotData = !customerEquipmentSnapshot.empty ? customerEquipmentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
 
-        if (customerSnapshot.exists) {
-          setCustomer({
-            data: {
-              id: customerSnapshot.id,
-              ...customerData,
-              equipments: customerEquipmentSnapshotData,
-            },
-            isLoading: false,
-            isError: false,
-          });
-        } else setCustomer({ data: {}, isLoading: false, isError: false });
+          if (customerSnapshot.exists) {
+            setCustomer({
+              data: {
+                id: customerSnapshot.id,
+                ...customerData,
+                equipments: customerEquipmentSnapshotData,
+              },
+              isLoading: false,
+              isError: false,
+            });
+          } else setCustomer({ data: {}, isLoading: false, isError: false });
 
-        if (
-          jobRequest?.contact &&
-          Array.isArray(customerData.contacts) &&
-          customerData.contacts.length > 0 &&
-          contactSnapshot.exists()
-        ) {
-          const contactData = contactSnapshot.data();
-          setContact(contactData);
+          if (
+            jobRequest?.contact &&
+            Array.isArray(customerData.contacts) &&
+            customerData.contacts.length > 0 &&
+            contactSnapshot.exists()
+          ) {
+            const contactData = contactSnapshot.data();
+            setContact(contactData);
+          }
         }
-      })
+      )
       .catch((err) => {
         console.error(err.message);
         setCustomer({ data: {}, isLoading: false, isError: true });
@@ -219,12 +239,17 @@ const JobRequestDetails = () => {
 
   //* query customer equipments
   useEffect(() => {
-    if (jobRequest?.customerEquipments?.length < 1 || !jobRequest?.customer?.id) {
+    if (
+      jobRequest?.customerEquipments?.length < 1 ||
+      !jobRequest?.customer?.id
+    ) {
       setCustomerEquipments({ data: [], isLoading: false, isError: false });
       return;
     }
 
-    const customerEquipmentsIds = jobRequest?.customerEquipments?.map((ce) => ce.id) || [''];
+    const customerEquipmentsIds = jobRequest?.customerEquipments?.map(
+      (ce) => ce.id
+    ) || [''];
 
     Promise.all([
       ...customerEquipmentsIds
@@ -254,7 +279,10 @@ const JobRequestDetails = () => {
 
   if (isLoading) {
     return (
-      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
+      <div
+        className='d-flex justify-content-center align-items-center'
+        style={{ height: '100vh' }}
+      >
         <Spinner animation='border' variant='primary' />
         <span className='ms-3'>Loading Job Request...</span>
       </div>
@@ -270,7 +298,10 @@ const JobRequestDetails = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <button className='btn btn-primary' onClick={() => router.push('/jobs')}>
+          <button
+            className='btn btn-primary'
+            onClick={() => router.push('/jobs')}
+          >
             Back to Jobs Request List
           </button>
         </div>
@@ -298,18 +329,20 @@ const JobRequestDetails = () => {
 
   return (
     <>
-      <GeeksSEO title={`View Details for Job Request #${jobRequest.id} | VITAR Group`} />
+      <GeeksSEO
+        title={`View Details for Job Request #${jobRequest.id} | VITAR Group`}
+      />
 
       <ContentHeader
         title={`View Details for Job Request #${jobRequest.id}`}
         description='View comprehensive details about the job request'
         badgeText='Job Request Management'
-        badgeText2='Job Requests'
+        badgeText2='View Job Request'
         breadcrumbItems={[
           {
             text: 'Dashboard',
             link: '/',
-            icon: <i className='fe fe-home' style={{ marginRight: '8px' }} />,
+            icon: <HouseFill className='me-2' size={14} />,
           },
           {
             text: 'Job Requests',
@@ -318,23 +351,36 @@ const JobRequestDetails = () => {
           },
           {
             text: `View ${jobRequest.id}`,
-            icon: <i className='fe fe-user' style={{ marginRight: '8px' }} />,
+            icon: <EyeFill className='me-2' size={14} />,
+          },
+        ]}
+        customBadges={[
+          {
+            label: _.startCase(jobRequest?.status),
+            color: STATUS_COLOR[jobRequest?.status] || 'secondary',
           },
         ]}
         actionButtons={[
           {
-            text: 'Back to Job Requests List',
-            icon: <FaArrowLeft size={16} />,
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
             variant: 'outline-primary',
-            tooltip: 'Back to Job Requests List',
-            onClick: () => router.push('/job-requests'),
+            onClick: () => router.push(`/job-requests`),
           },
-          ...(auth.role === 'admin' || auth.role === 'supervisor'
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit Job Request',
+            icon: PencilSquare,
+            onClick: () =>
+              router.push(`/job-requests/edit-job-requests/${jobRequestId}`),
+          },
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-approved'
             ? [
                 {
-                  text: 'Approved Job Request',
-                  variant: 'light',
-                  icon: <HandThumbsUp size={14} />,
+                  label: 'Approved Job Request',
+                  icon: HandThumbsUp,
                   onClick: (args) => handleApprovedJobRequest(jobRequestId, args.setIsLoading),
                 },
               ]

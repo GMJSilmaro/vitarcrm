@@ -28,4 +28,6 @@ export const customerEquipmentSchema = z.object({
   uom: z.string().default(''),
   tolerance: z.string().default(''),
   notes: z.string().default(''),
+  dueDate: z.string().default(''),
+  calDate: z.string().default(''),
 });
