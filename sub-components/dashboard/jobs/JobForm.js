@@ -53,7 +53,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const notifications = useNotifications();
 
   const router = useRouter();
-  const { workerId } = router.query;
+  const { workerId, tab } = router.query;
   const [activeKey, setActiveKey] = useState('0');
 
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
@@ -126,7 +126,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
       const conflict = [];
       const constraints = [
         where('workers', 'array-contains', { id: workerId, name: workerName }),
-        where('status', 'in', ['created', 'confirmed', 'in progress']),
+        where('status', 'in', ['job-confirm', 'job-in-progress']),
       ];
 
       try {
@@ -541,6 +541,11 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
     return () => unsubscribe();
   }, [data]);
+
+  //* set active tab based on query "tab"
+  useEffect(() => {
+    if (tab) setActiveKey(tab);
+  }, [tab]);
 
   return (
     <>

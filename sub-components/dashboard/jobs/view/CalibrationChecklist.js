@@ -224,7 +224,7 @@ const CalibrationChecklist = ({ job, customer, users }) => {
       <Card.Header className='bg-transparent border-0 pt-4 pb-0 mb-4'>
         <div className='d-flex justify-content-between align-items-center'>
           <div>
-            <h4 className='mb-0'>Verified By</h4>
+            <h4 className='mb-0'>Verified by Lab In-charge</h4>
             <p className='text-muted fs-6 mb-0'>
               Details about checklist's verified by before and after calibration.
             </p>

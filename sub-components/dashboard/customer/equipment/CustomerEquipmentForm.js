@@ -314,39 +314,45 @@ const CustomerEquipmentForm = ({ data }) => {
                   name='tolerance'
                   control={form.control}
                   render={({ field }) => (
-                    <>
-                      <Form.Control {...field} id='tolerance' placeholder='Enter tolerance' />
-
-                      {formErrors && formErrors.tolerance?.message && (
-                        <Form.Text className='text-danger'>
-                          {formErrors.tolerance?.message}
-                        </Form.Text>
-                      )}
-                    </>
+                    <Form.Control {...field} id='tolerance' placeholder='Enter tolerance' />
                   )}
                 />
               </Form.Group>
 
+              <Form.Group as={Col} md={3}>
+                <Form.Label htmlFor='dueDate'>Due Date</Form.Label>
+
+                <Controller
+                  name='dueDate'
+                  control={form.control}
+                  render={({ field }) => <Form.Control {...field} id='dueDate' type='date' />}
+                />
+              </Form.Group>
+
+              <Form.Group as={Col} md={3}>
+                <Form.Label htmlFor='calDate'>Cal Date</Form.Label>
+
+                <Controller
+                  name='calDate'
+                  control={form.control}
+                  render={({ field }) => <Form.Control {...field} id='calDate' type='date' />}
+                />
+              </Form.Group>
+
               <Form.Group as={Col} md={6}>
-                <Form.Label htmlFor='uom'>Notes</Form.Label>
+                <Form.Label htmlFor='notes'>Notes</Form.Label>
 
                 <Controller
                   name='notes'
                   control={form.control}
                   render={({ field }) => (
-                    <>
-                      <Form.Control
-                        {...field}
-                        id='notes'
-                        as='textarea'
-                        rows={1}
-                        placeholder='Enter notes'
-                      />
-
-                      {formErrors && formErrors.notes?.message && (
-                        <Form.Text className='text-danger'>{formErrors.notes?.message}</Form.Text>
-                      )}
-                    </>
+                    <Form.Control
+                      {...field}
+                      id='notes'
+                      as='textarea'
+                      rows={1}
+                      placeholder='Enter notes'
+                    />
                   )}
                 />
               </Form.Group>

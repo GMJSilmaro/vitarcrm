@@ -5,16 +5,9 @@ import { GeeksSEO } from '@/widgets';
 import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Card, Spinner } from 'react-bootstrap';
-import {
-  ArrowLeftShort,
-  HouseDoorFill,
-  PencilFill,
-  People,
-  PeopleFill,
-  PlusCircle,
-} from 'react-bootstrap-icons';
+import { ArrowLeftShort, Eye, HouseDoorFill, PencilFill, PeopleFill } from 'react-bootstrap-icons';
 
 const EditUser = () => {
   const router = useRouter();
@@ -97,7 +90,8 @@ const EditUser = () => {
       <ContentHeader
         title='Edit Technician'
         description='Update technician personal, contact, and skill information'
-        badgeText='Edit Technician'
+        badgeText='Technician Management'
+        badgeText2='Edit Technician'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -116,10 +110,17 @@ const EditUser = () => {
         ]}
         actionButtons={[
           {
-            text: `Back to Technician List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push(`/workers`),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'View Technician',
+            icon: Eye,
+            onClick: () => router.push(`/workers/view/${uid}`),
           },
         ]}
       />

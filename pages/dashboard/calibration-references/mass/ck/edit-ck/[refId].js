@@ -10,6 +10,8 @@ import { Button, Card, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BoxSeam,
+  BoxSeamFill,
+  Eye,
   HouseDoorFill,
   ListColumns,
   PencilFill,
@@ -97,8 +99,8 @@ function EditCk() {
       <ContentHeader
         title='Edit CK'
         description='Edit CK information'
-        badgeText='Reference Data Management'
-        badgeText2='Edit References Data'
+        badgeText='Calibration References Data Management'
+        badgeText2='Edit Reference Data'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -113,7 +115,7 @@ function EditCk() {
           {
             text: 'Mass',
             link: '/calibration-references/mass/ck',
-            icon: <BoxSeam className='me-2' size={14} />,
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'CK',
@@ -129,10 +131,17 @@ function EditCk() {
         ]}
         actionButtons={[
           {
-            text: `Back to CK List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push('/calibration-references/mass/ck'),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'View CK',
+            icon: Eye,
+            onClick: () => router.push(`/calibration-references/mass/ck/view/${refId}`),
           },
         ]}
       />

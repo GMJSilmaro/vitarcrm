@@ -4,6 +4,7 @@ import {
   customerEquipmentSchema,
   documentsSchema,
   jobRequestSchema,
+  STATUS,
   summarySchema,
   taskSchema,
   tasksSchema,
@@ -47,7 +48,7 @@ const JobRequestForm = ({ data }) => {
     defaultValues: {
       ...getFormDefaultValues(schema),
       ...data,
-      ...(!data && { status: 'created' }),
+      ...(!data && { status: STATUS[0] }),
       customerEquipments: [],
       documents: [],
     },
@@ -86,6 +87,7 @@ const JobRequestForm = ({ data }) => {
         setIsLoading(true);
 
         let docFiles = [];
+        const isResubmit = data && data?.status === 'request-resubmit';
 
         //* upload documents
         if (formData?.documents && Array.isArray(formData?.documents ?? [])) {
@@ -143,6 +145,7 @@ const JobRequestForm = ({ data }) => {
           doc(db, 'jobRequests', formData.jobRequestId),
           {
             ...formData,
+            ...(isResubmit && { status: 'request-resubmission' }),
             documents: docFiles,
             supervisor: { id: formData.supervisor.id, name: formData.supervisor.name },
             ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
@@ -168,7 +171,7 @@ const JobRequestForm = ({ data }) => {
             module: 'job-request',
             target: ['admin', 'supervisor'],
             title: 'Job request updated',
-            message: `Job request (#${formData.jobRequestId}) has been updated by ${auth.currentUser.displayName}.`,
+            message: `Job request (#${formData.jobRequestId}) has been updated by ${auth.currentUser.displayName}${isResubmit ? ' and changed status to "Request Resubmission."' : '.'}`, // prettier-ignore
             data: {
               redirectUrl: `/job-requests/view/${formData.jobRequestId}`,
             },

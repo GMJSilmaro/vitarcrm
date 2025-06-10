@@ -4,9 +4,19 @@
 //* technician
 //* sales
 
+import { Briefcase, Person, Shield, ShieldCheck, WrenchAdjustable } from 'react-bootstrap-icons';
 import { z } from 'zod';
 
 export const ROLES = ['admin', 'supervisor', 'technician', 'sales'];
+
+export const ROLE_ICONS = {
+  admin: ShieldCheck,
+  supervisor: Shield,
+  technician: WrenchAdjustable,
+  sales: Briefcase,
+  default: Person,
+};
+
 export const GENDER = ['male', 'female'];
 export const EMERGENCY_CONTACT_RELATIONSHIP = ['parent', 'spouse', 'sibling', 'child', 'other'];
 

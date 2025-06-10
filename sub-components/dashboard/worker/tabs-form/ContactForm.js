@@ -226,7 +226,7 @@ const ContactForm = ({ data, isLoading, handleNext, handlePrevious }) => {
           </Form.Group>
 
           <Form.Group as={Col} md={4}>
-            <Form.Label htmlFor='address.stateProvince'>State / Province</Form.Label>
+            <Form.Label htmlFor='address.stateProvince'>State</Form.Label>
 
             <Controller
               name='address.stateProvince'
@@ -237,7 +237,7 @@ const ContactForm = ({ data, isLoading, handleNext, handlePrevious }) => {
                     {...field}
                     id='address.stateProvince'
                     type='text'
-                    placeholder='Enter State / Province'
+                    placeholder='Enter State'
                   />
                 </>
               )}

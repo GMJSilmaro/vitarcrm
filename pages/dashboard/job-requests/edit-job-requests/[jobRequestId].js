@@ -2,17 +2,19 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import { STATUS_COLOR } from '@/schema/job-request';
 import JobRequestForm from '@/sub-components/dashboard/job-requests/JobRequestForm';
 import { GeeksSEO } from '@/widgets';
 import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   EnvelopePaperFill,
+  Eye,
   HandThumbsUp,
-  House,
   HouseFill,
   Link,
   PencilFill,
@@ -52,8 +54,8 @@ const EditJobRequest = () => {
 
             await Promise.all([
               updateDoc(jobRequestRef, {
-                status: 'approved',
-                cancelledMessage: null,
+                status: 'request-approved',
+                reasonMessage: null,
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
               }),
@@ -117,7 +119,10 @@ const EditJobRequest = () => {
 
   if (isLoading) {
     return (
-      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
+      <div
+        className='d-flex justify-content-center align-items-center'
+        style={{ height: '100vh' }}
+      >
         <Spinner animation='border' variant='primary' />
         <span className='ms-3'>Loading Job Request...</span>
       </div>
@@ -133,7 +138,9 @@ const EditJobRequest = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <Button onClick={() => router.push('/jobs-requests')}>Back to Job Requests List</Button>
+          <Button onClick={() => router.push('/jobs-requests')}>
+            Back to Job Requests List
+          </Button>
         </div>
       </div>
     );
@@ -182,19 +189,32 @@ const EditJobRequest = () => {
             icon: <PencilFill className='me-2' size={14} />,
           },
         ]}
+        customBadges={[
+          {
+            label: _.startCase(jobRequest?.status),
+            color: STATUS_COLOR[jobRequest?.status] || 'secondary',
+          },
+        ]}
         actionButtons={[
           {
-            text: 'Back to Job Request List',
-            icon: <ArrowLeftShort size={16} />,
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
             variant: 'outline-primary',
             onClick: () => router.push(`/job-requests`),
           },
-          ...(auth.role === 'admin' || auth.role === 'supervisor'
+        ]}
+        dropdownItems={[
+          {
+            label: 'View Job Request',
+            icon: Eye,
+            onClick: () => router.push(`/job-requests/view/${jobRequestId}`),
+          },
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-approved'
             ? [
                 {
-                  text: 'Approved Job Request',
-                  variant: 'light',
-                  icon: <HandThumbsUp size={14} />,
+                  label: 'Approved Job Request',
+                  icon: HandThumbsUp,
                   onClick: (args) => handleApprovedJobRequest(jobRequestId, args.setIsLoading),
                 },
               ]

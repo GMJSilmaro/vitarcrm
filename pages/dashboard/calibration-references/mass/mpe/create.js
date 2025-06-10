@@ -6,9 +6,11 @@ import { Card } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BoxSeam,
+  BoxSeamFill,
   HouseDoorFill,
   ListColumns,
   Plus,
+  PlusCircleFill,
   Table,
 } from 'react-bootstrap-icons';
 
@@ -22,8 +24,8 @@ const CreateMpe = () => {
       <ContentHeader
         title='Create MPE'
         description='Create MPE reference data for your calibration'
-        badgeText='Reference Data Management'
-        badgeText2='New References Data'
+        badgeText='Calibration References Data Management'
+        badgeText2='New Reference Data'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -38,7 +40,7 @@ const CreateMpe = () => {
           {
             text: 'Mass',
             link: '/calibration-references/mass/mpe',
-            icon: <BoxSeam className='me-2' size={14} />,
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'MPE',
@@ -49,15 +51,15 @@ const CreateMpe = () => {
           {
             text: 'Create MPE',
             link: '/calibration-references/mass/mpe/create',
-            icon: <Plus className='me-2' size={14} />,
+            icon: <PlusCircleFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: `Back to MPE List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
-            onClick: () => router.push('/calibration-references/mass/MPE'),
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push('/calibration-references/mass/mpe'),
           },
         ]}
       />

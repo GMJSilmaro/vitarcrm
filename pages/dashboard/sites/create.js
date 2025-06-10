@@ -1,11 +1,14 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import SiteForm from '@/sub-components/dashboard/sites/SiteForm';
 import { GeeksSEO } from '@/widgets';
+import { useRouter } from 'next/router';
 import { Card } from 'react-bootstrap';
-import { BuildingFill, Plus, PlusCircleFill } from 'react-bootstrap-icons';
+import { ArrowLeftShort, BuildingFill, PlusCircleFill } from 'react-bootstrap-icons';
 import { FaHome } from 'react-icons/fa';
 
 const CreateLocation = () => {
+  const router = useRouter();
+
   return (
     <>
       <GeeksSEO title='Create Site | VITAR- GROUP | CRM & Calibration | Portal' />
@@ -15,6 +18,7 @@ const CreateLocation = () => {
         description='Add a new site or location to your network'
         infoText='Fill in site details including basic information, address details and site contacts.'
         badgeText='Site Management'
+        badgeText2='New Site'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -34,10 +38,10 @@ const CreateLocation = () => {
         ]}
         actionButtons={[
           {
-            text: 'Create Site',
-            icon: <Plus className='flex-shrink-0' size={24} />,
-            variant: 'light',
-            onClick: () => router.push('/sites/create'),
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push('/sites'),
           },
         ]}
       />

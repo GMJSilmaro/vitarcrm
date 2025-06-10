@@ -16,12 +16,15 @@ import {
   BriefcaseFill,
   HouseDoorFill,
   InfoSquareFill,
+  PencilSquare,
   Speedometer,
 } from 'react-bootstrap-icons';
 import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
 import { PDFViewer } from '@react-pdf/renderer';
 import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrationPDF1';
 import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
+import { STATUS_COLOR } from '@/schema/calibration';
+import _ from 'lodash';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -173,7 +176,7 @@ const CalibrationDetails = () => {
         title={`View Details for Job #${jobId} Calibration #${calibrateId}`}
         description='View comprehensive job calibration details including calibration info, measurements, reference instruments & calibration test & data'
         badgeText='Calibration Management'
-        badgeText2='Calibration'
+        badgeText2='View Calibration'
         breadcrumbItems={[
           {
             icon: <HouseDoorFill className='me-2' size={14} />,
@@ -195,12 +198,26 @@ const CalibrationDetails = () => {
             text: calibrateId,
           },
         ]}
+        customBadges={[
+          {
+            label: _.startCase(calibration?.status),
+            color: STATUS_COLOR[calibration?.status] || 'secondary',
+          },
+        ]}
         actionButtons={[
           {
-            text: `Back to Job #${jobId} Calibrations List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back to Job #${jobId} Calibrations`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push(`/jobs/${jobId}/calibrations`),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit Calibration',
+            icon: PencilSquare,
+            onClick: () =>
+              router.push(`/jobs/${jobId}/calibrations/edit-calibrations/${calibrateId}`),
           },
         ]}
       />

@@ -31,7 +31,7 @@ export const addressSchema = z.object({
   street1: z.string().min(1, { message: 'Street 1 is required.' }),
   street2: z.string().default(''),
   street3: z.string().default(''),
-  province: z.string().min(1, { message: 'Province is required.' }),
+  province: z.string().min(1, { message: 'State is required.' }),
   city: z.string().min(1, { message: 'City is required.' }),
   postalCode: z.string().min(1, { message: 'Postcode is required.' }),
   country: z

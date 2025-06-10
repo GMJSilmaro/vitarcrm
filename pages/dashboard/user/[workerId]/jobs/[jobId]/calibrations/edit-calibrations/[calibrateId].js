@@ -1,21 +1,15 @@
 import PageHeader from '@/components/common/PageHeader';
-import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
+import { STATUS_COLOR } from '@/schema/calibration';
 import CalibrationForm from '@/sub-components/dashboard/jobs/calibrations/CalibrationForm';
-import CurrentJobCard from '@/sub-components/dashboard/user/jobs/CurrentJobCard';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import _ from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
-import {
-  ArrowLeftShort,
-  BriefcaseFill,
-  HouseDoorFill,
-  PencilFill,
-  Speedometer,
-} from 'react-bootstrap-icons';
+import { Button, Card, Spinner } from 'react-bootstrap';
+import { ArrowLeftShort, Eye } from 'react-bootstrap-icons';
 
 const EditCalibrations = () => {
   const router = useRouter();
@@ -144,18 +138,31 @@ const EditCalibrations = () => {
         <PageHeader
           title={`Edit Calibration #${calibrateId} for Job #${jobId}`}
           subtitle='Edit calibration details'
-          action={
-            <Button
-              variant='light'
-              onClick={() => router.push(`/user/${workerId}/jobs/${jobId}/calibrations`)}
-            >
-              <ArrowLeftShort size={20} className='me-2' />
-              Go Back
-            </Button>
-          }
+          customBadges={[
+            {
+              label: _.startCase(calibration?.status),
+              color: STATUS_COLOR[calibration?.status] || 'secondary',
+            },
+          ]}
+          actionButtons={[
+            {
+              text: 'Back',
+              icon: <ArrowLeftShort size={20} />,
+              variant: 'outline-primary',
+              onClick: () => router.push(`/user/${workerId}/jobs/${jobId}/calibrations`),
+            },
+          ]}
+          dropdownItems={[
+            {
+              label: 'View Calibration',
+              icon: Eye,
+              onClick: () =>
+                router.push(`/user/${workerId}/jobs/${jobId}/calibrations/view/${calibrateId}`),
+            },
+          ]}
         />
 
-        <CurrentJobCard />
+        {/* <CurrentJobCard /> */}
 
         <Card className='shadow-sm'>
           <Card.Body>

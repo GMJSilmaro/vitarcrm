@@ -145,10 +145,10 @@ export const ContactTab = ({ onSubmit, initialValues, isProcessing }) => {
         </Form.Group>
 
         <Form.Group as={Col} controlId='formGridStateProvince'>
-          <Form.Label>State / Province</Form.Label>
+          <Form.Label>State</Form.Label>
           <Form.Control
             type='text'
-            placeholder='Enter State / Province'
+            placeholder='Enter State'
             value={stateProvince}
             onChange={(e) => setStateProvince(e.target.value)}
             required

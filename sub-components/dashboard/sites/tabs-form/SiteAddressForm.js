@@ -210,7 +210,7 @@ const SiteAddressForm = ({ data, isLoading, handleNext, handlePrevious }) => {
 
                     <Col md={4}>
                       <Form.Group className='mb-3'>
-                        <RequiredLabel label='Province' id='province' />
+                        <RequiredLabel label='State' id='province' />
 
                         <Controller
                           key={_field.id}

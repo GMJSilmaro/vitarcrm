@@ -61,7 +61,7 @@ const CalibrateSummaryForm = ({
 
   const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: _.capitalize(category) }))); //prettier-ignore
   const [dueDateRequestedOptions] = useState(DUE_DATE_REQUESTED.map((dueDateRequested) => ({ value: dueDateRequested, label: _.capitalize(dueDateRequested) }))); //prettier-ignore
-  const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.capitalize(status) }))); //prettier-ignore
+  const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.startCase(status) }))); //prettier-ignore
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
@@ -556,6 +556,28 @@ const CalibrateSummaryForm = ({
     <>
       <Card className='shadow-none'>
         <Card.Body>
+          {data && data?.status === 'data-rejected' && (
+            <Alert
+              className='mb-5 d-flex align-items-center gap-2'
+              style={{ width: 'fit-content' }}
+              variant='danger'
+            >
+              <ExclamationCircle className='flex-shrink-0 me-1' size={20} />{' '}
+              <div>
+                Calibration status is "
+                <span className='fw-bold'>{_.startCase(data?.status)}." </span>
+                {data?.reasonMessage ? (
+                  <span>
+                    Reason/message is "<span className='fw-bold'>{data?.reasonMessage}</span>
+                    ."
+                  </span>
+                ) : (
+                  ''
+                )}
+              </div>
+            </Alert>
+          )}
+
           {job?.data?.customerEquipments?.length < 1 && (
             <Alert className='mb-5' style={{ width: 'fit-content' }} variant='danger'>
               <ExclamationCircle className='me-1' size={20} /> The related job for this calibration

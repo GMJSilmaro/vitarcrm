@@ -1,4 +1,3 @@
-import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
 import Calibration from '@/sub-components/dashboard/jobs/calibrations/view/Calibration';
 import SummaryTab from '@/sub-components/dashboard/jobs/calibrations/view/SummaryTab';
@@ -6,20 +5,16 @@ import Result from '@/sub-components/dashboard/jobs/calibrations/view/Result';
 import Measurements from '@/sub-components/dashboard/jobs/calibrations/view/Measurements';
 import ReferenceInstruments from '@/sub-components/dashboard/jobs/calibrations/view/ReferenceInstruments';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Spinner, Tab, Tabs } from 'react-bootstrap';
-import {
-  ArrowLeftShort,
-  BriefcaseFill,
-  HouseDoorFill,
-  InfoSquareFill,
-  Speedometer,
-} from 'react-bootstrap-icons';
+import { ArrowLeftShort, PencilSquare } from 'react-bootstrap-icons';
 import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
 import PageHeader from '@/components/common/PageHeader';
+import _ from 'lodash';
+import { STATUS_COLOR } from '@/schema/calibration';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -166,6 +161,8 @@ const CalibrationDetails = () => {
     );
   }
 
+  console.log({ calibration });
+
   return (
     <>
       <GeeksSEO
@@ -176,15 +173,34 @@ const CalibrationDetails = () => {
         <PageHeader
           title={`View Calibration #${calibrateId} for Job #${jobId}`}
           subtitle='View calibration details'
-          action={
-            <Button
-              variant='light'
-              onClick={() => router.push(`/user/${workerId}/jobs/${jobId}/calibrations`)}
-            >
-              <ArrowLeftShort size={20} className='me-2' />
-              Go Back
-            </Button>
-          }
+          customBadges={[
+            {
+              label: _.startCase(calibration?.status),
+              color: STATUS_COLOR[calibration?.status] || 'secondary',
+            },
+          ]}
+          actionButtons={[
+            {
+              text: 'Back',
+              icon: <ArrowLeftShort size={20} />,
+              variant: 'outline-primary',
+              onClick: () => router.push(`/user/${workerId}/jobs/${jobId}/calibrations`),
+            },
+          ]}
+          dropdownItems={[
+            ...(calibration?.job?.status !== 'job-complete'
+              ? [
+                  {
+                    label: 'Edit Calibration',
+                    icon: PencilSquare,
+                    onClick: () =>
+                      router.push(
+                        `/user/${workerId}/jobs/${jobId}/calibrations/edit-calibrations/${calibrateId}`
+                      ),
+                  },
+                ]
+              : []),
+          ]}
         />
 
         <Card className='shadow-sm'>

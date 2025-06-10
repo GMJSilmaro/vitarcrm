@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Col, Form, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Col,
+  Form,
+  OverlayTrigger,
+  Row,
+  Tooltip,
+} from 'react-bootstrap';
 import { useForm, useFormContext, Controller } from 'react-hook-form';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
@@ -20,6 +30,7 @@ import {
 import toast from 'react-hot-toast';
 import Select from '@/components/Form/Select';
 import { useRouter } from 'next/router';
+import { ExclamationCircle } from 'react-bootstrap-icons';
 
 const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const router = useRouter();
@@ -408,7 +419,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
 
   //* query job request which are approved
   useEffect(() => {
-    const q = query(collection(db, 'jobRequests'), where('status', '==', 'approved'));
+    const q = query(collection(db, 'jobRequests'), where('status', '==', 'request-approved'));
 
     const unsubscribe = onSnapshot(
       q,
@@ -515,6 +526,27 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
     <>
       <Card className='shadow-none'>
         <Card.Body className='pb-0'>
+          {data && data?.status === 'job-cancel' && (
+            <Alert
+              className='mb-5 d-flex align-items-center gap-2'
+              style={{ width: 'fit-content' }}
+              variant='danger'
+            >
+              <ExclamationCircle className='flex-shrink-0 me-1' size={20} />{' '}
+              <div>
+                Job status is "<span className='fw-bold'>{_.startCase(data?.status)}." </span>
+                {data?.reasonMessage ? (
+                  <span>
+                    Reason/message is "<span className='fw-bold'>{data?.reasonMessage}</span>
+                    ."
+                  </span>
+                ) : (
+                  ''
+                )}
+              </div>
+            </Alert>
+          )}
+
           <h4 className='mb-0'>Job Request</h4>
           <p className='text-muted fs-6'>Associate job request for this job.</p>
 
@@ -588,11 +620,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
               <Form.Label>Sales Person</Form.Label>
               <Form.Control
                 type='text'
-                value={
-                  form.watch('jobRequestId.jobRequest.createdBy.displayName') ||
-                  data?.createdBy?.displayName ||
-                  ''
-                }
+                value={form.watch('jobRequestId.jobRequest.createdBy.displayName') || ''}
                 readOnly
                 disabled
               />
@@ -902,7 +930,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
               />
             </Form.Group>
             <Form.Group as={Col} md='4'>
-              <Form.Label>Province</Form.Label>
+              <Form.Label>State</Form.Label>
               <Form.Control
                 required
                 type='text'

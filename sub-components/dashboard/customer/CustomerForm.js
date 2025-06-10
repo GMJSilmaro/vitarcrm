@@ -31,6 +31,12 @@ import {
   ExclamationCircle,
   PencilFill,
   Trash,
+  HouseFill,
+  PeopleFill,
+  PlusCircleFill,
+  PencilSquare,
+  ArrowLeftShort,
+  Eye,
 } from 'react-bootstrap-icons';
 import { useRouter } from 'next/router';
 import ContentHeader from '@/components/dashboard/ContentHeader';
@@ -735,26 +741,46 @@ const CustomerForm = ({ data }) => {
       <GeeksSEO title='Create Customer | VITAR Group' />
 
       <ContentHeader
-        title='Create New Customer'
+        title={data?.customerId ? 'Edit Customer' : 'Create New Customer'}
         description='Add a new customer to your business network'
         infoText='Fill in the customer details including contact information and addresses. All fields marked with * are required.'
         badgeText='Customer Management'
+        badgeText2={data?.customerId ? 'Edit Customer' : 'New Customer'}
         breadcrumbItems={[
           {
-            icon: <House className='me-2' size={14} />,
             text: 'Dashboard',
             link: '/dashboard',
+            icon: <HouseFill className='me-2' size={14} />,
           },
           {
-            icon: <People className='me-2' size={14} />,
             text: 'Customers',
             link: '/customers',
+            icon: <PeopleFill className='me-2' size={14} />,
           },
           {
-            icon: <PencilFill className='me-2' size={14} />,
-            text: data ? data.customerId : 'Create',
+            icon: <PlusCircleFill className='me-2' size={14} />,
+            text: data ? data.customerId : 'Create Customer',
           },
         ]}
+        actionButtons={[
+          {
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push(`/customers`),
+          },
+        ]}
+        dropdownItems={
+          data?.customerId
+            ? [
+                {
+                  label: 'View Customer',
+                  icon: Eye,
+                  onClick: () => router.push(`/customers/view/${data.customerId}`),
+                },
+              ]
+            : []
+        }
       />
 
       <Row>

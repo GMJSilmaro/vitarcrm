@@ -43,9 +43,9 @@ export const dateFilter = (rowDateValue, filterDateValue) => {
 
 dateFilter.autoRemove = (filterValue) => !filterValue;
 
-export const dateSort = (rowDateValue, filterDateValue) => {
-  if (!isValid(rowDateValue) || !isValid(filterDateValue)) return 1;
-  return compareAsc(rowDateValue, filterDateValue);
+export const dateSort = (a, b) => {
+  if (!isValid(a) || !isValid(b)) return 1;
+  return compareAsc(a, b);
 };
 
 export function getCommonPinningStyles({ column }) {

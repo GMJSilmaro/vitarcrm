@@ -6,15 +6,14 @@ import SiteContacts from '@/sub-components/dashboard/sites/view/SiteContacts';
 import { GeeksSEO } from '@/widgets';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
 import {
+  ArrowLeftShort,
   BuildingFill,
-  CardHeading,
   EyeFill,
   HouseFill,
-  InfoSquareFill,
-  Plus,
+  PencilSquare,
 } from 'react-bootstrap-icons';
 
 const SiteDetails = () => {
@@ -89,7 +88,7 @@ const SiteDetails = () => {
         title={`View Details for Site #${site.id}`}
         description='View comprehensive site details including site basic information, address details & site contacts.'
         badgeText='Site Management'
-        badgeText2='Site'
+        badgeText2='View Site'
         breadcrumbItems={[
           {
             icon: <HouseFill className='me-2' size={14} />,
@@ -102,16 +101,23 @@ const SiteDetails = () => {
             link: '/sites',
           },
           {
-            icon: <InfoSquareFill className='me-2' size={14} />,
+            icon: <EyeFill className='me-2' size={14} />,
             text: siteId,
           },
         ]}
         actionButtons={[
           {
-            text: 'Create Site',
-            icon: <Plus className='flex-shrink-0' size={24} />,
-            variant: 'light',
-            onClick: () => router.push('/sites/create'),
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push('/sites'),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit Site',
+            icon: PencilSquare,
+            onClick: () => router.push(`/sites/edit-site/${siteId}`),
           },
         ]}
       />

@@ -304,7 +304,7 @@ const CalibrationChecklistPDF = ({
 
                     <View style={{ width: '45%' }}>
                       <Text style={{ fontSize: 10, marginBottom: 4 }}>
-                        Verified by Lab in-charger:
+                        Verified by Lab In-charge:
                       </Text>
                     </View>
                   </View>

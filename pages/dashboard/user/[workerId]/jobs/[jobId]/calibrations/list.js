@@ -21,6 +21,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { collection, deleteDoc, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
@@ -91,20 +92,20 @@ const JobCalibration = () => {
           const status = row?.original?.status;
 
           const colors = {
-            'for validation': 'success',
-            rejected: 'danger',
-            resubmission: 'warning',
-            completed: 'purple',
+            'data-validation': 'success',
+            'data-rejected': 'danger',
+            'data-resubmission': 'warning',
+            'cert-complete': 'purple',
           };
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
               <Badge className='text-capitalize' bg={colors[status] || 'secondary'}>
-                {status}
+                {_.startCase(status)}
               </Badge>
 
-              {status === 'rejected' && (
+              {status === 'data-rejected' && (
                 <span className='fw-medium fst-italic'>
-                  "{row.original.rejectedMessage || 'N/A'}"
+                  "{row.original.reasonMessage || 'N/A'}"
                 </span>
               )}
             </div>
@@ -223,17 +224,19 @@ const JobCalibration = () => {
                     View Calibration
                   </Dropdown.Item>
 
-                  {job.data?.status !== 'validated' && (
-                    <Dropdown.Item onClick={() => handleEditCalibration(id)}>
-                      <PencilSquare className='me-2' size={16} />
-                      Edit Calibration
-                    </Dropdown.Item>
-                  )}
+                  {job.data?.status !== 'job-complete' && (
+                    <>
+                      <Dropdown.Item onClick={() => handleEditCalibration(id)}>
+                        <PencilSquare className='me-2' size={16} />
+                        Edit Calibration
+                      </Dropdown.Item>
 
-                  <Dropdown.Item onClick={() => handleDeleteCalibration(id, certificateNumber)}>
-                    <Trash className='me-2' size={16} />
-                    Delete Calibration
-                  </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDeleteCalibration(id, certificateNumber)}>
+                        <Trash className='me-2' size={16} />
+                        Delete Calibration
+                      </Dropdown.Item>
+                    </>
+                  )}
 
                   <Dropdown.Item onClick={() => {}}>
                     <Printer className='me-2' size={16} />
@@ -289,7 +292,7 @@ const JobCalibration = () => {
         options: [
           { label: 'All Status', value: '' },
           ...STATUS.map((s) => ({
-            label: titleCase(s),
+            label: _.startCase(s),
             value: s,
           })),
         ],
@@ -409,35 +412,28 @@ const JobCalibration = () => {
         <PageHeader
           title={`Job #${jobId} Calibrations`}
           subtitle={`List of all the calibrations for the job #${jobId}`}
-          action={
-            <div className='d-flex align-items-center gap-2'>
-              {job.data && !job.isLoading && (
-                <>
-                  <Button
-                    variant={job.data?.status !== 'in progress' ? 'light' : 'outline-light'}
-                    onClick={() => router.push(`/user/${workerId}`)}
-                  >
-                    <ArrowLeftShort size={20} className='me-2' />
-                    Go Back
-                  </Button>
-
-                  {job.data?.status === 'in progress' && (
-                    <Button
-                      variant='light'
-                      onClick={() =>
-                        router.push(`/user/${workerId}/jobs/${jobId}/calibrations/create`)
-                      }
-                    >
-                      Add Calibration
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-          }
+          actionButtons={[
+            {
+              text: 'Back',
+              icon: <ArrowLeftShort size={20} />,
+              variant: 'outline-primary',
+              onClick: () => router.push(`/user/${workerId}`),
+            },
+            ...(job?.data?.status === 'job-in-progress'
+              ? [
+                  {
+                    text: 'Add Calibration',
+                    icon: <Plus size={20} />,
+                    variant: 'light',
+                    onClick: () =>
+                      router.push(`/user/${workerId}/jobs/${jobId}/calibrations/create`),
+                  },
+                ]
+              : []),
+          ]}
         />
 
-        <CurrentJobCard />
+        {/* <CurrentJobCard /> */}
 
         <Card className='shadow-sm'>
           <Card.Body className='p-4'>

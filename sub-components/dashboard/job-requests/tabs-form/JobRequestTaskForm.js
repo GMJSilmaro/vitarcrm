@@ -7,7 +7,7 @@ const JobRequestTaskForm = ({ data, isLoading, handleNext, handlePrevious }) => 
 
   const formErrors = form.formState.errors;
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     name: 'tasks',
     control: form.control,
   });
@@ -163,6 +163,13 @@ const JobRequestTaskForm = ({ data, isLoading, handleNext, handlePrevious }) => 
                             <Form.Check
                               className='d-flex align-items-center justify-content-center'
                               {...field}
+                              onChange={(e) => {
+                                const tasks = form.getValues('tasks');
+                                tasks[i].isPriority = e.target.checked;
+
+                                const sortedTasks = [...tasks].sort((a, b) => b.isPriority - a.isPriority); // prettier-ignore
+                                replace(sortedTasks);
+                              }}
                               checked={field.value}
                               type='checkbox'
                             />

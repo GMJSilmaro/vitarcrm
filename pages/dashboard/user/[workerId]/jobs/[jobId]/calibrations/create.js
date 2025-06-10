@@ -11,7 +11,7 @@ import { ArrowLeftShort, Plus } from 'react-bootstrap-icons';
 
 const CreateCalibration = () => {
   const router = useRouter();
-  const { jobId } = router.query;
+  const { jobId, workerId } = router.query;
 
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
 
@@ -57,15 +57,17 @@ const CreateCalibration = () => {
         <PageHeader
           title={`Create Calibration For Job #${jobId}`}
           subtitle='Create calibration for your job assignment'
-          action={
-            <Button variant='light' onClick={() => router.back()}>
-              <ArrowLeftShort size={20} className='me-2' />
-              Go Back
-            </Button>
-          }
+          actionButtons={[
+            {
+              text: 'Back',
+              icon: <ArrowLeftShort size={20} />,
+              variant: 'outline-primary',
+              onClick: () => router.push(`/user/${workerId}/jobs/${jobId}/calibrations`),
+            },
+          ]}
         />
 
-        <CurrentJobCard />
+        {/* <CurrentJobCard /> */}
 
         <Card className='shadow-sm'>
           <Card.Body>

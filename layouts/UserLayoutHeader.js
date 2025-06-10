@@ -8,6 +8,7 @@ import Swal from 'sweetalert2';
 import { useLogo } from '@/contexts/LogoContext';
 import TodayDate from '@/sub-components/dashboard/user/jobs/TodayDate';
 import NotificationMenu from './NotificationMenu';
+import { ROLE_ICONS } from '@/schema/users';
 
 const UserLayoutHeader = ({ user }) => {
   const { logo } = useLogo();
@@ -200,6 +201,8 @@ const UserLayoutHeader = ({ user }) => {
     }
   };
 
+  const RoleIcon = ROLE_ICONS['technician'] || ROLE_ICONS.default;
+
   return (
     <div className='px-5 py-3 d-flex justify-content-between border boder-bottom'>
       {/* <Image src={logo} alt='Company Logo' style={{ height: '80px', width: 'auto' }} /> */}
@@ -207,7 +210,7 @@ const UserLayoutHeader = ({ user }) => {
         <TodayDate />
       </div>
 
-      <div className='d-flex gap-3 align-items-center'>
+      <div className='d-flex gap-4 align-items-center'>
         <NotificationMenu />
 
         <Dropdown className='ms-2'>
@@ -220,8 +223,12 @@ const UserLayoutHeader = ({ user }) => {
             </div>
 
             {user && (
-              <Badge bg='secondary' className='text-capitalize'>
-                {user.role}
+              <Badge
+                bg='secondary'
+                className='fs-4 text-capitalize p-2 d-flex align-items-end'
+                style={{ gap: '6px' }}
+              >
+                <RoleIcon /> <span>{user.role}</span>
               </Badge>
             )}
           </Dropdown.Toggle>
@@ -245,8 +252,12 @@ const UserLayoutHeader = ({ user }) => {
                     <p className='mb-0 text-muted fs-6 text-wrap text-center'>{user.email}</p>
                   </div>
 
-                  <Badge bg='secondary' className='text-capitalize'>
-                    {user.role}
+                  <Badge
+                    bg='secondary'
+                    className='text-capitalize d-flex align-items-end'
+                    style={{ gap: '6px' }}
+                  >
+                    <RoleIcon /> <span>{user.role}</span>
                   </Badge>
                 </div>
               )}

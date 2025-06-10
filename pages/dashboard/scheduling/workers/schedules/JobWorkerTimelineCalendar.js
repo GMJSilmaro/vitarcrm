@@ -33,15 +33,7 @@ import { BsCircleFill } from 'react-icons/bs';
 import { toast } from 'react-toastify';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { useAuth } from '@/contexts/AuthContext';
-
-const JOB_STATUS_COLOR = {
-  confirmed: 'info',
-  'in progress': 'primary',
-  completed: 'success',
-  cancelled: 'warning',
-  rejected: 'danger',
-  validated: 'purple',
-};
+import { STATUS_COLOR } from '@/schema/job';
 
 const JobWorkerTimelineCalendar = () => {
   const router = useRouter();
@@ -107,7 +99,7 @@ const JobWorkerTimelineCalendar = () => {
 
   const eventRendered = (args) => {
     const status = args.data.Job.status;
-    args.element.classList.add(`bg-${JOB_STATUS_COLOR[status] || 'secondary'}`);
+    args.element.classList.add(`bg-${STATUS_COLOR[status] || 'secondary'}`);
     args.element.style.borderRadius = '4px';
   };
 
@@ -159,7 +151,7 @@ const JobWorkerTimelineCalendar = () => {
     if (elementType === 'cell') return null;
 
     const getStatusColor = (status) => {
-      return JOB_STATUS_COLOR[status] || 'secondary';
+      return STATUS_COLOR[status] || 'secondary';
     };
 
     return (
@@ -225,9 +217,7 @@ const JobWorkerTimelineCalendar = () => {
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Status:</span>
-          <Badge bg={getStatusColor(job?.status)} className='text-capitalize'>
-            {job?.status}
-          </Badge>
+          <Badge bg={getStatusColor(job?.status)}>{_.startCase(job?.status)}</Badge>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Created:</span>
@@ -595,7 +585,7 @@ const JobWorkerTimelineCalendar = () => {
   return (
     <div className='d-flex flex-column h-100 gap-3'>
       <div className='d-flex gap-4 flex-wrap align-align-items-center'>
-        {Object.entries(JOB_STATUS_COLOR).map(([key, value], i) => (
+        {Object.entries(STATUS_COLOR).map(([key, value], i) => (
           <div className='d-flex align-items-center gap-2 fs-5 fw-medium'>
             <div
               key={`${i}-${key}`}
@@ -603,7 +593,7 @@ const JobWorkerTimelineCalendar = () => {
               style={{ width: '20px', height: '20px', borderRadius: '50%' }}
             ></div>
 
-            <span className='text-capitalize'>{key}</span>
+            <span>{_.startCase(key)}</span>
           </div>
         ))}
       </div>

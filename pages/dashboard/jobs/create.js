@@ -6,10 +6,9 @@ import ContentHeader from 'components/dashboard/ContentHeader';
 import JobForm from '@/sub-components/dashboard/jobs/JobForm';
 import { useRouter } from 'next/router';
 import {
+  ArrowLeftShort,
   BriefcaseFill,
-  House,
   HouseDoorFill,
-  PlusCircle,
   PlusCircleFill,
 } from 'react-bootstrap-icons';
 
@@ -44,11 +43,10 @@ const CreateJobs = () => {
         ]}
         actionButtons={[
           {
-            text: 'Back to Jobs',
-            icon: <i className='fe fe-arrow-left' />,
-            variant: 'light',
-            tooltip: 'Return to jobs list',
-            onClick: () => router.push('/jobs'),
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push(`/jobs`),
           },
         ]}
       />

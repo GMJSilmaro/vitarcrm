@@ -14,12 +14,13 @@ import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firesto
 import { orderBy } from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import {
   Building,
   Clock,
   Envelope,
   EnvelopePaper,
+  ExclamationCircle,
   ExclamationCircleFill,
   Eye,
   Geo,
@@ -63,6 +64,27 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        {job && job?.status === 'job-cancel' && (
+          <Alert
+            className='mb-5 d-flex align-items-center gap-2'
+            style={{ width: 'fit-content' }}
+            variant='danger'
+          >
+            <ExclamationCircle className='flex-shrink-0 me-1' size={20} />{' '}
+            <div>
+              Job status is "<span className='fw-bold'>{_.startCase(job?.status)}." </span>
+              {job?.reasonMessage ? (
+                <span>
+                  Reason/message is "<span className='fw-bold'>{job?.reasonMessage}</span>
+                  ."
+                </span>
+              ) : (
+                ''
+              )}
+            </div>
+          </Alert>
+        )}
+
         <div className='d-flex justify-content-between align-items-center'>
           <div>
             <h5 className='mb-0'>Job Request</h5>
@@ -418,7 +440,7 @@ const SummaryTab = ({ job, customer, contact, location, jobRequest }) => {
                     <Map size={20} />
                   </div>
                   <div>
-                    <div className='text-secondary fs-6'>Province:</div>
+                    <div className='text-secondary fs-6'>State:</div>
                     <div className='text-primary-label fw-semibold'>
                       {defaultLocation?.province || 'N/A'}
                     </div>

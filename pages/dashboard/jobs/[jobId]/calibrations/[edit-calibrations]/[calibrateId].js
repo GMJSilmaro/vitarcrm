@@ -1,8 +1,10 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
+import { STATUS_COLOR } from '@/schema/calibration';
 import CalibrationForm from '@/sub-components/dashboard/jobs/calibrations/CalibrationForm';
 import { GeeksSEO } from '@/widgets';
 import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import _ from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -10,6 +12,7 @@ import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BriefcaseFill,
+  Eye,
   HouseDoorFill,
   PencilFill,
   Speedometer,
@@ -121,7 +124,7 @@ const EditCalibrations = () => {
           <h3>calibration not found</h3>
           <Link href='/jobs'>
             <Button variant='primary' className='mt-3'>
-              Back to Job Calibration List
+              `Back to Job #{jobId} Calibrations List
             </Button>
           </Link>
         </div>
@@ -159,12 +162,25 @@ const EditCalibrations = () => {
             text: calibration ? calibration.id : 'Create',
           },
         ]}
+        customBadges={[
+          {
+            label: _.startCase(calibration?.status),
+            color: STATUS_COLOR[calibration?.status] || 'secondary',
+          },
+        ]}
         actionButtons={[
           {
-            text: `Back to Job #${jobId} Calibrations List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back to Job #${jobId} Calibrations`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push(`/jobs/${jobId}/calibrations`),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'View Calibration',
+            icon: Eye,
+            onClick: () => router.push(`/jobs/${jobId}/calibrations/view/${calibrateId}`),
           },
         ]}
       />

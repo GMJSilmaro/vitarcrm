@@ -5,14 +5,16 @@ import { format } from 'date-fns';
 import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Card, Spinner, Table } from 'react-bootstrap';
 import {
   ArrowLeftShort,
-  BoxSeam,
+  BoxSeamFill,
+  Eye,
+  EyeFill,
   HouseDoorFill,
-  InfoSquareFill,
   ListColumns,
+  PencilSquare,
   Table as TableIcon,
 } from 'react-bootstrap-icons';
 
@@ -97,8 +99,8 @@ const CkDetails = () => {
       <ContentHeader
         title={`View Details for CK #${ck.id}`}
         description='View comprehensive details of reference data'
-        badgeText='Reference Data Management'
-        badgeText2='References Data'
+        badgeText='Calibration References Data Management'
+        badgeText2='View Reference Data'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -113,7 +115,7 @@ const CkDetails = () => {
           {
             text: 'Mass',
             link: '/calibration-references/mass/ck',
-            icon: <BoxSeam className='me-2' size={14} />,
+            icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'CK',
@@ -123,15 +125,22 @@ const CkDetails = () => {
           ,
           {
             text: refId,
-            icon: <InfoSquareFill className='me-2' size={14} />,
+            icon: <EyeFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: `Back to CK List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: `Back`,
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push('/calibration-references/mass/ck'),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit CK',
+            icon: PencilSquare,
+            onClick: () => router.push(`/calibration-references/mass/ck/edit-ck/${refId}`),
           },
         ]}
       />

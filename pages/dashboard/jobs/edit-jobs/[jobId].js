@@ -2,16 +2,24 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
+import { STATUS_COLOR } from '@/schema/job';
 import JobForm from '@/sub-components/dashboard/jobs/JobForm';
 import { GeeksSEO } from '@/widgets';
 import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import _ from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
-import { BriefcaseFill, House, PencilFill, ShieldCheck } from 'react-bootstrap-icons';
+import {
+  ArrowLeftShort,
+  BriefcaseFill,
+  Eye,
+  HouseFill,
+  PencilFill,
+  ShieldCheck,
+} from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
-import { FaArrowLeft } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 const EditJob = () => {
@@ -24,12 +32,12 @@ const EditJob = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const handleUpdateToValidated = async (id, setIsLoading) => {
+  const handleUpdateToComplete = async (id, setIsLoading) => {
     if (!id) return;
 
     Swal.fire({
       title: `Job Status Update - Job #${id}`,
-      text: `Are you sure you want to update the job status to "Validated"?`,
+      text: `Are you sure you want to update the job status to "Job Complete"?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Confirm',
@@ -47,7 +55,7 @@ const EditJob = () => {
 
           await Promise.all([
             updateDoc(jobHeaderRef, {
-              status: 'validated',
+              status: 'job-complete',
               updatedAt: serverTimestamp(),
               updatedBy: auth.currentUser,
             }),
@@ -56,7 +64,7 @@ const EditJob = () => {
               module: 'job',
               target: ['admin', 'supervisor'],
               title: 'Job status updated',
-              message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "Validated".`, //prettier-ignore
+              message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "Job Complete".`, //prettier-ignore
               data: {
                 redirectUrl: `/jobs/view/${id}`,
               },
@@ -160,7 +168,7 @@ const EditJob = () => {
           {
             text: 'Dashboard',
             link: '/dashboard',
-            icon: <House className='me-2' size={14} />,
+            icon: <HouseFill className='me-2' size={14} />,
           },
           {
             text: 'Jobs',
@@ -172,26 +180,33 @@ const EditJob = () => {
             icon: <PencilFill className='me-2' size={14} />,
           },
         ]}
+        customBadges={[
+          {
+            label: _.startCase(job?.status),
+            color: STATUS_COLOR[job?.status] || 'secondary',
+          },
+        ]}
         actionButtons={[
           {
-            text: 'Back to Job List',
-            icon: <FaArrowLeft size={16} />,
-            variant:
-              (auth.role === 'admin' || auth.role === 'supervisor') &&
-              job &&
-              job.status !== 'validated'
-                ? 'outline-primary'
-                : 'light',
-            tooltip: 'Back to Job List',
-            onClick: () => router.push('/jobs'),
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push(`/jobs`),
           },
-          ...(job && job.status !== 'validated'
+        ]}
+        dropdownItems={[
+          {
+            label: 'View Job',
+            icon: Eye,
+            onClick: () => router.push(`/jobs/view/${jobId}`),
+          },
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && job && job.status === 'job-validation'
             ? [
                 {
-                  text: 'Validate Job',
-                  variant: 'light',
-                  icon: <ShieldCheck size={14} />,
-                  onClick: (args) => handleUpdateToValidated(jobId, args.setIsLoading),
+                  label: 'Validate Job',
+                  icon: ShieldCheck,
+                  onClick: (args) => handleUpdateToComplete(jobId, args.setIsLoading),
                 },
               ]
             : []),

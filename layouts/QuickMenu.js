@@ -53,6 +53,7 @@ import debounce from 'lodash/debounce';
 import { Bell } from 'react-bootstrap-icons';
 import Notifications from './Notifications';
 import NotificationMenu from './NotificationMenu';
+import { ROLE_ICONS } from '@/schema/users';
 
 const getStatusTag = (type, status) => {
   const statusColors = {
@@ -1027,12 +1028,14 @@ const QuickMenu = ({ children }) => {
     });
   };
 
+  const RoleIcon = ROLE_ICONS[userDetails?.role] || ROLE_ICONS.default;
+
   return (
     <Fragment>
       <ListGroup
         as='ul'
         bsPrefix='navbar-nav'
-        className='navbar-right-wrap ms-2 d-flex nav-top-wrap align-items-center gap-2'
+        className='navbar-right-wrap ms-2 d-flex nav-top-wrap align-items-center gap-4'
       >
         {/* {renderSearch} */}
 
@@ -1115,8 +1118,12 @@ const QuickMenu = ({ children }) => {
             <UserAvatar userDetails={userDetails} />
 
             {userDetails && (
-              <Badge bg='secondary' className='text-capitalize'>
-                {userDetails.role}
+              <Badge
+                bg='secondary'
+                className='fs-4 text-capitalize p-2 d-flex align-items-end'
+                style={{ gap: '6px' }}
+              >
+                <RoleIcon /> <span>{userDetails.role}</span>
               </Badge>
             )}
           </Dropdown.Toggle>
@@ -1133,8 +1140,12 @@ const QuickMenu = ({ children }) => {
                     <p className='mb-0 text-muted fs-6 text-wrap'>{userDetails.email}</p>
                   </div>
 
-                  <Badge bg='secondary' className='text-capitalize'>
-                    {userDetails.role}
+                  <Badge
+                    bg='secondary'
+                    className='text-capitalize d-flex align-items-end'
+                    style={{ gap: '6px' }}
+                  >
+                    <RoleIcon /> <span>{userDetails.role}</span>
                   </Badge>
                 </div>
               )}

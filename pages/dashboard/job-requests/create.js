@@ -43,9 +43,9 @@ const CreateJobs = () => {
         ]}
         actionButtons={[
           {
-            text: `Back to Job Request List`,
-            icon: <ArrowLeftShort size={16} />,
-            variant: 'light',
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
             onClick: () => router.push(`/job-requests`),
           },
         ]}
