@@ -53,7 +53,7 @@ import debounce from 'lodash/debounce';
 import { Bell } from 'react-bootstrap-icons';
 import Notifications from './Notifications';
 import NotificationMenu from './NotificationMenu';
-import { ROLE_ICONS } from '@/schema/users';
+import { ROLE_COLOR, ROLE_ICON } from '@/schema/users';
 
 const getStatusTag = (type, status) => {
   const statusColors = {
@@ -1028,7 +1028,8 @@ const QuickMenu = ({ children }) => {
     });
   };
 
-  const RoleIcon = ROLE_ICONS[userDetails?.role] || ROLE_ICONS.default;
+  const RoleIcon = ROLE_ICON[userDetails?.role] || ROLE_ICON.default;
+  const roleColor = ROLE_COLOR[userDetails?.role] || ROLE_COLOR.default;
 
   return (
     <Fragment>
@@ -1119,7 +1120,7 @@ const QuickMenu = ({ children }) => {
 
             {userDetails && (
               <Badge
-                bg='secondary'
+                bg={roleColor}
                 className='fs-4 text-capitalize p-2 d-flex align-items-end'
                 style={{ gap: '6px' }}
               >
@@ -1141,7 +1142,7 @@ const QuickMenu = ({ children }) => {
                   </div>
 
                   <Badge
-                    bg='secondary'
+                    bg={roleColor}
                     className='text-capitalize d-flex align-items-end'
                     style={{ gap: '6px' }}
                   >

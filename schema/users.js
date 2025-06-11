@@ -8,8 +8,14 @@ import { Briefcase, Person, Shield, ShieldCheck, WrenchAdjustable } from 'react-
 import { z } from 'zod';
 
 export const ROLES = ['admin', 'supervisor', 'technician', 'sales'];
-
-export const ROLE_ICONS = {
+export const ROLE_COLOR = {
+  admin: 'danger',
+  supervisor: 'success',
+  sales: 'warning',
+  technician: 'primary',
+  default: 'secondary',
+};
+export const ROLE_ICON = {
   admin: ShieldCheck,
   supervisor: Shield,
   technician: WrenchAdjustable,

@@ -192,9 +192,9 @@ const JobDetails = () => {
           toast.success('Job has been started successfully.', { position: 'top-right' });
           setIsLoading(false);
 
-          //* reload page after 2 seconds
+          //* redirect to job calibrations
           setTimeout(() => {
-            router.reload();
+            router.push(`/user/${workerId}/jobs/${jobId}/calibrations`);
           }, 2000);
         } catch (error) {
           setIsLoading(false);
@@ -556,7 +556,7 @@ const JobDetails = () => {
                   },
                 ]
               : []),
-            ...(job?.status === 'job-confirm'
+            ...(job?.status === 'job-confirm' || job?.status === 'job-reschedule'
               ? [
                   {
                     label: 'Initiate Job',

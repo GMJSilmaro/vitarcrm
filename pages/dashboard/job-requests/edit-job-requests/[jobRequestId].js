@@ -9,11 +9,13 @@ import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
+  CircleHalf,
   EnvelopePaperFill,
   Eye,
+  HandThumbsDown,
   HandThumbsUp,
   HouseFill,
   Link,
@@ -21,6 +23,7 @@ import {
 } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const EditJobRequest = () => {
   const router = useRouter();
@@ -32,65 +35,141 @@ const EditJobRequest = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const handleApprovedJobRequest = (id, setIsLoading) => {
-    try {
-      Swal.fire({
-        title: `Job Request Status Update - Job Request #${id}`,
-        text: `Are you sure you want to update the job request status to "Approved"?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Confirm',
-        cancelButtonText: 'Cancel',
-        customClass: {
-          confirmButton: 'btn btn-primary rounded',
-          cancelButton: 'btn btn-secondary rounded',
-        },
-      }).then(async (data) => {
-        if (data.isConfirmed) {
-          try {
-            setIsLoading(true);
+  const handleUpdateJobRequestStatus = (id, status, setIsLoading) => {
+    if (status === 'request-cancelled' || status === 'request-resubmit') {
+      withReactContent(Swal)
+        .fire({
+          title: `Job Request Status Update - Job Request #${id}`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Confirm',
+          cancelButtonText: 'Cancel',
+          customClass: {
+            confirmButton: 'btn btn-primary rounded',
+            cancelButton: 'btn btn-secondary rounded',
+          },
+          html: (
+            <div className='d-flex flex-column gap-4'>
+              <div
+                style={{ color: '#545454' }}
+              >{`Are you sure you want to update the job request status to "${_.startCase(
+                status
+              )}"?`}</div>
 
-            const jobRequestRef = doc(db, 'jobRequests', id);
+              <div>
+                <Form.Control
+                  id={`job-request-status-update-${id}`}
+                  type='text'
+                  as='textarea'
+                  rows={4}
+                  placeholder='Enter a message/reason'
+                />
+              </div>
+            </div>
+          ),
+          preConfirm: () => {
+            return document.getElementById(`job-request-status-update-${id}`).value;
+          },
+        })
+        .then(async (data) => {
+          const { value, isConfirmed } = data;
+          if (isConfirmed) {
+            try {
+              setIsLoading(true);
 
-            await Promise.all([
-              updateDoc(jobRequestRef, {
-                status: 'request-approved',
-                reasonMessage: null,
-                updatedAt: serverTimestamp(),
-                updatedBy: auth.currentUser,
-              }),
-              //* create notification for admin and supervisor when updated a job request status
-              notifications.create({
-                module: 'job-request',
-                target: ['admin', 'supervisor', 'sales'],
-                title: 'Job request status updated',
-                message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "Approved".`, //prettier-ignore
-                data: {
-                  redirectUrl: `/job-requests/view/${id}`,
-                },
-              }),
-            ]);
+              const jobRequestRef = doc(db, 'jobRequests', id);
 
-            toast.success('Job request status updated successfully', {
-              position: 'top-right',
-            });
-            setIsLoading(false);
+              await Promise.all([
+                updateDoc(jobRequestRef, {
+                  status,
+                  reasonMessage: value,
+                  updatedAt: serverTimestamp(),
+                  updatedBy: auth.currentUser,
+                }),
+                //* create notification for admin and supervisor when updated a job request status
+                notifications.create({
+                  module: 'job-request',
+                  target: ['admin', 'supervisor', 'sales'],
+                  title: 'Job request status updated',
+                  message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                  data: {
+                    redirectUrl: `/job-requests/view/${id}`,
+                  },
+                }),
+              ]);
 
+              toast.success('Job request status updated successfully', {
+                position: 'top-right',
+              });
+              setIsLoading(false);
+
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } catch (error) {
+              console.error('Error updating job request status:', error);
+              toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+              setIsLoading(false);
+            }
+          }
+        });
+      return;
+    }
+
+    Swal.fire({
+      title: `Job Request Status Update - Job Request #${id}`,
+      text: `Are you sure you want to update the job request status to "${_.startCase(status)}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
+    }).then(async (data) => {
+      if (data.isConfirmed) {
+        try {
+          setIsLoading(true);
+
+          const jobRequestRef = doc(db, 'jobRequests', id);
+
+          await Promise.all([
+            updateDoc(jobRequestRef, {
+              status,
+              reasonMessage: null,
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            }),
+            //* create notification for admin and supervisor when updated a job request status
+            notifications.create({
+              module: 'job-request',
+              target: ['admin', 'supervisor', 'sales'],
+              title: 'Job request status updated',
+              message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+              data: {
+                redirectUrl: `/job-requests/view/${id}`,
+              },
+            }),
+          ]);
+
+          toast.success('Job request status updated successfully', {
+            position: 'top-right',
+          });
+          setIsLoading(false);
+
+          if (status === 'request-approved') {
             setTimeout(() => {
               window.location.assign(`/jobs/create?jobRequestId=${id}`);
             }, 1500);
-          } catch (error) {
-            console.error('Error updating job request status:', error);
-            toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
-            setIsLoading(false);
           }
+        } catch (error) {
+          console.error('Error updating job request status:', error);
+          toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+          setIsLoading(false);
         }
-      });
-    } catch (error) {
-      console.error('Error updating job request status:', error);
-      toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
-      setIsLoading(false);
-    }
+      }
+    });
   };
 
   useEffect(() => {
@@ -119,10 +198,7 @@ const EditJobRequest = () => {
 
   if (isLoading) {
     return (
-      <div
-        className='d-flex justify-content-center align-items-center'
-        style={{ height: '100vh' }}
-      >
+      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
         <Spinner animation='border' variant='primary' />
         <span className='ms-3'>Loading Job Request...</span>
       </div>
@@ -138,9 +214,7 @@ const EditJobRequest = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <Button onClick={() => router.push('/jobs-requests')}>
-            Back to Job Requests List
-          </Button>
+          <Button onClick={() => router.push('/jobs-requests')}>Back to Job Requests List</Button>
         </div>
       </div>
     );
@@ -213,9 +287,29 @@ const EditJobRequest = () => {
           ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-approved'
             ? [
                 {
-                  label: 'Approved Job Request',
+                  label: 'Request Approved',
                   icon: HandThumbsUp,
-                  onClick: (args) => handleApprovedJobRequest(jobRequestId, args.setIsLoading),
+                  onClick: (args) => handleUpdateJobRequestStatus(jobRequestId, 'request-approved', args.setIsLoading),
+                },
+              ]
+            : []),
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-cancelled'
+          ? [
+              {
+                label: 'Request Cancelled',
+                icon: HandThumbsDown,
+                onClick: (args) => handleUpdateJobRequestStatus(jobRequestId, 'request-cancelled', args.setIsLoading),
+              },
+            ]
+          : []),
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-resubmit'
+            ? [
+                {
+                  label: 'Request Resubmit',
+                  icon: CircleHalf,
+                  onClick: (args) => handleUpdateJobRequestStatus(jobRequestId, 'request-resubmit', args.setIsLoading),
                 },
               ]
             : []),

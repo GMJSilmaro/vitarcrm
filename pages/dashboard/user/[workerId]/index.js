@@ -972,7 +972,11 @@ function WorkerDashboard() {
 
           toast.success('Job has been started successfully.', { position: 'top-right' });
           setIsLoading(false);
-          console.log('start timer..');
+
+          //* redirect to job calibrations
+          setTimeout(() => {
+            router.push(`/user/${workerId}/jobs/${id}/calibrations`);
+          }, 2000);
         } catch (error) {
           setIsLoading(false);
           console.error('Error stopping job', error);
