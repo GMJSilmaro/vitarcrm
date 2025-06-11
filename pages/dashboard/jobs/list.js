@@ -434,7 +434,7 @@ const JobList = () => {
                   toast.success('Job rescheduled successfully', { position: 'top-right' });
 
                   setTimeout(() => {
-                    router.push(`/jobs/duplicate/${id}?tab=4`);
+                    router.push(`/jobs/edit-jobs/${id}?tab=4`);
                   }, 1000);
                 } catch (error) {
                   console.error('Error rescheduling job:', error);
@@ -728,9 +728,7 @@ const JobList = () => {
                         Duplicate Job
                       </Dropdown.Item>
 
-                      {(status === 'job-confirm' ||
-                        status === 'job-in-progress' ||
-                        status === 'job-reschedule') && (
+                      {(status === 'job-confirm' || status === 'job-in-progress') && (
                         <Dropdown.Item onClick={() => handleRescheduleJob(id, status, workers)}>
                           <CalendarWeek className='me-2' size={16} />
                           Reschedule Job

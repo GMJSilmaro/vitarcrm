@@ -6,17 +6,29 @@ import Result from '@/sub-components/dashboard/jobs/calibrations/view/Result';
 import Measurements from '@/sub-components/dashboard/jobs/calibrations/view/Measurements';
 import ReferenceInstruments from '@/sub-components/dashboard/jobs/calibrations/view/ReferenceInstruments';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Button, Card, Spinner, Tab, Tabs } from 'react-bootstrap';
+import { Button, Card, Form, Spinner, Tab, Tabs } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BriefcaseFill,
+  HandThumbsDown,
   HouseDoorFill,
   InfoSquareFill,
   PencilSquare,
+  ShieldCheck,
   Speedometer,
 } from 'react-bootstrap-icons';
 import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
@@ -25,9 +37,15 @@ import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrat
 import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
 import { STATUS_COLOR } from '@/schema/calibration';
 import _ from 'lodash';
+import { useNotifications } from '@/hooks/useNotifications';
+import withReactContent from 'sweetalert2-react-content';
+import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CalibrationDetails = () => {
   const router = useRouter();
+  const auth = useAuth();
   const { calibrateId, jobId } = router.query;
 
   const [calibration, setCalibration] = useState();
@@ -37,6 +55,175 @@ const CalibrationDetails = () => {
   const [error, setError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('0');
+
+  const notifications = useNotifications();
+
+  const notifyCalibratedBy = async (status, calibration) => {
+    if (!calibration) return;
+
+    try {
+      const workerId = calibration?.calibratedBy?.id || '';
+      const snapshots = await getDocs(
+        query(collection(db, 'users'), where('workerId', '==', workerId))
+      );
+
+      if (!snapshots.empty) {
+        const snapshot = snapshots.docs[0];
+        const user = { id: snapshot.id, ...snapshot.data() };
+
+        if (user && user.id) {
+          await notifications.create({
+            module: 'calibration',
+            target: [user.id],
+            title: 'Calibration status updated',
+            message: `Calibration (#${calibrateId}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+            data: {
+              redirectUrl: `/jobs/${jobId}/calibrations/view/${calibrateId}`,
+            },
+          });
+
+          //* reload page after 2 seconds
+          setTimeout(() => {
+            router.reload();
+          }, 2000);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to notify technician:', error);
+    }
+  };
+
+  const handleUpdateCalibrationStatus = (id, status, setIsLoading) => {
+    if (status === 'data-rejected') {
+      withReactContent(Swal)
+        .fire({
+          title: `Calibration Status Update - Calibration #${id}`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Confirm',
+          cancelButtonText: 'Cancel',
+          customClass: {
+            confirmButton: 'btn btn-primary rounded',
+            cancelButton: 'btn btn-secondary rounded',
+          },
+          html: (
+            <div className='d-flex flex-column gap-4'>
+              <div
+                style={{ color: '#545454' }}
+              >{`Are you sure you want to update the calibration status to "${_.startCase(
+                status
+              )}"?`}</div>
+
+              <div>
+                <Form.Control
+                  id={`calibration-status-update-${id}`}
+                  type='text'
+                  as='textarea'
+                  rows={4}
+                  placeholder='Enter a message/reason'
+                />
+              </div>
+            </div>
+          ),
+          preConfirm: () => {
+            return document.getElementById(`calibration-status-update-${id}`).value;
+          },
+        })
+        .then(async (data) => {
+          const { value, isConfirmed } = data;
+          if (isConfirmed) {
+            try {
+              setIsLoading(true);
+
+              const calibrationRef = doc(db, 'jobCalibrations', id);
+
+              await Promise.all([
+                updateDoc(calibrationRef, {
+                  status,
+                  reasonMessage: value,
+                  updatedAt: serverTimestamp(),
+                  updatedBy: auth.currentUser,
+                }),
+                //* create notification for admin and supervisor when updated a calibration status
+                notifications.create({
+                  module: 'calibration',
+                  target: ['admin', 'supervisor'],
+                  title: 'Calibration status updated',
+                  message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                  data: {
+                    redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+                  },
+                }),
+
+                notifyCalibratedBy(status, calibration),
+              ]);
+
+              toast.success('Job request status updated successfully', {
+                position: 'top-right',
+              });
+              setIsLoading(false);
+            } catch (error) {
+              console.error('Error updating job request status:', error);
+              toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+              setIsLoading(false);
+            }
+          }
+        });
+      return;
+    }
+
+    Swal.fire({
+      title: `Calibration Status Update - Calibration #${id}`,
+      text: `Are you sure you want to update the calibration status to "${_.startCase(status)}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
+    }).then(async (data) => {
+      if (data.isConfirmed) {
+        try {
+          setIsLoading(true);
+
+          const jobCalibrationRef = doc(db, 'jobCalibrations', id);
+
+          await Promise.all([
+            updateDoc(jobCalibrationRef, {
+              status,
+              reasonMessage: null,
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            }),
+
+            //* create notification for admin and supervisor when updated a calibration status
+            notifications.create({
+              module: 'calibration',
+              target: ['admin', 'supervisor'],
+              title: 'Calibration status updated',
+              message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+              data: {
+                redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+              },
+            }),
+
+            notifyCalibratedBy(status, calibration),
+          ]);
+
+          toast.success('Calibration status updated successfully', {
+            position: 'top-right',
+          });
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error updating calibration status:', error);
+          toast.error('Error updating calibration status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+          setIsLoading(false);
+        }
+      }
+    });
+  };
 
   //* query calibration & job header
   useEffect(() => {
@@ -219,6 +406,26 @@ const CalibrationDetails = () => {
             onClick: () =>
               router.push(`/jobs/${jobId}/calibrations/edit-calibrations/${calibrateId}`),
           },
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && calibration && calibration?.status !== 'data-rejected'
+            ? [
+                {
+                  label: 'Data Rejected',
+                  icon: HandThumbsDown,
+                  onClick: (args) => handleUpdateCalibrationStatus(calibrateId, 'data-rejected', args.setIsLoading),
+                },
+              ]
+            : []),
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && calibration && calibration?.status !== 'cert-complete'
+          ? [
+              {
+                label: 'Cert Complete',
+                icon: ShieldCheck,
+                onClick: (args) => handleUpdateCalibrationStatus(calibrateId, 'cert-complete', args.setIsLoading),
+              },
+            ]
+          : []),
         ]}
       />
 

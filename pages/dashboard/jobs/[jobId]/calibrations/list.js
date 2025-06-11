@@ -252,7 +252,7 @@ const JobCalibration = () => {
             }
           };
 
-          const handleUpdateCalibrationStatus = (id, status, calibratedBy) => {
+          const handleUpdateCalibrationStatus = (id, status) => {
             if (status === 'data-rejected') {
               withReactContent(Swal)
                 .fire({
@@ -279,7 +279,7 @@ const JobCalibration = () => {
                           type='text'
                           as='textarea'
                           rows={4}
-                          placeholder='Enter a message/reason for the rejected calibration..'
+                          placeholder='Enter a message/reason'
                         />
                       </div>
                     </div>

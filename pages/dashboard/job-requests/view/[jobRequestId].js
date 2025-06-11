@@ -22,17 +22,20 @@ import {
 import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
+import { Card, Form, Spinner, Tab, Tabs } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BriefcaseFill,
+  CircleHalf,
   EyeFill,
+  HandThumbsDown,
   HandThumbsUp,
   HouseFill,
   PencilSquare,
 } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const JobRequestDetails = () => {
   const router = useRouter();
@@ -58,65 +61,141 @@ const JobRequestDetails = () => {
   });
   const [customerEquipments, setCustomerEquipments] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
 
-  const handleApprovedJobRequest = (id, setIsLoading) => {
-    try {
-      Swal.fire({
-        title: `Job Request Status Update - Job Request #${id}`,
-        text: `Are you sure you want to update the job request status to "Approved"?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Confirm',
-        cancelButtonText: 'Cancel',
-        customClass: {
-          confirmButton: 'btn btn-primary rounded',
-          cancelButton: 'btn btn-secondary rounded',
-        },
-      }).then(async (data) => {
-        if (data.isConfirmed) {
-          try {
-            setIsLoading(true);
+  const handleUpdateJobRequestStatus = (id, status, setIsLoading) => {
+    if (status === 'request-cancelled' || status === 'request-resubmit') {
+      withReactContent(Swal)
+        .fire({
+          title: `Job Request Status Update - Job Request #${id}`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Confirm',
+          cancelButtonText: 'Cancel',
+          customClass: {
+            confirmButton: 'btn btn-primary rounded',
+            cancelButton: 'btn btn-secondary rounded',
+          },
+          html: (
+            <div className='d-flex flex-column gap-4'>
+              <div
+                style={{ color: '#545454' }}
+              >{`Are you sure you want to update the job request status to "${_.startCase(
+                status
+              )}"?`}</div>
 
-            const jobRequestRef = doc(db, 'jobRequests', id);
+              <div>
+                <Form.Control
+                  id={`job-request-status-update-${id}`}
+                  type='text'
+                  as='textarea'
+                  rows={4}
+                  placeholder='Enter a message/reason'
+                />
+              </div>
+            </div>
+          ),
+          preConfirm: () => {
+            return document.getElementById(`job-request-status-update-${id}`).value;
+          },
+        })
+        .then(async (data) => {
+          const { value, isConfirmed } = data;
+          if (isConfirmed) {
+            try {
+              setIsLoading(true);
 
-            await Promise.all([
-              updateDoc(jobRequestRef, {
-                status: 'request-approved',
-                reasonMessage: null,
-                updatedAt: serverTimestamp(),
-                updatedBy: auth.currentUser,
-              }),
-              //* create notification for admin and supervisor when updated a job request status
-              notifications.create({
-                module: 'job-request',
-                target: ['admin', 'supervisor', 'sales'],
-                title: 'Job request status updated',
-                message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "Approved".`, //prettier-ignore
-                data: {
-                  redirectUrl: `/job-requests/view/${id}`,
-                },
-              }),
-            ]);
+              const jobRequestRef = doc(db, 'jobRequests', id);
 
-            toast.success('Job request status updated successfully', {
-              position: 'top-right',
-            });
-            setIsLoading(false);
+              await Promise.all([
+                updateDoc(jobRequestRef, {
+                  status,
+                  reasonMessage: value,
+                  updatedAt: serverTimestamp(),
+                  updatedBy: auth.currentUser,
+                }),
+                //* create notification for admin and supervisor when updated a job request status
+                notifications.create({
+                  module: 'job-request',
+                  target: ['admin', 'supervisor', 'sales'],
+                  title: 'Job request status updated',
+                  message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                  data: {
+                    redirectUrl: `/job-requests/view/${id}`,
+                  },
+                }),
+              ]);
 
+              toast.success('Job request status updated successfully', {
+                position: 'top-right',
+              });
+              setIsLoading(false);
+
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } catch (error) {
+              console.error('Error updating job request status:', error);
+              toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+              setIsLoading(false);
+            }
+          }
+        });
+      return;
+    }
+
+    Swal.fire({
+      title: `Job Request Status Update - Job Request #${id}`,
+      text: `Are you sure you want to update the job request status to "${_.startCase(status)}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
+    }).then(async (data) => {
+      if (data.isConfirmed) {
+        try {
+          setIsLoading(true);
+
+          const jobRequestRef = doc(db, 'jobRequests', id);
+
+          await Promise.all([
+            updateDoc(jobRequestRef, {
+              status,
+              reasonMessage: null,
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            }),
+            //* create notification for admin and supervisor when updated a job request status
+            notifications.create({
+              module: 'job-request',
+              target: ['admin', 'supervisor', 'sales'],
+              title: 'Job request status updated',
+              message: `Job request (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+              data: {
+                redirectUrl: `/job-requests/view/${id}`,
+              },
+            }),
+          ]);
+
+          toast.success('Job request status updated successfully', {
+            position: 'top-right',
+          });
+          setIsLoading(false);
+
+          if (status === 'request-approved') {
             setTimeout(() => {
               window.location.assign(`/jobs/create?jobRequestId=${id}`);
             }, 1500);
-          } catch (error) {
-            console.error('Error updating job request status:', error);
-            toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
-            setIsLoading(false);
           }
+        } catch (error) {
+          console.error('Error updating job request status:', error);
+          toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+          setIsLoading(false);
         }
-      });
-    } catch (error) {
-      console.error('Error updating job request status:', error);
-      toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
-      setIsLoading(false);
-    }
+      }
+    });
   };
 
   //* query job request
@@ -155,9 +234,7 @@ const JobRequestDetails = () => {
 
     Promise.all([
       getDoc(doc(db, 'customers', jobRequest?.customer?.id)),
-      jobRequest?.contact?.id
-        ? getDoc(doc(db, 'contacts', jobRequest?.contact?.id))
-        : undefined,
+      jobRequest?.contact?.id ? getDoc(doc(db, 'contacts', jobRequest?.contact?.id)) : undefined,
       getDocs(
         query(
           collection(db, 'customerEquipments'),
@@ -165,34 +242,32 @@ const JobRequestDetails = () => {
         )
       ),
     ])
-      .then(
-        ([customerSnapshot, contactSnapshot, customerEquipmentSnapshot]) => {
-          const customerData = customerSnapshot.data();
-          const customerEquipmentSnapshotData = !customerEquipmentSnapshot.empty ? customerEquipmentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
+      .then(([customerSnapshot, contactSnapshot, customerEquipmentSnapshot]) => {
+        const customerData = customerSnapshot.data();
+        const customerEquipmentSnapshotData = !customerEquipmentSnapshot.empty ? customerEquipmentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) : []; // prettier-ignore
 
-          if (customerSnapshot.exists) {
-            setCustomer({
-              data: {
-                id: customerSnapshot.id,
-                ...customerData,
-                equipments: customerEquipmentSnapshotData,
-              },
-              isLoading: false,
-              isError: false,
-            });
-          } else setCustomer({ data: {}, isLoading: false, isError: false });
+        if (customerSnapshot.exists) {
+          setCustomer({
+            data: {
+              id: customerSnapshot.id,
+              ...customerData,
+              equipments: customerEquipmentSnapshotData,
+            },
+            isLoading: false,
+            isError: false,
+          });
+        } else setCustomer({ data: {}, isLoading: false, isError: false });
 
-          if (
-            jobRequest?.contact &&
-            Array.isArray(customerData.contacts) &&
-            customerData.contacts.length > 0 &&
-            contactSnapshot.exists()
-          ) {
-            const contactData = contactSnapshot.data();
-            setContact(contactData);
-          }
+        if (
+          jobRequest?.contact &&
+          Array.isArray(customerData.contacts) &&
+          customerData.contacts.length > 0 &&
+          contactSnapshot.exists()
+        ) {
+          const contactData = contactSnapshot.data();
+          setContact(contactData);
         }
-      )
+      })
       .catch((err) => {
         console.error(err.message);
         setCustomer({ data: {}, isLoading: false, isError: true });
@@ -239,17 +314,12 @@ const JobRequestDetails = () => {
 
   //* query customer equipments
   useEffect(() => {
-    if (
-      jobRequest?.customerEquipments?.length < 1 ||
-      !jobRequest?.customer?.id
-    ) {
+    if (jobRequest?.customerEquipments?.length < 1 || !jobRequest?.customer?.id) {
       setCustomerEquipments({ data: [], isLoading: false, isError: false });
       return;
     }
 
-    const customerEquipmentsIds = jobRequest?.customerEquipments?.map(
-      (ce) => ce.id
-    ) || [''];
+    const customerEquipmentsIds = jobRequest?.customerEquipments?.map((ce) => ce.id) || [''];
 
     Promise.all([
       ...customerEquipmentsIds
@@ -279,10 +349,7 @@ const JobRequestDetails = () => {
 
   if (isLoading) {
     return (
-      <div
-        className='d-flex justify-content-center align-items-center'
-        style={{ height: '100vh' }}
-      >
+      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
         <Spinner animation='border' variant='primary' />
         <span className='ms-3'>Loading Job Request...</span>
       </div>
@@ -298,10 +365,7 @@ const JobRequestDetails = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <button
-            className='btn btn-primary'
-            onClick={() => router.push('/jobs')}
-          >
+          <button className='btn btn-primary' onClick={() => router.push('/jobs')}>
             Back to Jobs Request List
           </button>
         </div>
@@ -329,9 +393,7 @@ const JobRequestDetails = () => {
 
   return (
     <>
-      <GeeksSEO
-        title={`View Details for Job Request #${jobRequest.id} | VITAR Group`}
-      />
+      <GeeksSEO title={`View Details for Job Request #${jobRequest.id} | VITAR Group`} />
 
       <ContentHeader
         title={`View Details for Job Request #${jobRequest.id}`}
@@ -372,16 +434,35 @@ const JobRequestDetails = () => {
           {
             label: 'Edit Job Request',
             icon: PencilSquare,
-            onClick: () =>
-              router.push(`/job-requests/edit-job-requests/${jobRequestId}`),
+            onClick: () => router.push(`/job-requests/edit-job-requests/${jobRequestId}`),
           },
           // prettier-ignore
           ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-approved'
             ? [
                 {
-                  label: 'Approved Job Request',
+                  label: 'Request Approved',
                   icon: HandThumbsUp,
-                  onClick: (args) => handleApprovedJobRequest(jobRequestId, args.setIsLoading),
+                  onClick: (args) => handleUpdateJobRequestStatus(jobRequestId, 'request-approved', args.setIsLoading),
+                },
+              ]
+            : []),
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-cancelled'
+          ? [
+              {
+                label: 'Request Cancelled',
+                icon: HandThumbsDown,
+                onClick: (args) => handleUpdateJobRequestStatus(jobRequestId, 'request-cancelled', args.setIsLoading),
+              },
+            ]
+          : []),
+          // prettier-ignore
+          ...((auth.role === 'admin' || auth.role === 'supervisor') && jobRequest?.status !== 'request-resubmit'
+            ? [
+                {
+                  label: 'Request Resubmit',
+                  icon: CircleHalf,
+                  onClick: (args) => handleUpdateJobRequestStatus(jobRequestId, 'request-resubmit', args.setIsLoading),
                 },
               ]
             : []),

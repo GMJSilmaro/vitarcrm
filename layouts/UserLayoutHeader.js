@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 import { useLogo } from '@/contexts/LogoContext';
 import TodayDate from '@/sub-components/dashboard/user/jobs/TodayDate';
 import NotificationMenu from './NotificationMenu';
-import { ROLE_ICONS } from '@/schema/users';
+import { ROLE_COLOR, ROLE_ICON } from '@/schema/users';
 
 const UserLayoutHeader = ({ user }) => {
   const { logo } = useLogo();
@@ -201,7 +201,8 @@ const UserLayoutHeader = ({ user }) => {
     }
   };
 
-  const RoleIcon = ROLE_ICONS['technician'] || ROLE_ICONS.default;
+  const RoleIcon = ROLE_ICON['technician'] || ROLE_ICON.default;
+  const roleColor = ROLE_COLOR['technician'] || ROLE_COLOR.default;
 
   return (
     <div className='px-5 py-3 d-flex justify-content-between border boder-bottom'>
@@ -224,7 +225,7 @@ const UserLayoutHeader = ({ user }) => {
 
             {user && (
               <Badge
-                bg='secondary'
+                bg={roleColor}
                 className='fs-4 text-capitalize p-2 d-flex align-items-end'
                 style={{ gap: '6px' }}
               >
@@ -253,7 +254,7 @@ const UserLayoutHeader = ({ user }) => {
                   </div>
 
                   <Badge
-                    bg='secondary'
+                    bg={roleColor}
                     className='text-capitalize d-flex align-items-end'
                     style={{ gap: '6px' }}
                   >

@@ -417,7 +417,7 @@ const JobCalibration = () => {
               text: 'Back',
               icon: <ArrowLeftShort size={20} />,
               variant: 'outline-primary',
-              onClick: () => router.push(`/user/${workerId}`),
+              onClick: () => router.push(`/user/${workerId}/jobs/view/${jobId}`),
             },
             ...(job?.data?.status === 'job-in-progress'
               ? [
