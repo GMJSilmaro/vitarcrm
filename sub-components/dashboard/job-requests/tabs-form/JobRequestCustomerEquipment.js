@@ -637,7 +637,7 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
 
   //* set selected equipment if data exist
   useEffect(() => {
-    if (data && allCustomerEquipment.length > 1 && table) {
+    if (data && allCustomerEquipment.length > 0 && table) {
       const currentEquipmentsIds = data.customerEquipments?.length > 0 ? data.customerEquipments.map(eq => eq.id) : []; // prettier-ignore
       const selectedEquipments = allCustomerEquipment.filter((eq) => currentEquipmentsIds.includes(eq.id)); // prettier-ignore
 
@@ -645,7 +645,7 @@ const JobRequestCustomerEquipmentForm = ({ data, isLoading, handleNext, handlePr
       form.setValue('customerEquipments', selectedEquipments);
       table.setRowSelection(selectedEquipments.reduce((acc, eq) => ({ ...acc, [eq.id]: true }), {})); // prettier-ignore
     }
-  }, [data, allCustomerEquipment, table]);
+  }, [data, JSON.stringify(allCustomerEquipment), table]);
 
   //* query & set last customer equipment  id
   useEffect(() => {

@@ -261,6 +261,7 @@ const checklistEquipmentSchema = z.object({
   id: z.string(),
   tagId: z.string(),
   description: z.string(),
+  nominalValue: z.string().default(''),
   acceptance: z.string().default(''),
   resultBefore: z.string().default(''),
   resultAfter: z.string().default(''),

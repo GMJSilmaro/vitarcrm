@@ -255,11 +255,11 @@ export const HistoryTab = () => {
               <div className='d-flex flex-column gap-2 justify-content-center'>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Start</div>
-                  <div>{format(startEnd.start, 'dd-MM-yyyy HH:mm a')}</div>
+                  <div>{format(startEnd.start, 'dd-MM-yyyy hh:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>End</div>
-                  <div>{format(startEnd.end, 'dd-MM-yyyy HH:mm a')}</div>
+                  <div>{format(startEnd.end, 'dd-MM-yyyy hh:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Duration:</div> <div>{startEnd.duration}</div>

@@ -491,6 +491,7 @@ const JobRequestList = () => {
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
       columnPinning: { right: ['actions'] },
+      sorting: [{ id: 'date', desc: true }],
     },
   });
 

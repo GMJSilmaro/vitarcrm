@@ -3,10 +3,21 @@ import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
 import DataTableFilter from '@/components/common/DataTableFilter';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
-import { db } from '@/firebase';
-import { CATEGORY, STATUS, STATUS_COLOR } from '@/schema/calibration';
+import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
+import { useAuth } from '@/contexts/AuthContext';
+import { auth, db } from '@/firebase';
+import { useCertificateData } from '@/hooks/useCalibrationCertificateDate';
+import { useNotifications } from '@/hooks/useNotifications';
+import {
+  CATEGORY,
+  PRINT_STATUS,
+  PRINT_STATUS_COLOR,
+  STATUS,
+  STATUS_COLOR,
+} from '@/schema/calibration';
 import { titleCase } from '@/utils/common';
 import { globalSearchFilter } from '@/utils/datatable';
+import { usePDF } from '@react-pdf/renderer';
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -15,18 +26,34 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
-import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
+import _ from 'lodash';
+import { useRouter } from 'next/router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Badge, Button, Card, Dropdown, Form, OverlayTrigger, Spinner } from 'react-bootstrap';
+import {
+  ArrowRepeat,
   BuildingFill,
   CardList,
+  CheckCircle,
+  ExclamationCircle,
   Eye,
   FileEarmarkArrowDown,
+  HandThumbsDown,
   PencilSquare,
   PersonLinesFill,
   Printer,
+  ShieldCheck,
   Speedometer,
   ThreeDotsVertical,
   Trash,
@@ -34,9 +61,106 @@ import {
 } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+
+const DropdownItemPrintCoc = ({
+  printStatus,
+  handlePrint,
+  trigger,
+  setTrigger,
+  isLoading,
+  calibration,
+  instruments,
+  calibratedBy,
+  approvedSignatory,
+  error,
+}) => {
+  const iframeRef = useRef(null);
+  const [instance, updateInstance] = usePDF();
+
+  const showLoading = isLoading || instance.loading || calibratedBy.isLoading || approvedSignatory.isLoading; //prettier-ignore
+
+  const PDF = () => {
+    useEffect(() => {
+      if (iframeRef.current && instance.url) {
+        const iframe = iframeRef.current;
+        iframe.src = instance.url;
+        iframe.onload = () => iframe.contentWindow?.print();
+      }
+    }, [instance, iframeRef]);
+
+    return <iframe ref={iframeRef} style={{ display: 'none' }} />;
+  };
+
+  useEffect(() => {
+    return () => setTrigger(0);
+  }, []);
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      calibration &&
+      instruments.length > 0 &&
+      calibratedBy.data &&
+      approvedSignatory.data
+    ) {
+      console.log('loaded data to pdf = ', {
+        calibration,
+        instruments,
+        calibratedBy,
+        approvedSignatory,
+      });
+
+      updateInstance(
+        <CertificateOfCalibrationPDF2
+          calibration={calibration}
+          instruments={{ data: instruments }}
+          calibratedBy={calibratedBy}
+          approvedSignatory={approvedSignatory}
+        />
+      );
+    }
+  }, [
+    isLoading,
+    calibratedBy.isLoading,
+    approvedSignatory.isLoading,
+    JSON.stringify(calibration),
+    JSON.stringify(instruments),
+    JSON.stringify(calibratedBy.data),
+    JSON.stringify(approvedSignatory.data),
+  ]);
+
+  if (error) {
+    return (
+      <Dropdown.Item style={{ cursor: 'not-allowed' }}>
+        <ExclamationCircle className='me-2' /> Print Unvailable
+      </Dropdown.Item>
+    );
+  }
+
+  return (
+    <Dropdown.Item onClick={handlePrint} disabled={showLoading || !!error}>
+      {showLoading ? (
+        <Spinner className='me-2' animation='border' size='sm' />
+      ) : (
+        <Printer className='me-2' size={16} />
+      )}
+
+      {!showLoading
+        ? !printStatus
+          ? 'Print Certificate'
+          : 'Reprint Certificate'
+        : 'Initializing PDF'}
+
+      {trigger > 0 && <PDF />}
+    </Dropdown.Item>
+  );
+};
 
 const CalibrationTab = ({ job }) => {
   const router = useRouter();
+  const auth = useAuth();
+  const notifications = useNotifications();
 
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
 
@@ -78,8 +202,32 @@ const CalibrationTab = ({ job }) => {
           const status = row?.original?.status;
 
           return (
-            <Badge className='text-capitalize' bg={STATUS_COLOR[status] || 'secondary'}>
-              {_.startCase(status)}
+            <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
+              <Badge className='text-capitalize' bg={STATUS_COLOR[status] || 'secondary'}>
+                {_.startCase(status)}
+              </Badge>
+
+              {status === 'data-rejected' && (
+                <span className='fw-medium fst-italic'>
+                  "{row.original.reasonMessage || 'N/A'}"
+                </span>
+              )}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor('printStatus', {
+        id: 'print status',
+        filterFn: 'equals',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Print Status' />,
+        cell: ({ row }) => {
+          const printStatus = row?.original?.printStatus;
+
+          if (!printStatus) return null;
+
+          return (
+            <Badge className='text-capitalize' bg={PRINT_STATUS_COLOR[printStatus] || 'secondary'}>
+              {_.startCase(printStatus)}
             </Badge>
           );
         },
@@ -120,94 +268,361 @@ const CalibrationTab = ({ job }) => {
           );
         },
       }),
-      // columnHelper.accessor('actions', {
-      //   id: 'actions',
-      //   size: 50,
-      //   header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
-      //   enableSorting: false,
-      //   cell: ({ row }) => {
-      //     const [isLoading, setIsLoading] = useState(false);
+      columnHelper.accessor('actions', {
+        id: 'actions',
+        size: 50,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Actions' />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const [isLoading, setIsLoading] = useState(false);
 
-      //     const { id, certificateNumber } = row.original;
+          const { id, jobId, certificateNumber, calibratedBy, printStatus } = row.original;
 
-      //     const handleViewCalibration = (id) => {
-      //       router.push(`/jobs/${job.id}/calibrations/view/${id}`);
-      //     };
+          const [trigger, setTrigger] = useState(0);
+          const {calibration, instruments,isLoading: isLoadingCertData, error, approvedSignatory, calibratedBy: calibratedByData} = useCertificateData(id, jobId, trigger); //prettier-ignore
 
-      //     const handleEditCalibration = (id) => {
-      //       router.push(`/jobs/${job.id}/calibrations/edit-calibrations/${id}`);
-      //     };
+          console.log({ row: row.original, jobId });
 
-      //     const handleDeleteCalibration = (id, certificateNumber) => {
-      //       Swal.fire({
-      //         title: 'Are you sure?',
-      //         text: 'This action cannot be undone.',
-      //         icon: 'warning',
-      //         showCancelButton: true,
-      //         confirmButtonText: 'Confirm',
-      //         cancelButtonText: 'Cancel',
-      //         customClass: {
-      //           confirmButton: 'btn btn-primary rounded',
-      //           cancelButton: 'btn btn-secondary rounded',
-      //         },
-      //       }).then(async (data) => {
-      //         if (data.isConfirmed) {
-      //           try {
-      //             setIsLoading(true);
+          const handleViewCalibration = (id) => {
+            router.push(`/jobs/${jobId}/calibrations/view/${id}`);
+          };
 
-      //             const siteRef = doc(db, 'jobCalibrations', id);
-      //             const certificateRef = doc(db, 'jobCertificates', certificateNumber);
+          const handleEditCalibration = (id) => {
+            router.push(`/jobs/${jobId}/calibrations/edit-calibrations/${id}`);
+          };
 
-      //             await Promise.all([deleteDoc(siteRef), deleteDoc(certificateRef)]);
+          const handleDeleteCalibration = (id, certificateNumber) => {
+            Swal.fire({
+              title: 'Are you sure?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
 
-      //             toast.success('Site removed successfully', { position: 'top-right' });
-      //             setIsLoading(false);
-      //           } catch (error) {
-      //             console.error('Error removing site:', error);
-      //             toast.error('Error removing site: ' + error.message, { position: 'top-right' });
-      //             setIsLoading(false);
-      //           }
-      //         }
-      //       });
-      //     };
+                  const calibrationRef = doc(db, 'jobCalibrations', id);
+                  const certificateRef = doc(db, 'jobCertificates', id);
 
-      //     return (
-      //       <OverlayTrigger
-      //         rootClose
-      //         trigger='click'
-      //         placement='left-start'
-      //         overlay={
-      //           <Dropdown.Menu show style={{ zIndex: 999 }}>
-      //             <Dropdown.Item onClick={() => handleViewCalibration(id)}>
-      //               <Eye className='me-2' size={16} />
-      //               View Calibration
-      //             </Dropdown.Item>
-      //             <Dropdown.Item onClick={() => handleEditCalibration(id)}>
-      //               <PencilSquare className='me-2' size={16} />
-      //               Edit Calibration
-      //             </Dropdown.Item>
-      //             <Dropdown.Item onClick={() => handleDeleteCalibration(id, certificateNumber)}>
-      //               <Trash className='me-2' size={16} />
-      //               Delete Calibration
-      //             </Dropdown.Item>
-      //             <Dropdown.Item onClick={() => {}}>
-      //               <Printer className='me-2' size={16} />
-      //               Reprint Certificate
-      //             </Dropdown.Item>
-      //           </Dropdown.Menu>
-      //         }
-      //       >
-      //         <Button variant='light' className='p-2' size='sm'>
-      //           {isLoading ? (
-      //             <Spinner animation='border' size='sm' />
-      //           ) : (
-      //             <ThreeDotsVertical size={16} />
-      //           )}
-      //         </Button>
-      //       </OverlayTrigger>
-      //     );
-      //   },
-      // }),
+                  await Promise.all([
+                    deleteDoc(calibrationRef),
+                    deleteDoc(certificateRef),
+                    //* create notification when calibration is removed
+                    notifications.create({
+                      icon: 'calibration',
+                      target: ['admin', 'supervisor'],
+                      title: 'Calibration removed',
+                      message: `Calibration (#${id}) was removed by ${auth.currentUser.displayName}.`,
+                      data: {
+                        redirectUrl: `/jobs/${jobId}/calibrations`,
+                      },
+                    }),
+                  ]);
+
+                  toast.success('Calibration removed successfully', { position: 'top-right' });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error removing calibration:', error);
+                  toast.error('Error removing calibration: ' + error.message, {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
+
+          const notifyCalibratedBy = async (status) => {
+            try {
+              const workerId = calibratedBy.id;
+              const snapshots = await getDocs(
+                query(collection(db, 'users'), where('workerId', '==', workerId))
+              );
+
+              if (!snapshots.empty) {
+                const snapshot = snapshots.docs[0];
+                const user = { id: snapshot.id, ...snapshot.data() };
+
+                if (user && user.id) {
+                  await notifications.create({
+                    module: 'calibration',
+                    target: [user.id],
+                    title: 'Calibration status updated',
+                    message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                    data: {
+                      redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+                    },
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Failed to notify technician:', error);
+            }
+          };
+
+          const handleUpdateCalibrationStatus = (id, status) => {
+            if (status === 'data-rejected') {
+              withReactContent(Swal)
+                .fire({
+                  title: `Calibration Status Update - Calibration #${id}`,
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonText: 'Confirm',
+                  cancelButtonText: 'Cancel',
+                  customClass: {
+                    confirmButton: 'btn btn-primary rounded',
+                    cancelButton: 'btn btn-secondary rounded',
+                  },
+                  html: (
+                    <div className='d-flex flex-column gap-4'>
+                      <div
+                        style={{ color: '#545454' }}
+                      >{`Are you sure you want to update the calibration status to "${_.startCase(
+                        status
+                      )}"?`}</div>
+
+                      <div>
+                        <Form.Control
+                          id={`calibration-status-update-${id}`}
+                          type='text'
+                          as='textarea'
+                          rows={4}
+                          placeholder='Enter a message/reason'
+                        />
+                      </div>
+                    </div>
+                  ),
+                  preConfirm: () => {
+                    return document.getElementById(`calibration-status-update-${id}`).value;
+                  },
+                })
+                .then(async (data) => {
+                  const { value, isConfirmed } = data;
+                  if (isConfirmed) {
+                    try {
+                      setIsLoading(true);
+
+                      const calibrationRef = doc(db, 'jobCalibrations', id);
+
+                      await Promise.all([
+                        updateDoc(calibrationRef, {
+                          status,
+                          reasonMessage: value,
+                          updatedAt: serverTimestamp(),
+                          updatedBy: auth.currentUser,
+                        }),
+                        //* create notification for admin and supervisor when updated a calibration status
+                        notifications.create({
+                          module: 'calibration',
+                          target: ['admin', 'supervisor'],
+                          title: 'Calibration status updated',
+                          message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                          data: {
+                            redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+                          },
+                        }),
+
+                        notifyCalibratedBy(status),
+                      ]);
+
+                      toast.success('Job request status updated successfully', {
+                        position: 'top-right',
+                      });
+                      setIsLoading(false);
+                    } catch (error) {
+                      console.error('Error updating job request status:', error);
+                      toast.error('Error updating job request status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+                      setIsLoading(false);
+                    }
+                  }
+                });
+              return;
+            }
+
+            Swal.fire({
+              title: `Calibration Status Update - Calibration #${id}`,
+              text: `Are you sure you want to update the calibration status to "${_.startCase(
+                status
+              )}"?`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  const jobCalibrationRef = doc(db, 'jobCalibrations', id);
+
+                  await Promise.all([
+                    updateDoc(jobCalibrationRef, {
+                      status,
+                      reasonMessage: null,
+                      updatedAt: serverTimestamp(),
+                      updatedBy: auth.currentUser,
+                    }),
+
+                    //* create notification for admin and supervisor when updated a calibration status
+                    notifications.create({
+                      module: 'calibration',
+                      target: ['admin', 'supervisor'],
+                      title: 'Calibration status updated',
+                      message: `Calibration (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
+                      data: {
+                        redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
+                      },
+                    }),
+
+                    notifyCalibratedBy(status),
+                  ]);
+
+                  toast.success('Calibration status updated successfully', {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error updating calibration status:', error);
+                  toast.error('Error updating calibration status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
+
+          const handlePrintCertificate = async (id, status) => {
+            setTrigger((prev) => prev + 1);
+
+            try {
+              const jobCalibrationRef = doc(db, 'jobCalibrations', id);
+
+              const calibrationPrintStatus = !status
+                ? 'printed'
+                : status === 'printed'
+                ? 'reprinted'
+                : 'reprinted';
+
+              await updateDoc(jobCalibrationRef, {
+                printStatus: calibrationPrintStatus,
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              });
+
+              //* notify admin & supervisor when printed
+              await notifications.create({
+                module: 'calibration',
+                target: ['admin', 'supervisor'],
+                title: `Certificate ${calibrationPrintStatus}`,
+                message: `Certificate (#${id})'s certificate has been printed by ${auth.currentUser.displayName}.`,
+                data: {
+                  redirectUrl: `/jobs/view/${jobId}`,
+                },
+              });
+            } catch (error) {
+              console.error('Error printing certificate:', error);
+            }
+          };
+
+          if (auth.role === 'sales') return null;
+
+          return (
+            <OverlayTrigger
+              rootClose
+              trigger='click'
+              placement='left-start'
+              overlay={
+                <Dropdown.Menu show style={{ zIndex: 999 }}>
+                  <Dropdown.Item onClick={() => handleViewCalibration(id)}>
+                    <Eye className='me-2' size={16} />
+                    View Calibration
+                  </Dropdown.Item>
+
+                  <Dropdown.Item onClick={() => handleEditCalibration(id)}>
+                    <PencilSquare className='me-2' size={16} />
+                    Edit Calibration
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => handleDeleteCalibration(id, certificateNumber)}>
+                    <Trash className='me-2' size={16} />
+                    Delete Calibration
+                  </Dropdown.Item>
+
+                  <OverlayTrigger
+                    rootClose
+                    trigger='click'
+                    placement='left'
+                    overlay={
+                      <Dropdown.Menu show style={{ zIndex: 999 }}>
+                        <Dropdown.Item
+                          onClick={() => {
+                            handleUpdateCalibrationStatus(id, 'data-validation', calibratedBy);
+                          }}
+                        >
+                          <CheckCircle className='me-2' size={16} />
+                          Data Validation
+                        </Dropdown.Item>
+
+                        <Dropdown.Item
+                          onClick={() => {
+                            handleUpdateCalibrationStatus(id, 'data-rejected', calibratedBy);
+                          }}
+                        >
+                          <HandThumbsDown className='me-2' size={16} />
+                          Data Rejected
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          onClick={() => {
+                            handleUpdateCalibrationStatus(id, 'cert-complete', calibratedBy);
+                          }}
+                        >
+                          <ShieldCheck className='me-2' size={16} />
+                          Cert Complete
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    }
+                  >
+                    <Dropdown.Item>
+                      <ArrowRepeat className='me-2' size={16} />
+                      Update Status
+                    </Dropdown.Item>
+                  </OverlayTrigger>
+
+                  <DropdownItemPrintCoc
+                    handlePrint={() => handlePrintCertificate(id, printStatus)}
+                    printStatus={printStatus}
+                    trigger={trigger}
+                    setTrigger={setTrigger}
+                    isLoading={isLoadingCertData}
+                    calibration={calibration}
+                    instruments={instruments}
+                    calibratedBy={calibratedByData}
+                    approvedSignatory={approvedSignatory}
+                    error={error}
+                  />
+                </Dropdown.Menu>
+              }
+            >
+              <Button variant='light' className='p-2' size='sm'>
+                {isLoading ? (
+                  <Spinner animation='border' size='sm' />
+                ) : (
+                  <ThreeDotsVertical size={16} />
+                )}
+              </Button>
+            </OverlayTrigger>
+          );
+        },
+      }),
     ];
   }, []);
 
@@ -245,6 +660,18 @@ const CalibrationTab = ({ job }) => {
           { label: 'All Status', value: '' },
           ...STATUS.map((s) => ({
             label: titleCase(s),
+            value: s,
+          })),
+        ],
+      },
+      {
+        label: 'Print Status',
+        columnId: 'print status',
+        type: 'select',
+        options: [
+          { label: 'All Print Status', value: '' },
+          ...PRINT_STATUS.map((s) => ({
+            label: _.startCase(s),
             value: s,
           })),
         ],

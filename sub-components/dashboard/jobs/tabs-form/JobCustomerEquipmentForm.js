@@ -644,7 +644,7 @@ const JobCustomerEquipmentForm = ({
 
   //* set selected equipment if data exist
   useEffect(() => {
-    if (data && allCustomerEquipment.length > 1 && table && !form.getValues('jobRequestId')) {
+    if (data && allCustomerEquipment.length > 0 && table && !form.getValues('jobRequestId')) {
       const currentEquipmentsIds = data.customerEquipments?.length > 0 ? data.customerEquipments.map(eq => eq.id) : []; // prettier-ignore
       const selectedEquipments = allCustomerEquipment.filter((eq) => currentEquipmentsIds.includes(eq.id)); // prettier-ignore
 
@@ -659,7 +659,7 @@ const JobCustomerEquipmentForm = ({
     if (
       form.getValues('jobRequestId') &&
       form.getValues('jobRequestId')?.jobRequest &&
-      allCustomerEquipment.length > 1 &&
+      allCustomerEquipment.length > 0 &&
       table
     ) {
       const jobRequest = form.getValues('jobRequestId')?.jobRequest;
@@ -689,7 +689,7 @@ const JobCustomerEquipmentForm = ({
   useEffect(() => {
     if (toDuplicateJob) {
       //* set selected equipment (customerEquipments)
-      if (allCustomerEquipment.length > 1 && table) {
+      if (allCustomerEquipment.length > 0 && table) {
         const currentEquipmentsIds = toDuplicateJob.customerEquipments?.length > 0 ? toDuplicateJob.customerEquipments.map(eq => eq.id) : []; // prettier-ignore
         const selectedEquipments = allCustomerEquipment.filter((eq) => currentEquipmentsIds.includes(eq.id)); // prettier-ignore
 
