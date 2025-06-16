@@ -1,6 +1,8 @@
 import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrationPDF1';
 import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import { useNotifications } from '@/hooks/useNotifications';
 import {
   TEST_LOADS,
   TRACEABILITY_ACCREDITATION_BODY,
@@ -12,13 +14,24 @@ import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
 import { countDecimals } from '@/utils/common';
 import { usePDF } from '@react-pdf/renderer';
 import { add, format } from 'date-fns';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import { ceil, divide, multiply, round } from 'mathjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, Image, Spinner, Table } from 'react-bootstrap';
 import { Calendar4, Download, Printer } from 'react-bootstrap-icons';
 
 const CertificateOfCalibration = ({ calibration, instruments }) => {
+  const auth = useAuth();
+  const notifications = useNotifications();
+
   const iframeRef = useRef(null);
 
   const [instance, updateInstance] = usePDF();
@@ -243,13 +256,45 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     [instance.url]
   );
 
-  const printPDF = useCallback(() => {
-    if (iframeRef.current) {
-      const iframe = iframeRef.current;
-      iframe.src = instance.url;
-      iframe.onload = () => iframe.contentWindow?.print();
-    }
-  }, [instance.url, iframeRef]);
+  const printPDF = useCallback(
+    async (id, status) => {
+      try {
+        const jobCalibrationRef = doc(db, 'jobCalibrations', id);
+
+        const calibrationPrintStatus = !status
+          ? 'printed'
+          : status === 'printed'
+          ? 'reprinted'
+          : 'reprinted';
+
+        await updateDoc(jobCalibrationRef, {
+          printStatus: calibrationPrintStatus,
+          updatedAt: serverTimestamp(),
+          updatedBy: auth.currentUser,
+        });
+
+        //* notify admin & supervisor when printed
+        await notifications.create({
+          module: 'calibration',
+          target: ['admin', 'supervisor'],
+          title: `Certificate ${calibrationPrintStatus}`,
+          message: `Certificate (#${id})'s certificate has been printed by ${auth.currentUser.displayName}.`,
+          data: {
+            redirectUrl: `/jobs/view/${jobId}`,
+          },
+        });
+      } catch (error) {
+        console.error('Error printing certificate:', error);
+      }
+
+      if (iframeRef.current) {
+        const iframe = iframeRef.current;
+        iframe.src = instance.url;
+        iframe.onload = () => iframe.contentWindow?.print();
+      }
+    },
+    [instance.url, iframeRef]
+  );
 
   //* set calibratedBy and approvedSignatory
   useEffect(() => {
@@ -259,11 +304,6 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       calibration?.approvedSignatory &&
       calibration?.approvedSignatory?.id
     ) {
-      console.log('zzzzz', {
-        calibratedById: calibration.calibratedBy.id,
-        approvedSignatoryId: calibration.approvedSignatory.id,
-      });
-
       getDocs(
         query(
           collection(db, 'users'),
@@ -348,7 +388,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
           </div>
 
           <div className='d-flex align-items-center gap-2'>
-            <Button onClick={() => printPDF()}>
+            <Button onClick={() => printPDF(calibration.id, calibration.printStatus)}>
               <Printer size={18} className='me-2' />
               Print
             </Button>

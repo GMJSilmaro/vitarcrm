@@ -19,7 +19,6 @@ import React, { use, useEffect, useMemo, useState } from 'react';
 import { Button, Card, Col, Form, Row } from 'react-bootstrap';
 
 import { Controller, useFormContext } from 'react-hook-form';
-import { useDebouncedCallback } from 'use-debounce';
 
 const JobCalibrationChecklistForm = ({
   data,
@@ -63,6 +62,31 @@ const JobCalibrationChecklistForm = ({
       columnHelper.accessor('tagId', {
         id: 'equipment id',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment ID' />,
+      }),
+      columnHelper.accessor('nominalValue', {
+        id: 'nominal value',
+        enableSorting: false,
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Nominal Value' />,
+        cell: ({ row }) => {
+          const index = row.index;
+
+          return (
+            <Controller
+              name={`checklistEquipments.${index}.nominalValue`}
+              control={form.control}
+              render={({ field }) => (
+                <>
+                  <Form.Control
+                    className='text-center'
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    type='text'
+                  />
+                </>
+              )}
+            />
+          );
+        },
       }),
       columnHelper.accessor('acceptance', {
         id: 'acceptance',
@@ -157,6 +181,12 @@ const JobCalibrationChecklistForm = ({
         placeholder: 'Search by equipment ID...',
       },
       {
+        label: 'Nominal Value',
+        columnId: 'nominal value',
+        type: 'text',
+        placeholder: 'Search by nominal value...',
+      },
+      {
         label: 'Acceptance',
         columnId: 'acceptance',
         type: 'text',
@@ -242,6 +272,7 @@ const JobCalibrationChecklistForm = ({
         id: eq.inventoryId,
         tagId: eq.tagId,
         description: eq.description,
+        nominalValue: '',
         acceptance: '',
         resultBefore: '',
         resultAfter: '',
@@ -273,6 +304,7 @@ const JobCalibrationChecklistForm = ({
           id: eq.inventoryId,
           tagId: eq.tagId,
           description: eq.description,
+          nominalValue: '',
           acceptance: '',
           resultBefore: '',
           resultAfter: '',
@@ -291,6 +323,7 @@ const JobCalibrationChecklistForm = ({
           id: eq.inventoryId,
           tagId: eq.tagId,
           description: eq.description,
+          nominalValue: '',
           acceptance: '',
           resultBefore: '',
           resultAfter: '',
@@ -304,8 +337,6 @@ const JobCalibrationChecklistForm = ({
   //* set data if toDuplicateJob exists
   useEffect(() => {
     if (toDuplicateJob) {
-      console.log({ toDuplicateJob });
-
       const checklistEquipments = toDuplicateJob?.checklistEquipments || [];
       const refEquipments = toDuplicateJob?.equipments || [];
 
@@ -326,6 +357,7 @@ const JobCalibrationChecklistForm = ({
           id: eq.inventoryId,
           tagId: eq.tagId,
           description: eq.description,
+          nominalValue: '',
           acceptance: '',
           resultBefore: '',
           resultAfter: '',
@@ -344,6 +376,7 @@ const JobCalibrationChecklistForm = ({
           id: eq.inventoryId,
           tagId: eq.tagId,
           description: eq.description,
+          nominalValue: '',
           acceptance: '',
           resultBefore: '',
           resultAfter: '',
@@ -384,8 +417,8 @@ const JobCalibrationChecklistForm = ({
         <hr className='my-4' />
         <h4 className='mb-0'>Reference Equipment</h4>
         <p className='text-muted fs-6'>
-          Details about reference equipment with their respective acceptance and before & after
-          calibration results.
+          Details about reference equipment with their respective nominal value, acceptance and
+          before & after calibration results.
         </p>
 
         <Row>
@@ -478,7 +511,7 @@ const JobCalibrationChecklistForm = ({
         <hr className='my-4' />
         <h4 className='mb-0'>Verified By Lab In-charge</h4>
         <p className='text-muted fs-6'>
-          Details about checklist's verified by lab in-charger before and after calibration.
+          Details about checklist's verified by lab in-charge before and after calibration.
         </p>
 
         <Row className='mb-3 row-gap-3'>

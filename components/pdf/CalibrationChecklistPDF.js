@@ -154,7 +154,7 @@ const CalibrationChecklistPDF = ({
         <View style={styles.container}>
           <View style={[styles.block, { marginBottom: 8 }]}>
             <View style={styles.blockContentLeft}>
-              <Text>Customer</Text>
+              <Text>Date</Text>
             </View>
 
             <View style={styles.separator}>
@@ -170,7 +170,7 @@ const CalibrationChecklistPDF = ({
         <View style={styles.container}>
           <View style={[styles.block, { marginBottom: 8 }]}>
             <View style={styles.blockContentLeft}>
-              <Text>Date</Text>
+              <Text>Customer</Text>
             </View>
 
             <View style={styles.separator}>
@@ -195,7 +195,7 @@ const CalibrationChecklistPDF = ({
             alignItems: 'center',
             border: '1px solid #00000',
             borderBottom: 'none',
-            fontSize: 10,
+            fontSize: 9.5,
             marginBottom: 8,
           }}
         >
@@ -207,28 +207,85 @@ const CalibrationChecklistPDF = ({
               borderBottom: '1px solid #00000',
             }}
           >
-            <View style={{ width: '8%', textAlign: 'center' }}>
-              <Text style={{ fontFamily: 'TimesNewRomanBold' }}>NO</Text>
+            <View
+              style={{
+                width: '4%',
+                textAlign: 'center',
+                height: '100%',
+              }}
+            >
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>NO</Text>
             </View>
 
-            <View style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-              <Text style={{ fontFamily: 'TimesNewRomanBold' }}>EQUIPMENT</Text>
+            <View
+              style={{
+                width: '20%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+                height: '100%',
+              }}
+            >
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>EQUIPMENT</Text>
             </View>
 
-            <View style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-              <Text style={{ fontFamily: 'TimesNewRomanBold' }}>EQUIPMENT ID</Text>
+            <View
+              style={{
+                width: '20%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+                height: '100%',
+              }}
+            >
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>
+                EQUIPMENT ID
+              </Text>
             </View>
 
-            <View style={{ width: '18%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-              <Text style={{ fontFamily: 'TimesNewRomanBold' }}>ACCEPTANNCE</Text>
+            <View
+              style={{
+                width: '14%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+                height: '100%',
+              }}
+            >
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>NOMINAL</Text>
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>VALUE</Text>
             </View>
 
-            <View style={{ width: '17%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-              <Text style={{ fontFamily: 'TimesNewRomanBold' }}>RESULT BEFORE</Text>
+            <View
+              style={{
+                width: '14%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+                height: '100%',
+              }}
+            >
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>ACCEPTANNCE</Text>
             </View>
 
-            <View style={{ width: '17%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-              <Text style={{ fontFamily: 'TimesNewRomanBold' }}>RESULT AFTER</Text>
+            <View
+              style={{
+                width: '14%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+                height: '100%',
+              }}
+            >
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>RESULT</Text>
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>BEFORE</Text>
+            </View>
+
+            <View
+              style={{
+                width: '14%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+                height: '100%',
+              }}
+            >
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>RESULT</Text>
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>AFTER</Text>
             </View>
           </View>
 
@@ -241,28 +298,74 @@ const CalibrationChecklistPDF = ({
                 borderBottom: '1px solid #00000',
               }}
             >
-              <View style={{ width: '8%', textAlign: 'center' }}>
+              <View style={{ width: '4%', textAlign: 'center', margin: 'auto 0', height: '100%' }}>
                 <Text>{i + 1}</Text>
               </View>
 
-              <View style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-                <Text>{ce.description}</Text>
+              <View
+                style={{
+                  width: '20%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                  height: '100%',
+                }}
+              >
+                <Text style={{ margin: 'auto 0' }}>{ce.description}</Text>
               </View>
 
-              <View style={{ width: '20%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-                <Text>{ce.tagId}</Text>
+              <View
+                style={{
+                  width: '20%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                  height: '100%',
+                }}
+              >
+                <Text style={{ margin: 'auto 0' }}>{ce.tagId}</Text>
               </View>
 
-              <View style={{ width: '18%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-                <Text>{ce.acceptance}</Text>
+              <View
+                style={{
+                  width: '14%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                  height: '100%',
+                }}
+              >
+                <Text style={{ margin: 'auto 0' }}>{ce.nominalValue}</Text>
               </View>
 
-              <View style={{ width: '17%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-                <Text>{ce.resultBefore}</Text>
+              <View
+                style={{
+                  width: '14%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                  height: '100%',
+                }}
+              >
+                <Text style={{ margin: 'auto 0' }}>{ce.acceptance}</Text>
               </View>
 
-              <View style={{ width: '17%', borderLeft: '1px solid #00000', textAlign: 'center' }}>
-                <Text>{ce.resultAfter}</Text>
+              <View
+                style={{
+                  width: '14%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                  height: '100%',
+                }}
+              >
+                <Text style={{ margin: 'auto 0' }}>{ce.resultBefore}</Text>
+              </View>
+
+              <View
+                style={{
+                  width: '14%',
+                  borderLeft: '1px solid #00000',
+                  textAlign: 'center',
+                  height: '100%',
+                }}
+              >
+                <Text style={{ margin: 'auto 0' }}>{ce.resultAfter}</Text>
               </View>
             </View>
           ))}

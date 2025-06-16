@@ -132,16 +132,17 @@ const CalibrationChecklist = ({ job, customer, users }) => {
           <tbody>
             <tr>
               <th>Date</th>
-              <td colSpan={4}>{format(new Date(), 'dd MMMM yyyy')}</td>
+              <td colSpan={5}>{format(new Date(), 'dd MMMM yyyy')}</td>
             </tr>
             <tr>
               <th>Customer</th>
-              <td colSpan={4}>{customer?.data?.customerName || ''}</td>
+              <td colSpan={5}>{customer?.data?.customerName || ''}</td>
             </tr>
 
             <tr>
               <th>Equipment</th>
               <th>Equipment ID</th>
+              <th>Nominal Value</th>
               <th>Acceptannce</th>
               <th>Result Before</th>
               <th>Result After</th>
@@ -149,11 +150,12 @@ const CalibrationChecklist = ({ job, customer, users }) => {
 
             {job.checklistEquipments?.map((ce) => (
               <tr key={ce.id}>
-                <td>{ce.description}</td>
-                <td>{ce.tagId}</td>
-                <td>{ce.acceptance}</td>
-                <td>{ce.resultBefore}</td>
-                <td>{ce.resultAfter}</td>
+                <td>{ce?.description || ''}</td>
+                <td>{ce?.tagId || ''}</td>
+                <td>{ce?.nominalValue || ''}</td>
+                <td>{ce?.acceptance || ''}</td>
+                <td>{ce?.resultBefore || ''}</td>
+                <td>{ce?.resultAfter || ''}</td>
               </tr>
             ))}
           </tbody>
@@ -226,7 +228,7 @@ const CalibrationChecklist = ({ job, customer, users }) => {
           <div>
             <h4 className='mb-0'>Verified by Lab In-charge</h4>
             <p className='text-muted fs-6 mb-0'>
-              Details about checklist's verified by before and after calibration.
+              Details about checklist's verified by lab in-charge before and after calibration.
             </p>
           </div>
         </div>

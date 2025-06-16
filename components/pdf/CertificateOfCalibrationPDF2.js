@@ -1,7 +1,3 @@
-import InterRegular from 'public/fonts/inter/Inter-Regular.ttf';
-import InterBold from 'public/fonts/inter/Inter-Bold.ttf';
-import InterItalic from 'public/fonts/inter/Inter-Italic.ttf';
-
 import TimesNewRomanRegular from 'public/fonts/times-new-roman/Times-New-Roman-Regular.ttf';
 import TimesNewRomanBold from 'public/fonts/times-new-roman/Times-New-Roman-Bold.ttf';
 import TimesNewRomanItalic from 'public/fonts/times-new-roman/Times-New-Roman-Italic.ttf';
@@ -1315,7 +1311,7 @@ const CertificateOfCalibrationPDF2 = ({
                 >
                   <Text
                     style={{
-                      fontFamily: 'InterBold',
+                      fontFamily: 'TimesNewRomanBold',
                       fontSize: 8,
                       marginBottom: 4,
                     }}

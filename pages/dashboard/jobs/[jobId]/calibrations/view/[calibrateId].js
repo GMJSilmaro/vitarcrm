@@ -35,7 +35,7 @@ import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibratio
 import { PDFViewer } from '@react-pdf/renderer';
 import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrationPDF1';
 import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
-import { STATUS_COLOR } from '@/schema/calibration';
+import { PRINT_STATUS_COLOR, STATUS_COLOR } from '@/schema/calibration';
 import _ from 'lodash';
 import { useNotifications } from '@/hooks/useNotifications';
 import withReactContent from 'sweetalert2-react-content';
@@ -390,6 +390,14 @@ const CalibrationDetails = () => {
             label: _.startCase(calibration?.status),
             color: STATUS_COLOR[calibration?.status] || 'secondary',
           },
+          ...(calibration?.status
+            ? [
+                {
+                  label: _.startCase(calibration?.printStatus),
+                  color: PRINT_STATUS_COLOR[calibration?.printStatus] || 'secondary',
+                },
+              ]
+            : []),
         ]}
         actionButtons={[
           {

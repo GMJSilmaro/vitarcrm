@@ -4,13 +4,23 @@ import Select from '@/components/Form/Select';
 import { isProd } from '@/constants/environment';
 import { db } from '@/firebase';
 import { PRIORITY_LEVELS, SCOPE_TYPE, STATUS } from '@/schema/job';
-import { format } from 'date-fns';
+import { format, formatDistanceStrict } from 'date-fns';
 import { collection, limit, onSnapshot, query, where } from 'firebase/firestore';
 import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Col, Form, OverlayTrigger, Row, Spinner, Tooltip } from 'react-bootstrap';
-import { Save } from 'react-bootstrap-icons';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Form,
+  OverlayTrigger,
+  Row,
+  Spinner,
+  Tooltip,
+} from 'react-bootstrap';
+import { Lightbulb, Save } from 'react-bootstrap-icons';
 import { Controller, useFormContext } from 'react-hook-form';
 
 import { toast } from 'react-toastify';
@@ -111,6 +121,39 @@ const JobSchedulingForm = ({
     }
 
     return <div className='text-capitalize'>{data.label}</div>;
+  };
+
+  const renderJobRequestScheduleLoadedAlert = (jobRequest) => {
+    if (!jobRequest) return null;
+
+    const startDate = jobRequest?.startDate || '';
+    const startTime = jobRequest?.startTime || '';
+    const endDate = jobRequest?.endDate || '';
+    const endTime = jobRequest?.endTime || '';
+
+    if (startDate && startTime && endDate && endTime) {
+      const start = new Date(`${startDate}T${startTime}:00`);
+      const end = new Date(`${endDate}T${endTime}:00`);
+      const duration = formatDistanceStrict(start, end);
+
+      return (
+        <Alert
+          className='mb-5 d-flex align-items-center gap-2'
+          style={{ width: 'fit-content' }}
+          variant='info'
+        >
+          <Lightbulb className='flex-shrink-0 me-1' size={20} />{' '}
+          <div>
+            Job is requested to start on{' '}
+            <span className='fw-bold'>{format(start, 'dd MMMM yyyy hh:mm a')}</span> and end on{' '}
+            <span className='fw-bold'>{format(end, 'dd MMMM yyyy hh:mm a')}</span>. Duration is{' '}
+            <span className='fw-bold'>{duration}</span>.
+          </div>
+        </Alert>
+      );
+    }
+
+    return null;
   };
 
   //* set startDate and startTime from router query
@@ -441,6 +484,9 @@ const JobSchedulingForm = ({
             </Row>
 
             <hr className='my-4' />
+
+            {renderJobRequestScheduleLoadedAlert(form.watch('jobRequestId')?.jobRequest)}
+
             <h4 className='mb-0'>Schedule</h4>
             <p className='text-muted fs-6'>Details about the job schedule.</p>
 

@@ -30,7 +30,8 @@ import {
 import toast from 'react-hot-toast';
 import Select from '@/components/Form/Select';
 import { useRouter } from 'next/router';
-import { ExclamationCircle } from 'react-bootstrap-icons';
+import { ExclamationCircle, Lightbulb } from 'react-bootstrap-icons';
+import { format, formatDistanceStrict } from 'date-fns';
 
 const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const router = useRouter();
@@ -164,6 +165,12 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
       const customer = customersOptions.data.find((c) => c.value === option?.jobRequest?.customer?.id); //prettier-ignore
       const customerEquipmentsFromJobRequest = option?.jobRequest?.customerEquipments || [];
       const tasksFromJobRequest = option?.jobRequest?.tasks || [];
+
+      const startDateFromJobRequest = option?.jobRequest?.startDate || '';
+      const startTimeFromJobRequest = option?.jobRequest?.startTime || '';
+      const endDateFromJobRequest = option?.jobRequest?.endDate || '';
+      const endTimeFromJobRequest = option?.jobRequest?.endTime || '';
+
       form.setValue('customer', customer);
 
       if (customer) {
@@ -243,6 +250,20 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
 
         //* set tasks based on job request
         form.setValue('tasks', tasksFromJobRequest);
+
+        //* set start and end date & time based on job request, only if those values exist
+        if (
+          !data &&
+          startDateFromJobRequest &&
+          startTimeFromJobRequest &&
+          endDateFromJobRequest &&
+          endTimeFromJobRequest
+        ) {
+          form.setValue('startDate', startDateFromJobRequest);
+          form.setValue('startTime', startTimeFromJobRequest);
+          form.setValue('endDate', endDateFromJobRequest);
+          form.setValue('endTime', endTimeFromJobRequest);
+        }
       }
     },
     [data, JSON.stringify(customersOptions)]

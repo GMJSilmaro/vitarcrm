@@ -2,7 +2,7 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
-import { STATUS_COLOR } from '@/schema/calibration';
+import { PRINT_STATUS_COLOR, STATUS_COLOR } from '@/schema/calibration';
 import CalibrationForm from '@/sub-components/dashboard/jobs/calibrations/CalibrationForm';
 import { GeeksSEO } from '@/widgets';
 import {
@@ -354,6 +354,14 @@ const EditCalibrations = () => {
             label: _.startCase(calibration?.status),
             color: STATUS_COLOR[calibration?.status] || 'secondary',
           },
+          ...(calibration?.status
+            ? [
+                {
+                  label: _.startCase(calibration?.printStatus),
+                  color: PRINT_STATUS_COLOR[calibration?.printStatus] || 'secondary',
+                },
+              ]
+            : []),
         ]}
         actionButtons={[
           {

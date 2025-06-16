@@ -17,6 +17,12 @@ export const STATUS_COLOR = {
   'cert-complete': 'purple',
 };
 
+export const PRINT_STATUS = ['printed', 'reprinted'];
+export const PRINT_STATUS_COLOR = {
+  printed: 'success',
+  reprinted: 'warning',
+};
+
 export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
 
 export const TRACEABILITY_TYPE = ['1', '2', '3'];
