@@ -88,10 +88,10 @@ const EquipmentRequested = ({ calibrations }) => {
       }),
       columnHelper.accessor(
         (row) => {
-          const rangeMin = row?.rangeMin;
-          const rangeMax = row?.rangeMax;
+          const rangeMin = row?.rangeMin ?? '';
+          const rangeMax = row?.rangeMax ?? '';
           const unit = row?.uom || '';
-          return rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : '';
+          return String(rangeMin) && String(rangeMax) ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
         },
         {
           id: 'range',
@@ -272,10 +272,10 @@ const EquipmentCompleted = ({ calibrations }) => {
       }),
       columnHelper.accessor(
         (row) => {
-          const rangeMin = row?.rangeMin;
-          const rangeMax = row?.rangeMax;
+          const rangeMin = row?.rangeMin ?? '';
+          const rangeMax = row?.rangeMax ?? '';
           const unit = row?.uom || '';
-          return rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : '';
+          return String(rangeMin) && String(rangeMax) ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
         },
         {
           id: 'range',
