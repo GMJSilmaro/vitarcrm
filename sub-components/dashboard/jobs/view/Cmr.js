@@ -370,7 +370,8 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
                 .map((equipment, i) => {
                   const rangeMin = equipment?.rangeMin;
                   const rangeMax = equipment?.rangeMax;
-                  const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+                  const unit = equipment?.uom || '';
+                  const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                   return (
                     <tr key={`${equipment.id}-${i}`}>
@@ -445,7 +446,8 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
                 .map((equipment, i) => {
                   const rangeMin = equipment?.rangeMin;
                   const rangeMax = equipment?.rangeMax;
-                  const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+                  const unit = equipment?.uom || '';
+                  const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                   return (
                     <tr key={`${equipment.id}-${i}`}>

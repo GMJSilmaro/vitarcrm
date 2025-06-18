@@ -69,6 +69,7 @@ import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
+//* Temporary - need to refractor
 const DropdownItemPrintCoc = ({
   printStatus,
   handlePrint,
@@ -152,11 +153,7 @@ const DropdownItemPrintCoc = ({
         <Printer className='me-2' size={16} />
       )}
 
-      {!showLoading
-        ? !printStatus
-          ? 'Print Certificate'
-          : 'Reprint Certificate'
-        : 'Initializing PDF'}
+      {!showLoading ? 'Print Certificate' : 'Initializing PDF'}
 
       {trigger > 0 && <PDF />}
     </Dropdown.Item>
@@ -284,7 +281,7 @@ const JobCalibration = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, jobId, certificateNumber, calibratedBy, printStatus } = row.original;
+          const { id, jobId, certificateNumber, calibratedBy, printStatus, status } = row.original;
 
           const [trigger, setTrigger] = useState(0);
           const {calibration, instruments,isLoading: isLoadingCertData, error, approvedSignatory, calibratedBy: calibratedByData} = useCertificateData(id, jobId, trigger); //prettier-ignore

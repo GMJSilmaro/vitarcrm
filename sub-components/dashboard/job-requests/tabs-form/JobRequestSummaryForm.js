@@ -423,9 +423,9 @@ const JobRequestSummaryForm = ({ data, isLoading, handleNext }) => {
                 overlay={
                   <Tooltip>
                     <TooltipContent
-                      title='User search Search'
+                      title='Supervisor Search'
                       info={[
-                        "Search by user's name",
+                        "Search by supervisor's name",
                         'Required to proceed with job request creation',
                       ]}
                     />

@@ -261,7 +261,7 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>ACCEPTANNCE</Text>
+              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>ACCEPTANCE</Text>
             </View>
 
             <View

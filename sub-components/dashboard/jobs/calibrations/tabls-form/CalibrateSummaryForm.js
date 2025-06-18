@@ -790,9 +790,9 @@ const CalibrateSummaryForm = ({
                 overlay={
                   <Tooltip>
                     <TooltipContent
-                      title='User search Search'
+                      title='Approved Signatory Search'
                       info={[
-                        "Search by user's name",
+                        "Search by approved signatory's name",
                         'Required to proceed with calibration creation',
                       ]}
                     />

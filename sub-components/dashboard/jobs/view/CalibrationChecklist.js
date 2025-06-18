@@ -143,7 +143,7 @@ const CalibrationChecklist = ({ job, customer, users }) => {
               <th>Equipment</th>
               <th>Equipment ID</th>
               <th>Nominal Value</th>
-              <th>Acceptannce</th>
+              <th>Acceptance</th>
               <th>Result Before</th>
               <th>Result After</th>
             </tr>
@@ -217,7 +217,7 @@ const CalibrationChecklist = ({ job, customer, users }) => {
                 </>
               )}
             </div>
-            <div className='mt-2 fw-bold text-center'>Before</div>
+            <div className='mt-2 fw-bold text-center'>After</div>
             <div className='text-muted text-center'>{takenByAfter?.fullName || ''}</div>
           </div>
         )}
@@ -278,7 +278,7 @@ const CalibrationChecklist = ({ job, customer, users }) => {
                 </>
               )}
             </div>
-            <div className='mt-2 fw-bold text-center'>Before</div>
+            <div className='mt-2 fw-bold text-center'>After</div>
             <div className='text-muted text-center'>{verifiedByAfter?.fullName || ''}</div>
           </div>
         )}

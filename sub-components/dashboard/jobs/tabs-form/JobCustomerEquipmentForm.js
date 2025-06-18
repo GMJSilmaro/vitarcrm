@@ -705,11 +705,6 @@ const JobCustomerEquipmentForm = ({
       <Card.Body className='pb-0'>
         <div className='d-flex'>
           <h4 className='mb-0'>Calibration Items</h4>
-          <OverlayTrigger placement='top' overlay={<Tooltip>This field is required</Tooltip>}>
-            <span className='text-danger' style={{ marginLeft: '4px', cursor: 'help' }}>
-              *
-            </span>
-          </OverlayTrigger>
         </div>
         <p className='text-muted fs-6'>
           The equipment of the currently selected customer. Select up to{' '}
@@ -973,7 +968,7 @@ const JobCustomerEquipmentForm = ({
                                   render={({ field }) => (
                                     <>
                                       <Form.Control
-                                        type='number'
+                                        type='text'
                                         {...field}
                                         id='rangeMin'
                                         placeholder='Enter minimum range'
@@ -999,7 +994,7 @@ const JobCustomerEquipmentForm = ({
                                   render={({ field }) => (
                                     <>
                                       <Form.Control
-                                        type='number'
+                                        type='text'
                                         {...field}
                                         id='rangeMax'
                                         placeholder='Enter maximum range'

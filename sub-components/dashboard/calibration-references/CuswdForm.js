@@ -629,7 +629,7 @@ const CuswdForm = ({ data }) => {
                 </Form.Group>
 
                 <Form.Group as={Col} md={3}>
-                  <Form.Label htmlFor='driftg'>Drift (g)</Form.Label>
+                  <RequiredLabel label='Drift (g)' id='driftg' />
 
                   <Controller
                     name='driftg'

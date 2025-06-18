@@ -32,15 +32,28 @@ const EquipmentRequested = ({ calibrations }) => {
 
   const [activeKey, setActiveKey] = useState(CATEGORY[0]);
 
-  const allCustomerEquipment = useMemo(() => {
-    const values = form.getValues('customerEquipments') || [];
+  const allCustomerEquipments = useMemo(() => {
+    const customer = form.getValues('customer');
+
+    if (!customer || !customer?.id) return [];
+
+    const values = form.getValues('allCustomerEquipments') || [];
+
+    return values.filter((eq) => eq.customerId === customer.id);
+  }, [form.watch('customer.id'), form.watch('allCustomerEquipments')]);
+
+  const customerEquipments = useMemo(() => {
+    const eqs = form.getValues('customerEquipments') || [];
+    const ids = eqs.map((eq) => eq.id);
+
+    const values = allCustomerEquipments.filter((eq) => ids.includes(eq.id));
     return values;
-  }, [JSON.stringify(form.watch('customerEquipments'))]);
+  }, [JSON.stringify(form.watch('customerEquipments')), JSON.stringify(allCustomerEquipments)]);
 
   const allCustomerEquipmentByCategory = useMemo(() => {
-    const values = allCustomerEquipment?.filter((eq) => eq.category === activeKey);
+    const values = customerEquipments?.filter((eq) => eq.category === activeKey);
     return values || [];
-  }, [allCustomerEquipment, activeKey]);
+  }, [customerEquipments, activeKey]);
 
   const getSelectedCategoryCountEquipmentRequested = useCallback(
     (category) => {
@@ -52,9 +65,9 @@ const EquipmentRequested = ({ calibrations }) => {
   );
 
   const selectedCustomerEquipmentRequestedByCategory = useMemo(() => {
-    if (allCustomerEquipment?.length < 1) return [];
+    if (customerEquipments?.length < 1) return [];
     return allCustomerEquipmentByCategory.filter((eq) => eq.category === activeKey);
-  }, [JSON.stringify(allCustomerEquipment), activeKey]);
+  }, [JSON.stringify(customerEquipments), activeKey]);
 
   const columns = useMemo(() => {
     return [
@@ -77,7 +90,8 @@ const EquipmentRequested = ({ calibrations }) => {
         (row) => {
           const rangeMin = row?.rangeMin;
           const rangeMax = row?.rangeMax;
-          return rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+          const unit = row?.uom || '';
+          return rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : '';
         },
         {
           id: 'range',
@@ -132,6 +146,10 @@ const EquipmentRequested = ({ calibrations }) => {
       },
     ];
   }, []);
+
+  useEffect(() => {
+    console.log({ selectedCustomerEquipmentRequestedByCategory });
+  }, [JSON.stringify(selectedCustomerEquipmentRequestedByCategory)]);
 
   const table = useReactTable({
     data: selectedCustomerEquipmentRequestedByCategory,
@@ -256,7 +274,8 @@ const EquipmentCompleted = ({ calibrations }) => {
         (row) => {
           const rangeMin = row?.rangeMin;
           const rangeMax = row?.rangeMax;
-          return rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+          const unit = row?.uom || '';
+          return rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : '';
         },
         {
           id: 'range',
@@ -311,6 +330,10 @@ const EquipmentCompleted = ({ calibrations }) => {
       },
     ];
   }, []);
+
+  useEffect(() => {
+    console.log({ selectedCompletedEquipmentByCategory });
+  }, [JSON.stringify(selectedCompletedEquipmentByCategory)]);
 
   const table = useReactTable({
     data: selectedCompletedEquipmentByCategory,

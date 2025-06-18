@@ -133,7 +133,7 @@ const CkForm = ({ data }) => {
                 </Form.Group>
 
                 <Form.Group as={Col} md={3}>
-                  <Form.Label htmlFor='value'>95.45%</Form.Label>
+                  <RequiredLabel label='95.45%' id='value' />
 
                   <Controller
                     name='value'
