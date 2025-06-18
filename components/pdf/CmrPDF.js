@@ -531,10 +531,10 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                       return a?.description?.localeCompare(b?.description);
                     })
                     .map((eq, i) => {
-                      const rangeMin = eq?.rangeMin;
-                      const rangeMax = eq?.rangeMax;
+                      const rangeMin = eq?.rangeMin ?? '';
+                      const rangeMax = eq?.rangeMax ?? '';
                       const unit = eq?.uom || '';
-                      const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
+                      const range = String(rangeMin) && String(rangeMax) ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                       return (
                         <View
@@ -684,10 +684,10 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                       return a?.description?.localeCompare(b?.description);
                     })
                     .map((eq, i) => {
-                      const rangeMin = eq?.rangeMin;
-                      const rangeMax = eq?.rangeMax;
+                      const rangeMin = eq?.rangeMin ?? '';
+                      const rangeMax = eq?.rangeMax ?? '';
                       const unit = eq?.uom || '';
-                      const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
+                      const range = String(rangeMin) && String(rangeMax) ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                       return (
                         <View

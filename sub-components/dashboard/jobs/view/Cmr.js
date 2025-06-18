@@ -368,10 +368,10 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
                   return a?.description?.localeCompare(b?.description);
                 })
                 .map((equipment, i) => {
-                  const rangeMin = equipment?.rangeMin;
-                  const rangeMax = equipment?.rangeMax;
+                  const rangeMin = equipment?.rangeMin ?? '';
+                  const rangeMax = equipment?.rangeMax ?? '';
                   const unit = equipment?.uom || '';
-                  const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
+                  const range = String(rangeMin) && String(rangeMax) ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                   return (
                     <tr key={`${equipment.id}-${i}`}>
@@ -444,10 +444,10 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
                   return a?.description?.localeCompare(b?.description);
                 })
                 .map((equipment, i) => {
-                  const rangeMin = equipment?.rangeMin;
-                  const rangeMax = equipment?.rangeMax;
+                  const rangeMin = equipment?.rangeMin ?? '';
+                  const rangeMax = equipment?.rangeMax ?? '';
                   const unit = equipment?.uom || '';
-                  const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
+                  const range = String(rangeMin) && String(rangeMax) ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                   return (
                     <tr key={`${equipment.id}-${i}`}>
