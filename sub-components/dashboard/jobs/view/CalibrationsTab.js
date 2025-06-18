@@ -63,6 +63,7 @@ import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 
+//* Temporary - need to refractor
 const DropdownItemPrintCoc = ({
   printStatus,
   handlePrint,
@@ -146,11 +147,7 @@ const DropdownItemPrintCoc = ({
         <Printer className='me-2' size={16} />
       )}
 
-      {!showLoading
-        ? !printStatus
-          ? 'Print Certificate'
-          : 'Reprint Certificate'
-        : 'Initializing PDF'}
+      {!showLoading ? 'Print Certificate' : 'Initializing PDF'}
 
       {trigger > 0 && <PDF />}
     </Dropdown.Item>
@@ -557,45 +554,47 @@ const CalibrationTab = ({ job }) => {
                     Delete Calibration
                   </Dropdown.Item>
 
-                  <OverlayTrigger
-                    rootClose
-                    trigger='click'
-                    placement='left'
-                    overlay={
-                      <Dropdown.Menu show style={{ zIndex: 999 }}>
-                        <Dropdown.Item
-                          onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'data-validation', calibratedBy);
-                          }}
-                        >
-                          <CheckCircle className='me-2' size={16} />
-                          Data Validation
-                        </Dropdown.Item>
+                  {auth.role === 'admin' && auth.role === 'supervisor' && (
+                    <OverlayTrigger
+                      rootClose
+                      trigger='click'
+                      placement='left'
+                      overlay={
+                        <Dropdown.Menu show style={{ zIndex: 999 }}>
+                          <Dropdown.Item
+                            onClick={() => {
+                              handleUpdateCalibrationStatus(id, 'data-validation', calibratedBy);
+                            }}
+                          >
+                            <CheckCircle className='me-2' size={16} />
+                            Data Validation
+                          </Dropdown.Item>
 
-                        <Dropdown.Item
-                          onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'data-rejected', calibratedBy);
-                          }}
-                        >
-                          <HandThumbsDown className='me-2' size={16} />
-                          Data Rejected
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                          onClick={() => {
-                            handleUpdateCalibrationStatus(id, 'cert-complete', calibratedBy);
-                          }}
-                        >
-                          <ShieldCheck className='me-2' size={16} />
-                          Cert Complete
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                    }
-                  >
-                    <Dropdown.Item>
-                      <ArrowRepeat className='me-2' size={16} />
-                      Update Status
-                    </Dropdown.Item>
-                  </OverlayTrigger>
+                          <Dropdown.Item
+                            onClick={() => {
+                              handleUpdateCalibrationStatus(id, 'data-rejected', calibratedBy);
+                            }}
+                          >
+                            <HandThumbsDown className='me-2' size={16} />
+                            Data Rejected
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            onClick={() => {
+                              handleUpdateCalibrationStatus(id, 'cert-complete', calibratedBy);
+                            }}
+                          >
+                            <ShieldCheck className='me-2' size={16} />
+                            Cert Complete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      }
+                    >
+                      <Dropdown.Item>
+                        <ArrowRepeat className='me-2' size={16} />
+                        Update Status
+                      </Dropdown.Item>
+                    </OverlayTrigger>
+                  )}
 
                   <DropdownItemPrintCoc
                     handlePrint={() => handlePrintCertificate(id, printStatus)}

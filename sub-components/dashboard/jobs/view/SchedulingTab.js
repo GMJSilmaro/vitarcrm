@@ -131,7 +131,7 @@ const SchedulingTab = ({ job }) => {
 
           <Card.Body className='pt-4'>
             <Row className='row-gap-3'>
-              <Col md={6} className='d-flex flex-column gap-3'>
+              <Col sm={12} className='d-flex flex-column gap-3'>
                 <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
                   <div
                     className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -143,23 +143,6 @@ const SchedulingTab = ({ job }) => {
                     <div className='text-secondary fs-6'>Assigned Technician:</div>
                     <div className='text-primary-label fw-semibold'>
                       {job?.workers?.map((worker) => worker?.name).join(', ') || 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </Col>
-
-              <Col md={6} className='d-flex flex-column gap-3'>
-                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                  <div
-                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                    style={{ width: '40px', height: '40px' }}
-                  >
-                    <People size={20} />
-                  </div>
-                  <div>
-                    <div className='text-secondary fs-6'>Team:</div>
-                    <div className='text-primary-label fw-semibold text-capitalize'>
-                      {job?.priority || 'N/A'}
                     </div>
                   </div>
                 </div>

@@ -533,7 +533,8 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                     .map((eq, i) => {
                       const rangeMin = eq?.rangeMin;
                       const rangeMax = eq?.rangeMax;
-                      const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+                      const unit = eq?.uom || '';
+                      const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                       return (
                         <View
@@ -685,7 +686,8 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                     .map((eq, i) => {
                       const rangeMin = eq?.rangeMin;
                       const rangeMax = eq?.rangeMax;
-                      const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+                      const unit = eq?.uom || '';
+                      const range = rangeMin && rangeMax ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                       return (
                         <View

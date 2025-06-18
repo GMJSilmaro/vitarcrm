@@ -198,7 +198,7 @@ const JobRequestForm = ({ data }) => {
         setIsLoading(false);
 
         setTimeout(() => {
-          window.location.assign(`/job-requests/edit-job-requests/${formData.jobRequestId}`);
+          window.location.assign(`/job-requests/view/${formData.jobRequestId}`);
         }, 1500);
       } catch (error) {
         console.error('Error submitting job request:', error);

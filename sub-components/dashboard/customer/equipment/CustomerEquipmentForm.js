@@ -248,7 +248,7 @@ const CustomerEquipmentForm = ({ data }) => {
                   render={({ field }) => (
                     <>
                       <Form.Control
-                        type='number'
+                        type='text'
                         {...field}
                         id='rangeMin'
                         placeholder='Enter minimum range'
@@ -273,7 +273,7 @@ const CustomerEquipmentForm = ({ data }) => {
                   render={({ field }) => (
                     <>
                       <Form.Control
-                        type='number'
+                        type='text'
                         {...field}
                         id='rangeMax'
                         placeholder='Enter maximum range'

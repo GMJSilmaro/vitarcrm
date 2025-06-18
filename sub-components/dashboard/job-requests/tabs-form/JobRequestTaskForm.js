@@ -73,9 +73,7 @@ const JobRequestTaskForm = ({ data, isLoading, handleNext, handlePrevious }) => 
                     <th className='text-center'>
                       <RequiredLabel label='Title' />
                     </th>
-                    <th className='text-center'>
-                      <RequiredLabel label='Description' />
-                    </th>
+                    <th className='text-center'>Description</th>
                     <th className='text-center'>Completed</th>
                     <th className='text-center'>Priority</th>
                   </tr>

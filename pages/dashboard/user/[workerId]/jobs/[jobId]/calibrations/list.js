@@ -5,13 +5,23 @@ import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import PageHeader from '@/components/common/PageHeader';
 import ContentHeader from '@/components/dashboard/ContentHeader';
+import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
-import { CATEGORY, STATUS } from '@/schema/calibration';
+import { useCertificateData } from '@/hooks/useCalibrationCertificateDate';
+import { useNotifications } from '@/hooks/useNotifications';
+import {
+  CATEGORY,
+  PRINT_STATUS,
+  PRINT_STATUS_COLOR,
+  STATUS,
+  STATUS_COLOR,
+} from '@/schema/calibration';
 import CurrentJobCard from '@/sub-components/dashboard/user/jobs/CurrentJobCard';
 import { titleCase } from '@/utils/common';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
+import { usePDF } from '@react-pdf/renderer';
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -20,10 +30,20 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, deleteDoc, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+} from 'firebase/firestore';
 import _ from 'lodash';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
@@ -31,6 +51,7 @@ import {
   BuildingFill,
   CardList,
   Eye,
+  ExclamationCircle,
   FileEarmarkArrowDown,
   HouseDoorFill,
   PencilSquare,
@@ -45,9 +66,101 @@ import {
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
+//* Temporary - need to refractor
+const DropdownItemPrintCoc = ({
+  printStatus,
+  handlePrint,
+  trigger,
+  setTrigger,
+  isLoading,
+  calibration,
+  instruments,
+  calibratedBy,
+  approvedSignatory,
+  error,
+}) => {
+  const iframeRef = useRef(null);
+  const [instance, updateInstance] = usePDF();
+
+  const showLoading = isLoading || instance.loading || calibratedBy.isLoading || approvedSignatory.isLoading; //prettier-ignore
+
+  const PDF = () => {
+    useEffect(() => {
+      if (iframeRef.current && instance.url) {
+        const iframe = iframeRef.current;
+        iframe.src = instance.url;
+        iframe.onload = () => iframe.contentWindow?.print();
+      }
+    }, [instance, iframeRef]);
+
+    return <iframe ref={iframeRef} style={{ display: 'none' }} />;
+  };
+
+  useEffect(() => {
+    return () => setTrigger(0);
+  }, []);
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      calibration &&
+      instruments.length > 0 &&
+      calibratedBy.data &&
+      approvedSignatory.data
+    ) {
+      console.log('loaded data to pdf = ', {
+        calibration,
+        instruments,
+        calibratedBy,
+        approvedSignatory,
+      });
+
+      updateInstance(
+        <CertificateOfCalibrationPDF2
+          calibration={calibration}
+          instruments={{ data: instruments }}
+          calibratedBy={calibratedBy}
+          approvedSignatory={approvedSignatory}
+        />
+      );
+    }
+  }, [
+    isLoading,
+    calibratedBy.isLoading,
+    approvedSignatory.isLoading,
+    JSON.stringify(calibration),
+    JSON.stringify(instruments),
+    JSON.stringify(calibratedBy.data),
+    JSON.stringify(approvedSignatory.data),
+  ]);
+
+  if (error) {
+    return (
+      <Dropdown.Item style={{ cursor: 'not-allowed' }}>
+        <ExclamationCircle className='me-2' /> Print Unvailable
+      </Dropdown.Item>
+    );
+  }
+
+  return (
+    <Dropdown.Item onClick={handlePrint} disabled={showLoading || !!error}>
+      {showLoading ? (
+        <Spinner className='me-2' animation='border' size='sm' />
+      ) : (
+        <Printer className='me-2' size={16} />
+      )}
+
+      {!showLoading ? 'Print Certificate' : 'Initializing PDF'}
+
+      {trigger > 0 && <PDF />}
+    </Dropdown.Item>
+  );
+};
+
 const JobCalibration = () => {
   const router = useRouter();
   const auth = useAuth();
+  const notifications = useNotifications();
 
   const { jobId, workerId } = router.query;
 
@@ -91,15 +204,9 @@ const JobCalibration = () => {
         cell: ({ row }) => {
           const status = row?.original?.status;
 
-          const colors = {
-            'data-validation': 'success',
-            'data-rejected': 'danger',
-            'data-resubmission': 'warning',
-            'cert-complete': 'purple',
-          };
           return (
             <div className='d-flex flex-column justify-content-center align-items-sm-center gap-2'>
-              <Badge className='text-capitalize' bg={colors[status] || 'secondary'}>
+              <Badge className='text-capitalize' bg={STATUS_COLOR[status] || 'secondary'}>
                 {_.startCase(status)}
               </Badge>
 
@@ -109,6 +216,22 @@ const JobCalibration = () => {
                 </span>
               )}
             </div>
+          );
+        },
+      }),
+      columnHelper.accessor('printStatus', {
+        id: 'print status',
+        filterFn: 'equals',
+        header: ({ column }) => <DataTableColumnHeader column={column} title='Print Status' />,
+        cell: ({ row }) => {
+          const printStatus = row?.original?.printStatus;
+
+          if (!printStatus) return null;
+
+          return (
+            <Badge className='text-capitalize' bg={PRINT_STATUS_COLOR[printStatus] || 'secondary'}>
+              {_.startCase(printStatus)}
+            </Badge>
           );
         },
       }),
@@ -156,7 +279,17 @@ const JobCalibration = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, certificateNumber } = row.original;
+          const { id, jobId, certificateNumber, calibratedBy, printStatus } = row.original;
+
+          const [trigger, setTrigger] = useState(0);
+          const {
+            calibration,
+            instruments,
+            isLoading: isLoadingCertData,
+            error,
+            approvedSignatory,
+            calibratedBy: calibratedByData,
+          } = useCertificateData(id, jobId, trigger);
 
           const handleViewCalibration = (id) => {
             router.push(`/user/${workerId}/jobs/${jobId}/calibrations/view/${id}`);
@@ -212,6 +345,39 @@ const JobCalibration = () => {
             });
           };
 
+          const handlePrintCertificate = async (id, status) => {
+            setTrigger((prev) => prev + 1);
+
+            try {
+              const jobCalibrationRef = doc(db, 'jobCalibrations', id);
+
+              const calibrationPrintStatus = !status
+                ? 'printed'
+                : status === 'printed'
+                ? 'reprinted'
+                : 'reprinted';
+
+              await updateDoc(jobCalibrationRef, {
+                printStatus: calibrationPrintStatus,
+                updatedAt: serverTimestamp(),
+                updatedBy: auth.currentUser,
+              });
+
+              //* notify admin & supervisor when printed
+              await notifications.create({
+                module: 'calibration',
+                target: ['admin', 'supervisor'],
+                title: `Certificate ${calibrationPrintStatus}`,
+                message: `Certificate (#${id})'s certificate has been printed by ${auth.currentUser.displayName}.`,
+                data: {
+                  redirectUrl: `/jobs/view/${jobId}`,
+                },
+              });
+            } catch (error) {
+              console.error('Error printing certificate:', error);
+            }
+          };
+
           return (
             <OverlayTrigger
               rootClose
@@ -238,10 +404,18 @@ const JobCalibration = () => {
                     </>
                   )}
 
-                  <Dropdown.Item onClick={() => {}}>
-                    <Printer className='me-2' size={16} />
-                    Reprint Certificate
-                  </Dropdown.Item>
+                  <DropdownItemPrintCoc
+                    handlePrint={() => handlePrintCertificate(id, printStatus)}
+                    printStatus={printStatus}
+                    trigger={trigger}
+                    setTrigger={setTrigger}
+                    isLoading={isLoadingCertData}
+                    calibration={calibration}
+                    instruments={instruments}
+                    calibratedBy={calibratedByData}
+                    approvedSignatory={approvedSignatory}
+                    error={error}
+                  />
                 </Dropdown.Menu>
               }
             >
@@ -292,6 +466,18 @@ const JobCalibration = () => {
         options: [
           { label: 'All Status', value: '' },
           ...STATUS.map((s) => ({
+            label: _.startCase(s),
+            value: s,
+          })),
+        ],
+      },
+      {
+        label: 'Print Status',
+        columnId: 'print status',
+        type: 'select',
+        options: [
+          { label: 'All Print Status', value: '' },
+          ...PRINT_STATUS.map((s) => ({
             label: _.startCase(s),
             value: s,
           })),
