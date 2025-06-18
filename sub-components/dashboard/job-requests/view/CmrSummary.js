@@ -163,9 +163,10 @@ const CmrSummary = ({ jobRequest, customer, contact, location, customerEquipment
                   return a?.description?.localeCompare(b?.description);
                 })
                 .map((equipment, i) => {
-                  const rangeMin = equipment?.rangeMin;
-                  const rangeMax = equipment?.rangeMax;
-                  const range = rangeMin && rangeMax ? `${rangeMin} - ${rangeMax}` : '';
+                  const rangeMin = equipment?.rangeMin ?? '';
+                  const rangeMax = equipment?.rangeMax ?? '';
+                  const unit = equipment?.uom || '';
+                  const range = String(rangeMin) && String(rangeMax) ? `${rangeMin}${unit} - ${rangeMax}${unit}` : ''; // prettier-ignore
 
                   return (
                     <tr key={`${equipment.id}-${i}`}>
