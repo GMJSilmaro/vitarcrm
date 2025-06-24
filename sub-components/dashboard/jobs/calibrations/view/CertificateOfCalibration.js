@@ -213,6 +213,17 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     return format(dueDate, 'dd MMMM yyyy');
   }, [calibration]);
 
+  const dateReceived = useMemo(() => {
+    if (!calibration.dateReceivedRequested || !calibration?.dateReceived) return 'N/A';
+
+    if (calibration.dateReceivedRequested === 'no') {
+      if (calibration.dateReceived) return calibration.dateReceived;
+      else return 'N/A';
+    }
+
+    return format(new Date(calibration.dateReceived), 'dd MMMM yyyy');
+  }, [calibration]);
+
   const traceability = useMemo(() => {
     if (!calibration?.traceabilityType) return '';
 
@@ -244,6 +255,18 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     return '';
   }, [calibration]);
 
+  const formatCertNo = (certNo) => {
+    const parts = certNo.split('-');
+
+    if (!certNo || parts.length < 3) return '';
+
+    const part1 = parts[0];
+    const initials = part1.substring(0, 3);
+    const date = part1.slice(3);
+
+    return [`${initials} - ${date}`, ...parts.slice(1)].join(' - ');
+  };
+
   const downloadPDF = useCallback(
     (id) => {
       const link = document.createElement('a');
@@ -257,7 +280,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
   );
 
   const printPDF = useCallback(
-    async (id, status) => {
+    async (id, jobId, status) => {
       try {
         const jobCalibrationRef = doc(db, 'jobCalibrations', id);
 
@@ -280,7 +303,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
           title: `Certificate ${calibrationPrintStatus}`,
           message: `Certificate (#${id})'s certificate has been printed by ${auth.currentUser.displayName}.`,
           data: {
-            redirectUrl: `/jobs/view/${jobId}`,
+            redirectUrl: `/jobs/${jobId}/calibrations/view/${id}`,
           },
         });
       } catch (error) {
@@ -387,21 +410,25 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             </p>
           </div>
 
-          <div className='d-flex align-items-center gap-2'>
-            <Button onClick={() => printPDF(calibration.id, calibration.printStatus)}>
-              <Printer size={18} className='me-2' />
-              Print
-            </Button>
-
-            <iframe ref={iframeRef} style={{ display: 'none' }} />
-
-            {instance.url && calibration.id && (
-              <Button variant='outline-primary' onClick={() => downloadPDF(calibration.id)}>
-                <Download size={18} className='me-2' />
-                Download
+          {(auth.role === 'admin' || auth.role === 'supervisor') && (
+            <div className='d-flex align-items-center gap-2'>
+              <Button
+                onClick={() => printPDF(calibration.id, calibration.jobId, calibration.printStatus)}
+              >
+                <Printer size={18} className='me-2' />
+                Print
               </Button>
-            )}
-          </div>
+
+              <iframe ref={iframeRef} style={{ display: 'none' }} />
+
+              {instance.url && calibration.id && (
+                <Button variant='outline-primary' onClick={() => downloadPDF(calibration.id)}>
+                  <Download size={18} className='me-2' />
+                  Download
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </Card.Header>
 
@@ -411,7 +438,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             <tr>
               <th>CERTIFICATE NO.</th>
               <td colSpan={5} className='fs-4 fw-bold'>
-                {calibration?.certificateNumber || ''}
+                {formatCertNo(calibration?.certificateNumber)}
               </td>
             </tr>
             <tr>
@@ -426,11 +453,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             </tr>
             <tr>
               <th>Date Received</th>
-              <td colSpan={5}>
-                {calibration?.dateReceived
-                  ? format(new Date(calibration.dateReceived), 'dd MMMM yyyy')
-                  : ''}
-              </td>
+              <td colSpan={5}>{dateReceived}</td>
             </tr>
             <tr>
               <th>Date Calibrated</th>
@@ -450,9 +473,8 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             <tr>
               <td></td>
               <td colSpan={5}>
-                {calibration?.dateReceived
-                  ? 'The User should be aware that any number of factors may cause this instrument to drift out of calibration before the specified calibration interval has expired.'
-                  : ''}
+                The User should be aware that any number of factors may cause this instrument to
+                drift out of calibration before the specified calibration interval has expired.
               </td>
             </tr>
 

@@ -156,6 +156,7 @@ const DropdownItemPrintCoc = ({
 
 const CalibrationTab = ({ job }) => {
   const router = useRouter();
+  const { workerId } = router.query;
   const auth = useAuth();
   const notifications = useNotifications();
 
@@ -229,16 +230,15 @@ const CalibrationTab = ({ job }) => {
           );
         },
       }),
-      columnHelper.accessor((row) => row?.location?.name || 'N/A', {
-        id: 'location',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Location' />,
+      columnHelper.accessor((row) => row?.approvedSignatory?.name || '', {
+        id: 'approvedSignatory',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Approved Signatory' />
+        ),
         cell: ({ row }) => {
-          const location = row?.original?.location?.name || 'N/A';
-          return (
-            <div>
-              <BuildingFill className='me-2' size={14} /> {location}
-            </div>
-          );
+          const approvedSignatory = row?.original?.approvedSignatory?.name || '';
+
+          return <div>{approvedSignatory}</div>;
         },
       }),
       columnHelper.accessor((row) => row?.description?.name || 'N/A', {
@@ -281,10 +281,19 @@ const CalibrationTab = ({ job }) => {
           console.log({ row: row.original, jobId });
 
           const handleViewCalibration = (id) => {
+            if (workerId) {
+              router.push(`/user/${workerId}/jobs/${jobId}/calibrations/view/${id}`);
+              return;
+            }
             router.push(`/jobs/${jobId}/calibrations/view/${id}`);
           };
 
           const handleEditCalibration = (id) => {
+            if (workerId) {
+              router.push(`/user/${workerId}/jobs/${jobId}/calibrations/edit-calibrations/${id}`);
+              return;
+            }
+
             router.push(`/jobs/${jobId}/calibrations/edit-calibrations/${id}`);
           };
 
@@ -554,60 +563,62 @@ const CalibrationTab = ({ job }) => {
                     Delete Calibration
                   </Dropdown.Item>
 
-                  {auth.role === 'admin' && auth.role === 'supervisor' && (
-                    <OverlayTrigger
-                      rootClose
-                      trigger='click'
-                      placement='left'
-                      overlay={
-                        <Dropdown.Menu show style={{ zIndex: 999 }}>
-                          <Dropdown.Item
-                            onClick={() => {
-                              handleUpdateCalibrationStatus(id, 'data-validation', calibratedBy);
-                            }}
-                          >
-                            <CheckCircle className='me-2' size={16} />
-                            Data Validation
-                          </Dropdown.Item>
+                  {(auth.role === 'admin' || auth.role === 'supervisor') && (
+                    <>
+                      <OverlayTrigger
+                        rootClose
+                        trigger='click'
+                        placement='left'
+                        overlay={
+                          <Dropdown.Menu show style={{ zIndex: 999 }}>
+                            <Dropdown.Item
+                              onClick={() => {
+                                handleUpdateCalibrationStatus(id, 'data-validation', calibratedBy);
+                              }}
+                            >
+                              <CheckCircle className='me-2' size={16} />
+                              Data Validation
+                            </Dropdown.Item>
 
-                          <Dropdown.Item
-                            onClick={() => {
-                              handleUpdateCalibrationStatus(id, 'data-rejected', calibratedBy);
-                            }}
-                          >
-                            <HandThumbsDown className='me-2' size={16} />
-                            Data Rejected
-                          </Dropdown.Item>
-                          <Dropdown.Item
-                            onClick={() => {
-                              handleUpdateCalibrationStatus(id, 'cert-complete', calibratedBy);
-                            }}
-                          >
-                            <ShieldCheck className='me-2' size={16} />
-                            Cert Complete
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      }
-                    >
-                      <Dropdown.Item>
-                        <ArrowRepeat className='me-2' size={16} />
-                        Update Status
-                      </Dropdown.Item>
-                    </OverlayTrigger>
+                            <Dropdown.Item
+                              onClick={() => {
+                                handleUpdateCalibrationStatus(id, 'data-rejected', calibratedBy);
+                              }}
+                            >
+                              <HandThumbsDown className='me-2' size={16} />
+                              Data Rejected
+                            </Dropdown.Item>
+                            <Dropdown.Item
+                              onClick={() => {
+                                handleUpdateCalibrationStatus(id, 'cert-complete', calibratedBy);
+                              }}
+                            >
+                              <ShieldCheck className='me-2' size={16} />
+                              Cert Complete
+                            </Dropdown.Item>
+                          </Dropdown.Menu>
+                        }
+                      >
+                        <Dropdown.Item>
+                          <ArrowRepeat className='me-2' size={16} />
+                          Update Status
+                        </Dropdown.Item>
+                      </OverlayTrigger>
+
+                      <DropdownItemPrintCoc
+                        handlePrint={() => handlePrintCertificate(id, printStatus)}
+                        printStatus={printStatus}
+                        trigger={trigger}
+                        setTrigger={setTrigger}
+                        isLoading={isLoadingCertData}
+                        calibration={calibration}
+                        instruments={instruments}
+                        calibratedBy={calibratedByData}
+                        approvedSignatory={approvedSignatory}
+                        error={error}
+                      />
+                    </>
                   )}
-
-                  <DropdownItemPrintCoc
-                    handlePrint={() => handlePrintCertificate(id, printStatus)}
-                    printStatus={printStatus}
-                    trigger={trigger}
-                    setTrigger={setTrigger}
-                    isLoading={isLoadingCertData}
-                    calibration={calibration}
-                    instruments={instruments}
-                    calibratedBy={calibratedByData}
-                    approvedSignatory={approvedSignatory}
-                    error={error}
-                  />
                 </Dropdown.Menu>
               }
             >
@@ -676,10 +687,10 @@ const CalibrationTab = ({ job }) => {
         ],
       },
       {
-        label: 'Location',
-        columnId: 'location',
+        label: 'Approved Signatory',
+        columnId: 'approvedSignatory',
         type: 'text',
-        placeholder: 'Search by location...',
+        placeholder: 'Search by approved signatory...',
       },
       {
         label: 'Equipment',

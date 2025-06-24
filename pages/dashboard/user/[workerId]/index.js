@@ -133,16 +133,6 @@ function WorkerDashboard() {
         filterValue: null,
       },
       {
-        id: 'urgent-jobs',
-        value: urgentJobs,
-        title: 'Urgent',
-        icon: ExclamationCircle,
-        color: 'warning',
-        width: 2,
-        filter: 'priority',
-        filterValue: 'urgent',
-      },
-      {
         id: 'overdue-jobs',
         value: overdueJobs,
         title: 'Overdue',
@@ -151,6 +141,16 @@ function WorkerDashboard() {
         width: 2,
         filter: 'endDate',
         filterValue: null,
+      },
+      {
+        id: 'urgent-jobs',
+        value: urgentJobs,
+        title: 'Urgent',
+        icon: ExclamationCircle,
+        color: 'warning',
+        width: 2,
+        filter: 'priority',
+        filterValue: 'urgent',
       },
       {
         id: 'on-site',
@@ -412,11 +412,11 @@ function WorkerDashboard() {
               <div className='d-flex flex-column gap-2 justify-content-center'>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Start</div>
-                  <div>{format(startEnd.start, 'dd-MM-yyyy HH:mm')}</div>
+                  <div>{format(startEnd.start, 'dd-MM-yyyy hh:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>End</div>
-                  <div>{format(startEnd.end, 'dd-MM-yyyy HH:mm')}</div>
+                  <div>{format(startEnd.end, 'dd-MM-yyyy hh:mm a')}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Duration:</div> <div>{startEnd.duration}</div>
@@ -448,12 +448,12 @@ function WorkerDashboard() {
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Start:</div>
                   <div>{startBy || 'N/A'}</div>
-                  <div>{startByAt ? format(startByAt, 'dd-MM-yyyy HH:mm') : 'N/A'}</div>
+                  <div>{startByAt ? format(startByAt, 'dd-MM-yyyy hh:mm a') : 'N/A'}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Completed:</div>
                   <div>{endBy || 'N/A'}</div>
-                  <div>{endByAt ? format(endByAt, 'dd-MM-yyyy HH:mm') : 'N/A'}</div>
+                  <div>{endByAt ? format(endByAt, 'dd-MM-yyyy hh:mm a') : 'N/A'}</div>
                 </div>
               </div>
             );
@@ -810,7 +810,7 @@ function WorkerDashboard() {
                       }
                     >
                       <PlusSquare className='me-2' size={16} />
-                      Start Calibration
+                      Add Calibration
                     </Dropdown.Item>
                   )}
                 </Dropdown.Menu>

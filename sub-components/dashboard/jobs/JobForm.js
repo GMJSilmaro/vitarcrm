@@ -8,6 +8,7 @@ import {
   customerEquipmentSchema,
   documentsSchema,
   jobSchema,
+  onSiteCalibrationSurveyResponsesSchema,
   referenceEquipmentSchema,
   scheduleSchema,
   summarySchema,
@@ -47,6 +48,7 @@ import JobDocumentsForm from './tabs-form/JobDocumentsForm';
 import { getFileFromBlobUrl } from '@/utils/common';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import JobCalibrationChecklistForm from './tabs-form/JobCalibrationChecklistForm';
+import JobOnSiteCalibrationSurveyForm from './tabs-form/JobOnSiteCalibrationSurveyForm';
 
 const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const auth = useAuth();
@@ -88,6 +90,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
       customerEquipments: [],
       checklistEquipments: [],
       documents: [],
+      surveyResponses: [],
     },
     resolver: zodResolver(schema),
   });
@@ -190,6 +193,10 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           verifiedByBefore,
           verifiedByAfter,
           checklistEquipments,
+          surveyTo,
+          surveyResponses,
+          surveyCustomerTimeInSignature,
+          surveyCustomerTimeOutSignature,
           ...jobHeaders
         } = formData;
 
@@ -388,6 +395,10 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
                 verifiedByBefore,
                 verifiedByAfter,
                 checklistEquipments,
+                ...(surveyTo ? { surveyTo } : { surveyTo: '' }), //prettier-ignore
+                ...(surveyResponses && surveyResponses.length > 0 && surveyResponses.filter(item => !_.isEmpty(item)).length > 0 ? { surveyResponses } : { surveyResponses: [] }), //prettier-ignore
+                ...(surveyCustomerTimeInSignature ? { surveyCustomerTimeInSignature } : { surveyCustomerTimeInSignature: '' }), //prettier-ignore
+                ...(surveyCustomerTimeOutSignature ? { surveyCustomerTimeOutSignature } : { surveyCustomerTimeOutSignature: '' }), //prettier-ignore
                 ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
@@ -430,7 +441,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
             title: 'New job created',
             message: `
              A new job (#${jobId}) has been created by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}.
-             Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
+             Start date is ${format(startDate, 'dd MMMM yyyy hh:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy hh:mm a')}.`, // prettier-ignore
             data: {
               redirectUrl: `/jobs/view/${jobId}`,
             },
@@ -444,7 +455,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
             title: 'Job updated',
             message: `
              A job (#${jobId}) has been updated by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}.
-             Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
+             Start date is ${format(startDate, 'dd MMMM yyyy hh:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy hh:mm a')}.`, // prettier-ignore
             data: {
               redirectUrl: `/jobs/view/${jobId}`,
             },
@@ -459,7 +470,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
             title: `You are assigned to a job (#${jobId}) `,
             message: `
                A job has been assigned to you by ${auth.currentUser.displayName} for ${jobHeaders.customer.name}.
-               Start date is ${format(startDate, 'dd MMMM yyyy HH:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy HH:mm a')}.`, // prettier-ignore
+               Start date is ${format(startDate, 'dd MMMM yyyy hh:mm a')} and end date is ${format(endDate, 'dd MMMM yyyy hh:mm a')}.`, // prettier-ignore
             data: {
               redirectUrl: `/jobs/view/${jobId}`,
             },
@@ -522,8 +533,8 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
           //* if calibrationData is greater than 0 then show CMR tab
           if (calibrationData.length > 0) {
-            setTabsSchema((prev) => [...prev, cmrSchema]);
-            setFinalSchema(jobSchema.merge(cmrSchema));
+            setTabsSchema((prev) => [...prev, cmrSchema, onSiteCalibrationSurveyResponsesSchema]);
+            setFinalSchema(jobSchema.merge(cmrSchema).merge(onSiteCalibrationSurveyResponsesSchema)); //prettier-ignore
           }
         } else {
           setCalibrations({
@@ -630,6 +641,18 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
             {calibrations.data.length > 0 && (
               <Tab eventKey='7' title='CMR'>
                 <JobCmrForm
+                  data={data}
+                  isLoading={isLoading}
+                  handleNext={handleNext}
+                  handlePrevious={handlePrevious}
+                  calibrations={calibrations}
+                />
+              </Tab>
+            )}
+
+            {calibrations.data.length > 0 && (
+              <Tab eventKey='8' title='On-Site Calibration Survey'>
+                <JobOnSiteCalibrationSurveyForm
                   data={data}
                   isLoading={isLoading}
                   handleNext={handleNext}

@@ -175,7 +175,7 @@ export const scheduleSchema = z
       return formData;
     }),
     description: z.string().default(''),
-    remarks: z.string().default(''),
+    remarks: z.string().default(''), //* remarks different from CMR's remark
     startDate: z
       .string({
         invalid_type_error: 'Start date is required.',
@@ -317,7 +317,7 @@ export const cmrSchema = z.object({
   pic: z.string().min(1, { message: 'P.I.C is required' }),
   recalibrationInterval: z.string().min(1, { message: 'Recalibration Interval is required' }),
   accessories: z.string().min(1, { message: 'Accessories is required' }),
-  remark: z.string().min(1, { message: 'Remarks is required' }),
+  remark: z.string().min(1, { message: 'Remark is required' }),
   conditionWhenReceived: z.string().min(1, { message: 'Condition When Received is required' }),
   isPartialRange: z.boolean().default(false),
   isNonAccredited: z.boolean().default(false),
@@ -328,6 +328,40 @@ export const cmrSchema = z.object({
   salesSignature: z.string().min(1, { message: 'Laboratory Representative Signature is required' }),
   workerSignature: z.string().min(1, { message: 'Reviewed By Signature is required' }),
   customerSignature: z.string().min(1, { message: 'Customer Signature is required' }),
+});
+
+//* Job On-site calibration survery question structure:
+//*  - questionId: string
+//*  - question: string
+//*  - type: "text" | "radio"
+//*  - options: string[]
+//*  - isRequired: boolean
+//*  - order: number
+//*  - category: string | null
+
+//* options for type: "radio"
+//* - "bad", "fair", "average", "good", "very-good"
+
+//* options for type: "text"
+//* - "text"
+export const SATISFACTION_LEVELS_MAP = {
+  bad: { label: 'Bad', value: 1 },
+  fair: { label: 'Fair', value: 2 },
+  average: { label: 'Average', value: 3 },
+  good: { label: 'Good', value: 4 },
+  'very-good': { label: 'Very Good', value: 5 },
+};
+
+export const surveyResponsesSchema = z.object({
+  questionId: z.string().min(1, { message: 'Question ID is required' }),
+  response: z.union([z.string(), z.array(z.string())]),
+});
+
+export const onSiteCalibrationSurveyResponsesSchema = z.object({
+  surveyTo: z.string().default(''),
+  surveyResponses: z.array(z.union([surveyResponsesSchema, z.object({})])).default([]),
+  surveyCustomerTimeInSignature: z.string().default(''),
+  surveyCustomerTimeOutSignature: z.string().default(''),
 });
 
 export const jobSchema = z

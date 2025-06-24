@@ -93,9 +93,9 @@ const SchedulingTab = ({ job }) => {
                     <ExclamationOctagon size={20} />
                   </div>
                   <div>
-                    <div className='text-secondary fs-6'>Description:</div>
+                    <div className='text-secondary fs-6'>Remark:</div>
                     <div className='text-primary-label fw-semibold text-capitalize'>
-                      {job?.description || 'N/A'}
+                      {job?.remarks || 'N/A'}
                     </div>
                   </div>
                 </div>

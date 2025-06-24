@@ -17,6 +17,8 @@ import {
   HouseFill,
   PencilSquare,
   PeopleFill,
+  Person,
+  PersonSquare,
 } from 'react-bootstrap-icons';
 import { FaArrowLeft } from 'react-icons/fa';
 
@@ -27,6 +29,8 @@ const CustomerDetails = () => {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(tab || 'overview');
+
+  const VENDOR_LIMIT = 3;
 
   useEffect(() => {
     const fetchCustomerDetails = async () => {
@@ -317,13 +321,23 @@ const CustomerDetails = () => {
 
             <Tab title='Contacts' eventKey='contacts'>
               <Row>
-                <Col lg={8}>
+                <Col lg={12}>
                   <Card className='border-0 shadow-none mb-4'>
                     <Card.Body>
+                      <div className='d-flex align-items-center gap-2 fw-bold mb-3'>
+                        <span className='text-uppercase' style={{ fontSize: '16px' }}>
+                          Total Contacts:
+                        </span>
+
+                        <Badge bg='primary' className='fs-4'>
+                          {customer.contacts.length > 0 ? customer.contacts.length : 0}
+                        </Badge>
+                      </div>
+
                       <div>
                         <div
                           className='d-flex flex-column gap-4 overflow-auto'
-                          style={{ maxHeight: '800px' }}
+                          style={{ maxHeight: '400px' }}
                         >
                           {customer.contacts.length < 1 && (
                             <div className='text-center py-5'>
@@ -333,80 +347,57 @@ const CustomerDetails = () => {
                             </div>
                           )}
 
-                          {customer.contacts.map((contact, i) => (
-                            <div>
-                              <h5 className='text-primary-label mb-2 fs-5'>Contact #{i + 1}</h5>
+                          {Array.isArray(customer.contacts) &&
+                            customer.contacts.map((contact, i) => (
+                              <div>
+                                <h5 className='text-primary-label mb-2 fs-5'>Contact #{i + 1}</h5>
 
-                              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-                                <div
-                                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                                  style={{ width: '40px', height: '40px' }}
-                                >
-                                  <i className='fe fe-phone'></i>
-                                </div>
+                                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                                  <div
+                                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                                    style={{ width: '40px', height: '40px' }}
+                                  >
+                                    <i className='fe fe-phone'></i>
+                                  </div>
 
-                                <Row className='w-100 row-gap-3'>
-                                  {contact.isDefault && (
-                                    <Col lg={12}>
-                                      <Badge bg='primary'>Default</Badge>
+                                  <Row className='w-100 row-gap-3'>
+                                    {contact.isDefault && (
+                                      <Col lg={12}>
+                                        <Badge bg='primary'>Default</Badge>
+                                      </Col>
+                                    )}
+
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>First Name</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {contact.firstName}
+                                      </div>
                                     </Col>
-                                  )}
 
-                                  <Col lg={6}>
-                                    <div className='text-secondary fs-6'>First Name</div>
-                                    <div className='text-primary-label fw-semibold'>
-                                      {contact.firstName}
-                                    </div>
-                                  </Col>
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>Last Name</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {contact.lastName}
+                                      </div>
+                                    </Col>
 
-                                  <Col lg={6}>
-                                    <div className='text-secondary fs-6'>Last Name</div>
-                                    <div className='text-primary-label fw-semibold'>
-                                      {contact.lastName}
-                                    </div>
-                                  </Col>
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>Phone</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {contact.phone}
+                                      </div>
+                                    </Col>
 
-                                  <Col lg={6}>
-                                    <div className='text-secondary fs-6'>Phone</div>
-                                    <div className='text-primary-label fw-semibold'>
-                                      {contact.phone}
-                                    </div>
-                                  </Col>
-
-                                  <Col lg={6}>
-                                    <div className='text-secondary fs-6'>Email</div>
-                                    <div className='text-primary-label fw-semibold'>
-                                      {contact.email}
-                                    </div>
-                                  </Col>
-                                </Row>
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>Email</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {contact.email}
+                                      </div>
+                                    </Col>
+                                  </Row>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Col>
-
-                <Col lg={4}>
-                  <Card className='my-4 bg-light-subtle rounded border border-light-subtle w-100'>
-                    <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-                      <h5 className='mb-0'>Contact Overview</h5>
-                    </Card.Header>
-                    <Card.Body>
-                      <div className='text-center mb-4'>
-                        <div
-                          style={{
-                            fontSize: '2.5rem',
-                            fontWeight: '600',
-                            color: '#305cde',
-                          }}
-                        >
-                          {customer.contacts.length > 0 ? customer.contacts.length : 0}
-                        </div>
-                        <div className='text-muted' style={{ fontSize: '16px' }}>
-                          Total Contacts
+                            ))}
                         </div>
                       </div>
                     </Card.Body>
@@ -417,9 +408,19 @@ const CustomerDetails = () => {
 
             <Tab title='Locations' eventKey='locations'>
               <Row>
-                <Col lg={8}>
+                <Col lg={12}>
                   <Card className='border-0 shadow-none mb-4'>
                     <Card.Body>
+                      <div className='d-flex align-items-center gap-2 text-capitalize fw-bold mb-3'>
+                        <span className='text-uppercase' style={{ fontSize: '16px' }}>
+                          Total Locations:
+                        </span>
+
+                        <Badge bg='primary' className='fs-4'>
+                          {Array.isArray(customer.locations) ? customer.locations.length : 0}
+                        </Badge>
+                      </div>
+
                       <div className='overflow-auto pe-2' style={{ maxHeight: '440px' }}>
                         <div className='d-flex flex-column gap-4 locations-container'>
                           {(!Array.isArray(customer.locations) ||
@@ -465,7 +466,7 @@ const CustomerDetails = () => {
                                       </div>
                                     </Col>
 
-                                    <Col lg={3}>
+                                    <Col lg={8}>
                                       <div className='text-secondary fs-6'>Name</div>
                                       <div className='text-primary-label fw-semibold'>
                                         {location.siteName}
@@ -480,25 +481,87 @@ const CustomerDetails = () => {
                     </Card.Body>
                   </Card>
                 </Col>
+              </Row>
+            </Tab>
 
-                <Col lg={4} className='d-none d-lg-block'>
-                  <Card className='my-4 bg-light-subtle rounded border border-light-subtle w-100'>
-                    <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-                      <h5 className='mb-0'>Location Overview</h5>
-                    </Card.Header>
+            <Tab title='Vendors' eventKey='vendors'>
+              <Row>
+                <Col lg={12}>
+                  <Card className='border-0 shadow-none mb-4'>
                     <Card.Body>
-                      <div className='text-center mb-4'>
-                        <div
-                          style={{
-                            fontSize: '2.5rem',
-                            fontWeight: '600',
-                            color: '#305cde',
-                          }}
-                        >
-                          {Array.isArray(customer.locations) ? customer.locations.length : 0}
-                        </div>
-                        <div className='text-muted' style={{ fontSize: '16px' }}>
-                          Total Locations
+                      <div className='d-flex align-items-center gap-2 text-capitalize fw-bold mb-3'>
+                        <span className='text-uppercase' style={{ fontSize: '16px' }}>
+                          Total Vendors:
+                        </span>
+
+                        <Badge bg='primary' className='fs-4'>
+                          {Array.isArray(customer.vendors) ? customer.vendors.length : 0} /{' '}
+                          {VENDOR_LIMIT}
+                        </Badge>
+                      </div>
+
+                      <div className='overflow-auto pe-2' style={{ maxHeight: '500px' }}>
+                        <div className='d-flex flex-column gap-4 vendors-container'>
+                          {(!Array.isArray(customer.vendors) || customer.vendors.length < 1) && (
+                            <div className='text-center py-5'>
+                              <Exclamation size={80} className='text-muted' />
+                              <h6>No Vendors Available</h6>
+                              <p className='text-muted small'>Add vendor to your customer</p>
+                            </div>
+                          )}
+
+                          {Array.isArray(customer.vendors) &&
+                            customer.vendors.map((vendor, i) => (
+                              <div>
+                                <h5 className='text-primary-label mb-2 fs-5'>Vendor #{i + 1}</h5>
+
+                                <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                                  <div
+                                    className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                                    style={{ width: '40px', height: '40px' }}
+                                  >
+                                    <PersonSquare size={20} />
+                                  </div>
+
+                                  <Row className='w-100 row-gap-3'>
+                                    <Col lg={12}>
+                                      <div className='text-secondary fs-6'>Name</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {vendor.name}
+                                      </div>
+                                    </Col>
+
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>P.I.C</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {vendor.pic}
+                                      </div>
+                                    </Col>
+
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>Title</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {vendor.title}
+                                      </div>
+                                    </Col>
+
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>Phone</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {vendor.phone}
+                                      </div>
+                                    </Col>
+
+                                    <Col lg={6}>
+                                      <div className='text-secondary fs-6'>Email</div>
+                                      <div className='text-primary-label fw-semibold'>
+                                        {vendor.email}
+                                      </div>
+                                    </Col>
+                                  </Row>
+                                </div>
+                              </div>
+                            ))}
                         </div>
                       </div>
                     </Card.Body>

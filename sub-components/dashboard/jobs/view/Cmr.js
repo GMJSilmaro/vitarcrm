@@ -2,19 +2,40 @@ import CmrPDF from '@/components/pdf/CmrPDF';
 import { db } from '@/firebase';
 import { usePDF } from '@react-pdf/renderer';
 import { format } from 'date-fns';
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from 'firebase/firestore';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Button, Card, Image, Table } from 'react-bootstrap';
 import { Download, Printer } from 'react-bootstrap-icons';
 
-const Cmr = ({ job, customer, contact, location, customerEquipments, calibrations }) => {
+const Cmr = ({
+  job,
+  customer,
+  contact,
+  location,
+  customerEquipments,
+  calibrations,
+}) => {
   const iframeRef = useRef(null);
   const [instance, updateInstance] = usePDF();
 
   const [worker, setWorker] = useState(null);
   const [isSettingWorker, setIsSettingWorker] = useState(false);
   const [labRepresentative, setLabRepresentative] = useState(null);
-  const [isSettingLabRepresentative, setIsSettingLabRepresentative] = useState(false);
+  const [isSettingLabRepresentative, setIsSettingLabRepresentative] =
+    useState(false);
 
   const scope = useMemo(() => {
     const value = job?.scope;
@@ -52,7 +73,9 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
     if (customerEquipments.isLoading || calibrations.isLoading) return [];
 
     const result = calibrations.data
-      .map((c) => customerEquipments.data.find((ce) => ce.id === c.description?.id))
+      .map((c) =>
+        customerEquipments.data.find((ce) => ce.id === c.description?.id)
+      )
       .filter(Boolean);
 
     return result;
@@ -89,6 +112,8 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
       !location.isLoading &&
       !customerEquipments.isLoading &&
       !calibrations.isLoading &&
+      !isSettingWorker &&
+      !isSettingLabRepresentative &&
       job &&
       customer.data &&
       location.data &&
@@ -104,6 +129,8 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
           location={location}
           customerEquipments={customerEquipments}
           calibrations={calibrations}
+          worker={worker}
+          labRepresentative={labRepresentative}
         />
       );
     }
@@ -112,11 +139,15 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
     location.isLoading,
     customerEquipments.isLoading,
     calibrations.isLoading,
+    isSettingWorker,
+    isSettingLabRepresentative,
     JSON.stringify(job),
     JSON.stringify(customer.data),
     JSON.stringify(location.data),
     JSON.stringify(customerEquipments.data),
     JSON.stringify(calibrations.data),
+    JSON.stringify(worker),
+    JSON.stringify(labRepresentative),
   ]);
 
   console.log('job', job);
@@ -248,7 +279,10 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
             <iframe ref={iframeRef} style={{ display: 'none' }} />
 
             {instance.url && job.id && (
-              <Button variant='outline-primary' onClick={() => downloadPDF(job.id)}>
+              <Button
+                variant='outline-primary'
+                onClick={() => downloadPDF(job.id)}
+              >
                 <Download size={18} className='me-2' />
                 Download
               </Button>
@@ -258,7 +292,11 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
       </Card.Header>
 
       <Card.Body>
-        <Table className='w-75 mx-auto text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
+        <Table
+          className='w-75 mx-auto text-center fs-6 align-middle mt-3 mb-5'
+          bordered
+          responsive
+        >
           <tbody>
             <tr>
               <th>CMR No.</th>
@@ -280,7 +318,11 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
             </tr>
             <tr>
               <th>Time</th>
-              <td colSpan={6}>{job?.endByAt ? format(new Date(job.endByAt.toDate()), 'p') : ''}</td>
+              <td colSpan={6}>
+                {job?.endByAt
+                  ? format(new Date(job.endByAt.toDate()), 'p')
+                  : ''}
+              </td>
             </tr>
 
             <tr>
@@ -377,7 +419,9 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
                     <tr key={`${equipment.id}-${i}`}>
                       <td>{equipment?.description || ''}</td>
                       <td className='text-capitalize'>
-                        {equipment?.category ? equipment?.category.toLowerCase() : ''}
+                        {equipment?.category
+                          ? equipment?.category.toLowerCase()
+                          : ''}
                       </td>
                       <td>{equipment?.make || ''}</td>
                       <td>{equipment?.model || ''}</td>
@@ -405,7 +449,9 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
               <th>Tolerance</th>
             </tr>
 
-            {(calibrations.data.length < 1 && !calibrations.isLoading && !calibrations.isError) ||
+            {(calibrations.data.length < 1 &&
+              !calibrations.isLoading &&
+              !calibrations.isError) ||
               (calibrations.length < 1 && completedEquipment.length < 1 && (
                 <tr>
                   <td colSpan={6}>
@@ -453,7 +499,9 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
                     <tr key={`${equipment.id}-${i}`}>
                       <td>{equipment?.description || ''}</td>
                       <td className='text-capitalize'>
-                        {equipment?.category ? equipment?.category.toLowerCase() : ''}
+                        {equipment?.category
+                          ? equipment?.category.toLowerCase()
+                          : ''}
                       </td>
                       <td>{equipment?.make || ''}</td>
                       <td>{equipment?.model || ''}</td>
@@ -512,7 +560,9 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
             <tr>
               <th>
                 Adjustments <br />
-                <small className='text-muted'>(Manufacturer's instructions Required)</small>
+                <small className='text-muted'>
+                  (Manufacturer's instructions Required)
+                </small>
               </th>
               <td colSpan={6}>{job?.isAdjustments ? 'Yes' : 'No'}</td>
             </tr>
@@ -528,7 +578,8 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
             <div>
               <h4 className='mb-0'>Signatures</h4>
               <p className='text-muted fs-6 mb-0'>
-                Signature details of laboratory representative, tecnician and customer.
+                Signature details of laboratory representative, tecnician and
+                customer.
               </p>
             </div>
           </div>
@@ -549,12 +600,18 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
               ) : (
                 <>
                   <h1 className='fs-5 fw-bold mb-0'>No Data Yet</h1>
-                  <p className='text-muted fs-6 mb-0'>Please update the the CMR in the job</p>
+                  <p className='text-muted fs-6 mb-0 text-center'>
+                    Please update the the CMR in the job
+                  </p>
                 </>
               )}
             </div>
-            <div className='mt-2 fw-bold text-center'>Laboratory Representative</div>
-            <div className='text-muted text-center'>{labRepresentative?.fullName || ''}</div>
+            <div className='mt-2 fw-bold text-center'>
+              Laboratory Representative
+            </div>
+            <div className='text-muted text-center'>
+              {labRepresentative?.fullName || ''}
+            </div>
           </div>
 
           <div
@@ -563,17 +620,27 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
           >
             <div className='container p-5 border rounded d-flex flex-column justify-content-center align-items-center'>
               {job?.workerSignature ? (
-                <Image className='w-100 h-100' src={job?.workerSignature} alt='worker' />
+                <Image
+                  className='w-100 h-100'
+                  src={job?.workerSignature}
+                  alt='worker'
+                />
               ) : (
                 <>
                   <h1 className='fs-5 fw-bold mb-0'>No Data Yet</h1>
-                  <p className='text-muted fs-6 mb-0'>Please update the the CMR in the job</p>
+                  <p className='text-muted fs-6 mb-0 text-center'>
+                    Please update the the CMR in the job
+                  </p>
                 </>
               )}
             </div>
             <div className='mt-2 fw-bold'>Reviewd By</div>
-            <div className='text-muted text-center'>{worker?.fullName || ''}</div>
-            <div className='text-muted text-center'>{format(new Date(), 'dd MMMM yyyy')}</div>
+            <div className='text-muted text-center'>
+              {worker?.fullName || ''}
+            </div>
+            <div className='text-muted text-center'>
+              {format(new Date(), 'dd MMMM yyyy')}
+            </div>
           </div>
 
           <div
@@ -582,16 +649,24 @@ const Cmr = ({ job, customer, contact, location, customerEquipments, calibration
           >
             <div className='container p-5 border rounded d-flex flex-column justify-content-center align-items-center'>
               {job?.customerSignature ? (
-                <Image className='w-100 h-100' src={job?.customerSignature} alt='customer' />
+                <Image
+                  className='w-100 h-100'
+                  src={job?.customerSignature}
+                  alt='customer'
+                />
               ) : (
                 <>
                   <h1 className='fs-5 fw-bold mb-0'>No Data Yet</h1>
-                  <p className='text-muted fs-6 mb-0'>Please update the the CMR in the job</p>
+                  <p className='text-muted fs-6 mb-0'>
+                    Please update the the CMR in the job
+                  </p>
                 </>
               )}
             </div>
             <div className='mt-2 fw-bold'>Customer Chop & Sign</div>
-            <div className='text-muted text-center'>{customer?.data?.customerName || ''}</div>
+            <div className='text-muted text-center'>
+              {customer?.data?.customerName || ''}
+            </div>
           </div>
         </div>
       </Card.Body>

@@ -2,7 +2,14 @@ import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
-import { Download, Eye, FileEarmarkText, Save, Trash, Upload } from 'react-bootstrap-icons';
+import {
+  Download,
+  Eye,
+  FileEarmarkText,
+  Save,
+  Trash,
+  Upload,
+} from 'react-bootstrap-icons';
 import { useFormContext } from 'react-hook-form';
 import { delay, getFileFromBlobUrl } from '@/utils/common';
 import toast from 'react-hot-toast';
@@ -117,7 +124,10 @@ const JobDocumentsForm = ({
     }
 
     //* set documents if job request exist
-    if (form.getValues('jobRequestId') && form.getValues('jobRequestId')?.jobRequest) {
+    if (
+      form.getValues('jobRequestId') &&
+      form.getValues('jobRequestId')?.jobRequest
+    ) {
       const jobRequest = form.getValues('jobRequestId')?.jobRequest;
 
       //* if CREATED, just based the selected customer equipments to job request
@@ -244,7 +254,10 @@ const JobDocumentsForm = ({
                 </div>
               </div>
             ) : (
-              <div className='my-5 px-3' style={{ maxHeight: '400px', overflow: 'auto' }}>
+              <div
+                className='my-5 px-3'
+                style={{ maxHeight: '400px', overflow: 'auto' }}
+              >
                 {documents.map((doc, index) => (
                   <div
                     key={index}
@@ -256,7 +269,8 @@ const JobDocumentsForm = ({
                       <div className='d-flex flex-column'>
                         <h6 className='mb-0'>{doc.name}</h6>
                         <small className='text-muted'>
-                          Uploaded on {format(doc.uploadedAt.toDate(), 'MMM d, yyyy')}
+                          Uploaded on{' '}
+                          {format(doc.uploadedAt.toDate(), 'MMM d, yyyy')}
                         </small>
                       </div>
                     </div>
@@ -277,7 +291,11 @@ const JobDocumentsForm = ({
                         <Download size={16} />
                       </Button>
                       {isDeletingDocumentId === doc.id ? (
-                        <Spinner animation='border' size='sm' className='me-2' />
+                        <Spinner
+                          animation='border'
+                          size='sm'
+                          className='me-2'
+                        />
                       ) : (
                         <Button
                           variant='link'

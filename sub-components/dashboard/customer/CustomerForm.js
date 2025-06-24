@@ -117,6 +117,8 @@ const CustomAlertModal = ({
 const CustomerForm = ({ data }) => {
   const auth = useAuth();
 
+  const VENDOR_LIMIT = 3;
+
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -149,6 +151,7 @@ const CustomerForm = ({ data }) => {
     return `CP${String(nextNumber).padStart(5, '0')}`;
   };
 
+  //* query locations
   useEffect(() => {
     const constraints = [];
 
@@ -208,6 +211,7 @@ const CustomerForm = ({ data }) => {
     return () => unsubscribe();
   }, []);
 
+  //* query latest customerId or set formData
   useEffect(() => {
     const fetchLatestCustomerId = async () => {
       try {
@@ -230,12 +234,15 @@ const CustomerForm = ({ data }) => {
 
     // TODO get from contacts not from contactss
     if (data) {
+      console.log({ data }, 'zzzzxx');
+
       setFormData({
         ...data,
         ...(data?.contacts && Array.isArray(data.contacts)
           ? { contacts: data.contacts }
           : { contacts: [] }),
         locations: data?.locations && Array.isArray(data.locations) ? data.locations : [],
+        vendors: data?.vendors && Array.isArray(data.vendors) ? data.vendors : [],
       });
     } else fetchLatestCustomerId();
   }, [data]);
@@ -262,7 +269,7 @@ const CustomerForm = ({ data }) => {
     ],
 
     locations: [],
-
+    vendors: [],
     contract: {
       status: 'N',
       startDate: '',
@@ -435,6 +442,7 @@ const CustomerForm = ({ data }) => {
           mainAddress: location.mainAddress,
         })),
         contract: formData.contract,
+        vendors: formData.vendors,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -658,6 +666,47 @@ const CustomerForm = ({ data }) => {
     }));
   };
 
+  const handleAddVendor = useCallback(() => {
+    if (formData.vendors.length === VENDOR_LIMIT) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      vendors: [
+        ...prev.vendors,
+        {
+          name: '',
+          pic: '',
+          title: '',
+          phone: '',
+          email: '',
+        },
+      ],
+    }));
+  }, [formData.vendors.length]);
+
+  const handleRemoveVendor = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      vendors: prev.vendors.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleVendorChange = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      vendors: prev.vendors.map((vendor, i) => {
+        if (i === index) {
+          return {
+            ...vendor,
+            [field]: value,
+          };
+        }
+
+        return vendor;
+      }),
+    }));
+  };
+
   const handleContactChange = (index, field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -831,7 +880,16 @@ const CustomerForm = ({ data }) => {
                             className='d-flex align-items-center gap-2 mb-2'
                           >
                             <Building size={18} />
-                            <span>Location List</span>
+                            <span>Locations</span>
+                          </Nav.Link>
+                        </Nav.Item>
+                        <Nav.Item>
+                          <Nav.Link
+                            eventKey='vendor'
+                            className='d-flex align-items-center gap-2 mb-2'
+                          >
+                            <People size={18} />
+                            <span>Vendors</span>
                           </Nav.Link>
                         </Nav.Item>
                       </Nav>
@@ -1089,6 +1147,7 @@ const CustomerForm = ({ data }) => {
                         <Card className='border-0 shadow-sm mb-4'>
                           <Card.Body className='p-4'>
                             <h5 className='mb-4'>Contract Details</h5>
+
                             <Row>
                               <Col md={4}>
                                 <Form.Group className='mb-3'>
@@ -1198,6 +1257,132 @@ const CustomerForm = ({ data }) => {
                           </Card.Body>
                         </Card>
                       </Tab.Pane>
+
+                      <Tab.Pane eventKey='vendor'>
+                        <Card className='border-0 shadow-sm mb-4 h-100'>
+                          <Card.Body className='p-4 h-100'>
+                            <div className='d-flex justify-content-between align-items-center mb-4'>
+                              <h5 className='mb-0'>
+                                Vendor Information ({formData.vendors.length}/{VENDOR_LIMIT})
+                              </h5>
+
+                              <Button
+                                disabled={formData.vendors.length === 3}
+                                variant='outline-primary'
+                                size='sm'
+                                onClick={() => handleAddVendor()}
+                              >
+                                <Plus size={14} className='me-1' />
+                                Add Vendor
+                              </Button>
+                            </div>
+
+                            {formData.vendors.length > 0 ? (
+                              formData.vendors.map((vendor, index) => (
+                                <Card key={index} className='border mb-4'>
+                                  <Card.Header className='bg-light d-flex justify-content-between align-items-center'>
+                                    <h6 className='mb-0'>
+                                      <span className='me-2'>Vendor #{index + 1}</span>
+                                    </h6>
+
+                                    <Button
+                                      variant='link'
+                                      className='text-danger p-0'
+                                      onClick={() => handleRemoveVendor(index)}
+                                    >
+                                      <X size={20} />
+                                    </Button>
+                                  </Card.Header>
+
+                                  <Card.Body>
+                                    <Row>
+                                      <Col md={12}>
+                                        <Form.Group className='mb-3'>
+                                          <RequiredFieldWithTooltip label='Name' />
+
+                                          <Form.Control
+                                            type='text'
+                                            value={vendor.name}
+                                            onChange={(e) =>
+                                              handleVendorChange(index, 'name', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <Form.Label>P.I.C</Form.Label>
+
+                                          <Form.Control
+                                            type='text'
+                                            value={vendor.pic}
+                                            onChange={(e) =>
+                                              handleVendorChange(index, 'pic', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <Form.Label>Title</Form.Label>
+
+                                          <Form.Control
+                                            type='text'
+                                            value={vendor.title}
+                                            onChange={(e) =>
+                                              handleVendorChange(index, 'title', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <Form.Label>Phone</Form.Label>
+
+                                          <Form.Control
+                                            type='text'
+                                            value={vendor.phone}
+                                            onChange={(e) =>
+                                              handleVendorChange(index, 'phone', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+
+                                      <Col md={6}>
+                                        <Form.Group className='mb-3'>
+                                          <Form.Label>Email</Form.Label>
+
+                                          <Form.Control
+                                            type='text'
+                                            value={vendor.email}
+                                            onChange={(e) =>
+                                              handleVendorChange(index, 'email', e.target.value)
+                                            }
+                                            required
+                                          />
+                                        </Form.Group>
+                                      </Col>
+                                    </Row>
+                                  </Card.Body>
+                                </Card>
+                              ))
+                            ) : (
+                              <div className='text-center mt-5 h-100'>
+                                <h5 className='mb-1'>No vendor added yet.</h5>
+                                <p className='text-muted'>Click "Add Vendor" to begin.</p>
+                              </div>
+                            )}
+                          </Card.Body>
+                        </Card>
+                      </Tab.Pane>
                     </Tab.Content>
                   </Col>
                 </Row>
@@ -1231,7 +1416,7 @@ const CustomerForm = ({ data }) => {
                     </Button>
                   )}
 
-                  {activeTab !== 'location' ? (
+                  {activeTab !== 'vendor' ? (
                     <Button
                       variant='primary'
                       onClick={handleNextClick}

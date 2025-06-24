@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
     height: '100%',
     paddingTop: 99.2088,
     paddingBottom: 19.836,
-    paddingLeft: 54,
+    paddingLeft: 25.2,
     paddingRight: 25.2,
   },
   title: {
@@ -290,6 +290,17 @@ const CertificateOfCalibrationPDF2 = ({
     return format(dueDate, 'dd MMMM yyyy');
   }, [calibration]);
 
+  const dateReceived = useMemo(() => {
+    if (!calibration.dateReceivedRequested || !calibration?.dateReceived) return 'N/A';
+
+    if (calibration.dateReceivedRequested === 'no') {
+      if (calibration.dateReceived) return calibration.dateReceived;
+      else return 'N/A';
+    }
+
+    return format(new Date(calibration.dateReceived), 'dd MMMM yyyy');
+  }, [calibration]);
+
   const traceability = useMemo(() => {
     if (!calibration?.traceabilityType) return '';
 
@@ -332,6 +343,18 @@ const CertificateOfCalibrationPDF2 = ({
     return { siteName: l?.siteName || '', defaultAddress };
   }, [calibration.location]);
 
+  const formatCertNo = (certNo) => {
+    const parts = certNo.split('-');
+
+    if (!certNo || parts.length < 3) return '';
+
+    const part1 = parts[0];
+    const initials = part1.substring(0, 3);
+    const date = part1.slice(3);
+
+    return [`${initials} - ${date}`, ...parts.slice(1)].join(' - ');
+  };
+
   console.log('COC PDF', { resolution, calibratedBy, approvedSignatory });
 
   return (
@@ -362,7 +385,7 @@ const CertificateOfCalibrationPDF2 = ({
                 }}
               >
                 <View style={[styles.blockContentBold, { flexGrow: 1 }]}>
-                  <Text>{calibration?.certificateNumber || ''}</Text>
+                  <Text>{formatCertNo(calibration?.certificateNumber)}</Text>
                 </View>
 
                 <View>
@@ -433,11 +456,7 @@ const CertificateOfCalibrationPDF2 = ({
             </View>
 
             <View style={styles.blockContentRight}>
-              <Text>
-                {calibration?.dateReceived
-                  ? format(new Date(calibration.dateReceived), 'dd MMMM yyyy')
-                  : ''}
-              </Text>
+              <Text>{dateReceived}</Text>
             </View>
           </View>
 
@@ -839,7 +858,7 @@ const CertificateOfCalibrationPDF2 = ({
                 }}
               >
                 <View style={[styles.blockContentBold, { flexGrow: 1 }]}>
-                  <Text>{calibration?.certificateNumber || ''}</Text>
+                  <Text>{formatCertNo(calibration?.certificateNumber)}</Text>
                 </View>
 
                 <View>
@@ -1364,7 +1383,6 @@ const CertificateOfCalibrationPDF2 = ({
               width: '80%',
               margin: '0 auto',
               marginTop: 30,
-              marginBottom: 10,
               display: 'flex',
               flexDirection: 'row',
               justifyContent: 'space-between',
@@ -1382,7 +1400,7 @@ const CertificateOfCalibrationPDF2 = ({
 
               {calibratedBy?.data?.signature && (
                 <Image
-                  style={{ width: '32px', height: 'auto', marginTop: 7 }}
+                  style={{ width: '60px', height: '40px', marginTop: 7 }}
                   src={calibratedBy?.data?.signature}
                 />
               )}
@@ -1411,7 +1429,7 @@ const CertificateOfCalibrationPDF2 = ({
 
               {approvedSignatory?.data?.signature && (
                 <Image
-                  style={{ width: '32px', height: 'auto', marginTop: 7 }}
+                  style={{ width: '60px', height: '40px', marginTop: 7 }}
                   src={approvedSignatory?.data?.signature}
                 />
               )}

@@ -237,16 +237,15 @@ const JobCalibration = () => {
           );
         },
       }),
-      columnHelper.accessor((row) => row?.location?.name || 'N/A', {
-        id: 'location',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Location' />,
+      columnHelper.accessor((row) => row?.approvedSignatory?.name || '', {
+        id: 'approvedSignatory',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Approved Signatory' />
+        ),
         cell: ({ row }) => {
-          const location = row?.original?.location?.name || 'N/A';
-          return (
-            <div>
-              <BuildingFill className='me-2' size={14} /> {location}
-            </div>
-          );
+          const approvedSignatory = row?.original?.approvedSignatory?.name || '';
+
+          return <div>{approvedSignatory}</div>;
         },
       }),
       columnHelper.accessor((row) => row?.description?.name || 'N/A', {
@@ -679,10 +678,10 @@ const JobCalibration = () => {
         ],
       },
       {
-        label: 'Location',
-        columnId: 'location',
+        label: 'Approved Signatory',
+        columnId: 'approvedSignatory',
         type: 'text',
-        placeholder: 'Search by location...',
+        placeholder: 'Search by approved signatory...',
       },
       {
         label: 'Equipment',

@@ -390,7 +390,7 @@ const CalibrationDetails = () => {
             label: _.startCase(calibration?.status),
             color: STATUS_COLOR[calibration?.status] || 'secondary',
           },
-          ...(calibration?.status
+          ...(calibration?.printStatus
             ? [
                 {
                   label: _.startCase(calibration?.printStatus),
