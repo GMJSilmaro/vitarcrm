@@ -63,6 +63,17 @@ const SummaryTab = ({ calibration }) => {
     return format(dueDate, 'dd-MM-yyyy');
   }, [calibration]);
 
+  const dateReceived = useMemo(() => {
+    if (!calibration.dateReceivedRequested || !calibration?.dateReceived) return 'N/A';
+
+    if (calibration.dateReceivedRequested === 'no') {
+      if (calibration.dateReceived) return calibration.dateReceived;
+      else return 'N/A';
+    }
+
+    return format(new Date(calibration.dateReceived), 'dd-MMMM-yyyy');
+  }, [calibration]);
+
   console.log({ calibration });
 
   return (
@@ -407,7 +418,24 @@ const SummaryTab = ({ calibration }) => {
             </div>
           </Col> */}
 
-          <Col md={6}>
+          <Col md={4}>
+            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+              <div
+                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                style={{ width: '40px', height: '40px' }}
+              >
+                <Toggles size={20} />
+              </div>
+              <div>
+                <div className='text-secondary fs-6'>Date Received Requested:</div>
+                <div className='text-primary-label fw-semibold text-capitalize'>
+                  {calibration?.dateReceivedRequested || 'N/A'}
+                </div>
+              </div>
+            </div>
+          </Col>
+
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
@@ -417,16 +445,12 @@ const SummaryTab = ({ calibration }) => {
               </div>
               <div>
                 <div className='text-secondary fs-6'>Date Received:</div>
-                <div className='text-primary-label fw-semibold text-capitalize'>
-                  {isValid(new Date(calibration?.dateReceived))
-                    ? format(new Date(calibration.dateReceived), 'dd-MM-yyyy')
-                    : 'N/A'}
-                </div>
+                <div className='text-primary-label fw-semibold text-capitalize'>{dateReceived}</div>
               </div>
             </div>
           </Col>
 
-          <Col md={6}>
+          <Col md={4}>
             <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
               <div
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'

@@ -45,28 +45,38 @@ const JobCalibrationChecklistForm = ({
     return [
       columnHelper.accessor('index', {
         id: 'index',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='#' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='#' />
+        ),
         enableSorting: false,
         size: 50,
         cell: ({ row, table }) => (
           <div>
-            {(table.getSortedRowModel()?.flatRows?.findIndex((flatRow) => flatRow.id === row.id) ||
-              0) + 1}
+            {(table
+              .getSortedRowModel()
+              ?.flatRows?.findIndex((flatRow) => flatRow.id === row.id) || 0) +
+              1}
           </div>
         ),
       }),
       columnHelper.accessor('description', {
         id: 'equipment',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Equipment' />
+        ),
       }),
       columnHelper.accessor('tagId', {
         id: 'equipment id',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment ID' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Equipment ID' />
+        ),
       }),
       columnHelper.accessor('nominalValue', {
         id: 'nominal value',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Nominal Value' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Nominal Value' />
+        ),
         cell: ({ row }) => {
           const index = row.index;
 
@@ -91,7 +101,9 @@ const JobCalibrationChecklistForm = ({
       columnHelper.accessor('acceptance', {
         id: 'acceptance',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Acceptance' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Acceptance' />
+        ),
         cell: ({ row }) => {
           const index = row.index;
 
@@ -116,7 +128,9 @@ const JobCalibrationChecklistForm = ({
       columnHelper.accessor('resultBefore', {
         id: 'result before',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Result Before' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Result Before' />
+        ),
         cell: ({ row }) => {
           const index = row.index;
 
@@ -141,7 +155,9 @@ const JobCalibrationChecklistForm = ({
       columnHelper.accessor('resultAfter', {
         id: 'result after',
         enableSorting: false,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Result After' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Result After' />
+        ),
         cell: ({ row }) => {
           const index = row.index;
 
@@ -241,7 +257,10 @@ const JobCalibrationChecklistForm = ({
     getDocs(q)
       .then((snapshot) => {
         if (!snapshot.empty) {
-          const userData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const userData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
 
           setUsersOptions({
             data: userData.map((user) => ({
@@ -315,7 +334,9 @@ const JobCalibrationChecklistForm = ({
       }
 
       const currentChecklistEquipments = refEquipments.map((eq) => {
-        const checklistEquipment = checklistEquipments.find((ce) => ce.id === eq.inventoryId);
+        const checklistEquipment = checklistEquipments.find(
+          (ce) => ce.id === eq.inventoryId
+        );
 
         if (checklistEquipment) return checklistEquipment;
 
@@ -368,7 +389,9 @@ const JobCalibrationChecklistForm = ({
       }
 
       const currentChecklistEquipments = refEquipments.map((eq) => {
-        const checklistEquipment = checklistEquipments.find((ce) => ce.id === eq.inventoryId);
+        const checklistEquipment = checklistEquipments.find(
+          (ce) => ce.id === eq.inventoryId
+        );
 
         if (checklistEquipment) return checklistEquipment;
 
@@ -417,8 +440,8 @@ const JobCalibrationChecklistForm = ({
         <hr className='my-4' />
         <h4 className='mb-0'>Reference Equipment</h4>
         <p className='text-muted fs-6'>
-          Details about reference equipment with their respective nominal value, acceptance and
-          before & after calibration results.
+          Details about reference equipment with their respective nominal value,
+          acceptance and before & after calibration results.
         </p>
 
         <Row>
@@ -459,7 +482,9 @@ const JobCalibrationChecklistForm = ({
                     options={takenByOptions}
                     isLoading={usersOptions.isLoading}
                     placeholder={
-                      usersOptions.isLoading ? 'Loading users...' : "Search by users' name"
+                      usersOptions.isLoading
+                        ? 'Loading users...'
+                        : "Search by users' name"
                     }
                     isDisabled={usersOptions.isLoading}
                     noOptionsMessage={() =>
@@ -468,7 +493,9 @@ const JobCalibrationChecklistForm = ({
                   />
 
                   {formErrors && formErrors.customer?.message && (
-                    <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.customer?.message}
+                    </Form.Text>
                   )}
                 </>
               )}
@@ -491,7 +518,9 @@ const JobCalibrationChecklistForm = ({
                     options={takenByOptions}
                     isLoading={usersOptions.isLoading}
                     placeholder={
-                      usersOptions.isLoading ? 'Loading users...' : "Search by users' name"
+                      usersOptions.isLoading
+                        ? 'Loading users...'
+                        : "Search by users' name"
                     }
                     isDisabled={usersOptions.isLoading}
                     noOptionsMessage={() =>
@@ -500,7 +529,9 @@ const JobCalibrationChecklistForm = ({
                   />
 
                   {formErrors && formErrors.customer?.message && (
-                    <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.customer?.message}
+                    </Form.Text>
                   )}
                 </>
               )}
@@ -511,7 +542,8 @@ const JobCalibrationChecklistForm = ({
         <hr className='my-4' />
         <h4 className='mb-0'>Verified By Lab In-charge</h4>
         <p className='text-muted fs-6'>
-          Details about checklist's verified by lab in-charge before and after calibration.
+          Details about checklist's verified by lab in-charge before and after
+          calibration.
         </p>
 
         <Row className='mb-3 row-gap-3'>
@@ -531,7 +563,9 @@ const JobCalibrationChecklistForm = ({
                     options={verifiedByOptions}
                     isLoading={usersOptions.isLoading}
                     placeholder={
-                      usersOptions.isLoading ? 'Loading users...' : "Search by users' name"
+                      usersOptions.isLoading
+                        ? 'Loading users...'
+                        : "Search by users' name"
                     }
                     isDisabled={usersOptions.isLoading}
                     noOptionsMessage={() =>
@@ -540,7 +574,9 @@ const JobCalibrationChecklistForm = ({
                   />
 
                   {formErrors && formErrors.customer?.message && (
-                    <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.customer?.message}
+                    </Form.Text>
                   )}
                 </>
               )}
@@ -563,7 +599,9 @@ const JobCalibrationChecklistForm = ({
                     options={verifiedByOptions}
                     isLoading={usersOptions.isLoading}
                     placeholder={
-                      usersOptions.isLoading ? 'Loading users...' : "Search by users' name"
+                      usersOptions.isLoading
+                        ? 'Loading users...'
+                        : "Search by users' name"
                     }
                     isDisabled={usersOptions.isLoading}
                     noOptionsMessage={() =>
@@ -572,7 +610,9 @@ const JobCalibrationChecklistForm = ({
                   />
 
                   {formErrors && formErrors.customer?.message && (
-                    <Form.Text className='text-danger'>{formErrors.customer?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.customer?.message}
+                    </Form.Text>
                   )}
                 </>
               )}

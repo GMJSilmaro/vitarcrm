@@ -92,8 +92,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingBottom: 19.836,
-    paddingLeft: 25.2,
-    paddingRight: 25.2,
+    paddingLeft: 22.2,
+    paddingRight: 22.2,
   },
 });
 
@@ -119,12 +119,16 @@ Font.register({
   src: TimesNewRomanBoldItalic,
 });
 
-const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrations }) => {
-  const [worker, setWorker] = useState(null);
-  const [isSettingWorker, setIsSettingWorker] = useState(false);
-  const [labRepresentative, setLabRepresentative] = useState(null);
-  const [isSettingLabRepresentative, setIsSettingLabRepresentative] = useState(false);
-
+const CmrPDF = ({
+  job,
+  customer,
+  contact,
+  location,
+  customerEquipments,
+  calibrations,
+  worker,
+  labRepresentative,
+}) => {
   const [totalPages, setTotalPages] = useState(0);
 
   const scope = useMemo(() => {
@@ -173,93 +177,6 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
     calibrations.data,
     calibrations.isLoading,
   ]);
-
-  //* set lab representative if data exist,
-  useEffect(() => {
-    //* if no jobRequestId then set it as the createdBy of job else set is as the one who created the job request
-    if (job) {
-      setIsSettingLabRepresentative(true);
-
-      if (!job?.jobRequestId) {
-        const uid = job?.createdBy?.uid;
-
-        if (uid) {
-          //* query user
-          getDoc(doc(db, 'users', uid))
-            .then((snapshot) => {
-              if (snapshot.exists()) {
-                const user = { id: snapshot.id, ...snapshot.data() };
-                setLabRepresentative(user);
-              }
-            })
-            .catch((err) => {
-              console.error('Failed to set lab representative:', err);
-              setIsSettingLabRepresentative(false);
-            });
-        }
-      } else {
-        const jobRequestId = job?.jobRequestId;
-
-        //* query job request
-        getDoc(doc(db, 'jobRequests', jobRequestId))
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              const jobRequest = snapshot.data();
-              const uid = jobRequest?.createdBy?.uid;
-
-              //* query user
-              getDoc(doc(db, 'users', uid))
-                .then((doc) => {
-                  if (doc.exists()) {
-                    const user = { id: doc.id, ...doc.data() };
-                    setLabRepresentative(user);
-                  }
-                })
-                .catch((err) => {
-                  console.error('Failed to set lab representative:', err);
-                  setIsSettingLabRepresentative(false);
-                });
-            }
-          })
-          .catch((err) => {
-            console.error('Failed to set lab representative:', err);
-            setIsSettingLabRepresentative(false);
-          });
-      }
-
-      setIsSettingLabRepresentative(false);
-    }
-  }, [job]);
-
-  //* set worker
-  useEffect(() => {
-    if (job) {
-      setIsSettingWorker(true);
-
-      //* set workerSignature based on the first worker assigned/selected in the job
-      const worker = job?.workers?.[0];
-
-      if (worker) {
-        const id = worker?.id;
-
-        if (id) {
-          getDocs(query(collection(db, 'users'), where('workerId', '==', id)))
-            .then((snapshot) => {
-              if (!snapshot.empty) {
-                const user = snapshot.docs[0].data();
-                setWorker(user);
-              }
-            })
-            .catch((err) => {
-              console.error('Failed to set worker:', err);
-              setIsSettingWorker(false);
-            });
-        }
-      }
-
-      setIsSettingWorker(false);
-    }
-  }, [job]);
 
   const prewrap = (text) => {
     if (!text) return null;
@@ -920,13 +837,13 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
             pageNumber === totalPages && (
               <View
                 style={{
-                  width: '80%',
-                  margin: '0 auto',
+                  margin: '0 0 0 auto',
                   display: 'flex',
                   flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  alignItems: 'stretch',
                   position: 'relative',
+                  gap: 8,
                 }}
               >
                 <View
@@ -934,10 +851,13 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    border: '1px solid #00000',
+                    padding: 4,
                   }}
                 >
                   {job?.salesSignature && (
-                    <Image style={{ width: '50px', height: '30px' }} src={job?.salesSignature} />
+                    <Image style={{ width: '60px', height: '40px' }} src={job?.salesSignature} />
                   )}
                   <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
                     Laboratory Representative
@@ -952,10 +872,13 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    border: '1px solid #00000',
+                    padding: 4,
                   }}
                 >
                   {job?.workerSignature && (
-                    <Image style={{ width: '50px', height: '30px' }} src={job?.workerSignature} />
+                    <Image style={{ width: '60px', height: '40px' }} src={job?.workerSignature} />
                   )}
                   <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>Reviewd By</Text>
                   <Text
@@ -977,10 +900,13 @@ const CmrPDF = ({ job, customer, contact, location, customerEquipments, calibrat
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    border: '1px solid #00000',
+                    padding: 4,
                   }}
                 >
                   {job?.customerSignature && (
-                    <Image style={{ width: '50px', height: '30px' }} src={job?.customerSignature} />
+                    <Image style={{ width: '60px', height: '40px' }} src={job?.customerSignature} />
                   )}
                   <Text style={{ fontSize: 8, marginTop: 5, textAlign: 'center' }}>
                     Customer Chop & Sign

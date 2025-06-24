@@ -12,21 +12,28 @@ import {
   Badge,
   Button,
   Card,
+  Col,
   Dropdown,
   Form,
   OverlayTrigger,
+  Row,
   Spinner,
   Tooltip,
 } from 'react-bootstrap';
 import {
   ArrowRepeat,
   ArrowReturnLeft,
+  Briefcase,
   BriefcaseFill,
   Building,
   CalendarWeek,
+  CalendarX,
   CardList,
   CheckCircle,
+  ClipboardCheck,
+  Clock,
   Copy,
+  ExclamationCircle,
   Eye,
   Flag,
   HandThumbsDown,
@@ -38,6 +45,7 @@ import {
   Plus,
   PlusSquare,
   ShieldCheck,
+  Thermometer,
   ThreeDotsVertical,
   Trash,
   XCircle,
@@ -61,7 +69,7 @@ import {
 import { db, storage } from '@/firebase';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import DataTable from '@/components/common/DataTable';
-import { format, formatDistanceStrict } from 'date-fns';
+import { format, formatDistanceStrict, isAfter, isBefore, isEqual } from 'date-fns';
 import { useRouter } from 'next/router';
 import Swal from 'sweetalert2';
 import DataTableSearch from '@/components/common/DataTableSearch';
@@ -70,7 +78,7 @@ import DataTableFilter from '@/components/common/DataTableFilter';
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import _, { set } from 'lodash';
+import _ from 'lodash';
 import { useNotifications } from '@/hooks/useNotifications';
 import { deleteObject, listAll, ref } from 'firebase/storage';
 import { PRIORITY_LEVELS_COLOR, SCOPE_TYPE_COLOR, STATUS, STATUS_COLOR } from '@/schema/job';
@@ -83,7 +91,203 @@ const JobList = () => {
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
 
+  const [activeFilterId, setActiveFilterId] = useState('');
+  const [columnFilters, setColumnFilters] = useState([]);
   const columnHelper = createColumnHelper();
+
+  const stats = useMemo(() => {
+    const total = jobs.data.length;
+    const upcomingJobs = jobs.data.filter((job) => {
+      const startDate = job.startDate;
+      const startTime = job.startTime;
+      const endDate = job.endDate;
+      const endTime = job.endTime;
+      const start = new Date(`${startDate}T${startTime}:00`);
+      const end = new Date(`${endDate}T${endTime}:00`);
+      const pending = job.status === 'job-confirm';
+
+      return (isEqual(start, new Date()) || isAfter(start, new Date()) || isEqual(end, new Date()) || isAfter(end, new Date())) && pending; //prettier-ignore
+    }).length;
+    const onSiteJobs = jobs.data.filter((job) => job.scope === 'site').length;
+    const onLabJobs = jobs.data.filter((job) => job.scope === 'lab').length;
+    const urgentJobs = jobs.data.filter((job) => job.priority === 'urgent').length;
+    const overdueJobs = jobs.data.filter((job) => {
+      const endDate = job.endDate;
+      const endTime = job.endTime;
+      const end = new Date(`${endDate}T${endTime}:00`);
+      const pending = job.status === 'job-confirm';
+
+      return isBefore(end, new Date()) && pending;
+    }).length;
+    const confirmedJobs = jobs.data.filter((job) => job.status === 'job-confirm').length;
+    const inProgressJobs = jobs.data.filter((job) => job.status === 'job-in-progress').length;
+    const jobValidationJobs = jobs.data.filter((job) => job.status === 'job-validation').length;
+    const cancelledJobs = jobs.data.filter((job) => job.status === 'job-cancel').length;
+    const completedJobs = jobs.data.filter((job) => job.status === 'job-complete').length;
+    const rescheduledJobs = jobs.data.filter((job) => job.status === 'job-reschedule').length;
+
+    return [
+      {
+        id: 'all',
+        value: total,
+        title: 'Total Jobs',
+        icon: Briefcase,
+        color: 'secondary',
+        width: 2,
+        filter: 'all',
+        filterValue: '',
+      },
+      {
+        id: 'upcoming-jobs',
+        value: upcomingJobs,
+        title: 'Upcoming',
+        icon: Clock,
+        color: 'dark',
+        width: 2,
+        filter: 'startDate',
+        filterValue: null,
+      },
+      {
+        id: 'overdue-jobs',
+        value: overdueJobs,
+        title: 'Overdue',
+        icon: CalendarX,
+        color: 'secondary',
+        width: 2,
+        filter: 'endDate',
+        filterValue: null,
+      },
+      {
+        id: 'urgent-jobs',
+        value: urgentJobs,
+        title: 'Urgent',
+        icon: ExclamationCircle,
+        color: 'warning',
+        width: 2,
+        filter: 'priority',
+        filterValue: 'urgent',
+      },
+      {
+        id: 'on-site',
+        value: onSiteJobs,
+        title: 'On Site',
+        icon: Building,
+        color: 'secondary',
+        width: 2,
+        filter: 'scope',
+        filterValue: 'site',
+      },
+      {
+        id: 'on-lab',
+        value: onLabJobs,
+        title: 'On Laboratory',
+        icon: Thermometer,
+        color: 'secondary',
+        width: 2,
+        filter: 'scope',
+        filterValue: 'lab',
+      },
+      {
+        id: 'in-progress-jobs',
+        value: inProgressJobs,
+        title: 'In Progress',
+        icon: Clock,
+        color: 'primary',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-in-progress',
+      },
+      {
+        id: 'confirmed-jobs',
+        value: confirmedJobs,
+        title: 'Confirmed',
+        icon: ClipboardCheck,
+        color: 'info',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-confirm',
+      },
+      {
+        id: 'for-validation-jobs',
+        value: jobValidationJobs,
+        title: 'For Validation',
+        icon: CheckCircle,
+        color: 'success',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-validation',
+      },
+      {
+        id: 'completed-jobs',
+        value: completedJobs,
+        title: 'Completed',
+        icon: ShieldCheck,
+        color: 'purple',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-complete',
+      },
+      {
+        id: 'rescheduled-jobs',
+        value: rescheduledJobs,
+        title: 'Rescheduled',
+        icon: CalendarWeek,
+        color: 'warning',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-reschedule',
+      },
+      {
+        id: 'cancelled-jobs',
+        value: cancelledJobs,
+        title: 'Cancelled',
+        icon: XCircle,
+        color: 'danger',
+        width: 2,
+        filter: 'status',
+        filterValue: 'job-cancel',
+      },
+    ];
+  }, [JSON.stringify(jobs)]);
+
+  const setFilterBasedOnStat = (stat) => {
+    switch (stat.filter) {
+      case 'all':
+        table.resetColumnFilters();
+        setActiveFilterId('all');
+        break;
+
+      case 'status':
+        setColumnFilters([{ id: 'status', value: stat.filterValue }]);
+        setActiveFilterId(stat.id);
+        break;
+
+      case 'scope':
+        setColumnFilters([{ id: 'scope', value: stat.filterValue }]);
+        setActiveFilterId(stat.id);
+        break;
+
+      case 'priority':
+        setColumnFilters([{ id: 'priority', value: stat.filterValue }]);
+        setActiveFilterId(stat.id);
+        break;
+
+      case 'startDate':
+        setColumnFilters([{ id: 'startDate', value: new Date() }]);
+        setActiveFilterId(stat.id);
+        break;
+
+      case 'endDate':
+        setColumnFilters([{ id: 'endDate', value: new Date() }]);
+        setActiveFilterId(stat.id);
+        break;
+
+      default:
+        table.resetColumnFilters();
+        setActiveFilterId('');
+        break;
+    }
+  };
 
   const getStartEnd = (startDate, endDate, startTime, endTime) => {
     const start = new Date(`${startDate}T${startTime}:00`);
@@ -310,12 +514,12 @@ const JobList = () => {
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Start:</div>
                   <div>{startBy || 'N/A'}</div>
-                  <div>{startByAt ? format(startByAt, 'dd-MM-yyyy HH:mm') : 'N/A'}</div>
+                  <div>{startByAt ? format(startByAt, 'dd-MM-yyyy hh:mm a') : 'N/A'}</div>
                 </div>
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Completed:</div>
                   <div>{endBy || 'N/A'}</div>
-                  <div>{endByAt ? format(endByAt, 'dd-MM-yyyy HH:mm') : 'N/A'}</div>
+                  <div>{endByAt ? format(endByAt, 'dd-MM-yyyy hh:mm a') : 'N/A'}</div>
                 </div>
               </div>
             );
@@ -357,6 +561,36 @@ const JobList = () => {
               <span>{format(createdAt, 'dd-MM-yyyy')}</span>
             </div>
           );
+        },
+      }),
+      columnHelper.accessor('startDate', {
+        filterFn: (row, columnId, filterValue, addMeta) => {
+          const startDate = row.original.startDate;
+          const startTime = row.original.startTime;
+          const endDate = row.original.endDate;
+          const endTime = row.original.endTime;
+          const start = new Date(`${startDate}T${startTime}:00`);
+          const end = new Date(`${endDate}T${endTime}:00`);
+
+          const pending = row.original.status === 'job-confirm';
+
+          return (
+            (isEqual(start, filterValue) ||
+              isAfter(start, filterValue) ||
+              isEqual(end, filterValue) ||
+              isAfter(end, filterValue)) &&
+            pending
+          );
+        },
+      }),
+      columnHelper.accessor('endDate', {
+        filterFn: (row, columnId, filterValue, addMeta) => {
+          const endDate = row.original.endDate;
+          const endTime = row.original.endTime;
+          const end = new Date(`${endDate}T${endTime}:00`);
+          const pending = row.original.status === 'job-confirm';
+
+          return isBefore(end, filterValue) && pending;
         },
       }),
       columnHelper.accessor('actions', {
@@ -784,7 +1018,7 @@ const JobList = () => {
 
                       <Dropdown.Item onClick={() => router.push(`/jobs/${id}/calibrations/create`)}>
                         <PlusSquare className='me-2' size={16} />
-                        Start Calibration
+                        Add Calibration
                       </Dropdown.Item>
                     </>
                   )}
@@ -878,10 +1112,14 @@ const JobList = () => {
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
-      columnVisibility: { date: false },
+      columnVisibility: { date: false, startDate: false, endDate: false },
       columnPinning: { right: ['actions'] },
       sorting: [{ id: 'date', desc: true }],
     },
+    state: {
+      columnFilters,
+    },
+    onColumnFiltersChange: setColumnFilters,
   });
 
   useEffect(() => {
@@ -1024,6 +1262,54 @@ const JobList = () => {
             : []),
         ]}
       />
+
+      <Row className='row-gap-4 mb-5'>
+        {stats.map((stat, i) => {
+          const Icon = stat.icon;
+
+          return (
+            <Col
+              lg={stat.width}
+              key={`${stat.id}-${stat.title}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setFilterBasedOnStat(stat)}
+            >
+              <div
+                className={`bg-${
+                  activeFilterId !== stat.id ? stat.color : 'primary-subtle'
+                } rounded`}
+                style={{ height: 8 }}
+              />
+
+              <div
+                className={`shadow-sm bg-white rounded-top-0 rounded-bottom p-4 h-100 border border-transaparent w-100 ${
+                  activeFilterId === stat.id ? 'border-primary' : 'hover-item'
+                }`}
+              >
+                <div className='d-flex justify-content-between align-items-center mb-3'>
+                  <div className='d-flex align-items-center'>
+                    <Icon size={18} className={`text-${stat.color} me-2`} />
+                    <span
+                      className={`small fw-semibold py-1 px-2 text-${stat.color} bg-${stat.color}-soft rounded-3`}
+                    >
+                      {stat.title}
+                    </span>
+                  </div>
+                </div>
+
+                {jobs.isLoading ? (
+                  <Spinner style={{ width: 20, height: 20 }} animation='border' size='sm' />
+                ) : (
+                  <>
+                    <h3 className='mb-1'>{stat.value}</h3>
+                    <small className='text-muted'>{stat.subtitle}</small>
+                  </>
+                )}
+              </div>
+            </Col>
+          );
+        })}
+      </Row>
 
       <Card className='border-0 shadow-none'>
         <Card.Body className='p-4'>

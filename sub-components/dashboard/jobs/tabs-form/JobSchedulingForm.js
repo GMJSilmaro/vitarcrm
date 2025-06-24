@@ -440,7 +440,7 @@ const JobSchedulingForm = ({
             </Row>
 
             <Row>
-              <Form.Group as={Col} md={12}>
+              {/* <Form.Group as={Col} md={12}>
                 <Form.Label htmlFor='description'>Description</Form.Label>
 
                 <Controller
@@ -463,24 +463,24 @@ const JobSchedulingForm = ({
                     </>
                   )}
                 />
-              </Form.Group>
+              </Form.Group> */}
 
-              {/* <Form.Group as={Col} md='6'>
-            <Form.Label>Remarsk/Note</Form.Label>
+              <Form.Group as={Col} md={12}>
+                <Form.Label>Remark</Form.Label>
 
-            <Controller
-              name='remarks'
-              control={form.control}
-              render={({ field }) => (
-                <Form.Control
-                  {...field}
-                  as='textarea'
-                  rows={3}
-                  placeholder='Enter job remarks/notes'
+                <Controller
+                  name='remarks'
+                  control={form.control}
+                  render={({ field }) => (
+                    <Form.Control
+                      {...field}
+                      as='textarea'
+                      rows={1}
+                      placeholder='Enter job remark'
+                    />
+                  )}
                 />
-              )}
-            />
-          </Form.Group> */}
+              </Form.Group>
             </Row>
 
             <hr className='my-4' />

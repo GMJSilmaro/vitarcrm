@@ -4,7 +4,13 @@ import Select from '@/components/Form/Select';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import useMounted from '@/hooks/useMounted';
-import { CALIBRATED_AT, CATEGORY, DUE_DATE_REQUESTED, STATUS } from '@/schema/calibration';
+import {
+  CALIBRATED_AT,
+  CATEGORY,
+  DATE_RECEIVED_REQUESTED,
+  DUE_DATE_REQUESTED,
+  STATUS,
+} from '@/schema/calibration';
 import { SCOPE_TYPE } from '@/schema/job';
 import { add, format } from 'date-fns';
 import {
@@ -61,6 +67,7 @@ const CalibrateSummaryForm = ({
 
   const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: _.capitalize(category) }))); //prettier-ignore
   const [dueDateRequestedOptions] = useState(DUE_DATE_REQUESTED.map((dueDateRequested) => ({ value: dueDateRequested, label: _.capitalize(dueDateRequested) }))); //prettier-ignore
+  const [dateReceivedRequestedOptions] = useState(DATE_RECEIVED_REQUESTED.map((dateReceivedRequested) => ({ value: dateReceivedRequested, label: _.capitalize(dateReceivedRequested) }))); //prettier-ignore
   const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.startCase(status) }))); //prettier-ignore
 
   const form = useFormContext();
@@ -82,6 +89,21 @@ const CalibrateSummaryForm = ({
         form.setValue('dueDate', 'N/A');
       }, 100);
     }
+  };
+
+  const handleDateReceivedRequestedChange = (option, field) => {
+    field.onChange(option);
+    form.clearErrors('dateReceived');
+
+    if (option.value === 'no') {
+      //* clear the fields
+      form.setValue('dateReceived', '');
+
+      //* delay to set null value
+      setTimeout(() => {
+        form.setValue('dateReceived', 'N/A');
+      }, 100);
+    } else form.setValue('dateReceived', '');
   };
 
   const handleGetLocationValue = useCallback(() => {
@@ -456,12 +478,23 @@ const CalibrateSummaryForm = ({
   useEffect(() => {
     if (data && dueDateRequestedOptions?.length > 0) {
       const selectedDueDateRequested = dueDateRequestedOptions.find(
-        (option) => option.value === data.dueDateRequested
+        (option) => option?.value === data?.dueDateRequested
       );
       form.setValue('dueDate', data.dueDate);
       form.setValue('dueDateRequested', selectedDueDateRequested);
     }
   }, [data, dueDateRequestedOptions]);
+
+  //* set date received requested, if data exist
+  useEffect(() => {
+    if (data && dateReceivedRequestedOptions?.length > 0) {
+      const selectedDateReceivedRequested = dateReceivedRequestedOptions.find(
+        (option) => option?.value === data?.dateReceivedRequested
+      );
+      form.setValue('dateReceived', data.dateReceived);
+      form.setValue('dateReceivedRequested', selectedDateReceivedRequested);
+    }
+  }, [data, dateReceivedRequestedOptions]);
 
   //* set customer equipments, filtered out based on selected category
   useEffect(() => {
@@ -492,7 +525,6 @@ const CalibrateSummaryForm = ({
   //* set default value for due due date requested, date duration,
   useEffect(() => {
     if (!data && dueDateRequestedOptions.length > 0) {
-      console.log('trigeer 1');
       //* set default value to "no"
       form.setValue('dueDateRequested', dueDateRequestedOptions[1]);
 
@@ -502,6 +534,18 @@ const CalibrateSummaryForm = ({
       }, 100);
     }
   }, [data, dueDateRequestedOptions]);
+
+  //* set defaullt value for date received requested, date received,
+  useEffect(() => {
+    if (!data && dateReceivedRequestedOptions.length > 0) {
+      //* set default value to "no"
+      form.setValue('dateReceivedRequested', dateReceivedRequestedOptions[1]);
+
+      setTimeout(() => {
+        form.setValue('dateReceived', 'N/A');
+      }, 100);
+    }
+  }, [data, dateReceivedRequestedOptions]);
 
   //* set status value
   useEffect(() => {
@@ -1009,15 +1053,48 @@ const CalibrateSummaryForm = ({
               />
             </Form.Group> */}
 
-            <Form.Group as={Col} md={6}>
-              <RequiredLabel label='Date Received' id='dateReceived' />
+            <Form.Group as={Col} md={4}>
+              <RequiredLabel label='Date Received Requested' id='dateReceivedRequested' />
+
+              <Controller
+                name='dateReceivedRequested'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Select
+                      {...field}
+                      inputId='dateReceivedRequested'
+                      instanceId='dateReceivedRequested'
+                      onChange={(option) => handleDateReceivedRequestedChange(option, field)}
+                      options={dueDateRequestedOptions}
+                      placeholder='Select date received requested'
+                      noOptionsMessage={() => 'No options found'}
+                    />
+
+                    {formErrors && formErrors.dateReceivedRequested?.message && (
+                      <Form.Text className='text-danger'>
+                        {formErrors.dateReceivedRequested?.message}
+                      </Form.Text>
+                    )}
+                  </>
+                )}
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md={4}>
+              <Form.Label htmlFor='dateReceived'>Date Received</Form.Label>
 
               <Controller
                 name='dateReceived'
                 control={form.control}
                 render={({ field }) => (
                   <>
-                    <Form.Control {...field} id='dateReceived' type='date' />
+                    {!form.watch('dateReceivedRequested') ||
+                    form.watch('dateReceivedRequested.value') === 'no' ? (
+                      <Form.Control {...field} id='dateReceived' type='text' />
+                    ) : (
+                      <Form.Control {...field} id='dateReceived' type='date' />
+                    )}
 
                     {formErrors && formErrors.dateReceived?.message && (
                       <Form.Text className='text-danger'>
@@ -1029,7 +1106,7 @@ const CalibrateSummaryForm = ({
               />
             </Form.Group>
 
-            <Form.Group as={Col} md={6}>
+            <Form.Group as={Col} md={4}>
               <RequiredLabel label='Date Calibrated' id='dateCalibrated' />
 
               <Controller

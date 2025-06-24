@@ -45,6 +45,7 @@ const EditCustomer = () => {
           contacts: contacts,
           contract: data.contract || { status: 'N', startDate: '', endDate: '' },
           locations: data?.locations || [],
+          vendors: data?.vendors || [],
         });
         setIsLoading(false);
         return;

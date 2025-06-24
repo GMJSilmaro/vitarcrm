@@ -84,6 +84,7 @@ export const UNIT_USED_FOR_COC = ['gram', 'kilogram'];
 export const CALIBRATION_POINT_NO = ['6', '7', '8', '9', '10', '11', '12'];
 export const CALIBRATED_AT = ['site'];
 export const DUE_DATE_REQUESTED = ['yes', 'no'];
+export const DATE_RECEIVED_REQUESTED = ['yes', 'no'];
 export const TEST_LOADS = ['C1', 'E1', 'E2', 'E3', 'E4', 'C2'];
 
 export const TAG_ID_BY_CLASS_MAP = {
@@ -112,6 +113,10 @@ export const EXPANDED_UNCERTAINTY = [
   '± 20.44483',
   '± 21.85559',
 ];
+
+export const dateReceivedRequested = z.enum(DATE_RECEIVED_REQUESTED, {
+  message: 'Please select date received requested',
+});
 
 export const dueDateRequested = z.enum(DUE_DATE_REQUESTED, {
   message: 'Please select due date requested',
@@ -194,7 +199,12 @@ export const calibrationInfoSchema = z
         }
         return null;
       }),
-
+    dateReceivedRequested: z
+      .union([dateReceivedRequested, z.record(z.string(), z.any())])
+      .transform((formData) => {
+        if (typeof formData === 'object') return formData.value;
+        return formData;
+      }),
     dueDateRequested: z
       .union([dueDateRequested, z.record(z.string(), z.any())])
       .transform((formData) => {
@@ -207,7 +217,7 @@ export const calibrationInfoSchema = z
       .nullish(),
     dueDate: z.string().nullish(),
     dateIssued: z.string().default(''),
-    dateReceived: z.string().min(1, { message: 'Date Received is required' }),
+    dateReceived: z.string().nullish(),
     dateCalibrated: z.string().min(1, { message: 'Date Calibrated is required' }),
   })
   .refine(
@@ -223,6 +233,16 @@ export const calibrationInfoSchema = z
       );
     },
     { message: 'Due Date Duration is required', path: ['dueDateDuration'] }
+  )
+  .refine(
+    (formObj) => {
+      if (formObj.dateReceivedRequested === 'no') return true;
+
+      //** value is yes
+
+      return formObj.dateReceivedRequested === 'yes' && formObj.dateReceived;
+    },
+    { message: 'Date Received is required', path: ['dateReceived'] }
   )
   .refine(
     (formObj) => {
@@ -373,7 +393,7 @@ export const calibrationMassSchema = z
 
 export const calibrationSchema = z
   .object({})
-  .merge(calibrationInfoSchema._def.schema._def.schema)
+  .merge(calibrationInfoSchema._def.schema._def.schema._def.schema)
   .merge(calibrationReferenceInstrumentsSchema)
   .merge(calibrationMeasurementSchema)
   .merge(calibrationMassSchema);

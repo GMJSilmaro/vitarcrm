@@ -18,10 +18,28 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from 'firebase/firestore';
 import _ from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Col, Form, Image, Nav, Row, Spinner, Tab } from 'react-bootstrap';
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Form,
+  Image,
+  Nav,
+  Row,
+  Spinner,
+  Tab,
+} from 'react-bootstrap';
 import { Save, Tag } from 'react-bootstrap-icons';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -48,43 +66,62 @@ const EquipmentRequested = ({ calibrations }) => {
 
     const values = allCustomerEquipments.filter((eq) => ids.includes(eq.id));
     return values;
-  }, [JSON.stringify(form.watch('customerEquipments')), JSON.stringify(allCustomerEquipments)]);
+  }, [
+    JSON.stringify(form.watch('customerEquipments')),
+    JSON.stringify(allCustomerEquipments),
+  ]);
 
   const allCustomerEquipmentByCategory = useMemo(() => {
-    const values = customerEquipments?.filter((eq) => eq.category === activeKey);
+    const values = customerEquipments?.filter(
+      (eq) => eq.category === activeKey
+    );
     return values || [];
   }, [customerEquipments, activeKey]);
 
   const getSelectedCategoryCountEquipmentRequested = useCallback(
     (category) => {
       const selectedEquipments = form.watch('customerEquipments');
-      if (!selectedEquipments || selectedEquipments?.length < 1 || !category) return 0;
-      return selectedEquipments.filter((eq) => eq?.category === category)?.length || 0;
+      if (!selectedEquipments || selectedEquipments?.length < 1 || !category)
+        return 0;
+      return (
+        selectedEquipments.filter((eq) => eq?.category === category)?.length ||
+        0
+      );
     },
     [JSON.stringify(form.watch('customerEquipments'))]
   );
 
   const selectedCustomerEquipmentRequestedByCategory = useMemo(() => {
     if (customerEquipments?.length < 1) return [];
-    return allCustomerEquipmentByCategory.filter((eq) => eq.category === activeKey);
+    return allCustomerEquipmentByCategory.filter(
+      (eq) => eq.category === activeKey
+    );
   }, [JSON.stringify(customerEquipments), activeKey]);
 
   const columns = useMemo(() => {
     return [
       columnHelper.accessor('description', {
         id: 'equipment',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Equipment' />
+        ),
       }),
 
       columnHelper.accessor('make', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Make' />
+        ),
       }),
       columnHelper.accessor('model', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Model' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Model' />
+        ),
       }),
       columnHelper.accessor('serialNumber', {
         id: 'serial number',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Serial Number' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Serial Number' />
+        ),
       }),
       columnHelper.accessor(
         (row) => {
@@ -96,12 +133,17 @@ const EquipmentRequested = ({ calibrations }) => {
         {
           id: 'range',
           header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Calibration Points / Range' />
+            <DataTableColumnHeader
+              column={column}
+              title='Calibration Points / Range'
+            />
           ),
         }
       ),
       columnHelper.accessor('tolerance', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Tolerance' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Tolerance' />
+        ),
       }),
     ];
   }, [activeKey, selectedCustomerEquipmentRequestedByCategory]);
@@ -165,7 +207,11 @@ const EquipmentRequested = ({ calibrations }) => {
   });
 
   return (
-    <Tab.Container className='mt-5' activeKey={activeKey} onSelect={(key) => setActiveKey(key)}>
+    <Tab.Container
+      className='mt-5'
+      activeKey={activeKey}
+      onSelect={(key) => setActiveKey(key)}
+    >
       <Nav variant='pills' className='d-flex justify-content-center gap-3'>
         {CATEGORY.map((c) => {
           return (
@@ -196,8 +242,16 @@ const EquipmentRequested = ({ calibrations }) => {
 
       <Tab.Content style={{ width: '100%', height: 'fit-content' }}>
         {CATEGORY.map((c) => (
-          <Tab.Pane key={`${c}-tab-pane-equipment-requested`} className='h-100' eventKey={c}>
-            <DataTable table={table} isLoading={calibrations.isLoading} isError={false}>
+          <Tab.Pane
+            key={`${c}-tab-pane-equipment-requested`}
+            className='h-100'
+            eventKey={c}
+          >
+            <DataTable
+              table={table}
+              isLoading={calibrations.isLoading}
+              isError={false}
+            >
               <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
                 <DataTableSearch table={table} />
 
@@ -233,7 +287,9 @@ const EquipmentCompleted = ({ calibrations }) => {
 
   const completedEquipment = useMemo(() => {
     const result = calibrations.data
-      .map((c) => allCustomerEquipments.find((ce) => ce.id === c.description?.id))
+      .map((c) =>
+        allCustomerEquipments.find((ce) => ce.id === c.description?.id)
+      )
       .filter(Boolean);
 
     return result;
@@ -242,8 +298,12 @@ const EquipmentCompleted = ({ calibrations }) => {
   const getSelectedCategoryCountEquipmentCompleted = useCallback(
     (category) => {
       const selectedEquipments = completedEquipment;
-      if (!selectedEquipments || selectedEquipments?.length < 1 || !category) return 0;
-      return selectedEquipments.filter((eq) => eq?.category === category)?.length || 0;
+      if (!selectedEquipments || selectedEquipments?.length < 1 || !category)
+        return 0;
+      return (
+        selectedEquipments.filter((eq) => eq?.category === category)?.length ||
+        0
+      );
     },
     [JSON.stringify(completedEquipment), activeKey]
   );
@@ -257,18 +317,26 @@ const EquipmentCompleted = ({ calibrations }) => {
     return [
       columnHelper.accessor('description', {
         id: 'equipment',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Equipment' />
+        ),
       }),
 
       columnHelper.accessor('make', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Make' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Make' />
+        ),
       }),
       columnHelper.accessor('model', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Model' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Model' />
+        ),
       }),
       columnHelper.accessor('serialNumber', {
         id: 'serial number',
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Serial Number' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Serial Number' />
+        ),
       }),
       columnHelper.accessor(
         (row) => {
@@ -280,12 +348,17 @@ const EquipmentCompleted = ({ calibrations }) => {
         {
           id: 'range',
           header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Calibration Points / Range' />
+            <DataTableColumnHeader
+              column={column}
+              title='Calibration Points / Range'
+            />
           ),
         }
       ),
       columnHelper.accessor('tolerance', {
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Tolerance' />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title='Tolerance' />
+        ),
       }),
     ];
   }, [activeKey]);
@@ -349,7 +422,11 @@ const EquipmentCompleted = ({ calibrations }) => {
   });
 
   return (
-    <Tab.Container className='mt-5' activeKey={activeKey} onSelect={(key) => setActiveKey(key)}>
+    <Tab.Container
+      className='mt-5'
+      activeKey={activeKey}
+      onSelect={(key) => setActiveKey(key)}
+    >
       <Nav variant='pills' className='d-flex justify-content-center gap-3'>
         {CATEGORY.map((c) => {
           return (
@@ -380,8 +457,16 @@ const EquipmentCompleted = ({ calibrations }) => {
 
       <Tab.Content style={{ width: '100%', height: 'fit-content' }}>
         {CATEGORY.map((c) => (
-          <Tab.Pane key={`${c}-tab-pane-equipment-completed`} className='h-100' eventKey={c}>
-            <DataTable table={table} isLoading={calibrations.isLoading} isError={false}>
+          <Tab.Pane
+            key={`${c}-tab-pane-equipment-completed`}
+            className='h-100'
+            eventKey={c}
+          >
+            <DataTable
+              table={table}
+              isLoading={calibrations.isLoading}
+              isError={false}
+            >
               <div className='d-flex flex-column row-gap-3 flex-lg-row justify-content-lg-between'>
                 <DataTableSearch table={table} />
 
@@ -398,14 +483,21 @@ const EquipmentCompleted = ({ calibrations }) => {
   );
 };
 
-const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations }) => {
+const JobCmrForm = ({
+  data,
+  isLoading,
+  handleNext,
+  handlePrevious,
+  calibrations,
+}) => {
   const form = useFormContext();
   const formErrors = form.formState.errors;
 
   const [worker, setWorker] = useState(null);
   const [isSettingWorker, setIsSettingWorker] = useState(false);
   const [labRepresentative, setLabRepresentative] = useState(null);
-  const [isSettingLabRepresentative, setIsSettingLabRepresentative] = useState(false);
+  const [isSettingLabRepresentative, setIsSettingLabRepresentative] =
+    useState(false);
 
   const scope = useMemo(() => {
     const value = form.watch('scope')?.value;
@@ -553,7 +645,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
       form.setValue('conditionWhenReceived', data?.conditionWhenReceived || '');
       form.setValue('isPartialRange', data?.isPartialRange || false);
       form.setValue('isNonAccredited', data?.isNonAccredited || false);
-      form.setValue('isOpenWiringConnection', data?.isOpenWiringConnection || false);
+      form.setValue(
+        'isOpenWiringConnection',
+        data?.isOpenWiringConnection || false
+      );
       form.setValue('isAdjustments', data?.isAdjustments || false);
     }
   }, [data]);
@@ -598,12 +693,24 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
 
           <Form.Group as={Col} md={6}>
             <Form.Label>CMR No.</Form.Label>
-            <Form.Control required type='text' value={form.watch('jobId')} readOnly disabled />
+            <Form.Control
+              required
+              type='text'
+              value={form.watch('jobId')}
+              readOnly
+              disabled
+            />
           </Form.Group>
 
           <Form.Group as={Col} md={4}>
             <Form.Label>Scope</Form.Label>
-            <Form.Control required type='text' value={scope} readOnly disabled />
+            <Form.Control
+              required
+              type='text'
+              value={scope}
+              readOnly
+              disabled
+            />
           </Form.Group>
 
           <Form.Group as={Col} md={4}>
@@ -622,7 +729,11 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
             <Form.Control
               required
               type='text'
-              value={data?.endByAt ? format(new Date(data.endByAt.toDate()), 'p') : ''}
+              value={
+                data?.endByAt
+                  ? format(new Date(data.endByAt.toDate()), 'p')
+                  : ''
+              }
               readOnly
               disabled
             />
@@ -666,7 +777,11 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
               name='telFax'
               control={form.control}
               render={({ field }) => (
-                <Form.Control {...field} id='telFax' placeholder='Enter Tel / Fax' />
+                <Form.Control
+                  {...field}
+                  id='telFax'
+                  placeholder='Enter Tel / Fax'
+                />
               )}
             />
           </Form.Group>
@@ -682,7 +797,9 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                   <Form.Control {...field} id='pic' placeholder='Enter P.I.C' />
 
                   {formErrors && formErrors.pic?.message && (
-                    <Form.Text className='text-danger'>{formErrors.pic?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.pic?.message}
+                    </Form.Text>
                   )}
                 </>
               )}
@@ -705,7 +822,8 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
         <hr className='my-4' />
         <h4 className='mb-0'>Equipment Completed</h4>
         <p className='text-muted fs-6'>
-          Details about the list of equipment completed (completed calibration items).
+          Details about the list of equipment completed (completed calibration
+          items).
         </p>
 
         <Row className='mb-3 row-gap-3'>
@@ -718,7 +836,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
 
         <Row className='mb-3 row-gap-3'>
           <Form.Group as={Col} md={6}>
-            <RequiredLabel label='Recalibration Interval' id='recalibrationInterval' />
+            <RequiredLabel
+              label='Recalibration Interval'
+              id='recalibrationInterval'
+            />
 
             <Controller
               name='recalibrationInterval'
@@ -750,10 +871,16 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
               control={form.control}
               render={({ field }) => (
                 <>
-                  <Form.Control {...field} id='accessories' placeholder='Enter accessories' />
+                  <Form.Control
+                    {...field}
+                    id='accessories'
+                    placeholder='Enter accessories'
+                  />
 
                   {formErrors && formErrors.accessories?.message && (
-                    <Form.Text className='text-danger'>{formErrors.accessories?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.accessories?.message}
+                    </Form.Text>
                   )}
                 </>
               )}
@@ -777,7 +904,9 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                   />
 
                   {formErrors && formErrors.remark?.message && (
-                    <Form.Text className='text-danger'>{formErrors.remark?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.remark?.message}
+                    </Form.Text>
                   )}
                 </>
               )}
@@ -785,7 +914,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
           </Form.Group>
 
           <Form.Group as={Col} md={6}>
-            <RequiredLabel label='Condition When Received' id='conditionWhenReceived' />
+            <RequiredLabel
+              label='Condition When Received'
+              id='conditionWhenReceived'
+            />
 
             <Controller
               name='conditionWhenReceived'
@@ -879,7 +1011,10 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
           </Form.Group>
 
           <Form.Group as={Col} md={3}>
-            <RequiredLabel label='Open Wiring Connection' id='isOpenWiringConnection'>
+            <RequiredLabel
+              label='Open Wiring Connection'
+              id='isOpenWiringConnection'
+            >
               <div className='text-muted' style={{ fontSize: '12px' }}>
                 (stop watch)
               </div>
@@ -903,11 +1038,12 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                   ))}
 
                   <div className='mt-1'>
-                    {formErrors && formErrors.isOpenWiringConnection?.message && (
-                      <Form.Text className='text-danger'>
-                        {formErrors.isOpenWiringConnection?.message}
-                      </Form.Text>
-                    )}
+                    {formErrors &&
+                      formErrors.isOpenWiringConnection?.message && (
+                        <Form.Text className='text-danger'>
+                          {formErrors.isOpenWiringConnection?.message}
+                        </Form.Text>
+                      )}
                   </div>
                 </div>
               )}
@@ -958,10 +1094,16 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
               control={form.control}
               render={({ field }) => (
                 <>
-                  <Form.Control {...field} id='others' placeholder='Please specify' />
+                  <Form.Control
+                    {...field}
+                    id='others'
+                    placeholder='Please specify'
+                  />
 
                   {formErrors && formErrors.others?.message && (
-                    <Form.Text className='text-danger'>{formErrors.others?.message}</Form.Text>
+                    <Form.Text className='text-danger'>
+                      {formErrors.others?.message}
+                    </Form.Text>
                   )}
                 </>
               )}
@@ -978,7 +1120,8 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
 
             {isSettingLabRepresentative ? (
               <div>
-                <Spinner animation='border' className='me-2' size='sm' /> Loading...
+                <Spinner animation='border' className='me-2' size='sm' />{' '}
+                Loading...
               </div>
             ) : form.watch('salesSignature') &&
               form.watch('salesSignature')?.startsWith('data:image') ? (
@@ -988,9 +1131,16 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                 render={({ field }) => (
                   <>
                     <div className='d-flex justify-content-center flex-column align-items-center text-center'>
-                      <SignatureField onChange={field.onChange} value={field.value} />
-                      <div className='fw-bold text-center'>Laboratory Representative</div>
-                      <div className='text-muted text-center'>{labRepresentative?.fullName}</div>
+                      <SignatureField
+                        onChange={field.onChange}
+                        value={field.value}
+                      />
+                      <div className='fw-bold text-center'>
+                        Laboratory Representative
+                      </div>
+                      <div className='text-muted text-center'>
+                        {labRepresentative?.fullName}
+                      </div>
                     </div>
 
                     {formErrors && formErrors.salesSignature?.message && (
@@ -1014,8 +1164,12 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                   />
                 </div>
 
-                <div className='mt-2 fw-bold text-center'>Laboratory Representative</div>
-                <div className='text-muted text-center'>{labRepresentative?.fullName}</div>
+                <div className='mt-2 fw-bold text-center'>
+                  Laboratory Representative
+                </div>
+                <div className='text-muted text-center'>
+                  {labRepresentative?.fullName}
+                </div>
               </div>
             ) : (
               <Controller
@@ -1024,9 +1178,16 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                 render={({ field }) => (
                   <>
                     <div className='d-flex justify-content-center flex-column align-items-center text-center'>
-                      <SignatureField onChange={field.onChange} value={field.value} />
-                      <div className='fw-bold text-center'>Laboratory Representative</div>
-                      <div className='text-muted text-center'>{labRepresentative?.fullName}</div>
+                      <SignatureField
+                        onChange={field.onChange}
+                        value={field.value}
+                      />
+                      <div className='fw-bold text-center'>
+                        Laboratory Representative
+                      </div>
+                      <div className='text-muted text-center'>
+                        {labRepresentative?.fullName}
+                      </div>
                     </div>
 
                     {formErrors && formErrors.salesSignature?.message && (
@@ -1048,7 +1209,8 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
 
             {isSettingWorker ? (
               <div>
-                <Spinner animation='border' className='me-2' size='sm' /> Loading...
+                <Spinner animation='border' className='me-2' size='sm' />{' '}
+                Loading...
               </div>
             ) : form.watch('workerSignature') &&
               form.watch('workerSignature')?.startsWith('data:image') ? (
@@ -1058,9 +1220,14 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                 render={({ field }) => (
                   <>
                     <div className='d-flex justify-content-center flex-column align-items-center text-center'>
-                      <SignatureField onChange={field.onChange} value={field.value} />
+                      <SignatureField
+                        onChange={field.onChange}
+                        value={field.value}
+                      />
                       <div className='fw-bold'>Reviewd By</div>
-                      <div className='text-muted text-center'>{worker?.fullName}</div>
+                      <div className='text-muted text-center'>
+                        {worker?.fullName}
+                      </div>
                       <div className='text-muted text-center'>
                         {format(new Date(), 'dd MMMM yyyy')}
                       </div>
@@ -1089,7 +1256,9 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
 
                 <div className='mt-2 fw-bold'>Reviewd By</div>
                 <div className='text-muted text-center'>{worker?.fullName}</div>
-                <div className='text-muted text-center'>{format(new Date(), 'dd MMMM yyyy')}</div>
+                <div className='text-muted text-center'>
+                  {format(new Date(), 'dd MMMM yyyy')}
+                </div>
               </div>
             ) : (
               <Controller
@@ -1098,9 +1267,14 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
                 render={({ field }) => (
                   <>
                     <div className='d-flex justify-content-center flex-column align-items-center text-center'>
-                      <SignatureField onChange={field.onChange} value={field.value} />
+                      <SignatureField
+                        onChange={field.onChange}
+                        value={field.value}
+                      />
                       <div className='fw-bold'>Reviewd By</div>
-                      <div className='text-muted text-center'>{worker?.fullName}</div>
+                      <div className='text-muted text-center'>
+                        {worker?.fullName}
+                      </div>
                       <div className='text-muted text-center'>
                         {format(new Date(), 'dd MMMM yyyy')}
                       </div>
@@ -1129,9 +1303,14 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
               render={({ field }) => (
                 <>
                   <div className='d-flex justify-content-center flex-column align-items-center text-center'>
-                    <SignatureField onChange={field.onChange} value={field.value} />
+                    <SignatureField
+                      onChange={field.onChange}
+                      value={field.value}
+                    />
                     <div className='fw-bold'>Customer Chop & Sign</div>
-                    <div className='text-muted'>{form.watch('customer.name')}</div>
+                    <div className='text-muted'>
+                      {form.watch('customer.name')}
+                    </div>
                   </div>
 
                   {formErrors && formErrors.customerSignature?.message && (
@@ -1155,25 +1334,8 @@ const JobCmrForm = ({ data, isLoading, handleNext, handlePrevious, calibrations 
             Previous
           </Button>
 
-          <Button type='button' onClick={handleNext} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Spinner
-                  as='span'
-                  animation='border'
-                  size='sm'
-                  role='status'
-                  aria-hidden='true'
-                  className='me-2'
-                />
-                {data ? 'Updating' : 'Creating'}...
-              </>
-            ) : (
-              <>
-                <Save size={14} className='me-2' />
-                {data ? 'Update' : 'Create'} {' Job'}
-              </>
-            )}
+          <Button disabled={isLoading} type='button' onClick={handleNext}>
+            Next
           </Button>
         </div>
       </Card.Body>

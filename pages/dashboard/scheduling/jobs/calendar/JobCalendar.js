@@ -151,8 +151,8 @@ const JobCalendar = () => {
     return (
       <div className='fs-5 mt-2'>
         <p className='mb-1'>
-          <span className='pe-1 fs-6'>Job Description:</span>
-          <strong className='text-capitalize'>{job?.description || 'N/A'}</strong>
+          <span className='pe-1 fs-6'>Remark:</span>
+          <strong className='text-capitalize'>{job?.remarks || 'N/A'}</strong>
         </p>
         <p className='mb-1'>
           <span className='pe-1 fs-6'>Assigned Worker/s:</span>

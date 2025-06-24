@@ -8,6 +8,7 @@ import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab
 import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
 import Documents from '@/sub-components/dashboard/jobs/view/Documents';
+import OnSiteCalibrationSurvey from '@/sub-components/dashboard/jobs/view/OnSiteCalibrationSurvey';
 import ReferenceEquipment from '@/sub-components/dashboard/jobs/view/ReferenceEquipment';
 import SchedulingTab from '@/sub-components/dashboard/jobs/view/SchedulingTab';
 import SummaryTab from '@/sub-components/dashboard/jobs/view/SummaryTab';
@@ -58,6 +59,7 @@ const JobDetails = () => {
   const [customerEquipments, setCustomerEquipments] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
   const [users, setUsers] = useState({ data: [], isLoading: true, isError: false });
+  const [surveyQuestions, setSurveyQuestions] = useState({ data: [],isLoading: true,isError: false }); //prettier-ignore
 
   const handleUpdateToComplete = async (id, setIsLoading) => {
     if (!id) return;
@@ -389,6 +391,46 @@ const JobDetails = () => {
       });
   }, []);
 
+  //* query survey questions
+  useEffect(() => {
+    if (!job?.jobId) {
+      setSurveyQuestions({ data: [], isLoading: false, isError: false });
+      return;
+    }
+
+    const q = query(
+      collection(db, 'surveyQuestions'),
+      where('category', '==', 'on-site-calibration-survey')
+    );
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const surveyQuestionsData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+          setSurveyQuestions({
+            data: surveyQuestionsData,
+            isLoading: false,
+            isError: false,
+          });
+          return;
+        }
+
+        setSurveyQuestions({
+          data: [],
+          isLoading: false,
+          isError: false,
+        });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setSurveyQuestions({ data: [], isLoading: false, isError: true });
+      });
+  }, [job]);
+
   if (isLoading) {
     return (
       <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
@@ -544,6 +586,16 @@ const JobDetails = () => {
                   location={location}
                   customerEquipments={customerEquipments}
                   calibrations={calibrations}
+                />
+              </Tab>
+            )}
+
+            {calibrations.data.length > 0 && (
+              <Tab eventKey='9' title='On-Site Calibration Survey'>
+                <OnSiteCalibrationSurvey
+                  job={job}
+                  customer={customer}
+                  surveyQuestions={surveyQuestions}
                 />
               </Tab>
             )}

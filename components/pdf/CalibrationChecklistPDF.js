@@ -3,7 +3,15 @@ import TimesNewRomanBold from 'public/fonts/times-new-roman/Times-New-Roman-Bold
 import TimesNewRomanItalic from 'public/fonts/times-new-roman/Times-New-Roman-Italic.ttf';
 import TimesNewRomanBoldItalic from 'public/fonts/times-new-roman/Times-New-Roman-Bold-Italic.ttf';
 
-import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
+import {
+  Page,
+  Text,
+  View,
+  Document,
+  StyleSheet,
+  Font,
+  Image,
+} from '@react-pdf/renderer';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 
@@ -140,12 +148,17 @@ const CalibrationChecklistPDF = ({
           <Image src='/images/VITARLOGO.png' style={styles.logo} />
         </View>
 
-        <View fixed style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+        <View
+          fixed
+          style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}
+        >
           <Text style={styles.title}>CALIBRATION CHECKLIST FORM</Text>
 
           <View style={{ fontSize: 10, marginLeft: 'auto' }}>
             <Text
-              render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+              render={({ pageNumber, totalPages }) =>
+                `Page ${pageNumber} of ${totalPages}`
+              }
               fixed
             />
           </View>
@@ -214,7 +227,11 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>NO</Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                NO
+              </Text>
             </View>
 
             <View
@@ -225,7 +242,11 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>EQUIPMENT</Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                EQUIPMENT
+              </Text>
             </View>
 
             <View
@@ -236,7 +257,9 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
                 EQUIPMENT ID
               </Text>
             </View>
@@ -249,8 +272,16 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>NOMINAL</Text>
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>VALUE</Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                NOMINAL
+              </Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                VALUE
+              </Text>
             </View>
 
             <View
@@ -261,7 +292,11 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>ACCEPTANCE</Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                ACCEPTANCE
+              </Text>
             </View>
 
             <View
@@ -272,8 +307,16 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>RESULT</Text>
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>BEFORE</Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                RESULT
+              </Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                BEFORE
+              </Text>
             </View>
 
             <View
@@ -284,8 +327,16 @@ const CalibrationChecklistPDF = ({
                 height: '100%',
               }}
             >
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>RESULT</Text>
-              <Text style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}>AFTER</Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                RESULT
+              </Text>
+              <Text
+                style={{ fontFamily: 'TimesNewRomanBold', margin: 'auto 0' }}
+              >
+                AFTER
+              </Text>
             </View>
           </View>
 
@@ -298,7 +349,14 @@ const CalibrationChecklistPDF = ({
                 borderBottom: '1px solid #00000',
               }}
             >
-              <View style={{ width: '4%', textAlign: 'center', margin: 'auto 0', height: '100%' }}>
+              <View
+                style={{
+                  width: '4%',
+                  textAlign: 'center',
+                  margin: 'auto 0',
+                  height: '100%',
+                }}
+              >
                 <Text>{i + 1}</Text>
               </View>
 
@@ -378,9 +436,15 @@ const CalibrationChecklistPDF = ({
           render={({ pageNumber }) =>
             pageNumber === totalPages && (
               <View>
-                <Text style={{ fontSize: 10, marginBottom: 8, fontFamily: 'TimesNewRomanItalic' }}>
-                  *Acceptance value is baed on the accuracy/tolerance in manual (please refer
-                  manual/datasheet of the equipment)
+                <Text
+                  style={{
+                    fontSize: 10,
+                    marginBottom: 8,
+                    fontFamily: 'TimesNewRomanItalic',
+                  }}
+                >
+                  *Acceptance value is baed on the accuracy/tolerance in manual
+                  (please refer manual/datasheet of the equipment)
                 </Text>
 
                 <View
@@ -402,7 +466,9 @@ const CalibrationChecklistPDF = ({
                     }}
                   >
                     <View style={{ width: '45%' }}>
-                      <Text style={{ fontSize: 10, marginBottom: 4 }}>Taken by:</Text>
+                      <Text style={{ fontSize: 10, marginBottom: 4 }}>
+                        Taken by:
+                      </Text>
                     </View>
 
                     <View style={{ width: '45%' }}>
