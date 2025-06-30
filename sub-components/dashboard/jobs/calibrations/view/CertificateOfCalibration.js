@@ -858,7 +858,7 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
                 className='d-flex flex-column justify-content-end align-items-center gap-2'
                 style={{ width: 'fit-content' }}
               >
-                <div className='fw-medium'>Approved By</div>
+                <div className='fw-medium'>Approved Signatory</div>
 
                 {approvedSignatory?.data?.signature && (
                   <div className='my-2' style={{ maxWidth: 80 }}>

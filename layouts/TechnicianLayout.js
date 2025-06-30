@@ -147,10 +147,10 @@ const TechnicianLayout = ({ children }) => {
             Reports
           </Button> */}
 
-          <Button className='shadow-sm' variant='light'>
+          {/* <Button className='shadow-sm' variant='light'>
             <Gear size={16} className='me-2' />
             Settings
-          </Button>
+          </Button> */}
         </div>
 
         <div className='flex-grow-1 d-flex flex-column'>{children}</div>

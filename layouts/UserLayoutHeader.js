@@ -263,13 +263,13 @@ const UserLayoutHeader = ({ user }) => {
                 </div>
               )}
             </Dropdown.Item>
-            <Dropdown.Divider />
+            {/* <Dropdown.Divider />
             <Dropdown.Item as={Link} href='#'>
               <Person size={16} className='me-2' /> Profile
             </Dropdown.Item>
             <Dropdown.Item as={Link} href='#'>
               <Gear size={16} className='me-2' /> Settings
-            </Dropdown.Item>
+            </Dropdown.Item> */}
             <Dropdown.Divider />
             <Dropdown.Item onClick={handleSignOut}>
               <BoxArrowRight size={16} className='me-2' /> Sign Out

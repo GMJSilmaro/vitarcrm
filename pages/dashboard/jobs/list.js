@@ -26,6 +26,7 @@ import {
   Briefcase,
   BriefcaseFill,
   Building,
+  Calendar2,
   CalendarWeek,
   CalendarX,
   CardList,
@@ -49,6 +50,7 @@ import {
   ThreeDotsVertical,
   Trash,
   XCircle,
+  XOctagon,
 } from 'react-bootstrap-icons';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import DataTableColumnHeader from '@/components/common/DataTableColumnHeader';
@@ -63,6 +65,7 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  Timestamp,
   updateDoc,
   where,
 } from 'firebase/firestore';
@@ -83,6 +86,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { deleteObject, listAll, ref } from 'firebase/storage';
 import { PRIORITY_LEVELS_COLOR, SCOPE_TYPE_COLOR, STATUS, STATUS_COLOR } from '@/schema/job';
 import withReactContent from 'sweetalert2-react-content';
+import Select from '@/components/Form/Select';
 
 const JobList = () => {
   const router = useRouter();
@@ -90,6 +94,11 @@ const JobList = () => {
   const notifications = useNotifications();
 
   const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
+
+  const [year, setYear] = useState({
+    value: new Date().getFullYear(),
+    label: new Date().getFullYear(),
+  });
 
   const [activeFilterId, setActiveFilterId] = useState('');
   const [columnFilters, setColumnFilters] = useState([]);
@@ -125,6 +134,9 @@ const JobList = () => {
     const cancelledJobs = jobs.data.filter((job) => job.status === 'job-cancel').length;
     const completedJobs = jobs.data.filter((job) => job.status === 'job-complete').length;
     const rescheduledJobs = jobs.data.filter((job) => job.status === 'job-reschedule').length;
+    const unReturnedEquipmentJobs = jobs.data.filter(
+      (job) => !job.details?.isReturnedEquipment
+    ).length;
 
     return [
       {
@@ -133,7 +145,7 @@ const JobList = () => {
         title: 'Total Jobs',
         icon: Briefcase,
         color: 'secondary',
-        width: 2,
+        width: 12,
         filter: 'all',
         filterValue: '',
       },
@@ -247,6 +259,16 @@ const JobList = () => {
         filter: 'status',
         filterValue: 'job-cancel',
       },
+      {
+        id: 'un-returned-equipment-jobs',
+        value: unReturnedEquipmentJobs,
+        title: 'Unreturned Equipment',
+        icon: XOctagon,
+        color: 'danger',
+        width: 2,
+        filter: 'equipment status',
+        filterValue: 'unreturned',
+      },
     ];
   }, [JSON.stringify(jobs)]);
 
@@ -279,6 +301,11 @@ const JobList = () => {
 
       case 'endDate':
         setColumnFilters([{ id: 'endDate', value: new Date() }]);
+        setActiveFilterId(stat.id);
+        break;
+
+      case 'equipment status':
+        setColumnFilters([{ id: 'equipment status', value: stat.filterValue }]);
         setActiveFilterId(stat.id);
         break;
 
@@ -526,20 +553,25 @@ const JobList = () => {
           },
         }
       ),
-      columnHelper.accessor((row) => row?.details?.isReturnedEquipment, {
-        id: 'equipment status',
-        size: 100,
-        header: ({ column }) => <DataTableColumnHeader column={column} title='Equipment Status' />,
-        cell: ({ row }) => {
-          const status = row.original?.details?.isReturnedEquipment;
+      columnHelper.accessor(
+        (row) => (row?.details?.isReturnedEquipment ? 'returned' : 'unreturned'),
+        {
+          id: 'equipment status',
+          size: 100,
+          header: ({ column }) => (
+            <DataTableColumnHeader column={column} title='Equipment Status' />
+          ),
+          cell: ({ row }) => {
+            const status = row.original?.details?.isReturnedEquipment;
 
-          return (
-            <Badge className='text-capitalize' bg={status ? 'success' : 'danger'}>
-              {status ? 'Returned' : 'Unreturned'}
-            </Badge>
-          );
-        },
-      }),
+            return (
+              <Badge className='text-capitalize' bg={status ? 'success' : 'danger'}>
+                {status ? 'Returned' : 'Unreturned'}
+              </Badge>
+            );
+          },
+        }
+      ),
       columnHelper.accessor((row) => row.jobRequest?.createdBy?.displayName || '', {
         id: 'sales person',
         header: ({ column }) => <DataTableColumnHeader column={column} title='Sales Person' />,
@@ -1054,37 +1086,6 @@ const JobList = () => {
         placeholder: 'Search by technician...',
       },
       {
-        label: 'Scope',
-        columnId: 'scope',
-        type: 'select',
-        options: [
-          { label: 'All Scope', value: '' },
-          { label: 'Lab', value: 'lab' },
-          { label: 'Site', value: 'site' },
-        ],
-        placeholder: 'Search by Scope...',
-      },
-      {
-        label: 'Priority',
-        columnId: 'priority',
-        type: 'select',
-        options: [
-          { label: 'All Priority', value: '' },
-          { label: 'Normal', value: 'normal' },
-          { label: 'Urgent', value: 'urgent' },
-        ],
-        placeholder: 'Search by Priority...',
-      },
-      {
-        label: 'Status',
-        columnId: 'status',
-        type: 'select',
-        options: [
-          { label: 'All Status', value: '' },
-          ...STATUS.map((s) => ({ label: _.startCase(s), value: s })),
-        ],
-      },
-      {
         label: 'Created By',
         columnId: 'created by',
         type: 'text',
@@ -1122,44 +1123,163 @@ const JobList = () => {
     onColumnFiltersChange: setColumnFilters,
   });
 
-  useEffect(() => {
-    const q = query(collection(db, 'jobHeaders'));
+  const StatCard = ({ stat, rowKey }) => {
+    const Icon = stat.icon;
 
-    //TODO: Optimize query
+    return (
+      <Col
+        lg={stat.width}
+        key={rowKey}
+        style={{ cursor: 'pointer' }}
+        onClick={() => setFilterBasedOnStat(stat)}
+      >
+        <div
+          className={`bg-${activeFilterId !== stat.id ? stat.color : 'primary-subtle'} rounded`}
+          style={{ height: 8 }}
+        />
+
+        {stat.id !== 'all' ? (
+          <div
+            className={`d-flex flex-column justify-content-start align-items-center align-items-lg-start shadow-sm bg-white rounded-top-0 rounded-bottom p-4 h-100 border border-transaparent w-100 ${
+              activeFilterId === stat.id ? 'border-primary' : 'hover-item'
+            }`}
+          >
+            <div className='d-flex align-items-center mb-3 flex-wrap gap-2'>
+              <Icon size={18} className={`text-${stat.color} flex-shrink-0`} />
+              <span
+                style={{ maxWidth: '120px' }}
+                className={`small fw-semibold py-1 px-2 text-${stat.color} bg-${stat.color}-soft rounded-3`}
+              >
+                {stat.title}
+              </span>
+            </div>
+
+            {jobs.isLoading ? (
+              <Spinner style={{ width: 20, height: 20 }} animation='border' size='sm' />
+            ) : (
+              <>
+                <h3 className='mb-1'>{stat.value}</h3>
+                <small className='text-muted'>{stat.subtitle}</small>
+              </>
+            )}
+          </div>
+        ) : (
+          <div
+            className={`d-flex flex-column justify-content-center align-items-center shadow-sm bg-white rounded-top-0 rounded-bottom p-4 h-100 border border-transaparent w-100 ${
+              activeFilterId === stat.id ? 'border-primary' : 'hover-item'
+            }`}
+          >
+            <div
+              className='d-flex flex-column gap-2 justify-content-center align-items-center mb-3'
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className='d-flex align-items-center flex-wrap gap-2'>
+                <Calendar2 size={18} />
+
+                <span
+                  className={`small fw-semibold py-1 px-2 text-secondary bg-secondary-soft rounded-3`}
+                >
+                  Year
+                </span>
+              </div>
+
+              <Select
+                value={year}
+                inputId='year-select'
+                instanceId='year-select'
+                onChange={(option) => setYear(option)}
+                options={getYears(2020).map((year) => ({ label: year, value: year }))}
+                placeholder='Select year'
+                noOptionsMessage={() => 'No options found'}
+              />
+            </div>
+
+            <div className='d-flex align-items-center mb-3 flex-wrap gap-2'>
+              <Icon size={18} className={`text-${stat.color} flex-shrink-0`} />
+              <span
+                className={`small fw-semibold py-1 px-2 text-${stat.color} bg-${stat.color}-soft rounded-3`}
+              >
+                {stat.title}
+              </span>
+            </div>
+
+            {jobs.isLoading ? (
+              <Spinner style={{ width: 20, height: 20 }} animation='border' size='sm' />
+            ) : (
+              <>
+                <h3 className='mb-1'>{stat.value}</h3>
+                <small className='text-muted'>{stat.subtitle}</small>
+              </>
+            )}
+          </div>
+        )}
+      </Col>
+    );
+  };
+
+  const getYears = (startYear) => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = startYear; year <= currentYear; year++) {
+      years.push(year);
+    }
+    return years;
+  };
+
+  //* Optimize query job header
+  useEffect(() => {
+    const startOfYear = new Date(year.value, 0, 1); //* Jan 1
+    const endOfYear = new Date(year.value + 1, 0, 1); //* Jan 1 of next year
+
+    const q = query(
+      collection(db, 'jobHeaders'),
+      where('createdAt', '>=', Timestamp.fromDate(startOfYear)),
+      where('createdAt', '<', Timestamp.fromDate(endOfYear))
+    );
+
     const unsubscribe = onSnapshot(
       q,
-      async (snapshop) => {
-        if (!snapshop.empty) {
-          let rows = [];
-          for (const jobDoc of snapshop.docs) {
-            const id = jobDoc.id;
-            const data = jobDoc.data();
-            const jobRequestId = data?.jobRequestId;
-
-            const jobDetailsDocPromise = getDoc(doc(db, 'jobDetails', id));
-            const jobRequestDocPromise = jobRequestId ?  getDoc(doc(db, 'jobRequests', jobRequestId)) : null; // prettier-ignore
-
-            const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
-              jobDetailsDocPromise,
-              jobRequestDocPromise,
-            ]);
-
-            const jobDetailsData = jobDetailsDoc.exists() ? jobDetailsDoc.data() : null; // prettier-ignore
-            const jobRequestData = jobRequestDoc && jobRequestDoc.exists() ? jobRequestDoc.data() : null; // prettier-ignore
-
-            rows.push({
-              id,
-              ...data,
-              details: jobDetailsData,
-              jobRequest: jobRequestData,
-            });
-          }
-
-          setJobs({ data: rows, isLoading: false, isError: false });
+      async (snapshot) => {
+        if (snapshot.empty) {
+          setJobs({ data: [], isLoading: false, isError: false });
           return;
         }
 
-        setJobs({ data: [], isLoading: false, isError: false });
+        const jobDocs = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        const promises = jobDocs.map(async (job) => {
+          try {
+            const jobDetailsPromise = getDoc(doc(db, 'jobDetails', job.id));
+            const jobRequestPromise = job.jobRequestId
+              ? getDoc(doc(db, 'jobRequests', job.jobRequestId))
+              : Promise.resolve(null);
+
+            const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
+              jobDetailsPromise,
+              jobRequestPromise,
+            ]);
+
+            return {
+              ...job,
+              details: jobDetailsDoc.exists() ? jobDetailsDoc.data() : null,
+              jobRequest: jobRequestDoc?.exists() ? jobRequestDoc.data() : null,
+            };
+          } catch (err) {
+            console.warn(`Failed to fetch details for job ${job.id}:`, err);
+            return null; // Skip this job
+          }
+        });
+
+        const settledResults = await Promise.allSettled(promises);
+
+        const validJobs = settledResults
+          .filter((result) => result.status === 'fulfilled' && result.value !== null)
+          .map((result) => result.value);
+
+        setJobs({ data: validJobs, isLoading: false, isError: false });
       },
       (err) => {
         console.error(err.message);
@@ -1168,64 +1288,7 @@ const JobList = () => {
     );
 
     return () => unsubscribe();
-  }, []);
-
-  //* Optimize idea query
-  // useEffect(() => {
-  //   const q = query(collection(db, 'jobHeaders'));
-
-  //   const unsubscribe = onSnapshot(
-  //     q,
-  //     async (snapshot) => {
-  //       if (snapshot.empty) {
-  //         setJobs({ data: [], isLoading: false, isError: false });
-  //         return;
-  //       }
-
-  //       const jobDocs = snapshot.docs.map((doc) => ({
-  //         id: doc.id,
-  //         ...doc.data(),
-  //       }));
-
-  //       const promises = jobDocs.map(async (job) => {
-  //         try {
-  //           const jobDetailsPromise = getDoc(doc(db, 'jobDetails', job.id));
-  //           const jobRequestPromise = job.jobRequestId
-  //             ? getDoc(doc(db, 'jobRequests', job.jobRequestId))
-  //             : Promise.resolve(null);
-
-  //           const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
-  //             jobDetailsPromise,
-  //             jobRequestPromise,
-  //           ]);
-
-  //           return {
-  //             ...job,
-  //             details: jobDetailsDoc.exists() ? jobDetailsDoc.data() : null,
-  //             jobRequest: jobRequestDoc?.exists() ? jobRequestDoc.data() : null,
-  //           };
-  //         } catch (err) {
-  //           console.warn(`Failed to fetch details for job ${job.id}:`, err);
-  //           return null; // Skip this job
-  //         }
-  //       });
-
-  //       const settledResults = await Promise.allSettled(promises);
-
-  //       const validJobs = settledResults
-  //         .filter((result) => result.status === 'fulfilled' && result.value !== null)
-  //         .map((result) => result.value);
-
-  //       setJobs({ data: validJobs, isLoading: false, isError: false });
-  //     },
-  //     (err) => {
-  //       console.error(err.message);
-  //       setJobs({ data: [], isLoading: false, isError: true });
-  //     }
-  //   );
-
-  //   return () => unsubscribe();
-  // }, []);
+  }, [year.value]);
 
   return (
     <>
@@ -1264,51 +1327,25 @@ const JobList = () => {
       />
 
       <Row className='row-gap-4 mb-5'>
-        {stats.map((stat, i) => {
-          const Icon = stat.icon;
+        <Col lg={12} xl={2}>
+          <Row className='row-gap-4 h-100'>
+            {stats
+              .filter((stat) => stat.id === 'all')
+              .map((stat) => (
+                <StatCard stat={stat} rowKey={`${stat.id}-${stat.title}`} />
+              ))}
+          </Row>
+        </Col>
 
-          return (
-            <Col
-              lg={stat.width}
-              key={`${stat.id}-${stat.title}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setFilterBasedOnStat(stat)}
-            >
-              <div
-                className={`bg-${
-                  activeFilterId !== stat.id ? stat.color : 'primary-subtle'
-                } rounded`}
-                style={{ height: 8 }}
-              />
-
-              <div
-                className={`shadow-sm bg-white rounded-top-0 rounded-bottom p-4 h-100 border border-transaparent w-100 ${
-                  activeFilterId === stat.id ? 'border-primary' : 'hover-item'
-                }`}
-              >
-                <div className='d-flex justify-content-between align-items-center mb-3'>
-                  <div className='d-flex align-items-center'>
-                    <Icon size={18} className={`text-${stat.color} me-2`} />
-                    <span
-                      className={`small fw-semibold py-1 px-2 text-${stat.color} bg-${stat.color}-soft rounded-3`}
-                    >
-                      {stat.title}
-                    </span>
-                  </div>
-                </div>
-
-                {jobs.isLoading ? (
-                  <Spinner style={{ width: 20, height: 20 }} animation='border' size='sm' />
-                ) : (
-                  <>
-                    <h3 className='mb-1'>{stat.value}</h3>
-                    <small className='text-muted'>{stat.subtitle}</small>
-                  </>
-                )}
-              </div>
-            </Col>
-          );
-        })}
+        <Col lg={12} xl={10}>
+          <Row className='row-gap-4'>
+            {stats
+              .filter((stat) => stat.id !== 'all')
+              .map((stat, i) => (
+                <StatCard stat={stat} rowKey={`${stat.id}-${stat.title}`} />
+              ))}
+          </Row>
+        </Col>
       </Row>
 
       <Card className='border-0 shadow-none'>

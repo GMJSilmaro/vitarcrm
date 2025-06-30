@@ -310,7 +310,7 @@ function JobOnSiteCalibrationSurveyForm({ data, isLoading, handleNext, handlePre
                                   value: option,
                                 }))}
                                 placeholder='Select response'
-                                noOptionsMessage='No options found'
+                                noOptionsMessage={() => 'No options found'}
                               />
                             )}
                           />
