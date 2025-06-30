@@ -1028,11 +1028,7 @@ const CustomerForm = ({ data }) => {
                           <Card.Body className='p-4 h-100'>
                             <div className='d-flex justify-content-between align-items-center mb-4'>
                               <h5 className='mb-0'>Contact Information</h5>
-                              <Button
-                                variant='outline-primary'
-                                size='sm'
-                                onClick={handleAddContact}
-                              >
+                              <Button size='sm' onClick={handleAddContact}>
                                 <Plus size={14} className='me-1' />
                                 Add Contact
                               </Button>
@@ -1268,7 +1264,6 @@ const CustomerForm = ({ data }) => {
 
                               <Button
                                 disabled={formData.vendors.length === 3}
-                                variant='outline-primary'
                                 size='sm'
                                 onClick={() => handleAddVendor()}
                               >

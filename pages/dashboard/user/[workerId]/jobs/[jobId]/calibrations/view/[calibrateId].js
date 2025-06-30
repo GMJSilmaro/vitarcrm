@@ -214,7 +214,7 @@ const CalibrationDetails = () => {
                 <Measurements calibration={calibration} />
               </Tab>
 
-              <Tab eventKey='2' title='Referece Instruments'>
+              <Tab eventKey='2' title='Reference Instruments'>
                 <ReferenceInstruments calibration={calibration} instruments={instruments} />
               </Tab>
 
