@@ -1287,7 +1287,10 @@ const JobList = () => {
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      setJobs({ data: [], isLoading: true, isError: false });
+    };
   }, [year.value]);
 
   return (
