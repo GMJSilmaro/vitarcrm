@@ -358,6 +358,15 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           await Promise.all(deletePromises);
         }
 
+        const oldEquipments = data.equipments.map((eq) => eq.id);
+        const newEquipments = equipments.map((eq) => eq.id);
+
+        const removedEquipments = oldEquipments.filter((eq) => !newEquipments.includes(eq));
+        const addedEquipments = newEquipments.filter((eq) => !oldEquipments.includes(eq));
+
+        console.log({ oldEquipments, newEquipments });
+        console.log({ removedEquipments, addedEquipments });
+
         await runTransaction(db, async (transaction) => {
           try {
             //* create job header
@@ -387,7 +396,8 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
               doc(db, 'jobDetails', jobId),
               {
                 jobId,
-                isReturnedEquipment: false,
+                isReturnedEquipment:
+                  (addedEquipments.length < 1 && data?.isReturnedEquipment) || false,
                 equipments: equipments.map((equipment) => ({ jobId, ...equipment })),
                 customerEquipments,
                 takenByBefore,
@@ -413,16 +423,15 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
               );
             } else {
               //* when edit find the differece between old and new equipments
-              const oldEquipments = data.equipments.map((eq) => eq.id);
-              const newEquipments = equipments.map((eq) => eq.id);
-
-              const removedEquipments = oldEquipments.filter((eq) => !newEquipments.includes(eq));
-              const addedEquipments = newEquipments.filter((eq) => !oldEquipments.includes(eq));
 
               //* update equipment qty
-              removedEquipments.map((eq) =>
-                transaction.update(doc(db, 'equipments', eq), { qty: increment(1) })
-              );
+
+              //* only increment update equipment qty if equipment is not yet returned
+              //* if we update when its already returned it will increase the equipment qty unnecessarily, which is wrong
+              !data?.isReturnedEquipment &&
+                removedEquipments.map((eq) =>
+                  transaction.update(doc(db, 'equipments', eq), { qty: increment(1) })
+                );
 
               addedEquipments.map((eq) =>
                 transaction.update(doc(db, 'equipments', eq), { qty: increment(-1) })

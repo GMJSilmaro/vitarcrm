@@ -12,12 +12,12 @@ export const getNavbarItems = (role) => {
         icon: 'HouseDoorFill',
         children: [
           { id: uuid(), menuitem: 'Overview', link: '/dashboard', icon: 'HouseDoorFill' },
-          {
-            id: uuid(),
-            menuitem: 'Certificate Editor',
-            icon: 'FileEarmarkBarGraphFill',
-            link: '/reports',
-          },
+          // {
+          //   id: uuid(),
+          //   menuitem: 'Certificate Editor',
+          //   icon: 'FileEarmarkBarGraphFill',
+          //   link: '/reports',
+          // },
         ],
         isAuthenticated: true,
       },
@@ -193,12 +193,12 @@ export const getNavbarItems = (role) => {
         icon: 'HouseDoorFill',
         children: [
           { id: uuid(), menuitem: 'Overview', link: '/dashboard', icon: 'HouseDoorFill' },
-          {
-            id: uuid(),
-            menuitem: 'Certificate Editor',
-            icon: 'FileEarmarkBarGraphFill',
-            link: '/reports',
-          },
+          // {
+          //   id: uuid(),
+          //   menuitem: 'Certificate Editor',
+          //   icon: 'FileEarmarkBarGraphFill',
+          //   link: '/reports',
+          // },
         ],
         isAuthenticated: true,
       },

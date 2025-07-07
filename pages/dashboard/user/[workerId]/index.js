@@ -760,10 +760,12 @@ function WorkerDashboard() {
                     Delete Job
                   </Dropdown.Item> */}
 
-                  <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
-                    <ArrowReturnLeft className='me-2' size={16} />
-                    Return Equipment
-                  </Dropdown.Item>
+                  {!details?.isReturnedEquipment && (
+                    <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
+                      <ArrowReturnLeft className='me-2' size={16} />
+                      Return Equipment
+                    </Dropdown.Item>
+                  )}
 
                   {/* <OverlayTrigger
                     rootClose
