@@ -168,31 +168,2456 @@ const useFirebaseCache = () => {
 // Add this helper function after the constants
 const generateDummyData = () => {
   // Generate random jobs for the last 30 days
-  const jobs = [];
+  let jobs = [];
   const jobTypes = ['Installation', 'Maintenance', 'Repair', 'Emergency', 'Other'];
   const jobStatuses = ['Created', 'In Progress', 'Completed', 'Job Complete'];
   const now = new Date();
 
-  for (let i = 0; i < 150; i++) {
-    const daysAgo = Math.floor(Math.random() * 30);
-    const hoursAgo = Math.floor(Math.random() * 24);
-    const date = new Date(now);
-    date.setDate(date.getDate() - daysAgo);
-    date.setHours(date.getHours() - hoursAgo);
+  // const JOB_STATUSES = [
+  //   'Job Confirm',
+  //   'Job In',
+  //   'Job Validation',
+  //   'Job Cancel',
+  //   'Job Complete',
+  //   'Job Reschedule',
+  // ];
 
-    jobs.push({
-      id: `job-${i}`,
-      jobContactType: jobTypes[Math.floor(Math.random() * jobTypes.length)],
-      jobStatus: jobStatuses[Math.floor(Math.random() * jobStatuses.length)],
-      createdAt: date,
-      assignedWorkers: Array(Math.floor(Math.random() * 3) + 1)
-        .fill(null)
-        .map((_, index) => ({
-          id: `worker-${index}`,
-          name: `Technician ${index + 1}`,
-        })),
-    });
-  }
+  // const CALIBRATION_CATEGORIES = [
+  //   'Temperature Humidity',
+  //   'Pressure',
+  //   'Electrical',
+  //   'Dimensional',
+  //   'Volumetric',
+  //   'Mass',
+  // ]
+
+  // for (let i = 0; i < 150; i++) {
+  //   const daysAgo = Math.floor(Math.random() * 30);
+  //   const hoursAgo = Math.floor(Math.random() * 24);
+  //   const date = new Date(now);
+  //   date.setDate(date.getDate() - daysAgo);
+  //   date.setHours(date.getHours() - hoursAgo);
+
+  //   jobs.push({
+  //     id: `job-${i}`,
+  //     jobContactType: jobTypes[Math.floor(Math.random() * jobTypes.length)],
+  //     jobStatus: jobStatuses[Math.floor(Math.random() * jobStatuses.length)],
+  //     createdAt: date,
+  //     assignedWorkers: Array(Math.floor(Math.random() * 3) + 1)
+  //       .fill(null)
+  //       .map((_, index) => ({
+  //         id: `worker-${index}`,
+  //         name: `Technician ${index + 1}`,
+  //       })),
+  //   });
+  // }
+
+  jobs = [
+    {
+      id: 'job-0',
+      jobContactType: 'Emergency',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-09T19:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-1',
+      jobContactType: 'Repair',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-19T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-2',
+      jobContactType: 'Installation',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-24T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-3',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-30T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-4',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-09T04:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-5',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-13T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-6',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-17T14:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-7',
+      jobContactType: 'Repair',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-11T02:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-8',
+      jobContactType: 'Emergency',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-02T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-9',
+      jobContactType: 'Repair',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-07-04T15:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-10',
+      jobContactType: 'Installation',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-20T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-11',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-29T05:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-12',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-09T05:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-13',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-29T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-14',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-04T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-15',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-07-05T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-16',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-15T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-17',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-26T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-18',
+      jobContactType: 'Installation',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-17T04:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-19',
+      jobContactType: 'Repair',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-18T18:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-20',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-25T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-21',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-02T12:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-22',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-27T20:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-23',
+      jobContactType: 'Repair',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-27T05:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-24',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-11T22:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-25',
+      jobContactType: 'Installation',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-06T16:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-26',
+      jobContactType: 'Installation',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-29T02:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-27',
+      jobContactType: 'Repair',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-12T22:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-28',
+      jobContactType: 'Other',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-25T16:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-29',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-30T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-30',
+      jobContactType: 'Installation',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-28T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-31',
+      jobContactType: 'Emergency',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-16T23:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-32',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-06T08:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-33',
+      jobContactType: 'Installation',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-05T23:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-34',
+      jobContactType: 'Installation',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-25T15:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-35',
+      jobContactType: 'Other',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-05T17:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-36',
+      jobContactType: 'Repair',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-05T09:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-37',
+      jobContactType: 'Repair',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-26T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-38',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-23T23:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-39',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-06T11:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-40',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-22T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-41',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-03T05:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-42',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-01T04:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-43',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-22T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-44',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-25T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-45',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-05T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-46',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-29T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-47',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-10T01:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-48',
+      jobContactType: 'Installation',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-15T05:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-49',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-09T18:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-50',
+      jobContactType: 'Installation',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-18T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-51',
+      jobContactType: 'Emergency',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-22T00:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-52',
+      jobContactType: 'Other',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-04T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-53',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-22T23:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-54',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-09T20:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-55',
+      jobContactType: 'Emergency',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-24T16:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-56',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-06T18:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-57',
+      jobContactType: 'Installation',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-03T17:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-58',
+      jobContactType: 'Emergency',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-07-05T09:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-59',
+      jobContactType: 'Other',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-04T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-60',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-05T17:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-61',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-25T20:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-62',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-15T14:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-63',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-06T08:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-64',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-16T12:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-65',
+      jobContactType: 'Installation',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-28T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-66',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-11T11:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-67',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-01T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-68',
+      jobContactType: 'Emergency',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-26T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-69',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-05T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-70',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-18T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-71',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-21T02:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-72',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-05T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-73',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-12T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-74',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-03T14:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-75',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-03T09:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-76',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-01T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-77',
+      jobContactType: 'Installation',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-21T03:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-78',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-14T19:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-79',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-19T16:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-80',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-03T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-81',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-25T02:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-82',
+      jobContactType: 'Emergency',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-09T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-83',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-04T15:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-84',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-17T19:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-85',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-04T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-86',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-16T18:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-87',
+      jobContactType: 'Installation',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-25T09:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-88',
+      jobContactType: 'Emergency',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-27T23:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-89',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-16T17:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-90',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-23T18:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-91',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-20T04:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-92',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-09T12:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-93',
+      jobContactType: 'Installation',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-03T14:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-94',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-07T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-95',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-03T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-96',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-11T12:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-97',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-10T16:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-98',
+      jobContactType: 'Repair',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-21T09:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-99',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-23T09:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-100',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-02T11:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-101',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-18T04:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-102',
+      jobContactType: 'Installation',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-21T00:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-103',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-14T14:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-104',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-19T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-105',
+      jobContactType: 'Installation',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-13T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-106',
+      jobContactType: 'Other',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-30T11:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-107',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-24T04:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-108',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-20T22:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-109',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-20T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-110',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-27T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-111',
+      jobContactType: 'Repair',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-23T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-112',
+      jobContactType: 'Installation',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-02T09:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-113',
+      jobContactType: 'Emergency',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-17T17:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-114',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-06T12:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-115',
+      jobContactType: 'Repair',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-12T00:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-116',
+      jobContactType: 'Emergency',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-24T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-117',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-22T12:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-118',
+      jobContactType: 'Emergency',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-26T22:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-119',
+      jobContactType: 'Repair',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-09T02:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-120',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-10T17:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-121',
+      jobContactType: 'Maintenance',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-03T01:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-122',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-08T15:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-123',
+      jobContactType: 'Installation',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-14T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-124',
+      jobContactType: 'Installation',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-20T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-125',
+      jobContactType: 'Installation',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-05T01:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-126',
+      jobContactType: 'Emergency',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-07-05T02:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-127',
+      jobContactType: 'Repair',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-07-05T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-128',
+      jobContactType: 'Installation',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-26T12:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-129',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-13T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-130',
+      jobContactType: 'Other',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-01T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-131',
+      jobContactType: 'Installation',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-17T14:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-132',
+      jobContactType: 'Installation',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-05T14:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-133',
+      jobContactType: 'Emergency',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-29T23:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-134',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-03T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-135',
+      jobContactType: 'Repair',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-08T07:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-136',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-11T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-137',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-17T15:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+    {
+      id: 'job-138',
+      jobContactType: 'Emergency',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-07-04T10:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-139',
+      jobContactType: 'Other',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-24T11:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-140',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-24T22:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-141',
+      jobContactType: 'Installation',
+      jobStatus: 'Job Complete',
+      createdAt: new Date('2025-06-23T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-142',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-07-02T20:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-143',
+      jobContactType: 'Repair',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-06-13T13:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-144',
+      jobContactType: 'Installation',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-21T04:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-145',
+      jobContactType: 'Other',
+      jobStatus: 'Created',
+      createdAt: new Date('2025-06-21T02:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+        {
+          id: 'worker-2',
+          name: 'Technician 3',
+        },
+      ],
+    },
+    {
+      id: 'job-146',
+      jobContactType: 'Maintenance',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-26T05:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-147',
+      jobContactType: 'Other',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-23T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-148',
+      jobContactType: 'Emergency',
+      jobStatus: 'In Progress',
+      createdAt: new Date('2025-07-03T21:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+        {
+          id: 'worker-1',
+          name: 'Technician 2',
+        },
+      ],
+    },
+    {
+      id: 'job-149',
+      jobContactType: 'Emergency',
+      jobStatus: 'Completed',
+      createdAt: new Date('2025-06-08T06:35:17.955Z'),
+      assignedWorkers: [
+        {
+          id: 'worker-0',
+          name: 'Technician 1',
+        },
+      ],
+    },
+  ];
 
   return jobs;
 };
@@ -328,6 +2753,7 @@ const Overview = () => {
               color: '#495057',
               generateLabels: (chart) => {
                 const { labels, datasets } = chart.data;
+                console.log({ datasets });
                 return labels.map((label, index) => ({
                   text: `${label} (${datasets[0].data[index]})`,
                   fillStyle: datasets[0].backgroundColor[index],
@@ -754,6 +3180,7 @@ const Overview = () => {
 
       // Generate and use dummy jobs
       const dummyJobs = generateDummyData();
+      console.log({ dummyJobs });
       setAllJobs(dummyJobs);
 
       // Initial calculations with dummy data

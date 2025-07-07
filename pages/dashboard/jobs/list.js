@@ -711,7 +711,7 @@ const JobList = () => {
             });
           };
 
-          const handleDeleteJob = (id) => {
+          const handleDeleteJob = (id, details) => {
             Swal.fire({
               title: 'Are you sure?',
               text: 'This action cannot be undone.',
@@ -747,6 +747,27 @@ const JobList = () => {
                     }
                   };
 
+                  const updateEquipmentQty = async (details) => {
+                    if (!details || !details.equipments) {
+                      console.log('job details not found');
+                      return;
+                    }
+
+                    try {
+                      await Promise.all(
+                        details.equipments.map(async (eq) => {
+                          try {
+                            return updateDoc(doc(db, 'equipments', eq.id), { qty: increment(1) });
+                          } catch (error) {
+                            return null;
+                          }
+                        })
+                      );
+                    } catch (error) {
+                      console.error(error, 'Failed to update equipment qty');
+                    }
+                  };
+
                   await Promise.all([
                     deleteDoc(jobHeaderRef),
                     deleteDoc(jobDetailsRef),
@@ -761,6 +782,7 @@ const JobList = () => {
                         redirectUrl: `/jobs`,
                       },
                     }),
+                    updateEquipmentQty(details),
                   ]);
 
                   toast.success('Job removed successfully', { position: 'top-right' });
@@ -984,7 +1006,7 @@ const JobList = () => {
                         <PencilSquare className='me-2' size={16} />
                         Edit Job
                       </Dropdown.Item>
-                      <Dropdown.Item onClick={() => handleDeleteJob(id)}>
+                      <Dropdown.Item onClick={() => handleDeleteJob(id, details)}>
                         <Trash className='me-2' size={16} />
                         Delete Job
                       </Dropdown.Item>
@@ -1001,10 +1023,12 @@ const JobList = () => {
                         </Dropdown.Item>
                       )}
 
-                      <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
-                        <ArrowReturnLeft className='me-2' size={16} />
-                        Return Equipment
-                      </Dropdown.Item>
+                      {!details?.isReturnedEquipment && (
+                        <Dropdown.Item onClick={() => handleReturnEquipment(id, details)}>
+                          <ArrowReturnLeft className='me-2' size={16} />
+                          Return Equipment
+                        </Dropdown.Item>
+                      )}
 
                       <OverlayTrigger
                         rootClose
