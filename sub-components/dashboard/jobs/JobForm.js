@@ -358,8 +358,8 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           await Promise.all(deletePromises);
         }
 
-        const oldEquipments = data.equipments.map((eq) => eq.id);
-        const newEquipments = equipments.map((eq) => eq.id);
+        const oldEquipments = data?.equipments?.map((eq) => eq.id) || [];
+        const newEquipments = equipments?.map((eq) => eq.id) || [];
 
         const removedEquipments = oldEquipments.filter((eq) => !newEquipments.includes(eq));
         const addedEquipments = newEquipments.filter((eq) => !oldEquipments.includes(eq));
