@@ -61,7 +61,7 @@ const JobDetails = () => {
   const [users, setUsers] = useState({ data: [], isLoading: true, isError: false });
   const [surveyQuestions, setSurveyQuestions] = useState({ data: [],isLoading: true,isError: false }); //prettier-ignore
 
-  const handleUpdateToComplete = async (id, setIsLoading) => {
+  const handleUpdateToComplete = async (id, setIsLoading, salesperson) => {
     if (!id) return;
 
     Swal.fire({
@@ -91,7 +91,7 @@ const JobDetails = () => {
             //* create notification for admin and supervisor when updated a job status
             notifications.create({
               module: 'job',
-              target: ['admin', 'supervisor'],
+              target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
               title: 'Job status updated',
               message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "Job Complete".`, //prettier-ignore
               data: {
@@ -504,6 +504,10 @@ const JobDetails = () => {
             label: _.startCase(job?.status),
             color: STATUS_COLOR[job?.status] || 'secondary',
           },
+          {
+            label: job?.isReturnedEquipment ? 'Returned' : 'Unreturned',
+            color: job?.isReturnedEquipment ? 'success' : 'danger',
+          },
         ]}
         actionButtons={[
           {
@@ -529,7 +533,7 @@ const JobDetails = () => {
                 {
                   label: 'Validate Job',
                   icon: ShieldCheck,
-                  onClick: (args) => handleUpdateToComplete(jobId, args.setIsLoading),
+                  onClick: (args) => handleUpdateToComplete(jobId, args.setIsLoading, jobRequest.data?.createdBy?.uid),
                 },
               ]
             : []),

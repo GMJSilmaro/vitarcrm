@@ -1,5 +1,15 @@
 import { useRouter } from 'next/router';
-import { Row, Col, Button, Card, Badge, OverlayTrigger, Dropdown, Spinner } from 'react-bootstrap';
+import {
+  Row,
+  Col,
+  Button,
+  Card,
+  Badge,
+  OverlayTrigger,
+  Dropdown,
+  Spinner,
+  Tooltip,
+} from 'react-bootstrap';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
 import DefaultLayout from '../../../../layouts/marketing/DefaultLayout';
@@ -71,6 +81,7 @@ import PageHeader from '@/components/common/PageHeader';
 import { useNotifications } from '@/hooks/useNotifications';
 import { STATUS_COLOR } from '@/schema/job';
 import Select from '@/components/Form/Select';
+import { TooltipContent } from '@/components/common/ToolTipContent';
 
 function WorkerDashboard() {
   const router = useRouter();
@@ -277,9 +288,26 @@ function WorkerDashboard() {
           </div>
         ),
       }),
-      columnHelper.accessor('id', {
+      columnHelper.accessor((row) => `${row.id} - ${row.jobRequestId || ''}`, {
+        id: 'id',
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
+        cell: ({ row }) => {
+          const { id, jobRequestId } = row.original;
+          return (
+            <div className='d-flex flex-column gap-2 justify-content-center'>
+              <div className='d-flex flex-column justify-content-center'>
+                <div className='fw-bold'>ID:</div> <div>{id}</div>
+              </div>
+
+              {jobRequestId && (
+                <div className='d-flex flex-column justify-content-center'>
+                  <div className='fw-bold'>Request ID:</div> <div>{jobRequestId}</div>
+                </div>
+              )}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor((row) => format(row.createdAt.toDate(), 'dd-MM-yyyy'), {
         id: 'date',
@@ -552,7 +580,9 @@ function WorkerDashboard() {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, details, status } = row.original;
+          const { id, details, status, jobRequest } = row.original;
+
+          const salesperson = jobRequest?.createdBy?.uid;
 
           const handleViewJob = (id) => {
             router.push(`/user/${workerId}/jobs/view/${id}`);
@@ -805,14 +835,14 @@ function WorkerDashboard() {
                   {status !== 'job-in-progress' &&
                     status !== 'job-validation' &&
                     status === 'job-confirm' && (
-                      <Dropdown.Item onClick={() => startJob(id, setIsLoading)}>
+                      <Dropdown.Item onClick={() => startJob(id, setIsLoading, salesperson)}>
                         <Play className='me-2' size={18} /> Initiate Job
                       </Dropdown.Item>
                     )}
 
                   {status === 'job-in-progress' && (
                     <>
-                      <Dropdown.Item onClick={() => stopJob(id, setIsLoading)}>
+                      <Dropdown.Item onClick={() => stopJob(id, setIsLoading, salesperson)}>
                         <Stop className='me-2' size={18} /> Complete Job
                       </Dropdown.Item>
                       {/* 
@@ -864,7 +894,7 @@ function WorkerDashboard() {
         label: 'ID',
         columnId: 'id',
         type: 'text',
-        placeholder: 'Search by job id...',
+        placeholder: 'Search by job id & job request id...',
       },
       {
         label: 'Technician',
@@ -948,7 +978,7 @@ function WorkerDashboard() {
     }
   };
 
-  const startJob = async (id, setIsLoading) => {
+  const startJob = async (id, setIsLoading, salesperson) => {
     if (!id) return;
 
     Swal.fire({
@@ -995,7 +1025,7 @@ function WorkerDashboard() {
           //* create notification for admin and supervisor when updated a job status
           await notifications.create({
             module: 'job',
-            target: ['admin', 'supervisor'],
+            target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
             title: 'Job started',
             message: `Job (#${id}) has been started by ${auth.currentUser.displayName}.`,
             data: {
@@ -1019,7 +1049,7 @@ function WorkerDashboard() {
     });
   };
 
-  const stopJob = async (id, setIsLoading) => {
+  const stopJob = async (id, setIsLoading, salesperson) => {
     if (!id) return;
 
     Swal.fire({
@@ -1064,7 +1094,7 @@ function WorkerDashboard() {
           //* create notification for admin and supervisor when updated a job status
           await notifications.create({
             module: 'job',
-            target: ['admin', 'supervisor'],
+            target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
             title: 'Job finished',
             message: `Job (#${id}) has been finished by ${auth.currentUser.displayName}.`,
             data: {
@@ -1223,12 +1253,19 @@ function WorkerDashboard() {
         const promises = jobDocs.map(async (job) => {
           try {
             const jobDetailsPromise = getDoc(doc(db, 'jobDetails', job.id));
+            const jobRequestPromise = job?.jobRequestId
+              ? getDoc(doc(db, 'jobRequests', job.jobRequestId))
+              : Promise.resolve(null);
 
-            const [jobDetailsDoc] = await Promise.all([jobDetailsPromise]);
+            const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
+              jobDetailsPromise,
+              jobRequestPromise,
+            ]);
 
             return {
               ...job,
               details: jobDetailsDoc.exists() ? jobDetailsDoc.data() : null,
+              jobRequest: jobRequestDoc?.exists() ? jobRequestDoc.data() : null,
             };
           } catch (err) {
             console.warn(`Failed to fetch details for job ${job.id}:`, err);

@@ -274,51 +274,13 @@ function OnSiteCalibrationSurveyPDF({ job, customer, surveyQuestions }) {
             <View
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                padding: 4,
-              }}
-            >
-              {job?.surveyCustomerTimeInSignature && (
-                <Image
-                  style={{ width: '60px', height: '40px' }}
-                  src={job?.surveyCustomerTimeInSignature}
-                />
-              )}
-            </View>
-
-            <Text
-              style={{
-                fontSize: 8,
-                maxWidth: 140,
-                textAlign: 'center',
-              }}
-            >
-              {customer?.data?.customerName || ''}
-            </Text>
-          </View>
-
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              border: '1px solid #00000',
-              padding: 8,
-            }}
-          >
-            <View
-              style={{
-                display: 'flex',
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 4,
               }}
             >
               <Text style={{ fontSize: 8, fontFamily: 'TimesNewRomanBold' }}>Time Out: </Text>
-              <Text style={{ fontSize: 8 }}>{startByAt}</Text>
+              <Text style={{ fontSize: 8 }}>{endByAt}</Text>
             </View>
 
             <View
@@ -330,10 +292,10 @@ function OnSiteCalibrationSurveyPDF({ job, customer, surveyQuestions }) {
                 padding: 4,
               }}
             >
-              {job?.surveyCustomerTimeOutSignature && (
+              {job?.surveyCustomerSignature && (
                 <Image
                   style={{ width: '60px', height: '40px' }}
-                  src={job?.surveyCustomerTimeOutSignature}
+                  src={job?.surveyCustomerSignature}
                 />
               )}
             </View>

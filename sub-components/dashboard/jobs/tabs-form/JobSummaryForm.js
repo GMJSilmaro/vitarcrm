@@ -35,7 +35,7 @@ import { format, formatDistanceStrict } from 'date-fns';
 
 const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const router = useRouter();
-  const { jobRequestId } = router.query;
+  const { jobRequestId, workerId } = router.query;
 
   const form = useFormContext();
 
@@ -611,7 +611,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
                           ? 'Loading job requests...'
                           : "Search by job request's ID & supervisor's name"
                       }
-                      isDisabled={jobs.isLoading || jobRequestOptions.isLoading}
+                      isDisabled={jobs.isLoading || jobRequestOptions.isLoading || workerId}
                       noOptionsMessage={() =>
                         jobRequestOptions.isLoading ? 'Loading...' : 'No job request found'
                       }

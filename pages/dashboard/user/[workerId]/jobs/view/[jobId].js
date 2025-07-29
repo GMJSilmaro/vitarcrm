@@ -67,7 +67,7 @@ const JobDetails = () => {
   const [isStartingJob, setIsStartingJob] = useState(false);
   const [isStoppingJob, setIsStoppingJob] = useState(false);
 
-  const stopJob = async (id, setIsLoading) => {
+  const stopJob = async (id, setIsLoading, salesperson) => {
     if (!id) return;
 
     Swal.fire({
@@ -112,7 +112,7 @@ const JobDetails = () => {
           //* create notification for admin and supervisor when updated a job status
           await notifications.create({
             module: 'job',
-            target: ['admin', 'supervisor'],
+            target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
             title: 'Job finished',
             message: `Job (#${id}) has been finished by ${auth.currentUser.displayName}.`,
             data: {
@@ -136,7 +136,7 @@ const JobDetails = () => {
     });
   };
 
-  const startJob = async (id, setIsLoading) => {
+  const startJob = async (id, setIsLoading, salesperson) => {
     if (!id) return;
 
     Swal.fire({
@@ -183,7 +183,7 @@ const JobDetails = () => {
           //* create notification for admin and supervisor when updated a job status
           await notifications.create({
             module: 'job',
-            target: ['admin', 'supervisor'],
+            target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
             title: 'Job started',
             message: `Job (#${id}) has been started by ${auth.currentUser.displayName}.`,
             data: {
@@ -579,6 +579,10 @@ const JobDetails = () => {
               label: _.startCase(job?.status),
               color: STATUS_COLOR[job?.status] || 'secondary',
             },
+            {
+              label: job?.isReturnedEquipment ? 'Returned' : 'Unreturned',
+              color: job?.isReturnedEquipment ? 'success' : 'danger',
+            },
           ]}
           actionButtons={[
             {
@@ -603,7 +607,8 @@ const JobDetails = () => {
                   {
                     label: 'Initiate Job',
                     icon: Play,
-                    onClick: (args) => startJob(jobId, args.setIsLoading),
+                    onClick: (args) =>
+                      startJob(jobId, args.setIsLoading, jobRequest.data?.createdBy?.uid),
                   },
                 ]
               : []),
@@ -612,7 +617,8 @@ const JobDetails = () => {
                   {
                     label: 'Close Job',
                     icon: Stop,
-                    onClick: (args) => stopJob(jobId, args.setIsLoading),
+                    onClick: (args) =>
+                      stopJob(jobId, args.setIsLoading, jobRequest.data?.createdBy?.uid),
                   },
                 ]
               : []),

@@ -360,8 +360,58 @@ export const surveyResponsesSchema = z.object({
 export const onSiteCalibrationSurveyResponsesSchema = z.object({
   surveyTo: z.string().default(''),
   surveyResponses: z.array(z.union([surveyResponsesSchema, z.object({})])).default([]),
-  surveyCustomerTimeInSignature: z.string().default(''),
-  surveyCustomerTimeOutSignature: z.string().default(''),
+  surveyCustomerSignature: z.string().default(''),
+});
+
+export const cnCalibrationItemSchema = z.object({
+  calibrateId: z.string(),
+  certificateNumber: z.string(),
+  equipmentId: z.string(),
+  description: z.string(),
+  serialNumber: z.string().default(''),
+  make: z.string().default(''),
+  model: z.string().default(''),
+  isBroken: z.boolean().default(false),
+  isInOperative: z.boolean().default(false),
+  isRequireAccessories: z.boolean().default(false),
+  others: z.string().default(''),
+  isSelected: z.boolean().default(false),
+});
+
+export const customerNotificationSchema = z.object({
+  cnTo: z.string().default(''),
+  cnYourRef: z.string().default(''),
+  cnAttention: z.string().default(''),
+  cnFaxNo: z.string().default(''),
+  cnIsBeforeCalibration: z.boolean().default(false),
+  cnIsDuringCalibration: z.boolean().default(false),
+  cnIsAfterCalibration: z.boolean().default(false),
+  cnCalibrationItems: z.array(cnCalibrationItemSchema).default([]),
+  cnIsSendTheAccessories: z.boolean().default(false),
+  cnIsArrangeForCollection: z.boolean().default(false),
+  cnIsAcknowledgeConfirm: z.boolean().default(false),
+  cnIsOthers: z.boolean().default(false),
+  cnOthers: z.string().default(''),
+  cnWorker: z.union([
+    z.string().default(''),
+    z.record(z.string(), z.any()).transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return '';
+    }),
+  ]),
+  cnForVitarLabUseIsProceed: z.boolean().default(false),
+  cnForVitarLabUseIsNoCalibrationRequired: z.boolean().default(false),
+  cnForVitarLabUseIsOthers: z.boolean().default(false),
+  cnForVitarLabUseOthers: z.string().default(''),
+  cnForVitarLabUseAuthorizeBy: z.union([
+    z.string().default(''),
+    z.record(z.string(), z.any()).transform((formData) => {
+      if (typeof formData === 'object' && formData !== null) return formData.value;
+      return '';
+    }),
+  ]),
+  cnCustomerReplyRemarks: z.string().default(''),
+  cnCustomerReplyAuthorizeSignature: z.string().default(''),
 });
 
 export const jobSchema = z

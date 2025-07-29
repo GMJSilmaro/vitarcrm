@@ -185,44 +185,19 @@ function OnSiteCalibrationSurvey({ job, customer, surveyQuestions }) {
             className='d-flex flex-column justify-content-center align-items-center '
             style={{ maxWidth: '300px' }}
           >
-            <div className='d-flex gap-2 mb-2'>
+            <div className='d-flex gap-2'>
               <span className='fw-bold'>Time In:</span>
               <span>{startByAt}</span>
             </div>
-            <div className='container p-5 border rounded d-flex flex-column justify-content-center align-items-center'>
-              {job?.surveyCustomerTimeInSignature ? (
-                <Image
-                  className='w-100 h-100'
-                  src={job?.surveyCustomerTimeInSignature}
-                  alt='customer'
-                />
-              ) : (
-                <>
-                  <h1 className='fs-5 fw-bold mb-0'>No Data Yet</h1>
-                  <p className='text-muted fs-6 mb-0 text-center'>
-                    Please update the the On-Site Calibration Survey in the job
-                  </p>
-                </>
-              )}
-            </div>
-            <div className='text-muted text-center mt-2'>{customer?.data?.customerName || ''}</div>
-          </div>
 
-          <div
-            className='d-flex flex-column justify-content-center align-items-center '
-            style={{ maxWidth: '300px' }}
-          >
             <div className='d-flex gap-2 mb-2'>
               <span className='fw-bold'>Time Out:</span>
               <span>{endByAt}</span>
             </div>
+
             <div className='container p-5 border rounded d-flex flex-column justify-content-center align-items-center'>
-              {job?.surveyCustomerTimeOutSignature ? (
-                <Image
-                  className='w-100 h-100'
-                  src={job?.surveyCustomerTimeOutSignature}
-                  alt='customer'
-                />
+              {job?.surveyCustomerSignature ? (
+                <Image className='w-100 h-100' src={job?.surveyCustomerSignature} alt='customer' />
               ) : (
                 <>
                   <h1 className='fs-5 fw-bold mb-0'>No Data Yet</h1>

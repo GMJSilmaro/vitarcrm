@@ -633,7 +633,9 @@ const JobList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, details, status, workers } = row.original;
+          const { id, details, status, workers, jobRequest } = row.original;
+
+          const salesperson = jobRequest?.createdBy?.uid;
 
           const handleViewJob = (id) => {
             router.push(`/jobs/view/${id}`);
@@ -647,7 +649,7 @@ const JobList = () => {
             router.push(`/jobs/duplicate/${id}`);
           };
 
-          const handleRescheduleJob = async (id, status, workers) => {
+          const handleRescheduleJob = async (id, status, workers, salesperson) => {
             Swal.fire({
               title: `Reschedule Job - Job #${id}`,
               text: `Are you sure you want to reschedule this job?`,
@@ -686,7 +688,12 @@ const JobList = () => {
                       //* create notification for admin and supervisor when updated a job status
                       notifications.create({
                         module: 'job',
-                        target: ['admin', 'supervisor', ...workerUids],
+                        target: [
+                          'admin',
+                          'supervisor',
+                          ...workerUids,
+                          ...(salesperson ? [salesperson] : []),
+                        ],
                         title: 'Job rescheduled',
                         message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase('job-reschedule')}".`, //prettier-ignore
                         data: {
@@ -796,7 +803,7 @@ const JobList = () => {
             });
           };
 
-          const handleUpdateJobStatus = (id, status) => {
+          const handleUpdateJobStatus = (id, status, salesperson) => {
             if (status === 'job-cancel') {
               withReactContent(Swal)
                 .fire({
@@ -849,7 +856,7 @@ const JobList = () => {
                         //* create notification for admin and supervisor when updated a job status
                         notifications.create({
                           module: 'job',
-                          target: ['admin', 'supervisor'],
+                          target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
                           title: 'Job status updated',
                           message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
                           data: {
@@ -898,7 +905,7 @@ const JobList = () => {
                     //* create notification for admin and supervisor when updated a job status
                     notifications.create({
                       module: 'job',
-                      target: ['admin', 'supervisor'],
+                      target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
                       title: 'Job status updated',
                       message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "${_.startCase(status)}".`, //prettier-ignore
                       data: {
@@ -1016,8 +1023,12 @@ const JobList = () => {
                         Duplicate Job
                       </Dropdown.Item>
 
-                      {(status === 'job-confirm' || status === 'job-in-progress') && (
-                        <Dropdown.Item onClick={() => handleRescheduleJob(id, status, workers)}>
+                      {(status === 'job-confirm' ||
+                        status === 'job-in-progress' ||
+                        'job-cancel') && (
+                        <Dropdown.Item
+                          onClick={() => handleRescheduleJob(id, status, workers, salesperson)}
+                        >
                           <CalendarWeek className='me-2' size={16} />
                           Reschedule Job
                         </Dropdown.Item>
@@ -1036,22 +1047,28 @@ const JobList = () => {
                         placement='left'
                         overlay={
                           <Dropdown.Menu show style={{ zIndex: 999 }}>
-                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'job-confirm')}>
+                            <Dropdown.Item
+                              onClick={() => handleUpdateJobStatus(id, 'job-confirm', salesperson)}
+                            >
                               <Flag className='me-2' size={16} />
                               Job Confirm
                             </Dropdown.Item>
                             <Dropdown.Item
-                              onClick={() => handleUpdateJobStatus(id, 'job-validation')}
+                              onClick={() =>
+                                handleUpdateJobStatus(id, 'job-validation', salesperson)
+                              }
                             >
                               <CheckCircle className='me-2' size={16} />
                               Job Validation
                             </Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleUpdateJobStatus(id, 'job-cancel')}>
+                            <Dropdown.Item
+                              onClick={() => handleUpdateJobStatus(id, 'job-cancel', salesperson)}
+                            >
                               <XCircle className='me-2' size={16} />
                               Job Cancel
                             </Dropdown.Item>
                             <Dropdown.Item
-                              onClick={() => handleUpdateJobStatus(id, 'job-complete')}
+                              onClick={() => handleUpdateJobStatus(id, 'job-complete', salesperson)}
                             >
                               <ShieldCheck className='me-2' size={16} />
                               Job Complete
@@ -1101,7 +1118,7 @@ const JobList = () => {
         label: 'ID',
         columnId: 'id',
         type: 'text',
-        placeholder: 'Search by job id...',
+        placeholder: 'Search by job id & job request id...',
       },
       {
         label: 'Technician',
@@ -1277,7 +1294,7 @@ const JobList = () => {
         const promises = jobDocs.map(async (job) => {
           try {
             const jobDetailsPromise = getDoc(doc(db, 'jobDetails', job.id));
-            const jobRequestPromise = job.jobRequestId
+            const jobRequestPromise = job?.jobRequestId
               ? getDoc(doc(db, 'jobRequests', job.jobRequestId))
               : Promise.resolve(null);
 

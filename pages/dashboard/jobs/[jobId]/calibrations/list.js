@@ -167,6 +167,8 @@ const JobCalibration = () => {
 
   const { jobId } = router.query;
 
+  const [job, setJob] = useState({ data: null, isLoading: true, isError: false });
+  const [jobRequest, setJobRequest] = useState({ data: null, isLoading: true, isError: false });
   const [calibrations, setCalibrations] = useState({ data: [], isLoading: true, isError: false });
 
   const columnHelper = createColumnHelper();
@@ -712,6 +714,87 @@ const JobCalibration = () => {
     },
   });
 
+  const handleUpdateToComplete = async (id, setIsLoading, salesperson) => {
+    if (!id) return;
+
+    Swal.fire({
+      title: `Job Status Update - Job #${id}`,
+      text: `Are you sure you want to update the job status to "Job Complete"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirm',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        confirmButton: 'btn btn-primary rounded',
+        cancelButton: 'btn btn-secondary rounded',
+      },
+    }).then(async (data) => {
+      if (data.isConfirmed) {
+        try {
+          console.log({ salesperson });
+
+          setIsLoading(true);
+
+          const jobHeaderRef = doc(db, 'jobHeaders', id);
+
+          await Promise.all([
+            updateDoc(jobHeaderRef, {
+              status: 'job-complete',
+              updatedAt: serverTimestamp(),
+              updatedBy: auth.currentUser,
+            }),
+            //* create notification for admin and supervisor when updated a job status
+            notifications.create({
+              module: 'job',
+              target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
+              title: 'Job status updated',
+              message: `Job (#${id}) status was updated by ${auth.currentUser.displayName} to "Job Complete".`, //prettier-ignore
+              data: {
+                redirectUrl: `/jobs/view/${id}`,
+              },
+            }),
+          ]);
+
+          toast.success('Job status updated successfully', { position: 'top-right' });
+          setIsLoading(false);
+
+          //* reload page after 2 seconds
+          setTimeout(() => {
+            window.location.assign(`/jobs/view/${jobId}`);
+          }, 2000);
+        } catch (error) {
+          console.error('Error updating job status:', error);
+          toast.error('Error updating job status: ' + error.message, { position: 'top-right' }); //prettier-ignore
+          setIsLoading(false);
+        }
+      }
+    });
+  };
+
+  const isShowValidateJob = useMemo(() => {
+    if (
+      !job.data ||
+      job?.data?.customerEquipments?.length < 1 ||
+      !calibrations.data ||
+      calibrations.data.length < 1
+    ) {
+      return false;
+    }
+
+    if (job?.data?.status === 'job-complete') return false;
+
+    //* check if all job calibration items or customer equipment selected has a status of cert-complete
+    const calibrationItems = job?.data.customerEquipments || [];
+
+    if (calibrationItems?.length < 1) return false;
+
+    return calibrationItems.every((cItem) => {
+      const calibration = calibrations.data.find((c) => c.description?.id === cItem.id);
+      return calibration?.status === 'cert-complete';
+    });
+  }, [JSON.stringify(job), JSON.stringify(calibrations)]);
+
+  //* query job calibrations
   useEffect(() => {
     if (!jobId) return;
 
@@ -747,6 +830,63 @@ const JobCalibration = () => {
     return () => unsubscribe();
   }, [jobId]);
 
+  //* query job
+  useEffect(() => {
+    if (jobId) {
+      const jobHeaderRef = doc(db, 'jobHeaders', jobId);
+
+      getDoc(jobHeaderRef).then((jobDoc) => {
+        if (jobDoc.exists()) {
+          const jobData = { id: jobDoc.id, ...jobDoc.data() };
+
+          const jobDetailsPromise = getDoc(doc(db, 'jobDetails', jobData.id));
+          const jobRequestPromise = jobData?.jobRequestId
+            ? getDoc(doc(db, 'jobRequests', jobData.jobRequestId))
+            : Promise.resolve(null);
+
+          Promise.all([jobDetailsPromise, jobRequestPromise])
+            .then(([jobDetailsDoc, jobRequestDoc]) => {
+              if (jobDetailsDoc.exists()) {
+                setJob({
+                  data: { id: jobData.id, ...jobData, ...jobDetailsDoc.data() },
+                  isLoading: false,
+                  isError: false,
+                });
+
+                if (jobRequestDoc) {
+                  setJobRequest({
+                    data: { id: jobRequestDoc.id, ...jobRequestDoc.data() },
+                    isLoading: false,
+                    isError: false,
+                  });
+                }
+              } else {
+                setJob({
+                  data: null,
+                  isLoading: false,
+                  isError: false,
+                });
+
+                setJobRequest({
+                  data: null,
+                  isLoading: false,
+                  isError: false,
+                });
+              }
+            })
+            .catch((err) => {
+              console.error(err);
+              setJob({
+                data: null,
+                isLoading: false,
+                isError: false,
+              });
+            });
+        }
+      });
+    }
+  }, [jobId]);
+
   return (
     <>
       <GeeksSEO title={`Job #${jobId} Calibrations - VITAR Group | Portal`} />
@@ -775,10 +915,25 @@ const JobCalibration = () => {
           },
         ]}
         actionButtons={[
+          ...(isShowValidateJob && (auth.role === 'admin' || auth.role === 'supervisor')
+            ? [
+                {
+                  text: 'Validate Job',
+                  icon: <ShieldCheck size={20} />,
+                  variant: 'light',
+                  onClick: (args) =>
+                    handleUpdateToComplete(
+                      jobId,
+                      args.setIsLoading,
+                      jobRequest?.data?.createdBy?.uid
+                    ),
+                },
+              ]
+            : []),
           {
             text: `Add calibration for Job #${jobId}`,
             icon: <Plus size={20} />,
-            variant: 'light',
+            variant: isShowValidateJob ? 'outline-primary' : 'light',
             onClick: () => router.push(`/jobs/${jobId}/calibrations/create`),
           },
         ]}
