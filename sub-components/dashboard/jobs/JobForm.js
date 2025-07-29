@@ -6,6 +6,7 @@ import {
   calibrationChecklistSchema,
   cmrSchema,
   customerEquipmentSchema,
+  customerNotificationSchema,
   documentsSchema,
   jobSchema,
   onSiteCalibrationSurveyResponsesSchema,
@@ -49,6 +50,7 @@ import { getFileFromBlobUrl } from '@/utils/common';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import JobCalibrationChecklistForm from './tabs-form/JobCalibrationChecklistForm';
 import JobOnSiteCalibrationSurveyForm from './tabs-form/JobOnSiteCalibrationSurveyForm';
+import JobCustomerNotificationForm from './tabs-form/JobCustomerNotificationForm';
 
 const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const auth = useAuth();
@@ -112,8 +114,10 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
         if (parseData.success) {
           handleSubmit(parseData.data);
-        } else
+        } else {
+          console.log({ parseData });
           toast.error('Failed to parse data. Please try again later.', { position: 'top-right' });
+        }
       }
     }
   }, [activeKey, JSON.stringify(tabSchema)]);
@@ -195,8 +199,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
           checklistEquipments,
           surveyTo,
           surveyResponses,
-          surveyCustomerTimeInSignature,
-          surveyCustomerTimeOutSignature,
+          surveyCustomerSignature,
           ...jobHeaders
         } = formData;
 
@@ -407,8 +410,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
                 checklistEquipments,
                 ...(surveyTo ? { surveyTo } : { surveyTo: '' }), //prettier-ignore
                 ...(surveyResponses && surveyResponses.length > 0 && surveyResponses.filter(item => !_.isEmpty(item)).length > 0 ? { surveyResponses } : { surveyResponses: [] }), //prettier-ignore
-                ...(surveyCustomerTimeInSignature ? { surveyCustomerTimeInSignature } : { surveyCustomerTimeInSignature: '' }), //prettier-ignore
-                ...(surveyCustomerTimeOutSignature ? { surveyCustomerTimeOutSignature } : { surveyCustomerTimeOutSignature: '' }), //prettier-ignore
+                ...(surveyCustomerSignature ? { surveyCustomerSignature } : { surveyCustomerSignature: '' }), //prettier-ignore
                 ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
                 updatedAt: serverTimestamp(),
                 updatedBy: auth.currentUser,
@@ -542,7 +544,14 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
           //* if calibrationData is greater than 0 then show CMR tab
           if (calibrationData.length > 0) {
-            setTabsSchema((prev) => [...prev, cmrSchema, onSiteCalibrationSurveyResponsesSchema]);
+            setTabsSchema((prev) => [
+              ...prev,
+              cmrSchema,
+              onSiteCalibrationSurveyResponsesSchema,
+              // customerNotificationSchema,
+            ]);
+
+            // setFinalSchema(jobSchema.merge(cmrSchema).merge(onSiteCalibrationSurveyResponsesSchema, customerNotificationSchema)); //prettier-ignore
             setFinalSchema(jobSchema.merge(cmrSchema).merge(onSiteCalibrationSurveyResponsesSchema)); //prettier-ignore
           }
         } else {
@@ -569,6 +578,32 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
   return (
     <>
+      {/* <FormDebug
+        form={form}
+        keys={[
+          'cnTo',
+          'cnYourRef',
+          'cnAttention',
+          'cnFaxNo',
+          'cnIsBeforeCalibration',
+          'cnIsDuringCalibration',
+          'cnIsAfterCalibration',
+          'cnCalibrationItems',
+          'cnIsSendTheAccessories',
+          'cnIsArrangeForCollection',
+          'cnIsAcknowledgeConfirm',
+          'cnIsOthers',
+          'cnOthers',
+          'cnWorker',
+          'cnForVitarLabUseIsProceed',
+          'cnForVitarLabUseIsNoCalibrationRequired',
+          'cnForVitarLabUseOthers',
+          'cnForVitarLabUseAuthorizeBy',
+          'cnCustomerReplyRemarks',
+          'cnCustomerReplyAuthorizeSignature',
+        ]}
+      /> */}
+
       {/* <FormDebug form={form} /> */}
 
       <FormProvider {...form}>
@@ -666,10 +701,21 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
                   isLoading={isLoading}
                   handleNext={handleNext}
                   handlePrevious={handlePrevious}
-                  calibrations={calibrations}
                 />
               </Tab>
             )}
+
+            {/* {calibrations.data.length > 0 && (
+              <Tab eventKey='9' title='CN'>
+                <JobCustomerNotificationForm
+                  data={data}
+                  isLoading={isLoading}
+                  handleNext={handleNext}
+                  handlePrevious={handlePrevious}
+                  calibrations={calibrations}
+                />
+              </Tab>
+            )} */}
           </Tabs>
         </Form>
       </FormProvider>

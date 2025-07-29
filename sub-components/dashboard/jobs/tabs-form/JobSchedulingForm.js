@@ -530,7 +530,12 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
+                      <Form.Control
+                        {...field}
+                        type='date'
+                        min={format(new Date(), 'yyyy-MM-dd')}
+                        disabled={workerId}
+                      />
 
                       {formErrors && formErrors.startDate?.message && (
                         <Form.Text className='text-danger'>
@@ -550,7 +555,7 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='time' />
+                      <Form.Control {...field} type='time' disabled={workerId} />
 
                       {formErrors && formErrors.startTime?.message && (
                         <Form.Text className='text-danger'>
@@ -570,7 +575,12 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='date' min={format(new Date(), 'yyyy-MM-dd')} />
+                      <Form.Control
+                        {...field}
+                        type='date'
+                        min={format(new Date(), 'yyyy-MM-dd')}
+                        disabled={workerId}
+                      />
 
                       {formErrors && formErrors.endDate?.message && (
                         <Form.Text className='text-danger'>{formErrors.endDate?.message}</Form.Text>
@@ -588,7 +598,7 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='time' />
+                      <Form.Control {...field} type='time' disabled={workerId} />
 
                       {formErrors && formErrors.endTime?.message && (
                         <Form.Text className='text-danger'>{formErrors.endTime?.message}</Form.Text>

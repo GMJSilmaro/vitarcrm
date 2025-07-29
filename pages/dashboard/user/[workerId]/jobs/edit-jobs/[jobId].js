@@ -22,12 +22,11 @@ const EditJob = () => {
   const notifications = useNotifications();
 
   const [job, setJob] = useState();
+  const [jobRequest, setJobRequest] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [isStoppingJob, setIsStoppingJob] = useState(false);
-
-  const stopJob = async (id, setIsLoading) => {
+  const stopJob = async (id, setIsLoading, salesperson) => {
     if (!id) return;
 
     Swal.fire({
@@ -72,7 +71,7 @@ const EditJob = () => {
           //* create notification for admin and supervisor when updated a job status
           await notifications.create({
             module: 'job',
-            target: ['admin', 'supervisor'],
+            target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
             title: 'Job finished',
             message: `Job (#${id}) has been finished by ${auth.currentUser.displayName}.`,
             data: {
@@ -99,26 +98,38 @@ const EditJob = () => {
   useEffect(() => {
     if (jobId) {
       const jobHeaderRef = doc(db, 'jobHeaders', jobId);
-      const jobDetailsRef = doc(db, 'jobDetails', jobId);
 
-      Promise.all([getDoc(jobHeaderRef), getDoc(jobDetailsRef)])
-        .then(([jobHeader, jobDetails]) => {
-          if (jobHeader.exists() && jobDetails.exists()) {
-            setJob({
-              id: jobHeader.id,
-              ...jobHeader.data(),
-              ...jobDetails.data(),
+      getDoc(jobHeaderRef).then((jobDoc) => {
+        if (jobDoc.exists()) {
+          const jobData = { id: jobDoc.id, ...jobDoc.data() };
+
+          const jobDetailsPromise = getDoc(doc(db, 'jobDetails', jobData.id));
+          const jobRequestPromise = jobData?.jobRequestId
+            ? getDoc(doc(db, 'jobRequests', jobData.jobRequestId))
+            : Promise.resolve(null);
+
+          Promise.all([jobDetailsPromise, jobRequestPromise])
+            .then(([jobDetailsDoc, jobRequestDoc]) => {
+              if (jobDetailsDoc.exists()) {
+                setJob({
+                  id: jobData.id,
+                  ...jobData,
+                  ...jobDetailsDoc.data(),
+                });
+
+                if (jobRequestDoc) setJobRequest({ id: jobRequestDoc.id, ...jobRequestDoc.data() });
+                setIsLoading(false);
+              } else {
+                setError('Job not found');
+                setIsLoading(false);
+              }
+            })
+            .catch((err) => {
+              setError(err.message || 'Error fetching job');
+              setIsLoading(false);
             });
-            setIsLoading(false);
-          } else {
-            setError('Job not found');
-            setIsLoading(false);
-          }
-        })
-        .catch((err) => {
-          setError(err.message || 'Error fetching job');
-          setIsLoading(false);
-        });
+        }
+      });
     }
   }, [jobId]);
 
@@ -177,6 +188,10 @@ const EditJob = () => {
               label: _.startCase(job?.status),
               color: STATUS_COLOR[job?.status] || 'secondary',
             },
+            {
+              label: job?.isReturnedEquipment ? 'Returned' : 'Unreturned',
+              color: job?.isReturnedEquipment ? 'success' : 'danger',
+            },
           ]}
           actionButtons={[
             {
@@ -197,7 +212,8 @@ const EditJob = () => {
                   {
                     label: 'Close Job',
                     icon: Stop,
-                    onClick: (args) => stopJob(jobId, args.setIsLoading),
+                    onClick: (args) =>
+                      stopJob(jobId, args.setIsLoading, jobRequest?.createdBy?.uid),
                   },
                 ]
               : []),

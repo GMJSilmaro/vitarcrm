@@ -96,7 +96,7 @@ function JobOnSiteCalibrationSurveyForm({ data, isLoading, handleNext, handlePre
     }
   }, [data]);
 
-  //* surveyTo default to pic, only set if surveyTo is empty
+  //* surveyTo default to pic,
   useEffect(() => {
     if (data) {
       if (form.getValues('pic')) form.setValue('surveyTo', form.getValues('pic'));
@@ -178,35 +178,17 @@ function JobOnSiteCalibrationSurveyForm({ data, isLoading, handleNext, handlePre
           <Form.Group
             className='d-flex flex-column justify-content-center align-items-center'
             as={Col}
-            lg={6}
           >
             <Controller
-              name='surveyCustomerTimeInSignature'
+              name='surveyCustomerSignature'
               control={form.control}
               render={({ field }) => (
                 <div className='d-flex justify-content-center flex-column align-items-center text-center'>
-                  <div className='d-flex gap-2 mb-2'>
+                  <div className='d-flex gap-2'>
                     <span className='fw-bold'>Time In:</span>
                     <span>{startByAt}</span>
                   </div>
 
-                  <SignatureField onChange={field.onChange} value={field.value} />
-                  <div className='text-muted'>{form.watch('customer.name')}</div>
-                </div>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group
-            className='d-flex flex-column justify-content-center align-items-center'
-            as={Col}
-            lg={6}
-          >
-            <Controller
-              name='surveyCustomerTimeOutSignature'
-              control={form.control}
-              render={({ field }) => (
-                <div className='d-flex justify-content-center flex-column align-items-center text-center'>
                   <div className='d-flex gap-2 mb-2'>
                     <span className='fw-bold'>Time Out:</span>
                     <span>{endByAt}</span>

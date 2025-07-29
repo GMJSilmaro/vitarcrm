@@ -50,7 +50,7 @@ const TechnicianSchedule = () => {
   };
 
   const handleEditJob = (id) => {
-    router.push(`/user/${workerId}/jobs/${id}`);
+    router.push(`/user/${workerId}/jobs/edit-jobs/${id}`);
   };
 
   const handleDeleteJob = (id) => {
