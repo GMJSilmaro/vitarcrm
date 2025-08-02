@@ -8,6 +8,7 @@ import CalibrationChecklist from '@/sub-components/dashboard/jobs/view/Calibrati
 import CalibrationTab from '@/sub-components/dashboard/jobs/view/CalibrationsTab';
 import Cmr from '@/sub-components/dashboard/jobs/view/Cmr';
 import CustomerEquipment from '@/sub-components/dashboard/jobs/view/CustomerEquipment';
+import CustomerNotification from '@/sub-components/dashboard/jobs/view/CustomerNotification';
 import Documents from '@/sub-components/dashboard/jobs/view/Documents';
 import OnSiteCalibrationSurvey from '@/sub-components/dashboard/jobs/view/OnSiteCalibrationSurvey';
 import ReferenceEquipment from '@/sub-components/dashboard/jobs/view/ReferenceEquipment';
@@ -20,6 +21,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
   orderBy,
   query,
   runTransaction,
@@ -34,8 +36,10 @@ import {
   ArrowLeftShort,
   BriefcaseFill,
   CheckCircle,
+  ExclamationTriangleFill,
   PencilSquare,
   Play,
+  PlusSquare,
   Stop,
 } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
@@ -66,6 +70,8 @@ const JobDetails = () => {
 
   const [isStartingJob, setIsStartingJob] = useState(false);
   const [isStoppingJob, setIsStoppingJob] = useState(false);
+
+  const [jobCn, setJobCn] = useState({ data: null, isLoading: true, isError: false });
 
   const stopJob = async (id, setIsLoading, salesperson) => {
     if (!id) return;
@@ -385,7 +391,7 @@ const JobDetails = () => {
       });
   }, [job]);
 
-  //* query customer equipments
+  //* query customer equipments (job calibration items)
   useEffect(() => {
     if (job?.customerEquipments?.length < 1 || !job?.customer?.id) {
       setCustomerEquipments({ data: [], isLoading: false, isError: false });
@@ -522,6 +528,40 @@ const JobDetails = () => {
       });
   }, [job]);
 
+  //* query job cn
+  useEffect(() => {
+    if (job) {
+      const q = query(
+        collection(db, 'jobCustomerNotifications'),
+        where('jobId', '==', job.id),
+        limit(1)
+      );
+
+      getDocs(q)
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            const jobCnDoc = snapshot?.docs?.[0];
+
+            if (jobCnDoc.exists()) {
+              setJobCn({
+                data: { id: jobCnDoc.id, ...jobCnDoc.data() },
+                isLoading: false,
+                isError: false,
+              });
+              return;
+            }
+
+            setJobCn({ data: null, isLoading: false, isError: false });
+            return;
+          }
+        })
+        .catch((err) => {
+          console.error(err.message);
+          setJobCn({ data: null, isLoading: false, isError: true });
+        });
+    }
+  }, [job]);
+
   if (isLoading) {
     return (
       <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
@@ -583,6 +623,9 @@ const JobDetails = () => {
               label: job?.isReturnedEquipment ? 'Returned' : 'Unreturned',
               color: job?.isReturnedEquipment ? 'success' : 'danger',
             },
+            ...(jobCn.data
+              ? [{ icon: ExclamationTriangleFill, label: 'Faulty', color: 'danger' }]
+              : []),
           ]}
           actionButtons={[
             {
@@ -620,6 +663,20 @@ const JobDetails = () => {
                     onClick: (args) =>
                       stopJob(jobId, args.setIsLoading, jobRequest.data?.createdBy?.uid),
                   },
+                ]
+              : []),
+
+            // prettier-ignore
+            ...(job && ['job-in-progress', 'job-validation', 'job-complete'].includes(job?.status)
+              ? [
+                  ...(jobCn.data ? 
+                      [
+                        { label: 'Edit Job CN', icon: PencilSquare, onClick: () => router.push(`/user/${workerId}/job-cns/edit-job-cns/${jobCn.data.id}`) }
+                      ] 
+                      : 
+                      [
+                        { label: 'Create Job CN', icon: PlusSquare, onClick: () => router.push(`/user/${workerId}/job-cns/create?jobId=${job.id}`) }
+                      ]),
                 ]
               : []),
           ]}
@@ -685,6 +742,16 @@ const JobDetails = () => {
                     job={job}
                     customer={customer}
                     surveyQuestions={surveyQuestions}
+                  />
+                </Tab>
+              )}
+
+              {jobCn?.data && (
+                <Tab eventKey='10' title='CN'>
+                  <CustomerNotification
+                    jobCn={jobCn?.data}
+                    job={{ data: job, isLoading, isError: error }}
+                    customer={customer}
                   />
                 </Tab>
               )}

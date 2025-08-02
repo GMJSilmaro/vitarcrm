@@ -6,25 +6,26 @@ import ContentHeader from 'components/dashboard/ContentHeader';
 import { useRouter } from 'next/router';
 import {
   ArrowLeftShort,
+  ChatLeftTextFill,
   EnvelopePaperFill,
   HouseDoorFill,
   PlusCircleFill,
 } from 'react-bootstrap-icons';
-import JobRequestForm from '@/sub-components/dashboard/job-requests/JobRequestForm';
+import JobCnForm from '@/sub-components/dashboard/job-cns/JobCnForm';
 
-const CreateJobRequest = () => {
+const CreateJobCn = () => {
   const router = useRouter();
 
   return (
     <>
-      <GeeksSEO title='Create Job Request - VITAR Group | Portal' />
+      <GeeksSEO title='Create Job Customer Notification - VITAR Group | Portal' />
 
       <ContentHeader
-        title='Create New Job Request'
-        description='Create a new job request for a job assignment'
-        infoText='Complete all the required fields to create a job request'
-        badgeText='Job Request Management'
-        badgeText2='New Job Request'
+        title='Create New Job CN'
+        description='Create a new job customer notification based on specific job'
+        infoText='Complete all the required fields to create a job customer notification'
+        badgeText='Job Customer Notification Management'
+        badgeText2='New Job Customer Notification'
         breadcrumbItems={[
           {
             text: 'Dashboard',
@@ -32,12 +33,12 @@ const CreateJobRequest = () => {
             icon: <HouseDoorFill className='me-2' size={14} />,
           },
           {
-            text: 'Jobs Requests',
-            link: '/job-requests',
-            icon: <EnvelopePaperFill className='me-2' size={14} />,
+            text: 'Jobs CN',
+            link: '/job-cns',
+            icon: <ChatLeftTextFill className='me-2' size={14} />,
           },
           {
-            text: 'Create Job Request',
+            text: 'Create Job Customer Notification',
             icon: <PlusCircleFill className='me-2' size={14} />,
           },
         ]}
@@ -46,18 +47,18 @@ const CreateJobRequest = () => {
             text: 'Back',
             icon: <ArrowLeftShort size={20} />,
             variant: 'outline-primary',
-            onClick: () => router.push(`/job-requests`),
+            onClick: () => router.push(`/job-cns`),
           },
         ]}
       />
 
       <Card className='shadow-sm'>
         <Card.Body>
-          <JobRequestForm />
+          <JobCnForm />
         </Card.Body>
       </Card>
     </>
   );
 };
 
-export default CreateJobRequest;
+export default CreateJobCn;

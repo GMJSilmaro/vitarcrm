@@ -420,6 +420,7 @@ const JobCalibration = () => {
                       await Promise.all([
                         updateDoc(calibrationRef, {
                           status,
+                          printStatus: null,
                           reasonMessage: value,
                           updatedAt: serverTimestamp(),
                           updatedBy: auth.currentUser,
@@ -475,6 +476,7 @@ const JobCalibration = () => {
                   await Promise.all([
                     updateDoc(jobCalibrationRef, {
                       status,
+                      printStatus: null,
                       reasonMessage: null,
                       updatedAt: serverTimestamp(),
                       updatedBy: auth.currentUser,
@@ -600,18 +602,20 @@ const JobCalibration = () => {
                     </Dropdown.Item>
                   </OverlayTrigger>
 
-                  <DropdownItemPrintCoc
-                    handlePrint={() => handlePrintCertificate(id, printStatus)}
-                    printStatus={printStatus}
-                    trigger={trigger}
-                    setTrigger={setTrigger}
-                    isLoading={isLoadingCertData}
-                    calibration={calibration}
-                    instruments={instruments}
-                    calibratedBy={calibratedByData}
-                    approvedSignatory={approvedSignatory}
-                    error={error}
-                  />
+                  {status === 'cert-complete' && (
+                    <DropdownItemPrintCoc
+                      handlePrint={() => handlePrintCertificate(id, printStatus)}
+                      printStatus={printStatus}
+                      trigger={trigger}
+                      setTrigger={setTrigger}
+                      isLoading={isLoadingCertData}
+                      calibration={calibration}
+                      instruments={instruments}
+                      calibratedBy={calibratedByData}
+                      approvedSignatory={approvedSignatory}
+                      error={error}
+                    />
+                  )}
                 </Dropdown.Menu>
               }
             >

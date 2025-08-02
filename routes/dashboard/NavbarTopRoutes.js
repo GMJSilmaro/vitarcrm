@@ -101,6 +101,12 @@ export const getNavbarItems = (role) => {
           },
           {
             id: uuid(),
+            menuitem: 'Job CN',
+            link: '/job-cns',
+            icon: 'ChatDotsFill',
+          },
+          {
+            id: uuid(),
             menuitem: 'Reference Equipment',
             icon: 'Tools',
             hasSubmenu: true,
@@ -279,6 +285,12 @@ export const getNavbarItems = (role) => {
             menuitem: 'Jobs',
             link: '/jobs',
             icon: 'BriefcaseFill',
+          },
+          {
+            id: uuid(),
+            menuitem: 'Job CN',
+            link: '/jobs-cns',
+            icon: 'ChatDotsFill',
           },
           {
             id: uuid(),

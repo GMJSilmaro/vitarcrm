@@ -32,10 +32,17 @@ import Select from '@/components/Form/Select';
 import { useRouter } from 'next/router';
 import { ExclamationCircle, Lightbulb } from 'react-bootstrap-icons';
 import { format, formatDistanceStrict } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const router = useRouter();
-  const { jobRequestId, workerId } = router.query;
+  const { jobRequestId } = router.query;
+  const auth = useAuth();
+
+  const isTechnician = useMemo(
+    () => !auth.role || auth.role === 'technician',
+    [JSON.stringify(auth)]
+  );
 
   const form = useFormContext();
 
@@ -611,7 +618,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
                           ? 'Loading job requests...'
                           : "Search by job request's ID & supervisor's name"
                       }
-                      isDisabled={jobs.isLoading || jobRequestOptions.isLoading || workerId}
+                      isDisabled={jobs.isLoading || jobRequestOptions.isLoading || isTechnician}
                       noOptionsMessage={() =>
                         jobRequestOptions.isLoading ? 'Loading...' : 'No job request found'
                       }

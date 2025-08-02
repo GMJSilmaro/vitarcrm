@@ -5,13 +5,31 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { STATUS_COLOR } from '@/schema/job';
 import JobForm from '@/sub-components/dashboard/jobs/JobForm';
 import { GeeksSEO } from '@/widgets';
-import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  runTransaction,
+  serverTimestamp,
+  where,
+} from 'firebase/firestore';
 import _ from 'lodash';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Spinner } from 'react-bootstrap';
-import { ArrowLeftShort, CheckCircle, Eye, Stop } from 'react-bootstrap-icons';
+import {
+  ArrowLeftShort,
+  CheckCircle,
+  ExclamationTriangleFill,
+  Eye,
+  PencilSquare,
+  PlusSquare,
+  Stop,
+} from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
@@ -25,6 +43,8 @@ const EditJob = () => {
   const [jobRequest, setJobRequest] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [jobCn, setJobCn] = useState({ data: null, isLoading: true, isError: false });
 
   const stopJob = async (id, setIsLoading, salesperson) => {
     if (!id) return;
@@ -95,6 +115,7 @@ const EditJob = () => {
     });
   };
 
+  //* query job, job headers & details and job request
   useEffect(() => {
     if (jobId) {
       const jobHeaderRef = doc(db, 'jobHeaders', jobId);
@@ -132,6 +153,40 @@ const EditJob = () => {
       });
     }
   }, [jobId]);
+
+  //* query job cn
+  useEffect(() => {
+    if (job) {
+      const q = query(
+        collection(db, 'jobCustomerNotifications'),
+        where('jobId', '==', job.id),
+        limit(1)
+      );
+
+      getDocs(q)
+        .then((snapshot) => {
+          if (!snapshot.empty) {
+            const jobCnDoc = snapshot?.docs?.[0];
+
+            if (jobCnDoc.exists()) {
+              setJobCn({
+                data: { id: jobCnDoc.id, ...jobCnDoc.data() },
+                isLoading: false,
+                isError: false,
+              });
+              return;
+            }
+
+            setJobCn({ data: null, isLoading: false, isError: false });
+            return;
+          }
+        })
+        .catch((err) => {
+          console.error(err.message);
+          setJobCn({ data: null, isLoading: false, isError: true });
+        });
+    }
+  }, [job]);
 
   if (isLoading) {
     return (
@@ -192,6 +247,9 @@ const EditJob = () => {
               label: job?.isReturnedEquipment ? 'Returned' : 'Unreturned',
               color: job?.isReturnedEquipment ? 'success' : 'danger',
             },
+            ...(jobCn.data
+              ? [{ icon: ExclamationTriangleFill, label: 'Faulty', color: 'danger' }]
+              : []),
           ]}
           actionButtons={[
             {
@@ -217,6 +275,21 @@ const EditJob = () => {
                   },
                 ]
               : []),
+
+            // prettier-ignore
+            ...(job && ['job-in-progress', 'job-validation', 'job-complete'].includes(job?.status)
+          ? [
+              ...(jobCn.data ? 
+                  [
+                    { label: 'View Job CN', icon: Eye, onClick: () => router.push(`/user/${workerId}/job-cns/view/${jobCn.data.id}`) },
+                    { label: 'Edit Job CN', icon: PencilSquare, onClick: () => router.push(`/user/${workerId}/job-cns/edit-job-cns/${jobCn.data.id}`) }
+                  ] 
+                  : 
+                  [
+                    { label: 'Create Job CN', icon: PlusSquare, onClick: () => router.push(`/user/${workerId}/job-cns/create?jobId=${job.id}`) }
+                  ]),
+            ]
+          : []),
           ]}
         />
 

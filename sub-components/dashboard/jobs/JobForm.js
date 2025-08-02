@@ -50,7 +50,6 @@ import { getFileFromBlobUrl } from '@/utils/common';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import JobCalibrationChecklistForm from './tabs-form/JobCalibrationChecklistForm';
 import JobOnSiteCalibrationSurveyForm from './tabs-form/JobOnSiteCalibrationSurveyForm';
-import JobCustomerNotificationForm from './tabs-form/JobCustomerNotificationForm';
 
 const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
   const auth = useAuth();
@@ -548,10 +547,9 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
               ...prev,
               cmrSchema,
               onSiteCalibrationSurveyResponsesSchema,
-              // customerNotificationSchema,
+              customerNotificationSchema,
             ]);
 
-            // setFinalSchema(jobSchema.merge(cmrSchema).merge(onSiteCalibrationSurveyResponsesSchema, customerNotificationSchema)); //prettier-ignore
             setFinalSchema(jobSchema.merge(cmrSchema).merge(onSiteCalibrationSurveyResponsesSchema)); //prettier-ignore
           }
         } else {
@@ -578,37 +576,12 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
   return (
     <>
-      {/* <FormDebug
-        form={form}
-        keys={[
-          'cnTo',
-          'cnYourRef',
-          'cnAttention',
-          'cnFaxNo',
-          'cnIsBeforeCalibration',
-          'cnIsDuringCalibration',
-          'cnIsAfterCalibration',
-          'cnCalibrationItems',
-          'cnIsSendTheAccessories',
-          'cnIsArrangeForCollection',
-          'cnIsAcknowledgeConfirm',
-          'cnIsOthers',
-          'cnOthers',
-          'cnWorker',
-          'cnForVitarLabUseIsProceed',
-          'cnForVitarLabUseIsNoCalibrationRequired',
-          'cnForVitarLabUseOthers',
-          'cnForVitarLabUseAuthorizeBy',
-          'cnCustomerReplyRemarks',
-          'cnCustomerReplyAuthorizeSignature',
-        ]}
-      /> */}
-
       {/* <FormDebug form={form} /> */}
 
       <FormProvider {...form}>
         <Form>
           <Tabs
+            className='row-gap-2'
             id='job-tab'
             activeKey={activeKey > tabsLength ? tabsLength : activeKey}
             onSelect={handleOnSelect}
@@ -704,18 +677,6 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
                 />
               </Tab>
             )}
-
-            {/* {calibrations.data.length > 0 && (
-              <Tab eventKey='9' title='CN'>
-                <JobCustomerNotificationForm
-                  data={data}
-                  isLoading={isLoading}
-                  handleNext={handleNext}
-                  handlePrevious={handlePrevious}
-                  calibrations={calibrations}
-                />
-              </Tab>
-            )} */}
           </Tabs>
         </Form>
       </FormProvider>

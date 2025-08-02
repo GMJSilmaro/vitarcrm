@@ -2,13 +2,14 @@ import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
 import { isProd } from '@/constants/environment';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { PRIORITY_LEVELS, SCOPE_TYPE, STATUS } from '@/schema/job';
 import { format, formatDistanceStrict } from 'date-fns';
 import { collection, limit, onSnapshot, query, where } from 'firebase/firestore';
 import _ from 'lodash';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Button,
@@ -39,6 +40,12 @@ const JobSchedulingForm = ({
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
+  const auth = useAuth();
+
+  const isTechnician = useMemo(
+    () => !auth.role || auth.role === 'technician',
+    [JSON.stringify(auth)]
+  );
 
   const [workersOptions, setWorkersOptions] = useState({ data: [], isLoading: true, isError: false }); //prettier-ignore
   const [prioritiesOptions] = useState(PRIORITY_LEVELS.map((prority) => ({ value: prority, label: _.capitalize(prority) }))); //prettier-ignore
@@ -534,7 +541,7 @@ const JobSchedulingForm = ({
                         {...field}
                         type='date'
                         min={format(new Date(), 'yyyy-MM-dd')}
-                        disabled={workerId}
+                        disabled={isTechnician}
                       />
 
                       {formErrors && formErrors.startDate?.message && (
@@ -555,7 +562,7 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='time' disabled={workerId} />
+                      <Form.Control {...field} type='time' disabled={isTechnician} />
 
                       {formErrors && formErrors.startTime?.message && (
                         <Form.Text className='text-danger'>
@@ -579,7 +586,7 @@ const JobSchedulingForm = ({
                         {...field}
                         type='date'
                         min={format(new Date(), 'yyyy-MM-dd')}
-                        disabled={workerId}
+                        disabled={isTechnician}
                       />
 
                       {formErrors && formErrors.endDate?.message && (
@@ -598,7 +605,7 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='time' disabled={workerId} />
+                      <Form.Control {...field} type='time' disabled={isTechnician} />
 
                       {formErrors && formErrors.endTime?.message && (
                         <Form.Text className='text-danger'>{formErrors.endTime?.message}</Form.Text>
