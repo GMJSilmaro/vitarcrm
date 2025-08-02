@@ -104,9 +104,13 @@ const ContentHeader = ({
               </span>
 
               {customBadges &&
-                customBadges.map((badge) => (
-                  <Badge bg={badge.color} style={{ fontSize: '14px' }}>
-                    {badge.label}
+                customBadges.map(({ icon: Icon, color, label }) => (
+                  <Badge
+                    className='d-flex align-items-center'
+                    bg={color}
+                    style={{ fontSize: '14px' }}
+                  >
+                    {Icon && <Icon className='me-2' size={12} />} {label}
                   </Badge>
                 ))}
             </div>

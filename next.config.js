@@ -193,6 +193,23 @@ const nextConfig = {
         source: '/jobs/duplicate/:jobId',
         destination: '/dashboard/jobs/duplicate/:jobId',
       },
+      //* job customer notification
+      {
+        source: '/job-cns',
+        destination: '/dashboard/job-cns/list',
+      },
+      {
+        source: '/job-cns/view/:jobCnId',
+        destination: '/dashboard/job-cns/view/:jobCnId',
+      },
+      {
+        source: '/job-cns/create',
+        destination: '/dashboard/job-cns/create',
+      },
+      {
+        source: '/job-cns/edit-job-cns/:jobCnId',
+        destination: '/dashboard/job-cns/edit-job-cns/:jobCnId',
+      },
 
       //* Calibration
       {
@@ -334,6 +351,18 @@ const nextConfig = {
       {
         source: '/user/:workerId/notifications',
         destination: '/dashboard/user/:workerId/notifications',
+      },
+      {
+        source: '/user/:workerId/job-cns/create',
+        destination: '/dashboard/user/:workerId/job-cns/create',
+      },
+      {
+        source: '/user/:workerId/job-cns/edit-job-cns/:jobCnId',
+        destination: '/dashboard/user/:workerId/job-cns/edit-job-cns/:jobCnId',
+      },
+      {
+        source: '/user/:workerId/job-cns/view/:jobCnId',
+        destination: '/dashboard/user/:workerId/job-cns/view/:jobCnId',
       },
     ];
   },

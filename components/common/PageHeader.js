@@ -29,9 +29,13 @@ const PageHeader = ({
 
           <div className='d-flex align-items-center gap-2 mb-3 flex-wrap'>
             {customBadges &&
-              customBadges.map((badge) => (
-                <Badge bg={badge.color} style={{ fontSize: '14px' }}>
-                  {badge.label}
+              customBadges.map(({ icon: Icon, color, label }) => (
+                <Badge
+                  className='d-flex align-items-center'
+                  bg={color}
+                  style={{ fontSize: '14px' }}
+                >
+                  {Icon && <Icon className='me-2' size={12} />} {label}
                 </Badge>
               ))}
           </div>

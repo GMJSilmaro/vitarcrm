@@ -35,8 +35,10 @@ import {
   Clock,
   Copy,
   ExclamationCircle,
+  ExclamationTriangleFill,
   Eye,
   Flag,
+  Gear,
   HandThumbsDown,
   Hourglass,
   HouseDoorFill,
@@ -61,6 +63,7 @@ import {
   getDoc,
   getDocs,
   increment,
+  limit,
   onSnapshot,
   query,
   runTransaction,
@@ -93,7 +96,11 @@ const JobList = () => {
   const auth = useAuth();
   const notifications = useNotifications();
 
-  const [jobs, setJobs] = useState({ data: [], isLoading: true, isError: false });
+  const [jobs, setJobs] = useState({
+    data: [],
+    isLoading: true,
+    isError: false,
+  });
 
   const [year, setYear] = useState({
     value: new Date().getFullYear(),
@@ -341,7 +348,8 @@ const JobList = () => {
         header: ({ column }) => <DataTableColumnHeader column={column} title='ID' />,
         size: 100,
         cell: ({ row }) => {
-          const { id, jobRequestId } = row.original;
+          const { id, jobRequestId, jobCn } = row.original;
+
           return (
             <div className='d-flex flex-column gap-2 justify-content-center'>
               <div className='d-flex flex-column justify-content-center'>
@@ -352,6 +360,12 @@ const JobList = () => {
                 <div className='d-flex flex-column justify-content-center'>
                   <div className='fw-bold'>Request ID:</div> <div>{jobRequestId}</div>
                 </div>
+              )}
+
+              {jobCn && (
+                <Badge className='d-flex align-items-center' bg='danger'>
+                  <ExclamationTriangleFill className='me-2' size={12} /> Faulty
+                </Badge>
               )}
             </div>
           );
@@ -625,6 +639,9 @@ const JobList = () => {
           return isBefore(end, filterValue) && pending;
         },
       }),
+      columnHelper.accessor((row) => (row?.jobCn ? 'true' : 'false'), {
+        id: 'isFaulty',
+      }),
       columnHelper.accessor('actions', {
         id: 'actions',
         size: 50,
@@ -633,7 +650,7 @@ const JobList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id, details, status, workers, jobRequest } = row.original;
+          const { id, details, status, workers, jobRequest, jobCn } = row.original;
 
           const salesperson = jobRequest?.createdBy?.uid;
 
@@ -647,6 +664,15 @@ const JobList = () => {
 
           const handleDuplicateJob = (id) => {
             router.push(`/jobs/duplicate/${id}`);
+          };
+
+          const handlejobCn = (cnId, jobId) => {
+            if (!cnId) router.push(`/job-cns/create?jobId=${jobId}`);
+            else router.push(`/job-cns/edit-job-cns/${cnId}`);
+          };
+
+          const handleViewJobCn = (id) => {
+            router.push(`/job-cns/view/${id}`);
           };
 
           const handleRescheduleJob = async (id, status, workers, salesperson) => {
@@ -704,7 +730,9 @@ const JobList = () => {
                   }
 
                   setIsLoading(false);
-                  toast.success('Job rescheduled successfully', { position: 'top-right' });
+                  toast.success('Job rescheduled successfully', {
+                    position: 'top-right',
+                  });
 
                   setTimeout(() => {
                     router.push(`/jobs/edit-jobs/${id}?tab=4`);
@@ -792,11 +820,15 @@ const JobList = () => {
                     updateEquipmentQty(details),
                   ]);
 
-                  toast.success('Job removed successfully', { position: 'top-right' });
+                  toast.success('Job removed successfully', {
+                    position: 'top-right',
+                  });
                   setIsLoading(false);
                 } catch (error) {
                   console.error('Error removing job:', error);
-                  toast.error('Error removing job: ' + error.message, { position: 'top-right' });
+                  toast.error('Error removing job: ' + error.message, {
+                    position: 'top-right',
+                  });
                   setIsLoading(false);
                 }
               }
@@ -865,7 +897,9 @@ const JobList = () => {
                         }),
                       ]);
 
-                      toast.success('Job status updated successfully', { position: 'top-right' });
+                      toast.success('Job status updated successfully', {
+                        position: 'top-right',
+                      });
                       setIsLoading(false);
                     } catch (error) {
                       console.error('Error updating job status:', error);
@@ -914,7 +948,9 @@ const JobList = () => {
                     }),
                   ]);
 
-                  toast.success('Job status updated successfully', { position: 'top-right' });
+                  toast.success('Job status updated successfully', {
+                    position: 'top-right',
+                  });
                   setIsLoading(false);
                 } catch (error) {
                   console.error('Error updating job status:', error);
@@ -949,7 +985,9 @@ const JobList = () => {
                     try {
                       //* update equipment qty
                       details.equipments.map((eq) => {
-                        transaction.update(doc(db, 'equipments', eq.id), { qty: increment(1) });
+                        transaction.update(doc(db, 'equipments', eq.id), {
+                          qty: increment(1),
+                        });
                       });
 
                       //* update job header
@@ -982,7 +1020,9 @@ const JobList = () => {
                     },
                   });
 
-                  toast.success('Equipment returned successfully', { position: 'top-right' });
+                  toast.success('Equipment returned successfully', {
+                    position: 'top-right',
+                  });
                   setIsLoading(false);
                 } catch (error) {
                   console.error('Error returning equipment:', error);
@@ -1040,6 +1080,41 @@ const JobList = () => {
                           Return Equipment
                         </Dropdown.Item>
                       )}
+
+                      {['job-in-progress', 'job-validation', 'job-complete'].includes(status) &&
+                        jobCn?.cnId && (
+                          <OverlayTrigger
+                            rootClose
+                            trigger='click'
+                            placement='left'
+                            overlay={
+                              <Dropdown.Menu show style={{ zIndex: 999 }}>
+                                <Dropdown.Item onClick={() => handleViewJobCn(jobCn.cnId)}>
+                                  <Eye className='me-2' size={16} />
+                                  View Job Cn
+                                </Dropdown.Item>
+
+                                <Dropdown.Item onClick={() => handlejobCn(jobCn.cnId, id)}>
+                                  <PencilSquare className='me-2' size={16} />
+                                  Edit Job CN
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            }
+                          >
+                            <Dropdown.Item>
+                              <Gear className='me-2' size={16} />
+                              Manage Job CN
+                            </Dropdown.Item>
+                          </OverlayTrigger>
+                        )}
+
+                      {['job-in-progress', 'job-validation', 'job-complete'].includes(status) &&
+                        !jobCn?.cnId && (
+                          <Dropdown.Item onClick={() => handlejobCn(jobCn?.cnId, id)}>
+                            <PlusSquare className='me-2' size={16} />
+                            Create Job CN
+                          </Dropdown.Item>
+                        )}
 
                       <OverlayTrigger
                         rootClose
@@ -1143,6 +1218,16 @@ const JobList = () => {
         columnId: 'date',
         type: 'date',
       },
+      {
+        label: 'Faulty',
+        columnId: 'isFaulty',
+        type: 'select',
+        options: [
+          { label: 'N/A', value: '' },
+          { label: 'Yes', value: 'true' },
+          { label: 'No', value: 'false' },
+        ],
+      },
     ];
   }, []);
 
@@ -1154,7 +1239,7 @@ const JobList = () => {
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
-      columnVisibility: { date: false, startDate: false, endDate: false },
+      columnVisibility: { date: false, startDate: false, endDate: false, isFaulty: false },
       columnPinning: { right: ['actions'] },
       sorting: [{ id: 'date', desc: true }],
     },
@@ -1229,7 +1314,10 @@ const JobList = () => {
                 inputId='year-select'
                 instanceId='year-select'
                 onChange={(option) => setYear(option)}
-                options={getYears(2020).map((year) => ({ label: year, value: year }))}
+                options={getYears(2020).map((year) => ({
+                  label: year,
+                  value: year,
+                }))}
                 placeholder='Select year'
                 noOptionsMessage={() => 'No options found'}
               />
@@ -1294,19 +1382,30 @@ const JobList = () => {
         const promises = jobDocs.map(async (job) => {
           try {
             const jobDetailsPromise = getDoc(doc(db, 'jobDetails', job.id));
+
             const jobRequestPromise = job?.jobRequestId
               ? getDoc(doc(db, 'jobRequests', job.jobRequestId))
               : Promise.resolve(null);
 
-            const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
+            const jobCnPromise = getDocs(
+              query(
+                collection(db, 'jobCustomerNotifications'),
+                where('jobId', '==', job.id),
+                limit(1)
+              )
+            );
+
+            const [jobDetailsDoc, jobRequestDoc, jobCNDocs] = await Promise.all([
               jobDetailsPromise,
               jobRequestPromise,
+              jobCnPromise,
             ]);
 
             return {
               ...job,
               details: jobDetailsDoc.exists() ? jobDetailsDoc.data() : null,
               jobRequest: jobRequestDoc?.exists() ? jobRequestDoc.data() : null,
+              jobCn: jobCNDocs.empty ? null : jobCNDocs?.docs?.[0]?.data() || null,
             };
           } catch (err) {
             console.warn(`Failed to fetch details for job ${job.id}:`, err);
@@ -1336,7 +1435,7 @@ const JobList = () => {
 
   return (
     <>
-      <GeeksSEO title='Jobs- VITAR Group | Portal' />
+      <GeeksSEO title='Jobs - VITAR Group | Portal' />
 
       <ContentHeader
         title='Job List'
