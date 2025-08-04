@@ -6,7 +6,6 @@ import {
   calibrationChecklistSchema,
   cmrSchema,
   customerEquipmentSchema,
-  customerNotificationSchema,
   documentsSchema,
   jobSchema,
   onSiteCalibrationSurveyResponsesSchema,
@@ -543,13 +542,7 @@ const JobForm = ({ data, isAdmin = true, toDuplicateJob }) => {
 
           //* if calibrationData is greater than 0 then show CMR tab
           if (calibrationData.length > 0) {
-            setTabsSchema((prev) => [
-              ...prev,
-              cmrSchema,
-              onSiteCalibrationSurveyResponsesSchema,
-              customerNotificationSchema,
-            ]);
-
+            setTabsSchema((prev) => [...prev, cmrSchema, onSiteCalibrationSurveyResponsesSchema]);
             setFinalSchema(jobSchema.merge(cmrSchema).merge(onSiteCalibrationSurveyResponsesSchema)); //prettier-ignore
           }
         } else {
