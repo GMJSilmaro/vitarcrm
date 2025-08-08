@@ -42,7 +42,7 @@ const JobSchedulingForm = ({
   const formErrors = form.formState.errors;
   const auth = useAuth();
 
-  const isTechnician = useMemo(
+  const isDisabledField = useMemo(
     () => !auth.role || auth.role === 'technician',
     [JSON.stringify(auth)]
   );
@@ -311,7 +311,7 @@ const JobSchedulingForm = ({
                             ? 'Loading technician...'
                             : "Search by technician's id or name"
                         }
-                        isDisabled={workersOptions.isLoading}
+                        isDisabled={workersOptions.isLoading || isDisabledField}
                         noOptionsMessage={() =>
                           workersOptions.isLoading ? 'Loading...' : 'No technician found'
                         }
@@ -352,6 +352,7 @@ const JobSchedulingForm = ({
                         instanceId='priority'
                         onChange={(option) => field.onChange(option)}
                         options={prioritiesOptions}
+                        isDisabled={isDisabledField}
                         placeholder='Search by job priority level'
                         noOptionsMessage={() => 'No job priority levels found'}
                       />
@@ -394,6 +395,7 @@ const JobSchedulingForm = ({
                         onChange={(option) => field.onChange(option)}
                         options={scopesOptions}
                         placeholder='Search by job scope type'
+                        isDisabled={isDisabledField}
                         noOptionsMessage={() => 'No job scopes found'}
                       />
 
@@ -541,7 +543,7 @@ const JobSchedulingForm = ({
                         {...field}
                         type='date'
                         min={format(new Date(), 'yyyy-MM-dd')}
-                        disabled={isTechnician}
+                        disabled={isDisabledField}
                       />
 
                       {formErrors && formErrors.startDate?.message && (
@@ -562,7 +564,7 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='time' disabled={isTechnician} />
+                      <Form.Control {...field} type='time' disabled={isDisabledField} />
 
                       {formErrors && formErrors.startTime?.message && (
                         <Form.Text className='text-danger'>
@@ -586,7 +588,7 @@ const JobSchedulingForm = ({
                         {...field}
                         type='date'
                         min={format(new Date(), 'yyyy-MM-dd')}
-                        disabled={isTechnician}
+                        disabled={isDisabledField}
                       />
 
                       {formErrors && formErrors.endDate?.message && (
@@ -605,7 +607,7 @@ const JobSchedulingForm = ({
                   control={form.control}
                   render={({ field }) => (
                     <>
-                      <Form.Control {...field} type='time' disabled={isTechnician} />
+                      <Form.Control {...field} type='time' disabled={isDisabledField} />
 
                       {formErrors && formErrors.endTime?.message && (
                         <Form.Text className='text-danger'>{formErrors.endTime?.message}</Form.Text>
