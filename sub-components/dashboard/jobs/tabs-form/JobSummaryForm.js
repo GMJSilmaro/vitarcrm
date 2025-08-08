@@ -39,7 +39,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
   const { jobRequestId } = router.query;
   const auth = useAuth();
 
-  const isTechnician = useMemo(
+  const isDisabledField = useMemo(
     () => !auth.role || auth.role === 'technician',
     [JSON.stringify(auth)]
   );
@@ -618,7 +618,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
                           ? 'Loading job requests...'
                           : "Search by job request's ID & supervisor's name"
                       }
-                      isDisabled={jobs.isLoading || jobRequestOptions.isLoading || isTechnician}
+                      isDisabled={jobs.isLoading || jobRequestOptions.isLoading || isDisabledField}
                       noOptionsMessage={() =>
                         jobRequestOptions.isLoading ? 'Loading...' : 'No job request found'
                       }
@@ -698,7 +698,9 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
                           ? 'Loading customers...'
                           : "Search by customer's code or name"
                       }
-                      isDisabled={customersOptions.isLoading || form.watch('jobRequestId')}
+                      isDisabled={
+                        customersOptions.isLoading || form.watch('jobRequestId') || isDisabledField
+                      }
                       noOptionsMessage={() =>
                         customersOptions.isLoading ? 'Loading...' : 'No customers found'
                       }
@@ -736,7 +738,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
                       isDisabled={
                         customersOptions.isLoading ||
                         contactsOptions.length < 1 ||
-                        form.watch('jobRequestId')
+                        form.watch('jobRequestId') ||
+                        isDisabledField
                       }
                       placeholder="Search by contact's name"
                       noOptionsMessage={() => 'No contacts found'}
@@ -836,7 +839,8 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
                       isDisabled={
                         locationIsLoading ||
                         locationsOptions.length < 1 ||
-                        form.watch('jobRequestId')
+                        form.watch('jobRequestId') ||
+                        isDisabledField
                       }
                       noOptionsMessage={() =>
                         locationsOptions.isLoading ? 'Loading...' : 'No locations found'
