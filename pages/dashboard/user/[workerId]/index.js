@@ -298,7 +298,7 @@ function WorkerDashboard() {
         cell: ({ row }) => {
           const { id, jobRequestId, jobCn } = row.original;
           return (
-            <div className='d-flex flex-column gap-2 justify-content-center'>
+            <div className='d-flex flex-column gap-2 justify-content-center align-items-center'>
               <div className='d-flex flex-column justify-content-center'>
                 <div className='fw-bold'>ID:</div> <div>{id}</div>
               </div>
@@ -311,7 +311,7 @@ function WorkerDashboard() {
 
               {jobCn && (
                 <Badge className='d-flex align-items-center' bg='danger'>
-                  <ExclamationTriangleFill className='me-2' size={12} /> Faulty
+                  <ExclamationTriangleFill className='me-2' size={12} /> CN
                 </Badge>
               )}
             </div>
@@ -582,7 +582,7 @@ function WorkerDashboard() {
         },
       }),
       columnHelper.accessor((row) => (row?.jobCn ? 'true' : 'false'), {
-        id: 'isFaulty',
+        id: 'cn',
       }),
       columnHelper.accessor('actions', {
         id: 'actions',
@@ -970,8 +970,8 @@ function WorkerDashboard() {
         type: 'date',
       },
       {
-        label: 'Faulty',
-        columnId: 'isFaulty',
+        label: 'CN',
+        columnId: 'cn',
         type: 'select',
         options: [
           { label: 'N/A', value: '' },
@@ -990,7 +990,7 @@ function WorkerDashboard() {
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
-      columnVisibility: { startDate: false, endDate: false, isFaulty: false },
+      columnVisibility: { startDate: false, endDate: false, cn: false },
       columnPinning: { right: ['actions'] },
       sorting: [{ id: 'date', desc: true }],
     },

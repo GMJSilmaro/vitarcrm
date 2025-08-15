@@ -34,7 +34,7 @@ const ViewJobCnDetails = ({ jobCn, job, customer, customerEquipments }) => {
     }
   }, [instance.url, iframeRef]);
 
-  const calibratedInstruments = useMemo(() => {
+  const calibrationItems = useMemo(() => {
     if (
       !customerEquipments ||
       customerEquipments.isLoading ||
@@ -297,7 +297,7 @@ const ViewJobCnDetails = ({ jobCn, job, customer, customerEquipments }) => {
               <th>Others</th>
             </tr>
 
-            {calibratedInstruments.length < 1 && (
+            {calibrationItems.length < 1 && (
               <tr>
                 <td colSpan={9}>
                   <div
@@ -328,8 +328,8 @@ const ViewJobCnDetails = ({ jobCn, job, customer, customerEquipments }) => {
               </tr>
             )}
 
-            {calibratedInstruments.length > 0 &&
-              calibratedInstruments
+            {calibrationItems.length > 0 &&
+              calibrationItems
                 .filter((ci) => ci.isSelected)
                 .sort((a, b) => {
                   if (!a?.description || !b?.description) return 0;

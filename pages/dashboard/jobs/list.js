@@ -351,7 +351,7 @@ const JobList = () => {
           const { id, jobRequestId, jobCn } = row.original;
 
           return (
-            <div className='d-flex flex-column gap-2 justify-content-center'>
+            <div className='d-flex flex-column gap-2 justify-content-center align-items-center'>
               <div className='d-flex flex-column justify-content-center'>
                 <div className='fw-bold'>ID:</div> <div>{id}</div>
               </div>
@@ -363,8 +363,8 @@ const JobList = () => {
               )}
 
               {jobCn && (
-                <Badge className='d-flex align-items-center' bg='danger'>
-                  <ExclamationTriangleFill className='me-2' size={12} /> Faulty
+                <Badge className='d-flex align-items-center about-section' bg='danger'>
+                  <ExclamationTriangleFill className='me-2' size={12} /> CN
                 </Badge>
               )}
             </div>
@@ -640,7 +640,7 @@ const JobList = () => {
         },
       }),
       columnHelper.accessor((row) => (row?.jobCn ? 'true' : 'false'), {
-        id: 'isFaulty',
+        id: 'cn',
       }),
       columnHelper.accessor('actions', {
         id: 'actions',
@@ -1219,8 +1219,8 @@ const JobList = () => {
         type: 'date',
       },
       {
-        label: 'Faulty',
-        columnId: 'isFaulty',
+        label: 'CN',
+        columnId: 'cn',
         type: 'select',
         options: [
           { label: 'N/A', value: '' },
@@ -1239,7 +1239,7 @@ const JobList = () => {
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     initialState: {
-      columnVisibility: { date: false, startDate: false, endDate: false, isFaulty: false },
+      columnVisibility: { date: false, startDate: false, endDate: false, cn: false },
       columnPinning: { right: ['actions'] },
       sorting: [{ id: 'date', desc: true }],
     },

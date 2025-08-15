@@ -248,7 +248,7 @@ const EditJob = () => {
               color: job?.isReturnedEquipment ? 'success' : 'danger',
             },
             ...(jobCn.data
-              ? [{ icon: ExclamationTriangleFill, label: 'Faulty', color: 'danger' }]
+              ? [{ icon: ExclamationTriangleFill, label: 'CN', color: 'danger' }]
               : []),
           ]}
           actionButtons={[

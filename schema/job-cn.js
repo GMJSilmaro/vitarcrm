@@ -1,16 +1,22 @@
 import { z } from 'zod';
 
 export const calibrationItemSchema = z.object({
-  calibrateId: z.string(),
-  certificateNumber: z.string(),
+  calibrateId: z.string().default(''),
+  certificateNumber: z.string().default(''),
   equipmentId: z.string(),
   description: z.string(),
   serialNumber: z.union([z.string(), z.number()]).transform((value) => {
     if (value === null || value === undefined) return '';
     return String(value);
   }),
-  make: z.string().default(''),
-  model: z.string().default(''),
+  make: z.union([z.string(), z.number()]).transform((value) => {
+    if (value === null || value === undefined) return '';
+    return String(value);
+  }),
+  model: z.union([z.string(), z.number()]).transform((value) => {
+    if (value === null || value === undefined) return '';
+    return String(value);
+  }),
   isBroken: z.boolean().default(false),
   isInOperative: z.boolean().default(false),
   isRequireAccessories: z.boolean().default(false),
