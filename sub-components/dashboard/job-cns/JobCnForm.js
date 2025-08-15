@@ -87,6 +87,10 @@ const JobCnForm = ({ data, isAdmin = true }) => {
 
   const jobId = useWatch({ name: 'jobId', control: form.control });
   const cnId = useWatch({ name: 'cnId', control: form.control });
+  const jobSelectedCalibrationItems = useWatch({
+    name: 'jobId.calibrationItems',
+    control: form.control,
+  });
   const customerId = useWatch({ name: 'jobId.customerId', control: form.control });
   const customerName = useWatch({ name: 'jobId.customerName', control: form.control });
   const workers = useWatch({ name: 'jobId.workers', control: form.control });
@@ -113,11 +117,10 @@ const JobCnForm = ({ data, isAdmin = true }) => {
     return [];
   }, [JSON.stringify(usersOptions)]);
 
-  const calibratedInstruments = useMemo(() => {
+  const selectedCalibrationItems = useMemo(() => {
     if (
-      !calibrations ||
-      calibrations.isLoading ||
-      calibrations?.data?.length < 1 ||
+      !jobSelectedCalibrationItems ||
+      jobSelectedCalibrationItems?.length < 1 ||
       !customerEquipments ||
       customerEquipments.isLoading ||
       customerEquipments?.data?.length < 1
@@ -125,15 +128,20 @@ const JobCnForm = ({ data, isAdmin = true }) => {
       return [];
     }
 
+    //* if calibration item has been calibrated or in calibrations populate the certificateNumber & calibrateId
     return (
-      calibrations?.data
-        ?.map((c, i) => {
-          const eqData = customerEquipments?.data?.find((eq) => c?.description?.id === eq?.id);
+      jobSelectedCalibrationItems
+        ?.map((ci) => {
+          const eqData = customerEquipments?.data?.find((eq) => ci?.id === eq?.id);
+          const cData = calibrations?.data?.find((c) => ci?.id == c?.description?.id);
+
+          const calibrateId = cData?.calibrateId || '';
+          const certificateNumber = cData?.certificateNumber || '';
 
           if (eqData) {
             return {
-              calibrateId: c.id,
-              certificateNumber: c.certificateNumber,
+              calibrateId,
+              certificateNumber,
               equipmentId: eqData.id,
               description: eqData.description,
               serialNumber: eqData.serialNumber,
@@ -142,9 +150,13 @@ const JobCnForm = ({ data, isAdmin = true }) => {
             };
           }
         })
-        .filter(Boolean) || []
+        ?.filter(Boolean) || []
     );
-  }, [JSON.stringify(calibrations), JSON.stringify(customerEquipments)]);
+  }, [
+    JSON.stringify(jobSelectedCalibrationItems),
+    JSON.stringify(customerEquipments),
+    JSON.stringify(calibrations),
+  ]);
 
   const calibrationItems = useMemo(() => {
     const value = form.getValues('calibrationItems') || [];
@@ -859,10 +871,10 @@ const JobCnForm = ({ data, isAdmin = true }) => {
     }
   }, [data, JSON.stringify(adminSupervisorOptions)]);
 
-  //* set calibrationItems
+  //* set calibrationItems (based on selected calibration items)
   useEffect(() => {
-    if (!data && calibratedInstruments?.length > 0) {
-      const items = calibratedInstruments.map((item) => ({
+    if (!data && selectedCalibrationItems?.length > 0) {
+      const items = selectedCalibrationItems.map((item) => ({
         ...item,
         isBroken: false,
         isInOperative: false,
@@ -875,11 +887,11 @@ const JobCnForm = ({ data, isAdmin = true }) => {
       return;
     }
 
-    if (data && calibratedInstruments?.length > 0) {
+    if (data && selectedCalibrationItems?.length > 0) {
       const cnCalibrationItems = data?.calibrationItems || [];
 
       if (cnCalibrationItems?.length < 1) {
-        const items = calibratedInstruments.map((item) => ({
+        const items = selectedCalibrationItems.map((item) => ({
           ...item,
           isBroken: false,
           isInOperative: false,
@@ -892,15 +904,15 @@ const JobCnForm = ({ data, isAdmin = true }) => {
         return;
       }
 
-      //* find item from calibratedInstruments if found use its data
-      //* did this to make customer equipment data up to date
-      const currentCnCalibrationItems = calibratedInstruments.map((ci) => {
-        const cnItem = cnCalibrationItems.find((cn) => cn.equipmentId === ci.equipmentId);
+      //* find item from selectedCalibrationItems if found use its data
+      //* did this to make customer equipment data and calibration data are up to date
+      const currentCnCalibrationItems = selectedCalibrationItems.map((item) => {
+        const cnItem = cnCalibrationItems.find((cn) => cn.equipmentId === item.equipmentId);
 
-        if (cnItem) return { ...cnItem, ...ci };
+        if (cnItem) return { ...cnItem, ...item };
 
         return {
-          ...ci,
+          ...item,
           isBroken: false,
           isInOperative: false,
           isRequireAccessories: false,
@@ -914,7 +926,7 @@ const JobCnForm = ({ data, isAdmin = true }) => {
     }
 
     form.setValue('calibrationItems', []);
-  }, [JSON.stringify(calibratedInstruments), data]);
+  }, [JSON.stringify(selectedCalibrationItems), JSON.stringify(data)]);
 
   //* set cnId
   useEffect(() => {
@@ -1174,6 +1186,7 @@ const JobCnForm = ({ data, isAdmin = true }) => {
               </Row>
 
               <hr className='my-4' />
+
               <div className='d-flex align-items-center gap-1'>
                 <h4 className='mb-0'>Calibrated Instruments</h4>{' '}
                 <span className='text-danger' style={{ marginLeft: '4px' }}>
@@ -1181,8 +1194,11 @@ const JobCnForm = ({ data, isAdmin = true }) => {
                 </span>
               </div>
               <p className='text-muted fs-6 mb-0'>
-                ist of instruments and their respective inspection results. Please select at least
-                one instrument that is deemed faulty based on the calibration inspection.
+                list of instruments and their respective inspection results. Please select at least
+                one instrument that is deemed faulty based on the calibration inspection.{' '}
+                <span className='fst-italic fw-bold'>
+                  Item(s) without a "Cert No." have not been calibrated
+                </span>
               </p>
 
               {formErrors &&

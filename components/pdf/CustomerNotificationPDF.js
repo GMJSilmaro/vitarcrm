@@ -117,7 +117,7 @@ const CustomerNotificationPDF = ({
   worker,
   forVitarLabUseAuthorizeBy,
 }) => {
-  const calibratedInstruments = useMemo(() => {
+  const calibrationItems = useMemo(() => {
     if (
       !customerEquipments ||
       customerEquipments.isLoading ||
@@ -407,16 +407,20 @@ const CustomerNotificationPDF = ({
           </View>
         </View>
 
-        <View style={styles.container}>
-          {calibratedInstruments.length > 0 &&
-            calibratedInstruments
-              .filter((ci) => ci.isSelected)
-              .sort((a, b) => {
-                if (!a?.description || !b?.description) return 0;
-                return a?.description?.localeCompare(b?.description);
-              })
-              .map((equipment, i) => (
+        {calibrationItems.length > 0 &&
+          calibrationItems
+            .filter((ci) => ci.isSelected)
+            .sort((a, b) => {
+              if (!a?.description || !b?.description) return 0;
+              return a?.description?.localeCompare(b?.description);
+            })
+            .map((equipment, i) => {
+              //* break every 6 rows
+              const isBreak = (i + 1) % 6 === 0;
+
+              return (
                 <View
+                  break={isBreak}
                   key={`${equipment.equipmentId}-${i}`}
                   style={[
                     styles.block,
@@ -427,6 +431,8 @@ const CustomerNotificationPDF = ({
                       paddingBottom: 6,
                       alignItems: 'flex-end',
                       borderBottom: '1px solid #00000',
+                      fontSize: 10,
+                      position: 'relative',
                     },
                   ]}
                 >
@@ -593,8 +599,8 @@ const CustomerNotificationPDF = ({
                     </View>
                   </View>
                 </View>
-              ))}
-        </View>
+              );
+            })}
 
         <View
           style={{

@@ -42,7 +42,7 @@ const CustomerNotification = ({ jobCn, job, customer }) => {
     return { data: customer?.data?.equipments, isLoading: false, isError: false };
   }, [JSON.stringify(customer)]);
 
-  const calibratedInstruments = useMemo(() => {
+  const calibrationItems = useMemo(() => {
     if (
       !customerEquipments ||
       customerEquipments.isLoading ||
@@ -309,7 +309,7 @@ const CustomerNotification = ({ jobCn, job, customer }) => {
               <th>Others</th>
             </tr>
 
-            {calibratedInstruments.length < 1 && (
+            {calibrationItems.length < 1 && (
               <tr>
                 <td colSpan={9}>
                   <div
@@ -340,8 +340,8 @@ const CustomerNotification = ({ jobCn, job, customer }) => {
               </tr>
             )}
 
-            {calibratedInstruments.length > 0 &&
-              calibratedInstruments
+            {calibrationItems.length > 0 &&
+              calibrationItems
                 .filter((ci) => ci.isSelected)
                 .sort((a, b) => {
                   if (!a?.description || !b?.description) return 0;
