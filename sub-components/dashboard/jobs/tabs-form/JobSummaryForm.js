@@ -452,7 +452,7 @@ const JobSummaryForm = ({ data, isLoading, handleNext, toDuplicateJob }) => {
     const unsubscribe = onSnapshot(
       q,
       async (snapshot) => {
-        if (!snapshot.empty && jobs.data.length > 0) {
+        if (!snapshot.empty) {
           const jobRequestData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
           const jobRequestWithNoAssociatedJob = jobRequestData.filter((jr) => {
