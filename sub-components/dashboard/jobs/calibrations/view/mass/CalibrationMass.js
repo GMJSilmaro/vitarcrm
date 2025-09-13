@@ -1,50 +1,115 @@
-import { Accordion, Card } from 'react-bootstrap';
+import { Accordion, Card, Col, Nav, Row, Tab } from 'react-bootstrap';
 import DFNVTest from './DFNVTest';
-import { Gear, GearFill, Rulers, Table } from 'react-bootstrap-icons';
+import { CardList, Gear, GearFill, Rulers, Table } from 'react-bootstrap-icons';
 import RTest from './RTest';
 import ETest from './ETest';
 import { useEffect, useMemo } from 'react';
 import CalculationTable from './CalculationTable';
 import { FormProvider, useForm } from 'react-hook-form';
 import OtherMeasurements from '../OtherMeasurements';
+import EnvironmentalCondition from './EnvironmentalCondition';
 
 const CalibrationMass = ({ calibration, category }) => {
+  const rangeDetails = calibration?.rangeDetails || [];
+
+  return (
+    <Card className='border-0 shadow-none'>
+      <Card.Body>
+        <EnvironmentalCondition calibration={calibration} />
+
+        <hr className='my-5' />
+
+        <Tab.Container defaultActiveKey='0'>
+          <Row className='mt-5'>
+            <Col className='px-0' md={12}>
+              <Nav
+                variant='pills'
+                className='d-flex justify-content-center align-items-center gap-3'
+              >
+                {rangeDetails?.length > 0 &&
+                  Array.from({ length: rangeDetails?.length }).map((_, rangeIndex) => (
+                    <Nav.Item key={`${rangeIndex}-nav-item`} className='d-flex align-items-center'>
+                      <Nav.Link eventKey={`${rangeIndex}`}>
+                        <CardList size={18} />
+                        Range {rangeIndex + 1}
+                      </Nav.Link>
+                    </Nav.Item>
+                  ))}
+              </Nav>
+            </Col>
+
+            <Col md={12} className='ps-0'>
+              <Tab.Content className='w-100 h-100'>
+                {rangeDetails?.length > 0 &&
+                  rangeDetails.map((range, rangeIndex) => (
+                    <Tab.Pane
+                      key={`${rangeIndex}-tab-pane`}
+                      className='h-100'
+                      eventKey={rangeIndex}
+                    >
+                      <CalibrationMassContent
+                        calibration={calibration}
+                        category={category}
+                        range={range}
+                        rangeIndex={rangeIndex}
+                      />
+                    </Tab.Pane>
+                  ))}
+              </Tab.Content>
+            </Col>
+          </Row>
+        </Tab.Container>
+      </Card.Body>
+    </Card>
+  );
+};
+
+const CalibrationMassContent = ({ calibration, category, range, rangeIndex }) => {
   const form = useForm({
     values: calibration,
   });
 
-  const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(calibration.calibrationPointNo);
-    return isNaN(value) ? 6 : value;
-  }, [calibration]);
+  console.log({ range });
 
   return (
-    <Card className='border-0 shadow-none'>
-      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-        <div className='d-flex justify-content-between align-items-center'>
-          <div>
-            <h5 className='mb-0'>Calibration</h5>
-            <small className='text-muted'>
-              Ensure accurate calibration through "Departure from Nominal Value (g) test",
-              "Repeatability Test (g)" and "Eccentricity Test (g)"
-            </small>
-          </div>
-        </div>
+    <>
+      <Row className='mb-3'>
+        <h4 className='mb-0'>Calibration</h4>
+        <p className='text-muted fs-6'>
+          Details of various test, computation and results of the calibration.
+        </p>
 
-        <div className='mt-3 flex align-items-center gap-2'>
+        <div className='flex align-items-center gap-2'>
           <div className='fs-5'>
             <span className='pe-2'>Category:</span>
             <span className='fw-bold text-capitalize'>{category}</span>
           </div>
 
           <div className='fs-5'>
+            <span className='pe-2'>Range:</span>
+            <span className='fw-bold'>
+              {range?.rangeMinCalibration ?? ''} to {range?.rangeMaxCalibration || ''} (gram)
+            </span>
+          </div>
+
+          <div className='fs-5'>
+            <span className='pe-2'>Resolution:</span>
+            <span className='fw-bold'>{range?.resolution || ''}</span>
+          </div>
+
+          <div className='fs-5'>
+            <span className='pe-2'>Unit for COC:</span>
+            <span className='fw-bold'>{range?.unitUsedForCOC || ''}</span>
+          </div>
+
+          <div className='fs-5'>
             <span className='pe-2'>No. of Calibration Point:</span>
-            <span className='fw-bold'>{calibration.calibrationPointNo}</span>
+            <span className='fw-bold'>{range?.calibrationPointNo || ''}</span>
           </div>
         </div>
-      </Card.Header>
+      </Row>
 
-      <Card.Body>
+      <Row>
         <Accordion className='mt-1'>
           <Accordion.Item eventKey='0'>
             <Accordion.Header>
@@ -53,7 +118,7 @@ const CalibrationMass = ({ calibration, category }) => {
             </Accordion.Header>
 
             <Accordion.Body>
-              <DFNVTest calibration={calibration} />
+              <DFNVTest calibration={calibration} rangeIndex={rangeIndex} />
             </Accordion.Body>
           </Accordion.Item>
 
@@ -64,7 +129,7 @@ const CalibrationMass = ({ calibration, category }) => {
             </Accordion.Header>
 
             <Accordion.Body>
-              <RTest calibration={calibration} />
+              <RTest calibration={calibration} rangeIndex={rangeIndex} />
             </Accordion.Body>
           </Accordion.Item>
 
@@ -75,7 +140,7 @@ const CalibrationMass = ({ calibration, category }) => {
             </Accordion.Header>
 
             <Accordion.Body>
-              <ETest calibration={calibration} />
+              <ETest calibration={calibration} rangeIndex={rangeIndex} />
             </Accordion.Body>
           </Accordion.Item>
 
@@ -86,25 +151,25 @@ const CalibrationMass = ({ calibration, category }) => {
             </Accordion.Header>
 
             <Accordion.Body>
-              <OtherMeasurements calibration={calibration} />
+              <OtherMeasurements calibration={calibration} rangeIndex={rangeIndex} />
             </Accordion.Body>
           </Accordion.Item>
 
           <Accordion.Item eventKey='4'>
             <Accordion.Header>
               <Table className='me-2' size={17} />
-              Uncertainty Calculation (Electronic Balance) - A1 - A{calibrationPointNo}
+              Uncertainty Calculation (Electronic Balance) - A1 - A{range?.calibrationPointNo || ''}
             </Accordion.Header>
 
             <Accordion.Body>
               <FormProvider {...form}>
-                <CalculationTable calibration={calibration} />
+                <CalculationTable calibration={calibration} rangeIndex={rangeIndex} />
               </FormProvider>
             </Accordion.Body>
           </Accordion.Item>
         </Accordion>
-      </Card.Body>
-    </Card>
+      </Row>
+    </>
   );
 };
 

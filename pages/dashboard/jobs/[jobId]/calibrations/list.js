@@ -322,6 +322,7 @@ const JobCalibration = () => {
                     deleteDoc(certificateRef),
                     //* create notification when calibration is removed
                     notifications.create({
+                      module: 'calibration',
                       icon: 'calibration',
                       target: ['admin', 'supervisor'],
                       title: 'Calibration removed',

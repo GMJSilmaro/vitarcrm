@@ -5,23 +5,19 @@ import { Controller, useFormContext } from 'react-hook-form';
 import styles from '../../mass.module.css';
 import { TEST_LOADS } from '@/schema/calibration';
 
-const ETest = ({ data }) => {
+const ETest = ({ data, rangeIndex }) => {
   const form = useFormContext();
   const formErrors = form.formState.errors;
 
-  const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
-    return isNaN(value) ? undefined : value;
-  }, [form.watch('calibrationPointNo.value')]);
-
-  const calibrationData = useMemo(() => {
-    return form.getValues('data');
-  }, [form.watch('data')]);
+  const currentRange = useMemo(() => {
+    const rangeDetails = form.getValues('rangeDetails') || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [rangeIndex, JSON.stringify(form.watch('rangeDetails')), rangeIndex]);
 
   const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(form.getValues('rangeMaxCalibration'));
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('rangeMaxCalibration')]);
+  }, [JSON.stringify(currentRange)]);
 
   const testLoadFormatted = useMemo(() => {
     const value = rangeMaxCalibration / 3;
@@ -31,7 +27,7 @@ const ETest = ({ data }) => {
   const getErrorValue = useCallback(
     (index) => {
       let actualValue;
-      const values = form.getValues('data.etest.values');
+      const values = form.getValues(`data.${rangeIndex}.etest.values`);
 
       if (values) {
         if (Array.isArray(values)) actualValue = values.map((value) => (isNaN(value) ? 0 : value));
@@ -45,7 +41,7 @@ const ETest = ({ data }) => {
         return abs(actualValue[index] - firstErrorValue);
       } else return '';
     },
-    [JSON.stringify(form.watch('data.etest.values')), TEST_LOADS]
+    [JSON.stringify(form.watch(`data.${rangeIndex}.etest.values`)), TEST_LOADS]
   );
 
   const maxErrorValue = useMemo(() => {
@@ -64,7 +60,7 @@ const ETest = ({ data }) => {
     const result = max(values);
 
     //* set temporary value used for view in table
-    form.setValue('data.etest.maxError', result);
+    form.setValue(`data.${rangeIndex}.etest.maxError`, result);
 
     return result;
   }, [getErrorValue, TEST_LOADS]);
@@ -72,19 +68,19 @@ const ETest = ({ data }) => {
   //* set initial etest value & d1 & d2
   useEffect(() => {
     //* if data exist and rangeMaxCalibration is same as data's dont dont something, else set initial data
-    if (data && parseFloat(data.rangeMaxCalibration) === rangeMaxCalibration) {
+    if (data && parseFloat(data?.[rangeIndex]?.rangeMaxCalibration) === rangeMaxCalibration) {
       return;
     }
 
     setTimeout(() => {
-      if (!data || parseFloat(data.rangeMaxCalibration) !== rangeMaxCalibration) {
+      if (!data || parseFloat(data?.[rangeIndex]?.rangeMaxCalibration) !== rangeMaxCalibration) {
         form.setValue(
-          'data.etest.values',
+          `data.${rangeIndex}.etest.values`,
           Array(TEST_LOADS.length).fill(divide(rangeMaxCalibration, 3))
         );
-        form.setValue('data.etest.testLoad', divide(rangeMaxCalibration, 3));
-        form.setValue('data.d1', 0);
-        form.setValue('data.d2', 0);
+        form.setValue(`data.${rangeIndex}.etest.testLoad`, divide(rangeMaxCalibration, 3));
+        form.setValue(`data.${rangeIndex}.d1`, 0);
+        form.setValue(`data.${rangeIndex}.d2`, 0);
       }
     }, 1000);
   }, [data, rangeMaxCalibration]);
@@ -102,13 +98,13 @@ const ETest = ({ data }) => {
               <th>Test Load</th>
               <th>
                 <Controller
-                  name={`data.etest.testLoad`}
+                  name={`data.${rangeIndex}.etest.testLoad`}
                   control={form.control}
                   render={({ field }) => (
                     <Form.Control
                       onChange={(e) => {
                         form.setValue(
-                          `data.etest.testLoad`,
+                          `data.${rangeIndex}.etest.testLoad`,
                           isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                         );
                       }}
@@ -132,13 +128,13 @@ const ETest = ({ data }) => {
                   <td>{testLoad}</td>
                   <td>
                     <Controller
-                      name={`data.etest.values.${i}`}
+                      name={`data.${rangeIndex}.etest.values.${i}`}
                       control={form.control}
                       render={({ field }) => (
                         <Form.Control
                           onChange={(e) => {
                             form.setValue(
-                              `data.etest.values.${i}`,
+                              `data.${rangeIndex}.etest.values.${i}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
                           }}
@@ -177,13 +173,13 @@ const ETest = ({ data }) => {
             </td>
             <td>
               <Controller
-                name={`data.d1`}
+                name={`data.${rangeIndex}.d1`}
                 control={form.control}
                 render={({ field }) => (
                   <Form.Control
                     onChange={(e) => {
                       form.setValue(
-                        `data.d1`,
+                        `data.${rangeIndex}.d1`,
                         isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                       );
                     }}
@@ -205,13 +201,13 @@ const ETest = ({ data }) => {
             </td>
             <td>
               <Controller
-                name={`data.d2`}
+                name={`data.${rangeIndex}.d2`}
                 control={form.control}
                 render={({ field }) => (
                   <Form.Control
                     onChange={(e) => {
                       form.setValue(
-                        `data.d2`,
+                        `data.${rangeIndex}.d2`,
                         isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                       );
                     }}

@@ -5,22 +5,27 @@ import React, { useCallback, useMemo } from 'react';
 import { Table } from 'react-bootstrap';
 import { useFormContext } from 'react-hook-form';
 
-const MassResultForm = () => {
+const MassResultForm = ({ rangeIndex }) => {
   const form = useFormContext();
 
+  const currentRange = useMemo(() => {
+    const rangeDetails = form.getValues('rangeDetails') || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [rangeIndex, JSON.stringify(form.watch('rangeDetails')), rangeIndex]);
+
   const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
-    return isNaN(value) ? 0 : value;
-  }, [form.watch('calibrationPointNo')]);
+    const value = parseFloat(currentRange?.calibrationPointNo?.value);
+    return isNaN(value) ? undefined : value;
+  }, [JSON.stringify(currentRange)]);
 
   const unitUsedForCOC = useMemo(() => {
-    return form.getValues('unitUsedForCOC')?.value || 'gram';
-  }, [form.watch('unitUsedForCOC')]);
+    return currentRange?.unitUsedForCOC?.value || 'gram';
+  }, [JSON.stringify(currentRange)]);
 
   const resolution = useMemo(() => {
-    const value = parseFloat(form.getValues('resolution')?.value);
+    const value = parseFloat(currentRange?.resolution?.value);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('resolution')]);
+  }, [JSON.stringify(currentRange)]);
 
   const convertValueBasedOnUnit = useCallback(
     (value) => {
@@ -49,33 +54,33 @@ const MassResultForm = () => {
   );
 
   const corrections = useMemo(() => {
-    const value = form.getValues('data.corrections');
+    const value = form.getValues(`data.${rangeIndex}.corrections`);
     return value && Array.isArray(value) ? value : [];
-  }, [JSON.stringify(form.watch('data.corrections'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.corrections`))]);
 
   const measuredValuesM = useMemo(() => {
-    const value = form.getValues('data.measuredValuesM');
+    const value = form.getValues(`data.${rangeIndex}.measuredValuesM`);
     return value && Array.isArray(value) ? value : [];
-  }, [JSON.stringify(form.watch('data.measuredValuesM'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.measuredValuesM`))]);
 
   const expandedUncertainties = useMemo(() => {
-    const value = form.getValues('data.expandedUncertainties');
+    const value = form.getValues(`data.${rangeIndex}.expandedUncertainties`);
     return value && Array.isArray(value) ? value : [];
-  }, [JSON.stringify(form.watch('data.expandedUncertainties'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.expandedUncertainties`))]);
 
   const nominalValues = useMemo(() => {
-    const value = form.getValues('data.nominalValues');
+    const value = form.getValues(`data.${rangeIndex}.nominalValues`);
     return value && Array.isArray(value) ? value : [];
-  }, [JSON.stringify(form.watch('data.nominalValues'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.nominalValues`))]);
 
   const rangeType = useMemo(() => {
     return form.getValues('rangeType')?.value || '';
   }, [JSON.stringify(form.watch('rangeType'))]);
 
   const rtestMaxError = useMemo(() => {
-    const value = form.getValues('data.rtest.maxError');
+    const value = form.getValues(`data.${rangeIndex}.rtest.maxError`);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('data.rtest.maxError')]);
+  }, [form.watch(`data.${rangeIndex}.rtest.maxError`)]);
 
   // console.log({ corrections, resolution, unitUsedForCOC });
 

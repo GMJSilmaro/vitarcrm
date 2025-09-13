@@ -4,27 +4,36 @@ import { Table } from 'react-bootstrap';
 import styles from '../../mass.module.css';
 import { NOMINAL_VALUE } from '@/schema/calibration';
 
-const DFNVTest = ({ calibration }) => {
+const DFNVTest = ({ calibration, rangeIndex }) => {
   const slotsFields = useMemo(() => {
     return [{ title: 'E2' }, { title: 'F1' }, { title: 'F1' }];
   }, []);
 
+  const currentRange = useMemo(() => {
+    const rangeDetails = calibration?.rangeDetails || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [JSON.stringify(calibration), rangeIndex]);
+
+  const currentCalibrationData = useMemo(() => {
+    return calibration?.data?.[rangeIndex];
+  }, [JSON.stringify(calibration), rangeIndex]);
+
   const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(calibration.calibrationPointNo);
+    const value = parseFloat(currentRange?.calibrationPointNo);
     return isNaN(value) ? undefined : value;
-  }, [calibration]);
+  }, [JSON.stringify(currentRange)]);
 
   const nominalValues = useMemo(() => {
-    return calibration.data?.nominalValues || [];
-  }, [calibration]);
+    return currentCalibrationData?.nominalValues || [];
+  }, [JSON.stringify(currentCalibrationData)]);
 
   const dfnv = useMemo(() => {
-    return calibration.data?.dfnv || [];
-  }, []);
+    return currentCalibrationData?.dfnv || [];
+  }, [JSON.stringify(currentCalibrationData)]);
 
   const measuredValues = useMemo(() => {
-    return calibration.data?.measuredValues || [];
-  }, []);
+    return currentCalibrationData?.measuredValues || [];
+  }, [JSON.stringify(currentCalibrationData)]);
 
   return (
     <>

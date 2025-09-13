@@ -3,15 +3,20 @@ import { useCallback, useMemo } from 'react';
 import { Table } from 'react-bootstrap';
 import { TEST_LOADS } from '@/schema/calibration';
 
-const ETest = ({ calibration }) => {
-  const data = useMemo(() => {
-    return calibration?.data || [];
-  }, [calibration]);
+const ETest = ({ calibration, rangeIndex }) => {
+  const currentCalibrationData = useMemo(() => {
+    return calibration?.data?.[rangeIndex];
+  }, [JSON.stringify(calibration), rangeIndex]);
+
+  const currentRange = useMemo(() => {
+    const rangeDetails = calibration?.rangeDetails || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [JSON.stringify(calibration), rangeIndex]);
 
   const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(calibration?.rangeMaxCalibration);
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
     return isNaN(value) ? 0 : value;
-  }, [calibration]);
+  }, [JSON.stringify(currentRange)]);
 
   const testLoadFormatted = useMemo(() => {
     const value = rangeMaxCalibration / 3;
@@ -21,7 +26,7 @@ const ETest = ({ calibration }) => {
   const getErrorValue = useCallback(
     (index) => {
       let actualValue;
-      const values = calibration?.data?.etest?.values;
+      const values = currentCalibrationData?.etest?.values;
 
       if (values) {
         if (Array.isArray(values) && values?.length > 0) {
@@ -37,7 +42,7 @@ const ETest = ({ calibration }) => {
         return abs(actualValue[index] - firstErrorValue);
       } else return '';
     },
-    [calibration, TEST_LOADS]
+    [JSON.stringify(currentCalibrationData), JSON.stringify(TEST_LOADS)]
   );
 
   const maxErrorValue = useMemo(() => {
@@ -65,7 +70,7 @@ const ETest = ({ calibration }) => {
           <thead>
             <tr>
               <th>Test Load</th>
-              <th>{data?.etest?.testLoad || ''}</th>
+              <th>{currentCalibrationData?.etest?.testLoad || ''}</th>
               <th>Error</th>
             </tr>
           </thead>
@@ -74,7 +79,7 @@ const ETest = ({ calibration }) => {
               return (
                 <tr key={i}>
                   <td>{testLoad}</td>
-                  <td>{data?.etest?.values?.[i] || ''}</td>
+                  <td>{currentCalibrationData?.etest?.values?.[i] || ''}</td>
                   <td>{getErrorValue(i) !== '' ? getErrorValue(i).toFixed(4) : ''}</td>
                 </tr>
               );
@@ -98,14 +103,14 @@ const ETest = ({ calibration }) => {
             <td className='text-center fw-bold'>
               d<sub>1</sub>
             </td>
-            <td>{data?.d1 || ''}</td>
+            <td>{currentCalibrationData?.d1 || ''}</td>
             <th>mm</th>
           </tr>
           <tr>
             <td className='text-center fw-bold'>
               d<sub>2</sub>
             </td>
-            <td>{data?.d2 || ''}</td>
+            <td>{currentCalibrationData?.d2 || ''}</td>
             <th>mm</th>
           </tr>
         </tbody>

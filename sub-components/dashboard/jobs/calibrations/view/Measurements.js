@@ -1,10 +1,11 @@
 import { TRACEABILITY_CALIBRATION_LAB } from '@/schema/calibration';
-import { Card, Col, Row } from 'react-bootstrap';
+import { Badge, Card, Col, Row } from 'react-bootstrap';
 import {
   BookmarkCheck,
   Buildings,
   Crosshair,
   GlobeAsiaAustralia,
+  Hash,
   ListOl,
   Rulers,
   ShieldCheck,
@@ -13,6 +14,10 @@ import {
 } from 'react-bootstrap-icons';
 
 const Measurements = ({ calibration }) => {
+  const rangeDetails = calibration?.rangeDetails || [];
+
+  console.log({ rangeDetails });
+
   return (
     <Card className='border-0 shadow-none'>
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
@@ -81,85 +86,125 @@ const Measurements = ({ calibration }) => {
                 className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
                 style={{ width: '40px', height: '40px' }}
               >
-                <Speedometer size={20} />
+                <Hash size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Range of Calibration (Min):</div>
+                <div className='text-secondary fs-6'>Range Count:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.rangeMinCalibration ?? 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={4}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <Speedometer size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Range of Calibration (Max):</div>
-                <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.rangeMaxCalibration ?? 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={4}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <Crosshair size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Resolution:</div>
-                <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.resolution || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={4}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <Rulers size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>Unit Used For COC:</div>
-                <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.unitUsedForCOC || 'N/A'}
-                </div>
-              </div>
-            </div>
-          </Col>
-
-          <Col md={4}>
-            <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
-              <div
-                className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
-                style={{ width: '40px', height: '40px' }}
-              >
-                <ListOl size={20} />
-              </div>
-              <div>
-                <div className='text-secondary fs-6'>No. of Calibration Point:</div>
-                <div className='text-primary-label fw-semibold text-capitalize'>
-                  {calibration?.calibrationPointNo || 'N/A'}
+                  {calibration?.rangeCount || 'N/A'}
                 </div>
               </div>
             </div>
           </Col>
         </Row>
+      </Card.Body>
+
+      <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
+        <div className='d-flex justify-content-between align-items-center'>
+          <div>
+            <h4 className='mb-0'>Range Details </h4>
+            <p className='text-muted fs-6 mb-0'>Details for each measurement range</p>
+          </div>
+        </div>
+      </Card.Header>
+
+      <Card.Body>
+        {rangeDetails.map((rd, i) => (
+          <Row key={`range-details-${i}`} className='row-gap-3'>
+            <Col xs={12}>
+              <h1 className='mb-0'>
+                <Badge bg='primary' className='fs-5'>
+                  Range {i + 1}
+                </Badge>
+              </h1>
+            </Col>
+
+            <Col md={4}>
+              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                <div
+                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                  style={{ width: '40px', height: '40px' }}
+                >
+                  <Speedometer size={20} />
+                </div>
+                <div>
+                  <div className='text-secondary fs-6'>Range of Calibration (Min):</div>
+                  <div className='text-primary-label fw-semibold text-capitalize'>
+                    {rd?.rangeMinCalibration ?? 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </Col>
+
+            <Col md={4}>
+              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                <div
+                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                  style={{ width: '40px', height: '40px' }}
+                >
+                  <Speedometer size={20} />
+                </div>
+                <div>
+                  <div className='text-secondary fs-6'>Range of Calibration (Max):</div>
+                  <div className='text-primary-label fw-semibold text-capitalize'>
+                    {rd?.rangeMaxCalibration ?? 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </Col>
+
+            <Col md={4}>
+              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                <div
+                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                  style={{ width: '40px', height: '40px' }}
+                >
+                  <Crosshair size={20} />
+                </div>
+                <div>
+                  <div className='text-secondary fs-6'>Resolution:</div>
+                  <div className='text-primary-label fw-semibold text-capitalize'>
+                    {rd?.resolution || 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </Col>
+
+            <Col md={4}>
+              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                <div
+                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                  style={{ width: '40px', height: '40px' }}
+                >
+                  <Rulers size={20} />
+                </div>
+                <div>
+                  <div className='text-secondary fs-6'>Unit Used For COC:</div>
+                  <div className='text-primary-label fw-semibold text-capitalize'>
+                    {rd?.unitUsedForCOC || 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </Col>
+
+            <Col md={4}>
+              <div className='d-flex align-items-sm-center gap-3 p-3 bg-light-subtle rounded border border-light-subtle w-100 h-100'>
+                <div
+                  className='d-flex justify-content-center align-items-center fs-3 rounded shadow text-primary-label'
+                  style={{ width: '40px', height: '40px' }}
+                >
+                  <ListOl size={20} />
+                </div>
+                <div>
+                  <div className='text-secondary fs-6'>No. of Calibration Point:</div>
+                  <div className='text-primary-label fw-semibold text-capitalize'>
+                    {rd?.calibrationPointNo || 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        ))}
       </Card.Body>
 
       <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
@@ -199,7 +244,7 @@ const Measurements = ({ calibration }) => {
                 <GlobeAsiaAustralia size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Country Type:</div>
+                <div className='text-secondary fs-6'>Country:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
                   {calibration?.traceabilityCountry ?? 'N/A'}
                 </div>
@@ -216,7 +261,7 @@ const Measurements = ({ calibration }) => {
                 <Buildings size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Country Type:</div>
+                <div className='text-secondary fs-6'>Country Lab:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
                   {calibration?.traceabilityCalibrationLab?.length > 0
                     ? TRACEABILITY_CALIBRATION_LAB.filter((lab) =>
@@ -261,7 +306,7 @@ const Measurements = ({ calibration }) => {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <div className='text-secondary fs-6'>Signatory:</div>
+                <div className='text-secondary fs-6'>Accreditation Body:</div>
                 <div className='text-primary-label fw-semibold text-capitalize'>
                   {calibration?.traceabilityAccreditationBody || 'N/A'}
                 </div>

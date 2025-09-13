@@ -23,7 +23,8 @@ export const PRINT_STATUS_COLOR = {
   reprinted: 'warning',
 };
 
-export const RANGE_TYPE = ['single']; //* Temporay remove "multiple" type
+export const RANGE_TYPE = ['single', 'multiple']; //* Temporay remove "multiple" type
+export const RANGE_COUNT = ['1', '2', '3'];
 
 export const TRACEABILITY_TYPE = ['1', '2', '3'];
 export const TRACEABILITY_MAP = {
@@ -132,6 +133,10 @@ const categoryEnum = z.enum(CATEGORY, {
 
 export const rangeTypeEnum = z.enum(RANGE_TYPE, {
   message: 'Please select a range type',
+});
+
+export const rangeCountEnum = z.enum(RANGE_COUNT, {
+  message: 'Please select a range count',
 });
 
 export const traceabilityTypeEnum = z.enum(TRACEABILITY_TYPE, {
@@ -254,6 +259,31 @@ export const calibrationInfoSchema = z
     { message: 'Due date is required', path: ['dueDate'] }
   );
 
+const rangeDetailsSchema = z.object({
+  rangeMaxCalibration: z.coerce.number({
+    message: 'Maximum Range Calibration is required',
+  }),
+  rangeMinCalibration: z.coerce.number({
+    message: ' Minimum Range Calibration is required',
+  }),
+  resolution: z.union([resolutionEnum, z.record(z.string(), z.any())]).transform((formData) => {
+    if (typeof formData === 'object') return formData.value;
+    return formData;
+  }),
+  unitUsedForCOC: z
+    .union([unitUsedForCOCEnum, z.record(z.string(), z.any())])
+    .transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
+  calibrationPointNo: z
+    .union([calibrationPointNoEnum, z.record(z.string(), z.any())])
+    .transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
+});
+
 export const calibrationMeasurementSchema = z.object({
   rangeType: z.union([rangeTypeEnum, z.record(z.string(), z.any())]).transform((formData) => {
     if (typeof formData === 'object') return formData.value;
@@ -298,29 +328,15 @@ export const calibrationMeasurementSchema = z.object({
       if (typeof formData === 'object' && formData !== null) return formData.value;
       return formData;
     }),
-  resolution: z.union([resolutionEnum, z.record(z.string(), z.any())]).transform((formData) => {
+  calibrationLocation: z.string().default(''),
+  rangeCount: z.union([rangeCountEnum, z.record(z.string(), z.any())]).transform((formData) => {
     if (typeof formData === 'object') return formData.value;
     return formData;
   }),
-  unitUsedForCOC: z
-    .union([unitUsedForCOCEnum, z.record(z.string(), z.any())])
-    .transform((formData) => {
-      if (typeof formData === 'object') return formData.value;
-      return formData;
-    }),
-  calibrationPointNo: z
-    .union([calibrationPointNoEnum, z.record(z.string(), z.any())])
-    .transform((formData) => {
-      if (typeof formData === 'object') return formData.value;
-      return formData;
-    }),
-  calibrationLocation: z.string().default(''),
-  rangeMaxCalibration: z.coerce.number({
-    message: 'Maximum Range Calibration is required',
-  }),
-  rangeMinCalibration: z.coerce.number({
-    message: ' Minimum Range Calibration is required',
-  }),
+  rangeDetails: z
+    .array(rangeDetailsSchema)
+    .min(1, { message: 'At least one range detail is required' })
+    .max(3, { message: 'Maximum of 3 range details allowed' }),
 });
 
 const otherMeasurementsSchema = z.object({
@@ -345,9 +361,6 @@ export const calibrationReferenceInstrumentsSchema = z.object({
       return formData;
     }),
   cocInstruments: z.array(z.string()),
-  // .min(1, {
-  //   message: 'Please select atleast 1 instrument to be incuded in the COC',
-  // }),
 });
 
 export const dfnvCalibrationPointSchema = z.object({
@@ -375,19 +388,22 @@ export const eTestSchema = z.object({
 
 export const calibrationMassSchema = z
   .object({
-    data: z.object({
-      nominalValues: z.array(z.coerce.number()).default([]),
-      measuredValuesM: z.array(z.coerce.number()).default([]),
-      corrections: z.array(z.coerce.number()).default([]),
-      expandedUncertainties: z.array(z.coerce.number()).default([]),
-      measuredValues: z.array(z.array(z.coerce.number())).default([]),
-      coverageFactors: z.array(z.coerce.number()).default([]),
-      dfnv: z.array(dfnvSchema).default([]),
-      rtest: rTestSchema,
-      etest: eTestSchema,
-      d1: z.coerce.number().default(0),
-      d2: z.coerce.number().default(0),
-    }),
+    data: z.array(
+      z.object({
+        nominalValues: z.array(z.coerce.number()).default([]),
+        measuredValuesM: z.array(z.coerce.number()).default([]),
+        corrections: z.array(z.coerce.number()).default([]),
+        expandedUncertainties: z.array(z.coerce.number()).default([]),
+        measuredValues: z.array(z.array(z.coerce.number())).default([]),
+        coverageFactors: z.array(z.coerce.number()).default([]),
+        dfnv: z.array(dfnvSchema).default([]),
+        rtest: rTestSchema,
+        etest: eTestSchema,
+        d1: z.coerce.number().default(0),
+        d2: z.coerce.number().default(0),
+        typeOfBalance: z.string().default(''),
+      })
+    ),
   })
   .merge(otherMeasurementsSchema);
 

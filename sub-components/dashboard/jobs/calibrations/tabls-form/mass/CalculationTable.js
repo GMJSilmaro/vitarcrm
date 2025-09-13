@@ -26,45 +26,50 @@ import { Tab, Col, Row, Nav, Card, Table, Spinner, Button } from 'react-bootstra
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/firebase';
 
-const CalculationTable = () => {
+const CalculationTable = ({ rangeIndex }) => {
   const form = useFormContext();
 
   const [showCalculationTables, setShowCalculationTables] = useState(false);
   const [showUncertaintyBudget, setShowUncertaintyBudget] = useState(false);
 
-  const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
-    return isNaN(value) ? undefined : value;
-  }, [form.watch('calibrationPointNo')]);
+  const currentRange = useMemo(() => {
+    const rangeDetails = form.getValues('rangeDetails') || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [rangeIndex, JSON.stringify(form.watch('rangeDetails')), rangeIndex]);
 
   const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(form.getValues('rangeMaxCalibration'));
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('rangeMaxCalibration')]);
+  }, [JSON.stringify(currentRange)]);
+
+  const calibrationPointNo = useMemo(() => {
+    const value = parseFloat(currentRange?.calibrationPointNo?.value);
+    return isNaN(value) ? undefined : value;
+  }, [JSON.stringify(currentRange)]);
 
   const dfnv = useMemo(() => {
-    const value = form.getValues('data.dfnv');
+    const value = form.getValues(`data.${rangeIndex}.dfnv`);
     return value && Array.isArray(value) ? value : [];
-  }, [JSON.stringify(form.watch('data.dfnv'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.dfnv`))]);
 
   const nominalValues = useMemo(() => {
-    const value = form.getValues('data.nominalValues');
+    const value = form.getValues(`data.${rangeIndex}.nominalValues`);
     return value && Array.isArray(value) ? value : [];
-  }, [JSON.stringify(form.watch('data.nominalValues'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.nominalValues`))]);
 
   const resolution = useMemo(() => {
-    const value = form.getValues('resolution')?.value;
-    return value ? value : 0;
-  }, [form.watch('resolution')]);
+    const value = parseFloat(currentRange?.resolution?.value);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
 
   const measuredValues = useMemo(() => {
-    const value = form.getValues('data.measuredValues');
+    const value = form.getValues(`data.${rangeIndex}.measuredValues`);
     return value && Array.isArray(value) ? value : [];
-  }, [JSON.stringify(form.watch('data.measuredValues'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.measuredValues`))]);
 
   const rtest = useMemo(() => {
     let actualValue = {};
-    const value = form.getValues('data.rtest');
+    const value = form.getValues(`data.${rangeIndex}.rtest`);
 
     if (value && !_.isEmpty(value)) {
       if (value?.half && Array.isArray(value.half) && value?.half?.length > 0) {
@@ -85,11 +90,11 @@ const CalculationTable = () => {
     } else actualValue = { half: [0], max: [0] };
 
     return actualValue;
-  }, [JSON.stringify(form.watch('data.rtest'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.rtest`))]);
 
   const etest = useMemo(() => {
     let actualValue = {};
-    const value = form.getValues('data.etest');
+    const value = form.getValues(`data.${rangeIndex}.etest`);
 
     if (value && !_.isEmpty(value)) {
       if (value?.values && Array.isArray(value.values) && value?.values?.length > 0) {
@@ -104,7 +109,7 @@ const CalculationTable = () => {
     } else actualValue = { values: [0] };
 
     return actualValue;
-  }, [JSON.stringify(form.watch('data.etest'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.etest`))]);
 
   const getESDMValue = (measuredValue) => {
     const values = getArrayActualValues(measuredValue);
@@ -117,14 +122,14 @@ const CalculationTable = () => {
   };
 
   const d1 = useMemo(() => {
-    const value = form.getValues('data.d1');
+    const value = form.getValues(`data.${rangeIndex}.d1`);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('data.d1')]);
+  }, [form.watch(`data.${rangeIndex}.d1`)]);
 
   const d2 = useMemo(() => {
-    const value = form.getValues('data.d2');
+    const value = form.getValues(`data.${rangeIndex}.d2`);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('data.d2')]);
+  }, [form.watch(`data.${rangeIndex}.d2`)]);
 
   const isAbove100Kg = useMemo(() => {
     return rangeMaxCalibration > 100000; //* 100000 in grams is 100kg
@@ -266,7 +271,9 @@ const CalculationTable = () => {
                                     <th>Actual Weight</th>
                                     <td>
                                       {formatToDicimalString(
-                                        form.watch(`data.totalActualWeight.${pointIndex}`),
+                                        form.watch(
+                                          `data.${rangeIndex}.totalActualWeight.${pointIndex}`
+                                        ),
                                         6
                                       )}{' '}
                                       g
@@ -285,7 +292,7 @@ const CalculationTable = () => {
                                     <th>Correction</th>
                                     <td>
                                       {formatToDicimalString(
-                                        form.watch(`data.corrections.${pointIndex}`),
+                                        form.watch(`data.${rangeIndex}.corrections.${pointIndex}`),
                                         4
                                       )}{' '}
                                       g
@@ -296,7 +303,9 @@ const CalculationTable = () => {
                                     <td>
                                       <span className='me-2'>±</span>
                                       {formatToDicimalString(
-                                        form.watch(`data.expandedUncertainties.${pointIndex}`),
+                                        form.watch(
+                                          `data.${rangeIndex}.expandedUncertainties.${pointIndex}`
+                                        ),
                                         5
                                       )}{' '}
                                       g
@@ -364,7 +373,7 @@ const CalculationTable = () => {
                                     </tr>
                                   ))}
 
-                                  <tr>
+                                  {/* <tr>
                                     <th>d1</th>
                                     <td>{d1}</td>
                                     <td>mm</td>
@@ -373,7 +382,7 @@ const CalculationTable = () => {
                                     <th>d2</th>
                                     <td>{d2}</td>
                                     <td>mm</td>
-                                  </tr>
+                                  </tr> */}
                                 </tbody>
                               </Table>
 
@@ -390,7 +399,10 @@ const CalculationTable = () => {
                                     </th>
                                     <td>
                                       {resolution
-                                        ? formatScientific(form.watch(`data.uMs.${pointIndex}`), 2)
+                                        ? formatScientific(
+                                            form.watch(`data.${rangeIndex}.uMs.${pointIndex}`),
+                                            2
+                                          )
                                         : ''}
                                     </td>
                                   </tr>
@@ -400,7 +412,10 @@ const CalculationTable = () => {
                                     </th>
                                     <td>
                                       {resolution
-                                        ? formatScientific(form.watch(`data.vEff.${pointIndex}`), 1)
+                                        ? formatScientific(
+                                            form.watch(`data.${rangeIndex}.vEff.${pointIndex}`),
+                                            1
+                                          )
                                         : ''}
                                     </td>
                                   </tr>
@@ -408,13 +423,18 @@ const CalculationTable = () => {
                                     <th>Total Actual Weight</th>
                                     <td>
                                       {formatToDicimalString(
-                                        form.watch(`data.totalActualWeight.${pointIndex}`, 6)
+                                        form.watch(
+                                          `data.${rangeIndex}.totalActualWeight.${pointIndex}`,
+                                          6
+                                        )
                                       )}
                                     </td>
                                   </tr>
                                   <tr>
                                     <th>Total MPE</th>
-                                    <td>{form.watch(`data.totalMPE.${pointIndex}`)}</td>
+                                    <td>
+                                      {form.watch(`data.${rangeIndex}.totalMPE.${pointIndex}`)}
+                                    </td>
                                   </tr>
                                   <tr>
                                     <th>
@@ -423,7 +443,7 @@ const CalculationTable = () => {
                                     </th>
                                     <td>
                                       {formatScientific(
-                                        form.watch(`data.totalUcert2g2.${pointIndex}`)
+                                        form.watch(`data.${rangeIndex}.totalUcert2g2.${pointIndex}`)
                                       )}
                                     </td>
                                   </tr>
@@ -434,7 +454,9 @@ const CalculationTable = () => {
                                     </th>
                                     <td>
                                       {formatScientific(
-                                        form.watch(`data.totalUcert4vG4.${pointIndex}`)
+                                        form.watch(
+                                          `data.${rangeIndex}.totalUcert4vG4.${pointIndex}`
+                                        )
                                       )}
                                     </td>
                                   </tr>
@@ -442,7 +464,7 @@ const CalculationTable = () => {
                                     <th>Total U(Z)</th>
                                     <td>
                                       {formatScientific(
-                                        form.watch(`data.totalUinstg.${pointIndex}`)
+                                        form.watch(`data.${rangeIndex}.totalUinstg.${pointIndex}`)
                                       )}
                                     </td>
                                   </tr>
@@ -452,7 +474,9 @@ const CalculationTable = () => {
                                     </th>
                                     <td>
                                       {formatScientific(
-                                        form.watch(`data.totalUints4vG4.${pointIndex}`)
+                                        form.watch(
+                                          `data.${rangeIndex}.totalUints4vG4.${pointIndex}`
+                                        )
                                       )}
                                     </td>
                                   </tr>
@@ -460,7 +484,11 @@ const CalculationTable = () => {
                                     <th>
                                       Total U(Ms)<sup>mg</sup>
                                     </th>
-                                    <td>{form.watch(`data.totalUncertainty.${pointIndex}`)}</td>
+                                    <td>
+                                      {form.watch(
+                                        `data.${rangeIndex}.totalUncertainty.${pointIndex}`
+                                      )}
+                                    </td>
                                   </tr>
                                 </tbody>
                               </Table>
@@ -481,6 +509,7 @@ const CalculationTable = () => {
                               showUncertaintyBudget={showUncertaintyBudget}
                               rtest={rtest}
                               etest={etest}
+                              rangeIndex={rangeIndex}
                             />
                           </Col>
                         </Row>
@@ -497,7 +526,7 @@ const CalculationTable = () => {
   );
 };
 
-const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => {
+const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest, rangeIndex }) => {
   const form = useFormContext();
 
   const [refTableData, setRefTableData] = useState({ data: [], isLoading: true, isError: false });
@@ -537,7 +566,10 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     });
 
     setEntryData(dfnvDataCurrentPoint);
-  }, [JSON.stringify(form.watch('data')), form.watch('calibrationPointNo.value')]);
+  }, [
+    JSON.stringify(form.watch('data')),
+    form.watch(`rangeDetails.${rangeIndex}calibrationPointNo.value`),
+  ]);
 
   //* query Correction, Uncertainty of the Standard Weight & Drift (CUSWD)
   useEffect(() => {
@@ -696,25 +728,30 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     setRefTableData({ data: refData, isLoading: false, isError: false });
   }, [cuswd.data, mpe.data, JSON.stringify(entryData)]);
 
+  const currentRange = useMemo(() => {
+    const rangeDetails = form.getValues('rangeDetails') || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [rangeIndex, JSON.stringify(form.watch('rangeDetails')), rangeIndex]);
+
   const resolution = useMemo(() => {
-    const value = form.getValues('resolution')?.value;
-    return value ? value : 0;
-  }, [form.watch('resolution')]);
+    const value = parseFloat(currentRange?.resolution?.value);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
 
   const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
-    return isNaN(value) ? 0 : value;
-  }, [form.watch('calibrationPointNo')]);
+    const value = parseFloat(currentRange?.calibrationPointNo?.value);
+    return isNaN(value) ? undefined : value;
+  }, [JSON.stringify(currentRange)]);
 
   const nominalValue = useMemo(() => {
-    const value = form.getValues(`data.nominalValues.${pointIndex}`);
+    const value = form.getValues(`data.${rangeIndex}.nominalValues.${pointIndex}`);
     return isNaN(value) ? 0 : value;
-  }, [pointIndex, JSON.stringify(form.watch('data.nominalValues'))]);
+  }, [pointIndex, JSON.stringify(form.watch(`data.${rangeIndex}.nominalValues`))]);
 
   const measuredValue = useMemo(() => {
-    const value = form.getValues(`data.measuredValues.${pointIndex}`);
+    const value = form.getValues(`data.${rangeIndex}.measuredValues.${pointIndex}`);
     return value && Array.isArray(value) ? value : [0];
-  }, [JSON.stringify(form.watch('data.measuredValues'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.measuredValues`))]);
 
   const stdMeasuredValue = useMemo(() => {
     const values = getArrayActualValues(measuredValue);
@@ -727,19 +764,19 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
   }, [JSON.stringify(measuredValue)]);
 
   const maxError = useMemo(() => {
-    const values = form.getValues('data.etest.maxError');
+    const values = form.getValues(`data.${rangeIndex}.etest.maxError`);
     return isNaN(values) ? 0 : values;
-  }, [form.watch('data.etest.maxError')]);
+  }, [form.watch(`data.${rangeIndex}.etest.maxError`)]);
 
   const testLoad = useMemo(() => {
-    const value = form.getValues('data.etest.testLoad');
+    const value = form.getValues(`data.${rangeIndex}.etest.testLoad`);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('data.etest.testLoad')]);
+  }, [form.watch(`data.${rangeIndex}.etest.testLoad`)]);
 
   const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(form.getValues('rangeMaxCalibration'));
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('rangeMaxCalibration')]);
+  }, [JSON.stringify(currentRange)]);
 
   const stdRtestMax = useMemo(() => {
     const values = getArrayActualValues(rtest.max);
@@ -768,7 +805,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalActualWeight.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalActualWeight.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -786,7 +823,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalMPE.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalMPE.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -815,7 +852,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalUcert2g2.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalUcert2g2.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -844,7 +881,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalUcert4vG4.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalUcert4vG4.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -873,7 +910,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalUints2g2.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalUints2g2.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -902,7 +939,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalUints4vG4.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalUints4vG4.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -922,7 +959,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalUinstg.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalUinstg.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -942,7 +979,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sum(values);
 
     //* set temporary value used for view in table
-    form.setValue(`data.totalUncertainty.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.totalUncertainty.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex]);
@@ -953,7 +990,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = sqrt(totalUcert2g2);
 
     //* set temporary value used for view in table
-    form.setValue(`data.uMs.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.uMs.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex, totalUcert2g2]);
@@ -965,7 +1002,7 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = uMsPow4 / totalUcert4vG4;
 
     //* set temporary value used for view in table
-    form.setValue(`data.vEff.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.vEff.${pointIndex}`, result);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex, uMs, totalUcert4vG4]);
@@ -980,8 +1017,8 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
     const result = -subtract(x, y);
 
     //* set temporary value used for view in table
-    form.setValue(`data.corrections.${pointIndex}`, result);
-    form.setValue(`data.measuredValuesM.${pointIndex}`, x);
+    form.setValue(`data.${rangeIndex}.corrections.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.measuredValuesM.${pointIndex}`, x);
 
     return result;
   }, [JSON.stringify(refTableData.data), pointIndex, JSON.stringify(measuredValue), totalWeight]);
@@ -1154,13 +1191,17 @@ const RefTable = ({ dfnv, pointIndex, showUncertaintyBudget, rtest, etest }) => 
           }}
         />
 
-        <UncertaintyBudgetTable pointIndex={pointIndex} calculations={calculations} />
+        <UncertaintyBudgetTable
+          pointIndex={pointIndex}
+          calculations={calculations}
+          rangeIndex={rangeIndex}
+        />
       </div>
     </>
   );
 };
 
-const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
+const UncertaintyBudgetTable = ({ pointIndex, calculations, rangeIndex }) => {
   // TODO: make function for common calculations, just accept input
 
   const form = useFormContext();
@@ -1623,7 +1664,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const cf = isNaN(parseFloat(result.value)) ? 0 : parseFloat(result.value);
 
     //* set temporary value used for view in table
-    form.setValue(`data.coverageFactors.${pointIndex}`, cf);
+    form.setValue(`data.${rangeIndex}.coverageFactors.${pointIndex}`, cf);
 
     return { value: cf, data: result };
   }, [effectiveNumberDegressOfFreedom, ck.data, pointIndex]);
@@ -1635,7 +1676,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const result = multiply(x, y);
 
     //* set temporary value used for view in table
-    form.setValue(`data.expandedUncertainties.${pointIndex}`, result);
+    form.setValue(`data.${rangeIndex}.expandedUncertainties.${pointIndex}`, result);
 
     return result;
   }, [combineUncertainty, coverageFactor.value, pointIndex]);
@@ -1646,7 +1687,7 @@ const UncertaintyBudgetTable = ({ pointIndex, calculations }) => {
     const result = max(calculations.stdRtestHalf, calculations.stdRtestMax);
 
     //* set temporary value used for view in table
-    form.setValue('data.rtest.maxError', result);
+    form.setValue(`data.${rangeIndex}.rtest.maxError`, result);
 
     return result;
   }, [calculations.resolution, calculations.stdRtestHalf, calculations.stdRtestMax]);
