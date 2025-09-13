@@ -2,24 +2,24 @@ import { useMemo } from 'react';
 import { Col, Row, Table } from 'react-bootstrap';
 import { std, max, min, abs } from 'mathjs';
 
-const RTest = ({ calibration }) => {
-  const data = useMemo(() => {
-    return calibration?.data || [];
-  }, [calibration]);
+const RTest = ({ calibration, rangeIndex }) => {
+  const currentCalibrationData = useMemo(() => {
+    return calibration?.data?.[rangeIndex];
+  }, [JSON.stringify(calibration), rangeIndex]);
 
-  const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(calibration?.calibrationPointNo);
-    return isNaN(value) ? 6 : value;
-  }, [calibration]);
+  const currentRange = useMemo(() => {
+    const rangeDetails = calibration?.rangeDetails || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [JSON.stringify(calibration), rangeIndex]);
 
   const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(calibration?.rangeMaxCalibration);
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
     return isNaN(value) ? 0 : value;
-  }, [calibration]);
+  }, [JSON.stringify(currentRange)]);
 
   const halfResults = useMemo(() => {
     let actualValues;
-    const halfValues = calibration?.data?.rtest?.half;
+    const halfValues = currentCalibrationData?.rtest?.half;
 
     if (halfValues) {
       if (Array.isArray(halfValues)) actualValues = halfValues.filter(Boolean);
@@ -38,11 +38,11 @@ const RTest = ({ calibration }) => {
         std: std(actualValues, 'uncorrected').toFixed(4),
       },
     };
-  }, [calibration]);
+  }, [JSON.stringify(currentCalibrationData)]);
 
   const maxResults = useMemo(() => {
     let actualValues;
-    const maxValues = calibration?.data?.rtest?.max;
+    const maxValues = currentCalibrationData?.rtest?.max;
 
     if (maxValues) {
       if (Array.isArray(maxValues)) actualValues = maxValues.filter(Boolean);
@@ -61,7 +61,7 @@ const RTest = ({ calibration }) => {
         std: std(actualValues, 'uncorrected').toFixed(4),
       },
     };
-  }, [calibration]);
+  }, [JSON.stringify(currentCalibrationData)]);
 
   const maxRepetabilityError = useMemo(() => {
     const values = [maxResults?.raw?.error ?? 0, halfResults?.raw?.error ?? 0];
@@ -101,8 +101,8 @@ const RTest = ({ calibration }) => {
               {Array.from({ length: isAbove100Kg ? 5 : 10 }).map((_, i) => (
                 <tr key={i}>
                   <td className='text-center'>#{i + 1}</td>
-                  <td className='text-center'>{data?.rtest?.half?.[i] || ''}</td>
-                  <td className='text-center'>{data?.rtest?.max?.[i] || ''}</td>
+                  <td className='text-center'>{currentCalibrationData?.rtest?.half?.[i] || ''}</td>
+                  <td className='text-center'>{currentCalibrationData?.rtest?.max?.[i] || ''}</td>
                 </tr>
               ))}
             </tbody>

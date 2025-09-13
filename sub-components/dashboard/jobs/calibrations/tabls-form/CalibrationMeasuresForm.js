@@ -3,6 +3,7 @@ import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
 import {
   CALIBRATION_POINT_NO,
+  RANGE_COUNT,
   RANGE_TYPE,
   RESOLUTION,
   TRACEABILITY_ACCREDITATION_BODY,
@@ -11,30 +12,42 @@ import {
   TRACEABILITY_TYPE,
   UNIT_USED_FOR_COC,
 } from '@/schema/calibration';
-import React, { useEffect, useState } from 'react';
-import { Button, Card, Col, Form, InputGroup, OverlayTrigger, Row, Tooltip } from 'react-bootstrap';
-import { Controller, useFormContext } from 'react-hook-form';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Form,
+  InputGroup,
+  OverlayTrigger,
+  Row,
+  Tooltip,
+} from 'react-bootstrap';
+import { Controller, useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) => {
   const [rangeTypeOptions] = useState(RANGE_TYPE.map((rangeType) => ({ value: rangeType, label: _.capitalize(rangeType) }))); //prettier-ignore
+  const [rangeCountOptions] = useState(RANGE_COUNT.map((rangeCount) => ({ value: rangeCount, label: rangeCount }))); //prettier-ignore
+
   const [resolutionOptions] = useState(RESOLUTION.map((resolution) => ({ value: resolution, label: resolution }))); //prettier-ignore
   const [unitUsedForCOCOptions] = useState(UNIT_USED_FOR_COC.map((unit) => ({ value: unit, label: unit }))); //prettier-ignore
   const [calibrationPointNoOptions] = useState(CALIBRATION_POINT_NO.map((pointNo) => ({ value: pointNo, label: pointNo }))); //prettier-ignore
 
   const [traceabilityTypeOptions] = useState(TRACEABILITY_TYPE.map((traceabilityType) => ({ value: traceabilityType, label: traceabilityType }))); //prettier-ignore
   const [traceabilityCountryOptions] = useState(TRACEABILITY_COUNTRY.map((country) => ({ value: country, label: country }))); //prettier-ignore
-  const [traceabilityCalibrationLabOptions] = useState(
-    TRACEABILITY_CALIBRATION_LAB.map((lab) => ({
-      label: `${lab.name}${
-        lab.accreditationNo && lab.accreditationNo !== 'N/A' ? ` - ${lab.accreditationNo}` : ''
-      }`,
-      ...lab,
-    }))
-  );
+  const [traceabilityCalibrationLabOptions] = useState(TRACEABILITY_CALIBRATION_LAB.map((lab) => ({ label: `${lab.name}${ lab.accreditationNo && lab.accreditationNo !== 'N/A' ? ` - ${lab.accreditationNo}` : ''}`,...lab }))); //prettier-ignore
   const [traceabilityAccreditationBodyOptions] = useState(TRACEABILITY_ACCREDITATION_BODY.map(body => ({ value: body, label: body }))); //prettier-ignore
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
+
+  const { fields, replace } = useFieldArray({
+    name: 'rangeDetails',
+    control: form.control,
+  });
+
+  const rangeType = useWatch({ name: 'rangeType', control: form.control });
 
   const handleTraceabilityTypeChange = (option, field) => {
     field.onChange(option);
@@ -61,6 +74,42 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
     }
   };
 
+  const handleRangeCountChange = (option, field) => {
+    field.onChange(option);
+
+    const rangeCount = parseInt(option.value);
+    const rangeDetails = Array.from({ length: rangeCount }).map((_, i) => ({
+      rangeMaxCalibration: null,
+      rangeMinCalibration: null,
+      resolution: null,
+      unitUsedForCOC: null,
+      calibrationPointNo: null,
+    }));
+
+    replace(rangeDetails);
+  };
+
+  const handleTypeOfRangeChange = (option, field) => {
+    field.onChange(option);
+    form.clearErrors('rangeDetails');
+
+    if (option.value === 'single') {
+      form.setValue('rangeCount', rangeCountOptions.find((o) => o.value === '1')); // prettier-ignore
+      form.setValue('rangeDetails', [
+        {
+          rangeMaxCalibration: null,
+          rangeMinCalibration: null,
+          resolution: null,
+          unitUsedForCOC: null,
+          calibrationPointNo: null,
+        },
+      ]);
+    } else {
+      form.setValue('rangeCount', null);
+      form.setValue('rangeDetails', []);
+    }
+  };
+
   //* set range type, if data exist
   useEffect(() => {
     if (data && rangeTypeOptions.length > 0) {
@@ -68,6 +117,40 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
       form.setValue('rangeType', rangeType);
     }
   }, [data, rangeTypeOptions]);
+
+  //* set range count if data exist
+  useEffect(() => {
+    if (data && rangeCountOptions.length > 0) {
+      const rangeCount = rangeCountOptions.find((option) => option.value === data.rangeCount);
+      form.setValue('rangeCount', rangeCount);
+    }
+  }, [data, rangeCountOptions]);
+
+  //* set range details if data exist
+  useEffect(() => {
+    if (data && data?.rangeDetails?.length > 0) {
+      const rDeatails = data?.rangeDetails;
+
+      //* details per each range
+      const currentRangeDetails = rDeatails.map((details, i) => {
+        const rangeMaxCalibration = details?.rangeMaxCalibration;
+        const rangeMinCalibration = details?.rangeMinCalibration;
+        const resolution = resolutionOptions.find((option) => option.value === details.resolution);
+        const unitUsedForCOC = unitUsedForCOCOptions.find((option) => option.value === details.unitUsedForCOC ); //prettier-ignore
+        const calibrationPointNo = calibrationPointNoOptions.find((option) => option.value === details.calibrationPointNo); //prettier-ignore
+
+        return {
+          rangeMaxCalibration,
+          rangeMinCalibration,
+          resolution,
+          unitUsedForCOC,
+          calibrationPointNo,
+        };
+      });
+
+      replace(currentRangeDetails);
+    }
+  }, [data, resolutionOptions, unitUsedForCOCOptions, calibrationPointNoOptions]);
 
   //* set traceability type, if data exist
   useEffect(() => {
@@ -113,33 +196,9 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
     traceabilityAccreditationBodyOptions,
   ]);
 
-  //* set resolution, if data exist
   useEffect(() => {
-    if (data && resolutionOptions.length > 0) {
-      const resolution = resolutionOptions.find((option) => option.value === data.resolution);
-      form.setValue('resolution', resolution);
-    }
-  }, [data, resolutionOptions]);
-
-  //* set unit used for COC, if data exist
-  useEffect(() => {
-    if (data && unitUsedForCOCOptions.length > 0) {
-      const unitUsedForCOC = unitUsedForCOCOptions.find(
-        (option) => option.value === data.unitUsedForCOC
-      );
-      form.setValue('unitUsedForCOC', unitUsedForCOC);
-    }
-  }, [data, unitUsedForCOCOptions]);
-
-  //* set calibration point no, if data exist
-  useEffect(() => {
-    if (data && calibrationPointNoOptions.length > 0) {
-      const calibrationPointNo = calibrationPointNoOptions.find(
-        (option) => option.value === data.calibrationPointNo
-      );
-      form.setValue('calibrationPointNo', calibrationPointNo);
-    }
-  }, [data, calibrationPointNoOptions]);
+    console.log({ fields });
+  }, [JSON.stringify(fields)]);
 
   return (
     <Card className='shadow-none'>
@@ -192,7 +251,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
                     {...field}
                     inputId='rangeType'
                     instanceId='rangeType'
-                    onChange={(option) => field.onChange(option)}
+                    onChange={(option) => handleTypeOfRangeChange(option, field)}
                     options={rangeTypeOptions}
                     placeholder='Search by type of range'
                     noOptionsMessage={() => 'No type of range found'}
@@ -207,70 +266,12 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
           </Form.Group>
 
           <Form.Group as={Col} md={4}>
-            <RequiredLabel label='Range of Calibration (Min)' id='rangeMinCalibration' />
-
-            <Controller
-              name='rangeMinCalibration'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <InputGroup>
-                    <Form.Control
-                      {...field}
-                      style={{ marginTop: '1px' }}
-                      id='rangeMinCalibration'
-                      type='number'
-                      placeholder='Enter minimum range of calibration'
-                    />
-                    <InputGroup.Text>gram</InputGroup.Text>
-                  </InputGroup>
-
-                  {formErrors && formErrors.rangeMinCalibration?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.rangeMinCalibration?.message}
-                    </Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md={4}>
-            <RequiredLabel label='Range of Calibration (Max)' id='rangeMaxCalibration' />
-
-            <Controller
-              name='rangeMaxCalibration'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <InputGroup>
-                    <Form.Control
-                      {...field}
-                      style={{ marginTop: '1px' }}
-                      id='rangeMaxCalibration'
-                      type='number'
-                      placeholder='Enter maximum range of calibration'
-                    />
-                    <InputGroup.Text>gram</InputGroup.Text>
-                  </InputGroup>
-
-                  {formErrors && formErrors.rangeMaxCalibration?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.rangeMaxCalibration?.message}
-                    </Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md={4}>
-            <RequiredLabel label='Resolution' id='resolution' />
+            <RequiredLabel label='Range Count' id='rangeCount' />
             <OverlayTrigger
               placement='right'
               overlay={
                 <Tooltip>
-                  <TooltipContent title='Resolution Search' info={['Search by resolution']} />
+                  <TooltipContent title='Range Count Search' info={['Search by range count']} />
                 </Tooltip>
               }
             >
@@ -278,115 +279,271 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
             </OverlayTrigger>
 
             <Controller
-              name='resolution'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <div className='d-flex'>
-                    <Select
-                      {...field}
-                      className='flex-1 flex-grow-1'
-                      inputId='resolution'
-                      instanceId='resolution'
-                      onChange={(option) => field.onChange(option)}
-                      options={resolutionOptions}
-                      placeholder='Search by resolution'
-                      noOptionsMessage={() => 'No resolution found'}
-                    />
-
-                    <InputGroup.Text className='rounded-start-0'>gram</InputGroup.Text>
-                  </div>
-
-                  {formErrors && formErrors.resolution?.message && (
-                    <Form.Text className='text-danger'>{formErrors.resolution?.message}</Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
-
-          <Form.Group as={Col} md={4}>
-            <RequiredLabel label='Unit Used For COC' id='unitUsedForCOC' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Unit Used For COC Search'
-                    info={['Search by unit used for COC']}
-                  />
-                </Tooltip>
-              }
-            >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
-
-            <Controller
-              name='unitUsedForCOC'
+              name='rangeCount'
               control={form.control}
               render={({ field }) => (
                 <>
                   <Select
                     {...field}
-                    inputId='unitUsedForCOC'
-                    instanceId='unitUsedForCOC'
-                    onChange={(option) => field.onChange(option)}
-                    options={unitUsedForCOCOptions}
-                    placeholder='Search by unit used for COC'
-                    noOptionsMessage={() => 'No unit used for COC found'}
+                    inputId='rangeCount'
+                    instanceId='rangeCount'
+                    onChange={(option) => handleRangeCountChange(option, field)}
+                    options={rangeCountOptions.filter((option) => {
+                      if (rangeType?.value === 'multiple' && option.value === '1') return false;
+                      return true;
+                    })}
+                    placeholder='Search by range count'
+                    noOptionsMessage={() => 'No range count found'}
+                    isDisabled={rangeType?.value === 'single'}
                   />
 
-                  {formErrors && formErrors.unitUsedForCOC?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.unitUsedForCOC?.message}
-                    </Form.Text>
+                  {formErrors && formErrors.rangeCount?.message && (
+                    <Form.Text className='text-danger'>{formErrors.rangeCount?.message}</Form.Text>
                   )}
                 </>
               )}
             />
           </Form.Group>
+        </Row>
 
-          <Form.Group as={Col} md={4}>
-            <RequiredLabel label='No. of Calibration Point' id='calibrationPointNo' />
-            <OverlayTrigger
-              placement='right'
-              overlay={
-                <Tooltip>
-                  <TooltipContent
-                    title='Calibration Point No. Search'
-                    info={['Search by calibration point no.']}
-                  />
-                </Tooltip>
-              }
+        <hr className='my-4' />
+        <h4 className='mb-0'>Range Details</h4>
+        <p className='text-muted fs-6'>Details for each measurement range</p>
+
+        <Row className='mb-3'>
+          {fields.length === 0 ? (
+            <div
+              className='d-flex justify-content-center align-items-center mt-3'
+              style={{ height: '100px' }}
             >
-              <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
-            </OverlayTrigger>
+              <div className='text-center d-inline'>
+                <h4 className='mb-0'>No ranges yet.</h4>
+                <p className='text-muted'>Please specify the range type and count.</p>
+              </div>
+            </div>
+          ) : (
+            fields.map((rangeDetailsFeild, i) => (
+              <Row key={`${rangeDetailsFeild.id}-range-details`} className='row-gap-3'>
+                <Col xs={12}>
+                  <h1 className='mb-0'>
+                    <Badge bg='primary' className='fs-5'>
+                      Range {i + 1}
+                    </Badge>
+                  </h1>
+                </Col>
 
-            <Controller
-              name='calibrationPointNo'
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Select
-                    {...field}
-                    isDisabled={!form.watch('resolution')}
-                    inputId='calibrationPointNo'
-                    instanceId='calibrationPointNo'
-                    onChange={(option) => field.onChange(option)}
-                    options={calibrationPointNoOptions}
-                    placeholder='Search by calibration point no. for COC'
-                    noOptionsMessage={() => 'No calibration point no. found'}
+                <Form.Group as={Col} md={4}>
+                  <RequiredLabel
+                    label='Range of Calibration (Min)'
+                    id={`rangeDetails.${i}.rangeMinCalibration`}
                   />
 
-                  {formErrors && formErrors.calibrationPointNo?.message && (
-                    <Form.Text className='text-danger'>
-                      {formErrors.calibrationPointNo?.message}
-                    </Form.Text>
-                  )}
-                </>
-              )}
-            />
-          </Form.Group>
+                  <Controller
+                    key={rangeDetailsFeild.id}
+                    name={`rangeDetails.${i}.rangeMinCalibration`}
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <InputGroup>
+                          <Form.Control
+                            {...field}
+                            style={{ marginTop: '1px' }}
+                            id={`rangeDetails.${i}.rangeMinCalibration`}
+                            type='number'
+                            placeholder='Enter minimum range of calibration'
+                          />
+                          <InputGroup.Text>gram</InputGroup.Text>
+                        </InputGroup>
+
+                        {formErrors &&
+                          formErrors?.rangeDetails?.[i]?.rangeMinCalibration?.message && (
+                            <Form.Text className='text-danger'>
+                              {formErrors.rangeDetails?.[i]?.rangeMinCalibration?.message}
+                            </Form.Text>
+                          )}
+                      </>
+                    )}
+                  />
+                </Form.Group>
+
+                <Form.Group as={Col} md={4}>
+                  <RequiredLabel
+                    label='Range of Calibration (Max)'
+                    id={`rangeDetails.${i}.rangeMaxCalibration`}
+                  />
+
+                  <Controller
+                    key={rangeDetailsFeild.id}
+                    name={`rangeDetails.${i}.rangeMaxCalibration`}
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <InputGroup>
+                          <Form.Control
+                            {...field}
+                            style={{ marginTop: '1px' }}
+                            id={`rangeDetails.${i}.rangeMaxCalibration`}
+                            type='number'
+                            placeholder='Enter maximum range of calibration'
+                          />
+                          <InputGroup.Text>gram</InputGroup.Text>
+                        </InputGroup>
+
+                        {formErrors &&
+                          formErrors?.rangeDetails?.[i]?.rangeMaxCalibration?.message && (
+                            <Form.Text className='text-danger'>
+                              {formErrors.rangeDetails?.[i]?.rangeMaxCalibration?.message}
+                            </Form.Text>
+                          )}
+                      </>
+                    )}
+                  />
+                </Form.Group>
+
+                <Form.Group as={Col} md={4}>
+                  <RequiredLabel label='Resolution' id={`rangeDetails.${i}.resolution`} />
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent title='Resolution Search' info={['Search by resolution']} />
+                      </Tooltip>
+                    }
+                  >
+                    <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                  </OverlayTrigger>
+
+                  <Controller
+                    key={rangeDetailsFeild.id}
+                    name={`rangeDetails.${i}.resolution`}
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <div className='d-flex'>
+                          <Select
+                            {...field}
+                            className='flex-1 flex-grow-1'
+                            inputId={`rangeDetails.${i}.resolution`}
+                            instanceId={`rangeDetails.${i}.resolution`}
+                            onChange={(option) => field.onChange(option)}
+                            options={resolutionOptions}
+                            placeholder='Search by resolution'
+                            noOptionsMessage={() => 'No resolution found'}
+                          />
+
+                          <InputGroup.Text className='rounded-start-0'>gram</InputGroup.Text>
+                        </div>
+
+                        {formErrors && formErrors?.rangeDetails?.[i]?.resolution?.message && (
+                          <Form.Text className='text-danger'>
+                            {formErrors.rangeDetails?.[i]?.resolution?.message}
+                          </Form.Text>
+                        )}
+                      </>
+                    )}
+                  />
+                </Form.Group>
+
+                <Form.Group as={Col} md={4}>
+                  <RequiredLabel
+                    label='Unit Used For COC'
+                    id={`rangeDetails.${i}.unitUsedForCOC`}
+                  />
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent
+                          title='Unit Used For COC Search'
+                          info={['Search by unit used for COC']}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                  </OverlayTrigger>
+
+                  <Controller
+                    name={`rangeDetails.${i}.unitUsedForCOC`}
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <Select
+                          {...field}
+                          inputId={`rangeDetails.${i}.unitUsedForCOC`}
+                          instanceId={`rangeDetails.${i}.unitUsedForCOC`}
+                          onChange={(option) => field.onChange(option)}
+                          options={unitUsedForCOCOptions}
+                          placeholder='Search by unit used for COC'
+                          noOptionsMessage={() => 'No unit used for COC found'}
+                        />
+
+                        {formErrors && formErrors?.rangeDetails?.[i]?.unitUsedForCOC?.message && (
+                          <Form.Text className='text-danger'>
+                            {formErrors.rangeDetails?.[i]?.unitUsedForCOC?.message}
+                          </Form.Text>
+                        )}
+                      </>
+                    )}
+                  />
+                </Form.Group>
+
+                <Form.Group as={Col} md={4}>
+                  <RequiredLabel
+                    label='No. of Calibration Point'
+                    id={`rangeDetails.${i}.calibrationPointNo`}
+                  />
+                  <OverlayTrigger
+                    placement='right'
+                    overlay={
+                      <Tooltip>
+                        <TooltipContent
+                          title='Calibration Point No. Search'
+                          info={['Search by calibration point no.']}
+                        />
+                      </Tooltip>
+                    }
+                  >
+                    <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+                  </OverlayTrigger>
+
+                  <Controller
+                    name={`rangeDetails.${i}.calibrationPointNo`}
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <Select
+                          {...field}
+                          isDisabled={!form.watch(`rangeDetails.${i}.resolution`)}
+                          inputId={`rangeDetails.${i}.calibrationPointNo`}
+                          instanceId={`rangeDetails.${i}.calibrationPointNo`}
+                          onChange={(option) => field.onChange(option)}
+                          options={calibrationPointNoOptions}
+                          placeholder='Search by calibration point no. for COC'
+                          noOptionsMessage={() => 'No calibration point no. found'}
+                        />
+
+                        {formErrors && formErrors.calibrationPointNo?.message && (
+                          <Form.Text className='text-danger'>
+                            {formErrors.calibrationPointNo?.message}
+                          </Form.Text>
+                        )}
+
+                        {formErrors &&
+                          formErrors?.rangeDetails?.[i]?.calibrationPointNo?.message && (
+                            <Form.Text className='text-danger'>
+                              {formErrors.rangeDetails?.[i]?.calibrationPointNo?.message}
+                            </Form.Text>
+                          )}
+                      </>
+                    )}
+                  />
+                </Form.Group>
+
+                {i < fields.length - 1 && <hr className='mt-2 mb-3' />}
+              </Row>
+            ))
+          )}
         </Row>
 
         <hr className='my-4' />

@@ -25,7 +25,7 @@ import {
 } from 'firebase/firestore';
 import { ceil, divide, multiply, round } from 'mathjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Card, Image, Spinner, Table } from 'react-bootstrap';
+import { Badge, Button, Card, Image, Spinner, Table } from 'react-bootstrap';
 import { Calendar4, Download, Printer } from 'react-bootstrap-icons';
 
 const CertificateOfCalibration = ({ calibration, instruments }) => {
@@ -36,7 +36,11 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
 
   const [instance, updateInstance] = usePDF();
 
-  const [calibrateBy, setCalibrateBy] = useState({ data: {}, isLoading: true, isError: false });
+  const [calibrateBy, setCalibrateBy] = useState({
+    data: {},
+    isLoading: true,
+    isError: false,
+  });
   const [approvedSignatory, setApprovedSignatory] = useState({data: {}, isLoading: true, isError: false}); //prettier-ignore
 
   const handleGetLocationValue = useCallback(() => {
@@ -65,58 +69,13 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     return '';
   }, [calibration.location]);
 
-  const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(calibration?.calibrationPointNo);
-    return isNaN(value) ? undefined : value;
-  }, [calibration]);
+  const rangeDetails = calibration?.rangeDetails || [];
 
-  const resolution = useMemo(() => {
-    const value = parseFloat(calibration?.resolution);
-    return isNaN(value) ? 0 : value;
-  }, [calibration]);
-
-  const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(calibration?.rangeMaxCalibration);
-    return isNaN(value) ? 0 : value;
-  }, [calibration]);
-
-  const rtestStd = useMemo(() => {
-    return calibration?.data?.rtest?.std || [];
-  }, [calibration]);
-
-  const rtestMaxDiffBetweenReadings = useMemo(() => {
-    return calibration?.data?.rtest?.maxDiffBetweenReadings || [];
-  }, [calibration]);
-
-  const etestValues = useMemo(() => {
-    return calibration?.data?.etest?.values || [];
-  }, [calibration]);
-
-  const unitUsedForCOC = useMemo(() => {
-    return calibration?.unitUsedForCOC || 'gram';
-  }, [calibration]);
-
-  const unitUsedForCOCAcronym = useMemo(() => {
-    if (!unitUsedForCOC) return 'g';
-    if (unitUsedForCOC === 'kilogram') return 'kg';
+  const unitUsedForCOCAcronym = (unit) => {
+    if (!unit) return 'g';
+    if (unit === 'kilogram') return 'kg';
     return 'g';
-  }, [unitUsedForCOC]);
-
-  const nominalValues = useMemo(() => {
-    return calibration?.data?.nominalValues || [];
-  }, [calibration]);
-
-  const corrections = useMemo(() => {
-    return calibration?.data?.corrections || [];
-  }, [calibration]);
-
-  const coverageFactors = useMemo(() => {
-    return calibration?.data?.coverageFactors || [];
-  }, [calibration]);
-
-  const expandedUncertainties = useMemo(() => {
-    return calibration?.data?.expandedUncertainties || [];
-  }, [calibration]);
+  };
 
   const cocInstruments = useMemo(() => {
     if (!instruments.data || instruments.data.length < 1) return [];
@@ -124,75 +83,27 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
     return instruments.data.filter((instrument) => selectedInstruments.includes(instrument.id));
   }, [calibration, instruments.data]);
 
-  const convertValueBasedOnUnit = useCallback(
-    (value) => {
-      const unit = unitUsedForCOC;
+  const convertValueBasedOnUnit = (value, resolutionToUsed, unitToUsed) => {
+    if ((!resolutionToUsed && resolutionToUsed !== 0) || !unitToUsed) return '';
 
-      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
-        return '';
+    if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+      return '';
+    }
+
+    switch (unitToUsed) {
+      case 'gram': {
+        const precision = countDecimals(resolutionToUsed);
+        return formatToDicimalString(value, precision);
+      }
+      case 'kilogram': {
+        const result = multiply(value, 0.001);
+        const precision = countDecimals(divide(resolutionToUsed, 1000));
+
+        return formatToDicimalString(result, precision);
       }
 
-      switch (unit) {
-        case 'gram': {
-          const precision = countDecimals(resolution);
-          return formatToDicimalString(value, precision);
-        }
-        case 'kilogram': {
-          const result = multiply(value, 0.001);
-          const precision = countDecimals(divide(resolution, 1000));
-          return formatToDicimalString(result, precision);
-        }
-
-        default:
-          return value;
-      }
-    },
-    [unitUsedForCOC, resolution]
-  );
-
-  const convertExpandedUncertaintyBasedOnUnit = useCallback(
-    (value) => {
-      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
-        return '';
-      }
-
-      const unit = unitUsedForCOC;
-      const factor = unit === 'gram' ? 1 : 0.001;
-      const scaledResolution = resolution * factor;
-      const result = ceil((value * factor) / scaledResolution) * scaledResolution;
-
-      switch (unit) {
-        case 'gram': {
-          const precision = countDecimals(resolution);
-          return formatToDicimalString(result, precision);
-        }
-        case 'kilogram': {
-          const precision = countDecimals(divide(resolution, 1000));
-          return formatToDicimalString(result, precision);
-        }
-        default:
-          return value;
-      }
-    },
-    [resolution]
-  );
-
-  const renderCorrectionValueWithSymbol = (value) => {
-    const parseValue = parseFloat(value);
-
-    if (isNaN(parseValue)) return value;
-
-    if (parseValue > 0) {
-      if (/^0+(\.0+)?$/.test(value)) return value;
-      return `+${value}`;
-    } else {
-      if (value.includes('-')) {
-        const valueWithoutSymbol = value.replace('-', '');
-        if (/^0+(\.0+)?$/.test(valueWithoutSymbol)) return valueWithoutSymbol;
-        return `-${valueWithoutSymbol}`;
-      }
-
-      return value;
+      default:
+        return value;
     }
   };
 
@@ -338,7 +249,10 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
       )
         .then((snapshot) => {
           if (!snapshot.empty) {
-            const docs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            const docs = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
             const calibrateByData = docs.find((doc) => doc.workerId === calibration.calibratedBy.id); //prettier-ignore
             const approvedSignatoryData = docs.find((doc) => doc.workerId === calibration.approvedSignatory.id); //prettier-ignore
 
@@ -504,18 +418,105 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
             <tr>
               <th>Range</th>
               <td colSpan={5}>
-                <div className='d-flex justify-content-center align-items-center'>
-                  <div>{calibration?.rangeMinCalibration}</div>
-                  <div className='px-5'>to</div>
-                  <div>{calibration?.rangeMaxCalibration}</div>
-                  <div className='ps-3'>g</div>
-                </div>
+                {rangeDetails?.length === 1 && (
+                  <div className='d-flex justify-content-center align-items-center'>
+                    <div>
+                      {convertValueBasedOnUnit(
+                        parseFloat(rangeDetails?.[0]?.rangeMinCalibration),
+                        isNaN(rangeDetails?.[0]?.rangeMinCalibration)
+                          ? 0
+                          : parseFloat(rangeDetails?.[0]?.rangeMinCalibration),
+                        rangeDetails?.[0]?.unitUsedForCOC
+                      )}
+                    </div>
+                    <div className='px-5'>to</div>
+                    <div>
+                      {convertValueBasedOnUnit(
+                        parseFloat(rangeDetails?.[0]?.rangeMaxCalibration),
+                        isNaN(rangeDetails?.[0]?.rangeMaxCalibration)
+                          ? 0
+                          : parseFloat(rangeDetails?.[0]?.rangeMaxCalibration),
+                        rangeDetails?.[0]?.unitUsedForCOC
+                      )}
+                    </div>
+                    <div className='ps-2'>
+                      {unitUsedForCOCAcronym(rangeDetails?.[0]?.unitUsedForCOC)}
+                    </div>
+                  </div>
+                )}
+
+                {rangeDetails?.length > 1 &&
+                  rangeDetails?.map((range, i) => (
+                    <div
+                      key={`${i}-range`}
+                      className='d-flex justify-content-center align-items-center'
+                    >
+                      <div className='pe-3 fw-bold'>Range {i + 1}: </div>
+                      <div>
+                        {convertValueBasedOnUnit(
+                          parseFloat(range?.rangeMinCalibration),
+                          isNaN(range?.rangeMinCalibration)
+                            ? 0
+                            : parseFloat(range?.rangeMinCalibration),
+                          range?.unitUsedForCOC
+                        )}
+                      </div>
+                      <div className='px-5'>to</div>
+                      <div>
+                        {convertValueBasedOnUnit(
+                          parseFloat(range?.rangeMaxCalibration),
+                          isNaN(range?.rangeMaxCalibration)
+                            ? 0
+                            : parseFloat(range?.rangeMaxCalibration),
+                          range?.unitUsedForCOC
+                        )}
+                      </div>
+                      <div className='ps-2'> {unitUsedForCOCAcronym(range?.unitUsedForCOC)}</div>
+                    </div>
+                  ))}
               </td>
             </tr>
             <tr>
               <th>Resolution</th>
               <td colSpan={5}>
-                {convertValueBasedOnUnit(resolution)} {unitUsedForCOCAcronym}
+                {rangeDetails?.length === 1 && (
+                  <div className='d-flex justify-content-center align-content-center'>
+                    <div className='ps-2'>
+                      {convertValueBasedOnUnit(
+                        parseFloat(rangeDetails?.[0]?.resolution),
+                        isNaN(parseFloat(rangeDetails?.[0]?.resolution))
+                          ? 0
+                          : parseFloat(rangeDetails?.[0]?.resolution),
+                        rangeDetails?.[0]?.unitUsedForCOC
+                      )}
+                    </div>
+                    <div className='ps-2'>
+                      {unitUsedForCOCAcronym(rangeDetails?.[0]?.unitUsedForCOC)}
+                    </div>
+                  </div>
+                )}
+
+                {rangeDetails?.length > 1 &&
+                  rangeDetails?.map((range, i) => (
+                    <div
+                      key={`${i}-range`}
+                      className='d-flex justify-content-center align-items-center'
+                    >
+                      <div className='pe-3 fw-bold'>Range {i + 1}: </div>
+                      <div className='d-flex align-items-center'>
+                        <div className='ps-2'>
+                          {convertValueBasedOnUnit(
+                            parseFloat(range?.resolution),
+                            isNaN(parseFloat(range?.resolution))
+                              ? 0
+                              : parseFloat(range?.resolution),
+                            range?.unitUsedForCOC
+                          )}
+                        </div>
+                        <div className='ps-2'>{unitUsedForCOCAcronym(range?.unitUsedForCOC)}</div>
+                      </div>
+                    </div>
+                  ))}
               </td>
             </tr>
 
@@ -689,218 +690,398 @@ const CertificateOfCalibration = ({ calibration, instruments }) => {
         </Card.Header>
 
         <div className='d-flex flex-column gap-3'>
-          <div className='mt-4 w-75 mx-auto'>
-            <h5 className='mb-0'>Accuracy Test</h5>
-
-            <Table className='text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
-              <thead>
-                <tr>
-                  <th>
-                    Nominal Value <br />({unitUsedForCOCAcronym})
-                  </th>
-                  <th>
-                    Correction <br />({unitUsedForCOCAcronym})
-                  </th>
-                  <th>
-                    Expanded Uncertainty <br />({unitUsedForCOCAcronym})
-                  </th>
-                  <th>
-                    Coverage <br />
-                    Factor, <i>k</i>
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {calibrationPointNo &&
-                  Array.from({ length: calibrationPointNo }).map((_, i) => (
-                    <tr key={i}>
-                      <td>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</td>
-                      <td>
-                        {renderCorrectionValueWithSymbol(
-                          convertValueBasedOnUnit(corrections?.[i] ?? 0)
-                        )}
-                      </td>
-                      <td>
-                        {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
-                      </td>
-                      <td>{coverageFactors?.[i] || 0}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </Table>
-          </div>
-
-          <div className='w-75 mx-auto'>
-            <h5 className=' mb-0'>Repeatability Test</h5>
-
-            <Table className='text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
-              <thead>
-                <tr>
-                  <th>
-                    Nominal Value <br />({unitUsedForCOCAcronym})
-                  </th>
-                  <th>
-                    Standard Deviation <br />({unitUsedForCOCAcronym})
-                  </th>
-                  <th>
-                    Maximum Difference Between Readings <br />({unitUsedForCOCAcronym})
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                <tr>
-                  <td>{convertValueBasedOnUnit(divide(rangeMaxCalibration, 2) ?? 0)}</td>
-                  <td>{convertValueBasedOnUnit(rtestStd?.[0] ?? 0)}</td>
-                  <td>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[0])}</td>
-                </tr>
-
-                <tr>
-                  <td>{convertValueBasedOnUnit(rangeMaxCalibration) ?? 0}</td>
-                  <td>{convertValueBasedOnUnit(rtestStd?.[1]) ?? 0}</td>
-                  <td>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[1] ?? 0)}</td>
-                </tr>
-              </tbody>
-            </Table>
-          </div>
-
-          <div className='w-75 mx-auto'>
-            <h5 className=' mb-0'>Eccentricity Test ({unitUsedForCOC})</h5>
-
-            <div className='d-flex flex-column flex-md-row gap-md-5 align-items-center justify-content-center'>
-              <Table
-                className='flex-grow-1 text-center fs-6 align-middle mt-3 mb-5'
-                bordered
-                responsive
-              >
-                <thead>
-                  <tr>
-                    <th>Test Load</th>
-                    <th>{convertValueBasedOnUnit(calibration?.data?.etest?.testLoad ?? 0)}</th>
-                    <th></th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {TEST_LOADS.map((testload, i) => (
-                    <tr key={`${testload}-${i}`}>
-                      <td>{testload}</td>
-                      <td>{convertValueBasedOnUnit(etestValues?.[i] ?? 0)}</td>
-                      {i === 0 && (
-                        <td rowSpan={TEST_LOADS.length}>
-                          <div className='d-flex flex-column align-items-center gap-2'>
-                            <div className='text-center fw-bold'>Max Error</div>
-                            <div className='text-center'>
-                              {convertValueBasedOnUnit(calibration?.data?.etest?.maxError ?? 0)}
-                            </div>
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-
-              <div className='d-flex justify-content-center align-items-center mt-1 gap-5'>
-                {calibration?.typeOfBalance && (
-                  <img src={`/images/balance-type-${calibration?.typeOfBalance}.png`} width={100} />
-                )}
-              </div>
-            </div>
-
-            <p className='text-muted text-center fst-italic'>
-              "The expanded uncertainties and it's coverage factors for the calibration results
-              above are based on an estimated confidence probability of not less than 95%."
-            </p>
-
-            <p className='text-muted fs-6 text-center'>
-              Note : The result of calibration is obtained after the balance is leveled. If the
-              balance is moved to different location, user should always ensure that the balance is
-              leveled, where appropriate using the bubble level that is usually attached to the
-              frame.
-            </p>
-            <p className='text-muted fs-6 text-center'>
-              Care should always be taken in the selection of location as all balance will be
-              affected to a greater or lesser extent by draughts, vibration, inadequate support
-              surfaces and temperature changes, whether across the machine or with time.
-            </p>
-
-            <div className='d-flex justify-content-between my-5'>
-              <div
-                className='d-flex flex-column justify-content-end align-items-center gap-2'
-                style={{ width: 'fit-content' }}
-              >
-                <div className='fw-medium'>Calibrated By</div>
-
-                {calibrateBy?.data?.signature && (
-                  <div className='my-2' style={{ maxWidth: 80 }}>
-                    <Image
-                      className='w-100 h-100'
-                      src={calibrateBy?.data?.signature}
-                      alt='Calibrated By Signature'
-                    />
-                  </div>
-                )}
-
-                <div
-                  className={
-                    `text-center border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0 ` +
-                    `${calibrateBy?.data?.signature ? ' mt-2' : 'mt-5'}`
-                  }
-                  style={{ maxWidth: 240 }}
-                >
-                  {calibration?.calibratedBy?.name || ''}
-                </div>
-              </div>
-
-              <div
-                className='d-flex flex-column justify-content-end align-items-center gap-2'
-                style={{ width: 'fit-content' }}
-              >
-                <div className='fw-medium'>Approved Signatory</div>
-
-                {approvedSignatory?.data?.signature && (
-                  <div className='my-2' style={{ maxWidth: 80 }}>
-                    <Image
-                      className='w-100 h-100'
-                      src={approvedSignatory?.data?.signature}
-                      alt='Approved Signatory Signature'
-                    />
-                  </div>
-                )}
-
-                <div
-                  className={
-                    `text-center border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0 ` +
-                    `${approvedSignatory?.data?.signature ? ' mt-2' : 'mt-5'}`
-                  }
-                  style={{ maxWidth: 240 }}
-                >
-                  {calibration?.approvedSignatory?.name || ''}
-                </div>
-              </div>
-            </div>
-
-            <p className='fw-bold mt-5 text-center'>
-              The expanded uncertainty is stated as the standard measurement uncertainty multiplied
-              by the coverage factor k, such that the coverage probability corresponds to
-              approximately 95 %.
-            </p>
-          </div>
-
-          <hr />
-
-          <small className='text-center'>
-            This certificate is issued in accordance with the laboratory accreditation requirements
-            of Skim Akreditasi Makmal Malaysia ( SAMM ) of Standards Malaysia which is a signatory
-            to the ILAC MRA. Copyright of this certificate is owned by the issuing laboratory and
-            may not be reproduced other than in full except with the prior written approval of the
-            Head of the issuing laboratory.
-          </small>
+          {rangeDetails.map((range, rangeIndex) => (
+            <CertificateOfCalibrationResultContent
+              calibration={calibration}
+              currentRange={range}
+              rangeIndex={rangeIndex}
+              calibrateBy={calibrateBy}
+              approvedSignatory={approvedSignatory}
+            />
+          ))}
         </div>
       </Card.Body>
     </Card>
+  );
+};
+
+const CertificateOfCalibrationResultContent = ({
+  calibration,
+  currentRange,
+  rangeIndex,
+  calibrateBy,
+  approvedSignatory,
+}) => {
+  const currentCalibrationData = useMemo(() => {
+    return calibration?.data?.[rangeIndex];
+  }, [JSON.stringify(calibration), rangeIndex]);
+
+  const calibrationPointNo = useMemo(() => {
+    const value = parseFloat(currentRange?.calibrationPointNo);
+    return isNaN(value) ? undefined : value;
+  }, [JSON.stringify(currentRange)]);
+
+  const resolution = useMemo(() => {
+    const value = parseFloat(currentRange?.resolution);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
+
+  const rangeMaxCalibration = useMemo(() => {
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
+
+  const unitUsedForCOC = useMemo(() => {
+    return currentRange?.unitUsedForCOC || 'gram';
+  }, [JSON.stringify(currentRange)]);
+
+  const typeOFBalance = useMemo(() => {
+    return currentCalibrationData?.typeOfBalance || '';
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const formattedRangeMaxCalibration = useMemo(() => {
+    if (unitUsedForCOC === 'gram') return rangeMaxCalibration;
+    return rangeMaxCalibration / 1000; //* convert to kilogram
+  }, [unitUsedForCOC]);
+
+  const rtestStd = useMemo(() => {
+    return currentCalibrationData?.rtest?.std || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const rtestMaxDiffBetweenReadings = useMemo(() => {
+    return currentCalibrationData?.rtest?.maxDiffBetweenReadings || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const etestValues = useMemo(() => {
+    return currentCalibrationData?.etest?.values || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const nominalValues = useMemo(() => {
+    return currentCalibrationData?.nominalValues || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const corrections = useMemo(() => {
+    return currentCalibrationData?.corrections || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const coverageFactors = useMemo(() => {
+    return currentCalibrationData?.coverageFactors || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const expandedUncertainties = useMemo(() => {
+    return currentCalibrationData?.expandedUncertainties || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const unitUsedForCOCAcronym = useMemo(() => {
+    if (!unitUsedForCOC) return 'g';
+    if (unitUsedForCOC === 'kilogram') return 'kg';
+    return 'g';
+  }, [unitUsedForCOC]);
+
+  const convertValueBasedOnUnit = useCallback(
+    (value) => {
+      const unit = unitUsedForCOC;
+
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+        return '';
+      }
+
+      switch (unit) {
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(value, precision);
+        }
+        case 'kilogram': {
+          const result = multiply(value, 0.001);
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+
+        default:
+          return value;
+      }
+    },
+    [unitUsedForCOC, resolution]
+  );
+
+  const convertExpandedUncertaintyBasedOnUnit = useCallback(
+    (value) => {
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+        return '';
+      }
+
+      const unit = unitUsedForCOC;
+      const factor = unit === 'gram' ? 1 : 0.001;
+      const scaledResolution = resolution * factor;
+      const result = ceil((value * factor) / scaledResolution) * scaledResolution;
+
+      switch (unit) {
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(result, precision);
+        }
+        case 'kilogram': {
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+        default:
+          return value;
+      }
+    },
+    [unitUsedForCOC, resolution]
+  );
+
+  const renderCorrectionValueWithSymbol = (value) => {
+    const parseValue = parseFloat(value);
+
+    if (isNaN(parseValue)) return value;
+
+    if (parseValue > 0) {
+      if (/^0+(\.0+)?$/.test(value)) return value;
+      return `+${value}`;
+    } else {
+      if (value.includes('-')) {
+        const valueWithoutSymbol = value.replace('-', '');
+        if (/^0+(\.0+)?$/.test(valueWithoutSymbol)) return valueWithoutSymbol;
+        return `-${valueWithoutSymbol}`;
+      }
+
+      return value;
+    }
+  };
+
+  return (
+    <>
+      <div className='d-flex flex-column gap-3'>
+        <div className='mt-4 w-75 mx-auto'>
+          <div className='d-flex align-items-center gap-2'>
+            <Table className='text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
+              <tbody>
+                <tr>
+                  <th>
+                    Range {rangeIndex + 1} : {formattedRangeMaxCalibration} {unitUsedForCOCAcronym}
+                  </th>
+                  <th>
+                    Resolution {convertValueBasedOnUnit(resolution)} {unitUsedForCOCAcronym}
+                  </th>
+                </tr>
+              </tbody>
+            </Table>
+          </div>
+
+          <h5 className='mb-0'>Accuracy Test</h5>
+
+          <Table className='text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
+            <thead>
+              <tr>
+                <th>
+                  Nominal Value <br />({unitUsedForCOCAcronym})
+                </th>
+                <th>
+                  Correction <br />({unitUsedForCOCAcronym})
+                </th>
+                <th>
+                  Expanded Uncertainty <br />({unitUsedForCOCAcronym})
+                </th>
+                <th>
+                  Coverage <br />
+                  Factor, <i>k</i>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {calibrationPointNo &&
+                Array.from({ length: calibrationPointNo }).map((_, i) => (
+                  <tr key={i}>
+                    <td>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</td>
+                    <td>
+                      {renderCorrectionValueWithSymbol(
+                        convertValueBasedOnUnit(corrections?.[i] ?? 0)
+                      )}
+                    </td>
+                    <td>
+                      {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
+                    </td>
+                    <td>{coverageFactors?.[i] || 0}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </Table>
+        </div>
+
+        <div className='w-75 mx-auto'>
+          <h5 className=' mb-0'>Repeatability Test</h5>
+
+          <Table className='text-center fs-6 align-middle mt-3 mb-5' bordered responsive>
+            <thead>
+              <tr>
+                <th>
+                  Nominal Value <br />({unitUsedForCOCAcronym})
+                </th>
+                <th>
+                  Standard Deviation <br />({unitUsedForCOCAcronym})
+                </th>
+                <th>
+                  Maximum Difference Between Readings <br />({unitUsedForCOCAcronym})
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td>{convertValueBasedOnUnit(divide(rangeMaxCalibration, 2) ?? 0)}</td>
+                <td>{convertValueBasedOnUnit(rtestStd?.[0] ?? 0)}</td>
+                <td>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[0])}</td>
+              </tr>
+
+              <tr>
+                <td>{convertValueBasedOnUnit(rangeMaxCalibration) ?? 0}</td>
+                <td>{convertValueBasedOnUnit(rtestStd?.[1]) ?? 0}</td>
+                <td>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[1] ?? 0)}</td>
+              </tr>
+            </tbody>
+          </Table>
+        </div>
+
+        <div className='w-75 mx-auto'>
+          <h5 className=' mb-0'>Eccentricity Test ({unitUsedForCOC})</h5>
+
+          <div className='d-flex flex-column flex-md-row gap-md-5 align-items-center justify-content-center'>
+            <Table
+              className='flex-grow-1 text-center fs-6 align-middle mt-3 mb-5'
+              bordered
+              responsive
+            >
+              <thead>
+                <tr>
+                  <th>Test Load</th>
+                  <th>{convertValueBasedOnUnit(currentCalibrationData?.etest?.testLoad ?? 0)}</th>
+                  <th></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {TEST_LOADS.map((testload, i) => (
+                  <tr key={`${testload}-${i}`}>
+                    <td>{testload}</td>
+                    <td>{convertValueBasedOnUnit(etestValues?.[i] ?? 0)}</td>
+                    {i === 0 && (
+                      <td rowSpan={TEST_LOADS.length}>
+                        <div className='d-flex flex-column align-items-center gap-2'>
+                          <div className='text-center fw-bold'>Max Error</div>
+                          <div className='text-center'>
+                            {convertValueBasedOnUnit(currentCalibrationData?.etest?.maxError ?? 0)}
+                          </div>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+
+            <div className='d-flex justify-content-center align-items-center mt-1 gap-5'>
+              {typeOFBalance && (
+                <img src={`/images/balance-type-${typeOFBalance}.png`} width={100} />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='d-flex flex-column gap-3'>
+        <div className='w-75 mx-auto'>
+          <p className='text-muted text-center fst-italic'>
+            "The expanded uncertainties and it's coverage factors for the calibration results above
+            are based on an estimated confidence probability of not less than 95%."
+          </p>
+
+          <p className='text-muted fs-6 text-center'>
+            Note : The result of calibration is obtained after the balance is leveled. If the
+            balance is moved to different location, user should always ensure that the balance is
+            leveled, where appropriate using the bubble level that is usually attached to the frame.
+          </p>
+          <p className='text-muted fs-6 text-center'>
+            Care should always be taken in the selection of location as all balance will be affected
+            to a greater or lesser extent by draughts, vibration, inadequate support surfaces and
+            temperature changes, whether across the machine or with time.
+          </p>
+
+          <div className='d-flex justify-content-between my-5'>
+            <div
+              className='d-flex flex-column justify-content-end align-items-center gap-2'
+              style={{ width: 'fit-content' }}
+            >
+              <div className='fw-medium'>Calibrated By</div>
+
+              {calibrateBy?.data?.signature && (
+                <div className='my-2' style={{ maxWidth: 80 }}>
+                  <Image
+                    className='w-100 h-100'
+                    src={calibrateBy?.data?.signature}
+                    alt='Calibrated By Signature'
+                  />
+                </div>
+              )}
+
+              <div
+                className={
+                  `text-center border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0 ` +
+                  `${calibrateBy?.data?.signature ? ' mt-2' : 'mt-5'}`
+                }
+                style={{ maxWidth: 240 }}
+              >
+                {calibration?.calibratedBy?.name || ''}
+              </div>
+            </div>
+
+            <div
+              className='d-flex flex-column justify-content-end align-items-center gap-2'
+              style={{ width: 'fit-content' }}
+            >
+              <div className='fw-medium'>Approved Signatory</div>
+
+              {approvedSignatory?.data?.signature && (
+                <div className='my-2' style={{ maxWidth: 80 }}>
+                  <Image
+                    className='w-100 h-100'
+                    src={approvedSignatory?.data?.signature}
+                    alt='Approved Signatory Signature'
+                  />
+                </div>
+              )}
+
+              <div
+                className={
+                  `text-center border border-dark-subtle border-2 py-2 border-bottom-0 border-start-0 border-end-0 ` +
+                  `${approvedSignatory?.data?.signature ? ' mt-2' : 'mt-5'}`
+                }
+                style={{ maxWidth: 240 }}
+              >
+                {calibration?.approvedSignatory?.name || ''}
+              </div>
+            </div>
+          </div>
+
+          <p className='fw-bold mt-5 text-center'>
+            The expanded uncertainty is stated as the standard measurement uncertainty multiplied by
+            the coverage factor k, such that the coverage probability corresponds to approximately
+            95 %.
+          </p>
+        </div>
+
+        <hr />
+
+        <small className='text-center'>
+          This certificate is issued in accordance with the laboratory accreditation requirements of
+          Skim Akreditasi Makmal Malaysia ( SAMM ) of Standards Malaysia which is a signatory to the
+          ILAC MRA. Copyright of this certificate is owned by the issuing laboratory and may not be
+          reproduced other than in full except with the prior written approval of the Head of the
+          issuing laboratory.
+        </small>
+      </div>
+    </>
   );
 };
 

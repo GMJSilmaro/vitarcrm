@@ -4,27 +4,23 @@ import { std, max, min, abs, sum, divide } from 'mathjs';
 import { Controller, useFormContext } from 'react-hook-form';
 import styles from '../../mass.module.css';
 
-const RTest = ({ data }) => {
+const RTest = ({ data, rangeIndex }) => {
   const form = useFormContext();
   const formErrors = form.formState.errors;
 
-  const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
-    return isNaN(value) ? undefined : value;
-  }, [form.watch('calibrationPointNo.value')]);
-
-  const calibrationData = useMemo(() => {
-    return form.getValues('data');
-  }, [form.watch('data')]);
+  const currentRange = useMemo(() => {
+    const rangeDetails = form.getValues('rangeDetails') || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [rangeIndex, JSON.stringify(form.watch('rangeDetails')), rangeIndex]);
 
   const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(form.getValues('rangeMaxCalibration'));
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
     return isNaN(value) ? 0 : value;
-  }, [form.watch('rangeMaxCalibration')]);
+  }, [JSON.stringify(currentRange)]);
 
   const halfResults = useMemo(() => {
     let actualValues;
-    const halfValues = form.getValues('data.rtest.half');
+    const halfValues = form.getValues(`data.${rangeIndex}.rtest.half`);
 
     if (halfValues) {
       if (Array.isArray(halfValues)) actualValues = halfValues.filter(Boolean);
@@ -45,15 +41,15 @@ const RTest = ({ data }) => {
     };
 
     //* set temporary value used for view in table
-    form.setValue(`data.rtest.std.${0}`, result.raw.std || 0);
-    form.setValue(`data.rtest.maxDiffBetweenReadings.${0}`, result.raw.error || 0);
+    form.setValue(`data.${rangeIndex}.rtest.std.${0}`, result.raw.std || 0);
+    form.setValue(`data.${rangeIndex}.rtest.maxDiffBetweenReadings.${0}`, result.raw.error || 0);
 
     return result;
-  }, [JSON.stringify(form.watch('data.rtest.half'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.rtest.half`)), rangeIndex]);
 
   const maxResults = useMemo(() => {
     let actualValues;
-    const maxValues = form.getValues('data.rtest.max');
+    const maxValues = form.getValues(`data.${rangeIndex}.rtest.max`);
 
     if (maxValues) {
       if (Array.isArray(maxValues)) actualValues = maxValues.filter(Boolean);
@@ -74,11 +70,11 @@ const RTest = ({ data }) => {
     };
 
     //* set temporary value used for view in table
-    form.setValue(`data.rtest.std.${1}`, result.raw.std || 0);
-    form.setValue(`data.rtest.maxDiffBetweenReadings.${1}`, result.raw.error || 0);
+    form.setValue(`data.${rangeIndex}.rtest.std.${1}`, result.raw.std || 0);
+    form.setValue(`data.${rangeIndex}.rtest.maxDiffBetweenReadings.${1}`, result.raw.error || 0);
 
     return result;
-  }, [JSON.stringify(form.watch('data.rtest.max'))]);
+  }, [JSON.stringify(form.watch(`data.${rangeIndex}.rtest.max`))]);
 
   const maxRepetabilityError = useMemo(() => {
     const values = [maxResults?.raw?.error ?? 0, halfResults?.raw?.error ?? 0];
@@ -91,22 +87,25 @@ const RTest = ({ data }) => {
 
   const isAbove100Kg = useMemo(() => {
     return rangeMaxCalibration > 100000; //* 100000 in grams is 100kg
-  }, [rangeMaxCalibration]);
+  }, [JSON.stringify(rangeMaxCalibration)]);
 
   //* set initial rtest data
   useEffect(() => {
     //* if data exist and rangeMaxCalibration is same as data's dont dont something, else set initial data
-    if (data && parseFloat(data.rangeMaxCalibration) === rangeMaxCalibration) {
+    if (data && parseFloat(data?.[rangeIndex]?.rangeMaxCalibration) === rangeMaxCalibration) {
       return;
     }
 
     setTimeout(() => {
-      if (!data || parseFloat(data.rangeMaxCalibration) !== rangeMaxCalibration) {
+      if (!data || parseFloat(data?.[rangeIndex]?.rangeMaxCalibration) !== rangeMaxCalibration) {
         form.setValue(
-          'data.rtest.half',
+          `data.${rangeIndex}.rtest.half`,
           Array(isAbove100Kg ? 5 : 10).fill(divide(rangeMaxCalibration, 2))
         );
-        form.setValue('data.rtest.max', Array(isAbove100Kg ? 5 : 10).fill(rangeMaxCalibration));
+        form.setValue(
+          `data.${rangeIndex}.rtest.max`,
+          Array(isAbove100Kg ? 5 : 10).fill(rangeMaxCalibration)
+        );
       }
     }, 1000);
   }, [data, rangeMaxCalibration, isAbove100Kg]);
@@ -140,24 +139,24 @@ const RTest = ({ data }) => {
                   <td className='text-center'>#{i + 1}</td>
                   <td className='text-center'>
                     <Controller
-                      name={`data.rtest.half.${i}`}
+                      name={`data.${rangeIndex}.rtest.half.${i}`}
                       control={form.control}
                       render={({ field }) => (
                         <Form.Control
                           onChange={(e) => {
                             form.setValue(
-                              `data.rtest.half.${i}`,
+                              `data.${rangeIndex}.rtest.half.${i}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
 
-                            form.clearErrors(`data.rtest.half.${i}`);
+                            form.clearErrors(`data.${rangeIndex}.rtest.half.${i}`);
                           }}
                           onWheel={numberInputOnWheel}
                           name={field.name}
                           ref={field.ref}
                           value={field.value}
                           className={`${styles.columnData} text-center ${
-                            formErrors && formErrors.data?.rtest?.half?.[i]?.message
+                            formErrors && formErrors.data?.[rangeIndex]?.rtest?.half?.[i]?.message
                               ? 'border-danger'
                               : ''
                           }`}
@@ -168,13 +167,13 @@ const RTest = ({ data }) => {
                   </td>
                   <td className='text-center'>
                     <Controller
-                      name={`data.rtest.max.${i}`}
+                      name={`data.${rangeIndex}.rtest.max.${i}`}
                       control={form.control}
                       render={({ field }) => (
                         <Form.Control
                           onChange={(e) => {
                             form.setValue(
-                              `data.rtest.max.${i}`,
+                              `data.${rangeIndex}.rtest.max.${i}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
                           }}
@@ -183,7 +182,7 @@ const RTest = ({ data }) => {
                           ref={field.ref}
                           value={field.value}
                           className={`${styles.columnData} text-center ${
-                            formErrors && formErrors.data?.rtest?.max?.[i]?.message
+                            formErrors && formErrors.data?.[rangeIndex]?.rtest?.max?.[i]?.message
                               ? 'border-danger'
                               : ''
                           }`}

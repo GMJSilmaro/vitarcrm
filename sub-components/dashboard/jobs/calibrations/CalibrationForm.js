@@ -9,7 +9,7 @@ import {
   calibrationSchema,
 } from '@/schema/calibration';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Accordion, Form, Tab, Tabs } from 'react-bootstrap';
+import { Accordion, Col, Form, Nav, Row, Tab, Tabs } from 'react-bootstrap';
 import { FormProvider, useForm } from 'react-hook-form';
 import { getFormDefaultValues } from '@/utils/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,10 +20,10 @@ import CalibrateSummaryForm from './tabls-form/CalibrateSummaryForm';
 import CalibrationReferenceInstrumentsForm from './tabls-form/CalibrationReferenceInstrumentsForm';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import CalibrationMassForm from './tabls-form/CalibrationMassForm';
+import CalibrationTemplateForm from './tabls-form/CalibrationTemplateForm';
 import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
-import { ExclamationTriangleFill } from 'react-bootstrap-icons';
+import { CardList, ExclamationTriangleFill } from 'react-bootstrap-icons';
 import useMounted from '@/hooks/useMounted';
 import { format } from 'date-fns';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -64,7 +64,8 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
       ...data,
       traceabilityCalibrationLab: null,
       cocInstruments: [],
-      data: { content: [] },
+      data: [],
+      rangeDetails: [],
     },
     resolver: zodResolver(schema),
   });
@@ -139,17 +140,20 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
           const formData = parseData.data;
 
           //* check conflict
-          const conflicts = validateCalibrationPointsData(
-            formData?.data?.dfnv?.[0]?.calibrationPoints
-          );
+          const formCData = formData?.data || [];
 
-          if (conflicts.length > 0) {
-            console.log({ conflicts });
+          const rangeConflicts = formCData.map((cData) => {
+            return validateCalibrationPointsData(cData?.dfnv?.[0]?.calibrationPoints);
+          });
+
+          //* check if any of the range has conflict show popup
+          if (rangeConflicts.some((c) => c.length > 0)) {
+            console.log({ rangeConflicts });
 
             setActiveKey((prev) => prev - 1);
             setIsLoading(false);
 
-            //* Swal popup with conflict, using accordion
+            //* Swal popup with range conflict, using accordion
             await withReactContent(Swal).fire({
               title: 'Duplicate Value Error',
               icon: 'error',
@@ -158,41 +162,84 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
               cancelButtonText: 'Ok',
               width: '600px',
               html: (
-                <div>
-                  <div>
-                    The following calibration points have duplicate values. Please fix the errors
-                    and try again.
-                  </div>
+                <Tab.Container defaultActiveKey='0'>
+                  <Row>
+                    <Col className='px-0' xs={12}>
+                      <Nav
+                        variant='pills'
+                        className='d-flex justify-content-center align-items-center gap-3'
+                      >
+                        {rangeConflicts?.length > 0 &&
+                          Array.from({ length: rangeConflicts?.length }).map(
+                            (_, rangeConflictIndex) => (
+                              <Nav.Item
+                                key={`${rangeConflictIndex}-nav-item`}
+                                className='d-flex align-items-center'
+                              >
+                                <Nav.Link eventKey={`${rangeConflictIndex}`}>
+                                  <CardList size={18} />
+                                  Range {rangeConflictIndex + 1}
+                                </Nav.Link>
+                              </Nav.Item>
+                            )
+                          )}
+                      </Nav>
+                    </Col>
 
-                  <Accordion className='mt-4'>
-                    {conflicts.map((conflict, i) => (
-                      <Accordion.Item eventKey={`${i}-${conflict.pointIndex}`}>
-                        <Accordion.Header className='text-danger'>
-                          <ExclamationTriangleFill className='me-3' size={17} />
-                          {conflict.message}
-                        </Accordion.Header>
-                        <Accordion.Body className='fs-6'>
-                          <div className='d-flex flex-column align-items-start gap-2'>
-                            <div>
-                              <span className='fw-bold me-2'>Duplicates:</span>{' '}
-                              {conflict?.duplicates?.join(', ')}
-                            </div>
-                            <div>
-                              <span className='fw-bold me-2'>Values:</span>{' '}
-                              {conflict?.values?.join(', ')}
-                            </div>
-                          </div>
-                        </Accordion.Body>
-                      </Accordion.Item>
-                    ))}
-                  </Accordion>
-                </div>
+                    <Col xs={12}>
+                      <Tab.Content>
+                        {rangeConflicts.map((conflicts, rangeConflictIndex) => {
+                          return (
+                            <Tab.Pane
+                              key={`${rangeConflictIndex}-tab-pane-range-conflict`}
+                              className='h-100'
+                              eventKey={rangeConflictIndex}
+                            >
+                              <div className='fs-5 mt-3'>
+                                The following calibration points have duplicate values. Please fix
+                                the errors and try again.
+                              </div>
+
+                              <Accordion className='mt-4'>
+                                {conflicts.length > 0 ? (
+                                  conflicts.map((conflict, i) => (
+                                    <Accordion.Item eventKey={`${i}-${conflict.pointIndex}`}>
+                                      <Accordion.Header className='text-danger'>
+                                        <ExclamationTriangleFill className='me-3' size={17} />
+                                        {conflict.message}
+                                      </Accordion.Header>
+                                      <Accordion.Body className='fs-6'>
+                                        <div className='d-flex flex-column align-items-start gap-2'>
+                                          <div>
+                                            <span className='fw-bold me-2'>Duplicates:</span>{' '}
+                                            {conflict?.duplicates?.join(', ')}
+                                          </div>
+                                          <div>
+                                            <span className='fw-bold me-2'>Values:</span>{' '}
+                                            {conflict?.values?.join(', ')}
+                                          </div>
+                                        </div>
+                                      </Accordion.Body>
+                                    </Accordion.Item>
+                                  ))
+                                ) : (
+                                  <div className='text-center fs-5'>No conflict found</div>
+                                )}
+                              </Accordion>
+                            </Tab.Pane>
+                          );
+                        })}
+                      </Tab.Content>
+                    </Col>
+                  </Row>
+                </Tab.Container>
               ),
             });
 
             return;
           }
 
+          const formValueCData = formValues?.data || [];
           let dfnvHasData = true;
 
           const filterNullUndefined = (v) => v !== null && v !== undefined && v !== '';
@@ -207,7 +254,20 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
             dfnvHasData = false;
           }
 
-          //* check if theres no data in dfnv (empty), no nominal valueso or measuredValues and the other measurement show popup
+          //* check if some of the range data dont have dfnv data then dfnvHasData will be false,
+          dfnvHasData = !formValueCData.some((fcData) => {
+            // prettier-ignore
+            if (
+              fcData?.dfnv?.[0]?.calibrationPoints?.length === 0 ||
+              fcData?.dfnv?.[0]?.calibrationPoints?.every((point) => point?.data ?.filter(filterNullUndefined) .every((columnData) => columnData?.filter(filterNullUndefined).length === 0)) ||
+              fcData?.nominalValues?.filter(filterNullUndefined).length === 0 ||
+              fcData?.measuredValues ?.filter(filterNullUndefined).every((mValues) => mValues?.filter(filterNullUndefined).length === 0)
+            ) {
+              return true;
+            }
+          });
+
+          //* check if there are some of the range that dont have dfnv data, no nominal values , measuredValues and the other measurement show popup
           if (
             !reminded &&
             (!dfnvHasData ||
@@ -215,7 +275,7 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
               (!formValues.maxTemperature && !formValues.maxTemperature !== 0) ||
               (!formValues.rangeMinRHumidity && !formValues.rangeMinRHumidity !== 0) ||
               (!formValues.rangeMaxRHumidity && !formValues.rangeMaxRHumidity !== 0) ||
-              !formValues.typeOfBalance)
+              formValueCData.some((fcData) => !fcData?.typeOfBalance))
           ) {
             await Swal.fire({
               title: 'Reminder!',
@@ -256,17 +316,24 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
       try {
         setIsLoading(true);
 
-        const results = {
-          nominalValues: formData?.data?.nominalValues || [],
-          measuredValuesM: formData?.data?.measuredValuesM || [],
-          corrections: formData?.data?.corrections || [],
-          expandedUncertainties: formData?.data?.expandedUncertainties || [],
-          rangeType: formData?.rangeType || 'single',
-          resolution: !isNaN(parseFloat(formData?.resolution))
-            ? parseFloat(formData?.resolution)
-            : 0,
-          rtestMaxError: formData?.data?.rtest?.maxError || 0,
-        };
+        const formCalibrationData = formData?.data || [];
+
+        const results = formCalibrationData.map((cData, i) => {
+          const rangeDetails = formData?.rangeDetails || [];
+          const currentRange = rangeDetails.find((_, rIndex) => rIndex === i);
+
+          return {
+            nominalValues: cData?.nominalValues || [],
+            measuredValuesM: cData?.measuredValuesM || [],
+            corrections: cData?.corrections || [],
+            expandedUncertainties: cData?.expandedUncertainties || [],
+            rangeType: formData?.rangeType || 'single',
+            resolution: !isNaN(parseFloat(currentRange?.resolution))
+              ? parseFloat(currentRange?.resolution)
+              : 0,
+            rtestMaxError: cData?.rtest?.maxError || 0,
+          };
+        });
 
         const promises = [
           setDoc(
@@ -530,7 +597,19 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
 
   return (
     <>
-      {/* <FormDebug form={form} /> */}
+      {/* <FormDebug
+        form={form}
+        keys={[
+          'rangeCount',
+          'rangeDetails',
+          'rangeType',
+          'resolution',
+          'unitUsedForCOC',
+          'calibrationPointNo',
+          'data',
+        ]}
+ 
+      /> */}
 
       <FormProvider {...form}>
         <Form>
@@ -574,7 +653,7 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
             </Tab>
 
             <Tab eventKey='3' title='Calibration'>
-              <CalibrationMassForm
+              <CalibrationTemplateForm
                 data={data}
                 isLoading={isLoading}
                 handleNext={handleNext}

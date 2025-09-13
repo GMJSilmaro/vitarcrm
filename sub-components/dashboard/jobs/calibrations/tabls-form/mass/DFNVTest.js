@@ -8,16 +8,11 @@ import { useDebouncedCallback } from 'use-debounce';
 import Select from '@/components/Form/Select';
 import _ from 'lodash';
 
-const DFNVTest = ({ data }) => {
+const DFNVTest = ({ data, rangeIndex }) => {
   const isMounted = useRef(false);
 
   const form = useFormContext();
   const formErrors = form.formState.errors;
-
-  const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(form.getValues('rangeMaxCalibration'));
-    return isNaN(value) ? 0 : value;
-  }, [form.watch('rangeMaxCalibration')]);
 
   const slotsFields = useMemo(() => {
     return [
@@ -28,18 +23,24 @@ const DFNVTest = ({ data }) => {
   }, []);
 
   const { fields, append, update, replace } = useFieldArray({
-    name: 'data.dfnv',
+    name: `data.${rangeIndex}.dfnv`,
     control: form.control,
   });
 
-  const instruments = useMemo(() => {
-    return form.getValues('instruments');
-  }, [form.watch('instruments')]);
+  const currentRange = useMemo(() => {
+    const rangeDetails = form.getValues('rangeDetails') || [];
+    return rangeDetails.find((_, rIndex) => rIndex === rangeIndex);
+  }, [rangeIndex, JSON.stringify(form.watch('rangeDetails')), rangeIndex]);
+
+  const rangeMaxCalibration = useMemo(() => {
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
 
   const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(form.getValues('calibrationPointNo')?.value);
+    const value = parseFloat(currentRange?.calibrationPointNo?.value);
     return isNaN(value) ? undefined : value;
-  }, [form.watch('calibrationPointNo')]);
+  }, [JSON.stringify(currentRange)]);
 
   const handleValueSubmit = ({
     value,
@@ -75,7 +76,7 @@ const DFNVTest = ({ data }) => {
     form.setValue(key, value);
   };
 
-  const handleIdValueSubmit = ({ value, entry, entryIndex, key, slotIndex }) => {
+  const handleIdValueSubmit = ({ value, entry, entryIndex, key, slotIndex, rangeIndex }) => {
     const existingIdsArray = entry.ids?.[slotIndex];
 
     if (!existingIdsArray) return;
@@ -92,7 +93,7 @@ const DFNVTest = ({ data }) => {
     form.setValue(key, '');
 
     //* clear errors
-    form.clearErrors(`data.dfnv.${entryIndex}.${slotIndex}.ids`);
+    form.clearErrors(`data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.ids`);
   };
 
   const handleEditData = useCallback(
@@ -233,11 +234,11 @@ const DFNVTest = ({ data }) => {
         }
       }
     },
-    [form.watch('data.dfnv')]
+    [form.watch(`data.${rangeIndex}.dfnv`)]
   );
 
   const idsInputOnKeyDown = useCallback(
-    ({ event, entry, entryIndex, key, slotIndex }) => {
+    ({ event, entry, entryIndex, key, slotIndex, rangeIndex }) => {
       const value = form.getValues(key);
 
       if (event.key === 'Enter') {
@@ -251,15 +252,16 @@ const DFNVTest = ({ data }) => {
             entryIndex,
             key,
             slotIndex,
+            rangeIndex,
           });
         }
       }
     },
-    [form.watch('data.dfnv')]
+    [form.watch(`data.${rangeIndex}.dfnv`)]
   );
 
   const idsSelectOnChange = useCallback(
-    ({ value, entry, entryIndex, key, slotIndex }) => {
+    ({ value, entry, entryIndex, key, slotIndex, rangeIndex }) => {
       const existingIdsArray = entry.ids?.[slotIndex];
 
       if (!value || !existingIdsArray || existingIdsArray.includes(value)) return;
@@ -270,9 +272,10 @@ const DFNVTest = ({ data }) => {
         entryIndex,
         key,
         slotIndex,
+        rangeIndex,
       });
     },
-    [form.watch('data.dfnv')]
+    [form.watch(`data.${rangeIndex}.dfnv`)]
   );
 
   const putCursorAtEnd = (target) => {
@@ -295,7 +298,14 @@ const DFNVTest = ({ data }) => {
   //* set iniitial DFNV data
   useEffect(() => {
     //* if data exist and calibration point no is same as data's dont dont something, else set initial data
-    if (data && parseFloat(data.calibrationPointNo) === calibrationPointNo) return;
+
+    console.log({ x: data?.rangeDetails?.[rangeIndex]?.calibrationPointNo, y: calibrationPointNo });
+    if (
+      data &&
+      parseFloat(data?.rangeDetails?.[rangeIndex]?.calibrationPointNo) == calibrationPointNo
+    ) {
+      return;
+    }
 
     if (!isMounted.current && calibrationPointNo) {
       isMounted.current = true;
@@ -313,9 +323,8 @@ const DFNVTest = ({ data }) => {
 
       setTimeout(() => {
         //* set initial nominal value
-
         form.setValue(
-          'data.nominalValues',
+          `data.${rangeIndex}.nominalValues`,
           Array.from(
             { length: calibrationPointNo },
             (_, i) => rangeMaxCalibration * NOMINAL_VALUE_MULTIPLIER[i]
@@ -325,7 +334,7 @@ const DFNVTest = ({ data }) => {
         // //* set initial measured value
 
         form.setValue(
-          'data.measuredValues',
+          `data.${rangeIndex}.measuredValues`,
           Array.from({ length: calibrationPointNo }).map((_, i) =>
             Array(3).fill(rangeMaxCalibration * NOMINAL_VALUE_MULTIPLIER[i])
           )
@@ -336,7 +345,7 @@ const DFNVTest = ({ data }) => {
     }
 
     return () => (isMounted.current = false);
-  }, [data, calibrationPointNo, rangeMaxCalibration]);
+  }, [data, calibrationPointNo, rangeMaxCalibration, rangeIndex]);
 
   const numberInputOnWheel = (e) => {
     e.target.blur();
@@ -365,25 +374,28 @@ const DFNVTest = ({ data }) => {
                 return (
                   <th key={i}>
                     <Controller
-                      name={`data.nominalValues.${i}`}
+                      name={`data.${rangeIndex}.nominalValues.${i}`}
                       control={form.control}
                       render={({ field }) => (
                         <Form.Control
                           onChange={(e) => {
                             if (e.target.value === '') {
-                              form.setValue(`data.nominalValues.${i}`, '');
+                              form.setValue(`data.${rangeIndex}.nominalValues.${i}`, '');
 
-                              form.setValue(`data.measuredValues.${i}`, Array(3).fill(''));
+                              form.setValue(
+                                `data.${rangeIndex}.measuredValues.${i}`,
+                                Array(3).fill('')
+                              );
                               return;
                             }
 
                             form.setValue(
-                              `data.nominalValues.${i}`,
+                              `data.${rangeIndex}.nominalValues.${i}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
 
                             form.setValue(
-                              `data.measuredValues.${i}`,
+                              `data.${rangeIndex}.measuredValues.${i}`,
                               Array(3).fill(isNaN(e.target.value) ? 0 : parseFloat(e.target.value))
                             );
                           }}
@@ -434,21 +446,22 @@ const DFNVTest = ({ data }) => {
                         <div>
                           <div>
                             <Controller
-                              name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                              name={`data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`}
                               control={form.control}
                               render={({ field }) => (
                                 <>
                                   <Select
                                     {...field}
-                                    inputId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
-                                    instanceId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                    inputId={`data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                    instanceId={`data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`}
                                     onChange={(option) => {
                                       idsSelectOnChange({
                                         value: option.value,
                                         entry,
                                         entryIndex,
-                                        key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
+                                        key: `data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`,
                                         slotIndex,
+                                        rangeIndex,
                                       });
                                     }}
                                     placeholder={`${slotField.displayClass}'s Tag ID`}
@@ -471,12 +484,14 @@ const DFNVTest = ({ data }) => {
                                   />
 
                                   {formErrors &&
-                                    formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
-                                      ?.message && (
+                                    formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]?.ids?.[
+                                      slotIndex
+                                    ]?.message && (
                                       <Form.Text className='text-danger'>
                                         {
-                                          formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
-                                            ?.message
+                                          formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]?.ids?.[
+                                            slotIndex
+                                          ]?.message
                                         }
                                       </Form.Text>
                                     )}
@@ -545,7 +560,7 @@ const DFNVTest = ({ data }) => {
                                   onKeyDown={(e) =>
                                     dataInputOnKeyDown({
                                       event: e,
-                                      key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.e2`,
+                                      key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.e2`,
                                       entry,
                                       entryIndex,
                                       calibrationPointIndex: pointIndex,
@@ -554,7 +569,7 @@ const DFNVTest = ({ data }) => {
                                   }
                                 >
                                   <Controller
-                                    name={`data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.e2`}
+                                    name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.e2`}
                                     control={form.control}
                                     render={({ field }) => (
                                       <Form.Control
@@ -564,7 +579,7 @@ const DFNVTest = ({ data }) => {
                                             entry,
                                             calibrationPointIndex: pointIndex,
                                             dataColumnIndex: 0,
-                                            key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.e2`,
+                                            key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.e2`,
                                           });
                                         }}
                                         name={field.name}
@@ -578,14 +593,12 @@ const DFNVTest = ({ data }) => {
                                 </Form>
 
                                 {formErrors &&
-                                  formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                    pointIndex
-                                  ]?.e2?.message && (
+                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                    ?.calibrationPoints?.[pointIndex]?.e2?.message && (
                                     <Form.Text className='text-danger' style={{ fontSize: 10.2 }}>
                                       {
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.e2?.message
+                                        formErrors?.[rangeIndex]?.data?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.e2?.message
                                       }
                                     </Form.Text>
                                   )}
@@ -596,7 +609,7 @@ const DFNVTest = ({ data }) => {
                                   onKeyDown={(e) =>
                                     dataInputOnKeyDown({
                                       event: e,
-                                      key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.st-mw`,
+                                      key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.st-mw`,
                                       entry,
                                       entryIndex,
                                       calibrationPointIndex: pointIndex,
@@ -605,7 +618,7 @@ const DFNVTest = ({ data }) => {
                                   }
                                 >
                                   <Controller
-                                    name={`data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.st-mw`}
+                                    name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.st-mw`}
                                     control={form.control}
                                     render={({ field }) => (
                                       <Form.Control
@@ -615,7 +628,7 @@ const DFNVTest = ({ data }) => {
                                             entry,
                                             calibrationPointIndex: pointIndex,
                                             dataColumnIndex: 1,
-                                            key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.st-mw`,
+                                            key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.st-mw`,
                                           });
                                         }}
                                         name={field.name}
@@ -629,14 +642,12 @@ const DFNVTest = ({ data }) => {
                                 </Form>
 
                                 {formErrors &&
-                                  formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                    pointIndex
-                                  ]?.['st-mw']?.message && (
+                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                    ?.calibrationPoints?.[pointIndex]?.['st-mw']?.message && (
                                     <Form.Text className='text-danger' style={{ fontSize: 10.2 }}>
                                       {
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.['st-mw']?.message
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.['st-mw']?.message
                                       }
                                     </Form.Text>
                                   )}
@@ -667,7 +678,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 0,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${0}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${0}.${indexColumnData}`,
                                               });
 
                                               putCursorAtEnd(e.target);
@@ -686,7 +697,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 0,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${0}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${0}.${indexColumnData}`,
                                               });
                                             }}
                                           >
@@ -704,17 +715,18 @@ const DFNVTest = ({ data }) => {
                                       )}
 
                                       {formErrors &&
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.[0]?.[indexColumnData]?.message && (
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.[0]?.[indexColumnData]
+                                          ?.message && (
                                           <Form.Text
                                             className='text-danger'
                                             style={{ fontSize: 10.2 }}
                                             contentEditable={false}
                                           >
                                             {
-                                              formErrors?.data?.dfnv?.[entryIndex]
-                                                ?.calibrationPoints?.[pointIndex]?.[0]?.[
+                                              formErrors?.data?.[rangeIndex]?.[rangeIndex]?.dfnv?.[
+                                                entryIndex
+                                              ]?.calibrationPoints?.[pointIndex]?.[0]?.[
                                                 indexColumnData
                                               ]?.message
                                             }
@@ -743,7 +755,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 1,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${1}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${1}.${indexColumnData}`,
                                               });
 
                                               putCursorAtEnd(e.target);
@@ -761,7 +773,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 1,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${1}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${1}.${indexColumnData}`,
                                               });
                                             }}
                                           >
@@ -779,16 +791,16 @@ const DFNVTest = ({ data }) => {
                                       )}
 
                                       {formErrors &&
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.[1]?.[indexColumnData]?.message && (
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.[1]?.[indexColumnData]
+                                          ?.message && (
                                           <Form.Text
                                             className='text-danger'
                                             style={{ fontSize: 10.2 }}
                                             contentEditable={false}
                                           >
                                             {
-                                              formErrors?.data?.dfnv?.[entryIndex]
+                                              formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                                 ?.calibrationPoints?.[pointIndex]?.[1]?.[
                                                 indexColumnData
                                               ]?.message
@@ -823,7 +835,7 @@ const DFNVTest = ({ data }) => {
                                   onKeyDown={(e) =>
                                     dataInputOnKeyDown({
                                       event: e,
-                                      key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`,
+                                      key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`,
                                       entry,
                                       entryIndex,
                                       calibrationPointIndex: pointIndex,
@@ -832,7 +844,7 @@ const DFNVTest = ({ data }) => {
                                   }
                                 >
                                   <Controller
-                                    name={`data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`}
+                                    name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`}
                                     control={form.control}
                                     render={({ field }) => (
                                       <Form.Control
@@ -842,7 +854,7 @@ const DFNVTest = ({ data }) => {
                                             entry,
                                             calibrationPointIndex: pointIndex,
                                             dataColumnIndex: 2,
-                                            key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`,
+                                            key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.1f1`,
                                           });
                                         }}
                                         name={field.name}
@@ -856,14 +868,12 @@ const DFNVTest = ({ data }) => {
                                 </Form>
 
                                 {formErrors &&
-                                  formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                    pointIndex
-                                  ]?.['1f1']?.message && (
+                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                    ?.calibrationPoints?.[pointIndex]?.['1f1']?.message && (
                                     <Form.Text className='text-danger' style={{ fontSize: 10.2 }}>
                                       {
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.['1f1']?.message
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.['1f1']?.message
                                       }
                                     </Form.Text>
                                   )}
@@ -874,7 +884,7 @@ const DFNVTest = ({ data }) => {
                                   onKeyDown={(e) =>
                                     dataInputOnKeyDown({
                                       event: e,
-                                      key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`,
+                                      key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`,
                                       entry,
                                       entryIndex,
                                       calibrationPointIndex: pointIndex,
@@ -883,7 +893,7 @@ const DFNVTest = ({ data }) => {
                                   }
                                 >
                                   <Controller
-                                    name={`data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`}
+                                    name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`}
                                     control={form.control}
                                     render={({ field }) => (
                                       <Form.Control
@@ -893,7 +903,7 @@ const DFNVTest = ({ data }) => {
                                             entry,
                                             calibrationPointIndex: pointIndex,
                                             dataColumnIndex: 3,
-                                            key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`,
+                                            key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.2f1`,
                                           });
                                         }}
                                         name={field.name}
@@ -907,14 +917,12 @@ const DFNVTest = ({ data }) => {
                                 </Form>
 
                                 {formErrors &&
-                                  formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                    pointIndex
-                                  ]?.['2f1']?.message && (
+                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                    ?.calibrationPoints?.[pointIndex]?.['2f1']?.message && (
                                     <Form.Text className='text-danger' style={{ fontSize: 10.2 }}>
                                       {
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.['2f1']?.message
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.['2f1']?.message
                                       }
                                     </Form.Text>
                                   )}
@@ -953,7 +961,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 2,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${2}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${2}.${indexColumnData}`,
                                               });
 
                                               putCursorAtEnd(e.target);
@@ -971,7 +979,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 2,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${2}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${2}.${indexColumnData}`,
                                               });
                                             }}
                                           >
@@ -989,16 +997,16 @@ const DFNVTest = ({ data }) => {
                                       )}
 
                                       {formErrors &&
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.[2]?.[indexColumnData]?.message && (
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.[2]?.[indexColumnData]
+                                          ?.message && (
                                           <Form.Text
                                             className='text-danger'
                                             style={{ fontSize: 10.2 }}
                                             contentEditable={false}
                                           >
                                             {
-                                              formErrors?.data?.dfnv?.[entryIndex]
+                                              formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                                 ?.calibrationPoints?.[pointIndex]?.[2]?.[
                                                 indexColumnData
                                               ]?.message
@@ -1028,7 +1036,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 3,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${3}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${3}.${indexColumnData}`,
                                               });
 
                                               putCursorAtEnd(e.target);
@@ -1046,7 +1054,7 @@ const DFNVTest = ({ data }) => {
                                                 calibrationPointIndex: pointIndex,
                                                 dataColumnIndex: 3,
                                                 dataIndex: indexColumnData,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${3}.${indexColumnData}`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${pointIndex}.${3}.${indexColumnData}`,
                                               });
                                             }}
                                           >
@@ -1064,16 +1072,16 @@ const DFNVTest = ({ data }) => {
                                       )}
 
                                       {formErrors &&
-                                        formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                          pointIndex
-                                        ]?.[3]?.[indexColumnData]?.message && (
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                          ?.calibrationPoints?.[pointIndex]?.[3]?.[indexColumnData]
+                                          ?.message && (
                                           <Form.Text
                                             className='text-danger'
                                             style={{ fontSize: 10.2 }}
                                             contentEditable={false}
                                           >
                                             {
-                                              formErrors?.data?.dfnv?.[entryIndex]
+                                              formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                                 ?.calibrationPoints?.[pointIndex]?.[3]?.[
                                                 indexColumnData
                                               ]?.message
@@ -1106,21 +1114,21 @@ const DFNVTest = ({ data }) => {
                 {NOMINAL_VALUE.slice(0, 6).map((_, pointIndex) => (
                   <th key={`${pointIndex}-measured-value`} className='align-middle'>
                     <Controller
-                      name={`data.measuredValues.${pointIndex}.${measuredValueIndex}`}
+                      name={`data.${rangeIndex}.measuredValues.${pointIndex}.${measuredValueIndex}`}
                       control={form.control}
                       render={({ field }) => (
                         <Form.Control
                           onChange={(e) => {
                             if (e.target.value === '') {
                               form.setValue(
-                                `data.measuredValues.${pointIndex}.${measuredValueIndex}`,
+                                `data.${rangeIndex}.measuredValues.${pointIndex}.${measuredValueIndex}`,
                                 ''
                               );
                               return;
                             }
 
                             form.setValue(
-                              `data.measuredValues.${pointIndex}.${measuredValueIndex}`,
+                              `data.${rangeIndex}.measuredValues.${pointIndex}.${measuredValueIndex}`,
                               isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                             );
                           }}
@@ -1169,28 +1177,31 @@ const DFNVTest = ({ data }) => {
                       <th key={i}>
                         <Form>
                           <Controller
-                            name={`data.nominalValues.${nominalValueIndex}`}
+                            name={`data.${rangeIndex}.nominalValues.${nominalValueIndex}`}
                             control={form.control}
                             render={({ field }) => (
                               <Form.Control
                                 onChange={(e) => {
                                   if (e.target.value === '') {
-                                    form.setValue(`data.nominalValues.${nominalValueIndex}`, '');
+                                    form.setValue(
+                                      `data.${rangeIndex}.nominalValues.${nominalValueIndex}`,
+                                      ''
+                                    );
 
                                     form.setValue(
-                                      `data.measuredValues.${nominalValueIndex}`,
+                                      `data.${rangeIndex}.measuredValues.${nominalValueIndex}`,
                                       Array(3).fill('')
                                     );
                                     return;
                                   }
 
                                   form.setValue(
-                                    `data.nominalValues.${nominalValueIndex}`,
+                                    `data.${rangeIndex}.nominalValues.${nominalValueIndex}`,
                                     isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                                   );
 
                                   form.setValue(
-                                    `data.measuredValues.${nominalValueIndex}`,
+                                    `data.${rangeIndex}.measuredValues.${nominalValueIndex}`,
                                     Array(3).fill(
                                       isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                                     )
@@ -1243,21 +1254,22 @@ const DFNVTest = ({ data }) => {
                             <div>
                               <div>
                                 <Controller
-                                  name={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                  name={`data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`}
                                   control={form.control}
                                   render={({ field }) => (
                                     <>
                                       <Select
                                         {...field}
-                                        inputId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
-                                        instanceId={`data.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                        inputId={`data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`}
+                                        instanceId={`data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`}
                                         onChange={(option) => {
                                           idsSelectOnChange({
                                             value: option.value,
                                             entry,
                                             entryIndex,
-                                            key: `data.dfnv.${entryIndex}.${slotIndex}.idValue`,
+                                            key: `data.${rangeIndex}.dfnv.${entryIndex}.${slotIndex}.idValue`,
                                             slotIndex,
+                                            rangeIndex,
                                           });
                                         }}
                                         placeholder={`${slotField.displayClass}'s Tag ID`}
@@ -1280,12 +1292,13 @@ const DFNVTest = ({ data }) => {
                                       />
 
                                       {formErrors &&
-                                        formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
-                                          ?.message && (
+                                        formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]?.ids?.[
+                                          slotIndex
+                                        ]?.message && (
                                           <Form.Text className='text-danger'>
                                             {
-                                              formErrors?.data?.dfnv?.[entryIndex]?.ids?.[slotIndex]
-                                                ?.message
+                                              formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                                ?.ids?.[slotIndex]?.message
                                             }
                                           </Form.Text>
                                         )}
@@ -1363,7 +1376,7 @@ const DFNVTest = ({ data }) => {
                                       onKeyDown={(e) =>
                                         dataInputOnKeyDown({
                                           event: e,
-                                          key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.e2`,
+                                          key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.e2`,
                                           entry,
                                           entryIndex,
                                           calibrationPointIndex: _pointIndex,
@@ -1372,7 +1385,7 @@ const DFNVTest = ({ data }) => {
                                       }
                                     >
                                       <Controller
-                                        name={`data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.e2`}
+                                        name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.e2`}
                                         control={form.control}
                                         render={({ field }) => (
                                           <Form.Control
@@ -1382,7 +1395,7 @@ const DFNVTest = ({ data }) => {
                                                 entry,
                                                 calibrationPointIndex: _pointIndex,
                                                 dataColumnIndex: 0,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.e2`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.e2`,
                                               });
                                             }}
                                             name={field.name}
@@ -1396,15 +1409,14 @@ const DFNVTest = ({ data }) => {
                                     </Form>
 
                                     {formErrors &&
-                                      formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                        _pointIndex
-                                      ]?.e2?.message && (
+                                      formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                        ?.calibrationPoints?.[_pointIndex]?.e2?.message && (
                                         <Form.Text
                                           className='text-danger'
                                           style={{ fontSize: 10.2 }}
                                         >
                                           {
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.e2?.message
                                           }
                                         </Form.Text>
@@ -1416,7 +1428,7 @@ const DFNVTest = ({ data }) => {
                                       onKeyDown={(e) =>
                                         dataInputOnKeyDown({
                                           event: e,
-                                          key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.st-mw`,
+                                          key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.st-mw`,
                                           entry,
                                           entryIndex,
                                           calibrationPointIndex: _pointIndex,
@@ -1425,7 +1437,7 @@ const DFNVTest = ({ data }) => {
                                       }
                                     >
                                       <Controller
-                                        name={`data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.st-mw`}
+                                        name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.st-mw`}
                                         control={form.control}
                                         render={({ field }) => (
                                           <Form.Control
@@ -1435,7 +1447,7 @@ const DFNVTest = ({ data }) => {
                                                 entry,
                                                 calibrationPointIndex: _pointIndex,
                                                 dataColumnIndex: 1,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.st-mw`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.st-mw`,
                                               });
                                             }}
                                             name={field.name}
@@ -1449,15 +1461,14 @@ const DFNVTest = ({ data }) => {
                                     </Form>
 
                                     {formErrors &&
-                                      formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                        _pointIndex
-                                      ]?.['st-mw']?.message && (
+                                      formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                        ?.calibrationPoints?.[_pointIndex]?.['st-mw']?.message && (
                                         <Form.Text
                                           className='text-danger'
                                           style={{ fontSize: 10.2 }}
                                         >
                                           {
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.['st-mw']?.message
                                           }
                                         </Form.Text>
@@ -1489,7 +1500,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 0,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${0}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${0}.${indexColumnData}`,
                                                   });
 
                                                   putCursorAtEnd(e.target);
@@ -1507,7 +1518,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 0,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${0}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${0}.${indexColumnData}`,
                                                   });
                                                 }}
                                               >
@@ -1527,7 +1538,7 @@ const DFNVTest = ({ data }) => {
                                           )}
 
                                           {formErrors &&
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.[0]?.[
                                               indexColumnData
                                             ]?.message && (
@@ -1537,7 +1548,7 @@ const DFNVTest = ({ data }) => {
                                                 contentEditable={false}
                                               >
                                                 {
-                                                  formErrors?.data?.dfnv?.[entryIndex]
+                                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                                     ?.calibrationPoints?.[_pointIndex]?.[0]?.[
                                                     indexColumnData
                                                   ]?.message
@@ -1567,7 +1578,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 1,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${1}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${1}.${indexColumnData}`,
                                                   });
 
                                                   putCursorAtEnd(e.target);
@@ -1585,7 +1596,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 1,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${1}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${1}.${indexColumnData}`,
                                                   });
                                                 }}
                                               >
@@ -1605,7 +1616,7 @@ const DFNVTest = ({ data }) => {
                                           )}
 
                                           {formErrors &&
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.[1]?.[
                                               indexColumnData
                                             ]?.message && (
@@ -1615,7 +1626,7 @@ const DFNVTest = ({ data }) => {
                                                 contentEditable={false}
                                               >
                                                 {
-                                                  formErrors?.data?.dfnv?.[entryIndex]
+                                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                                     ?.calibrationPoints?.[_pointIndex]?.[1]?.[
                                                     indexColumnData
                                                   ]?.message
@@ -1652,7 +1663,7 @@ const DFNVTest = ({ data }) => {
                                       onKeyDown={(e) =>
                                         dataInputOnKeyDown({
                                           event: e,
-                                          key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`,
+                                          key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`,
                                           entry,
                                           entryIndex,
                                           calibrationPointIndex: _pointIndex,
@@ -1661,7 +1672,7 @@ const DFNVTest = ({ data }) => {
                                       }
                                     >
                                       <Controller
-                                        name={`data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`}
+                                        name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`}
                                         control={form.control}
                                         render={({ field }) => (
                                           <Form.Control
@@ -1671,7 +1682,7 @@ const DFNVTest = ({ data }) => {
                                                 entry,
                                                 calibrationPointIndex: _pointIndex,
                                                 dataColumnIndex: 2,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.1f1`,
                                               });
                                             }}
                                             name={field.name}
@@ -1685,15 +1696,14 @@ const DFNVTest = ({ data }) => {
                                     </Form>
 
                                     {formErrors &&
-                                      formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                        _pointIndex
-                                      ]?.['1f1']?.message && (
+                                      formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                        ?.calibrationPoints?.[_pointIndex]?.['1f1']?.message && (
                                         <Form.Text
                                           className='text-danger'
                                           style={{ fontSize: 10.2 }}
                                         >
                                           {
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.['1f1']?.message
                                           }
                                         </Form.Text>
@@ -1705,7 +1715,7 @@ const DFNVTest = ({ data }) => {
                                       onKeyDown={(e) =>
                                         dataInputOnKeyDown({
                                           event: e,
-                                          key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`,
+                                          key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`,
                                           entry,
                                           entryIndex,
                                           calibrationPointIndex: _pointIndex,
@@ -1714,7 +1724,7 @@ const DFNVTest = ({ data }) => {
                                       }
                                     >
                                       <Controller
-                                        name={`data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`}
+                                        name={`data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`}
                                         control={form.control}
                                         render={({ field }) => (
                                           <Form.Control
@@ -1724,7 +1734,7 @@ const DFNVTest = ({ data }) => {
                                                 entry,
                                                 calibrationPointIndex: _pointIndex,
                                                 dataColumnIndex: 3,
-                                                key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`,
+                                                key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.2f1`,
                                               });
                                             }}
                                             name={field.name}
@@ -1738,15 +1748,14 @@ const DFNVTest = ({ data }) => {
                                     </Form>
 
                                     {formErrors &&
-                                      formErrors?.data?.dfnv?.[entryIndex]?.calibrationPoints?.[
-                                        _pointIndex
-                                      ]?.['2f1']?.message && (
+                                      formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
+                                        ?.calibrationPoints?.[_pointIndex]?.['2f1']?.message && (
                                         <Form.Text
                                           className='text-danger'
                                           style={{ fontSize: 10.2 }}
                                         >
                                           {
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.['2f1']?.message
                                           }
                                         </Form.Text>
@@ -1785,7 +1794,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 2,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${2}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${2}.${indexColumnData}`,
                                                   });
 
                                                   putCursorAtEnd(e.target);
@@ -1803,7 +1812,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 2,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${2}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${2}.${indexColumnData}`,
                                                   });
                                                 }}
                                               >
@@ -1823,7 +1832,7 @@ const DFNVTest = ({ data }) => {
                                           )}
 
                                           {formErrors &&
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.[2]?.[
                                               indexColumnData
                                             ]?.message && (
@@ -1833,7 +1842,7 @@ const DFNVTest = ({ data }) => {
                                                 contentEditable={false}
                                               >
                                                 {
-                                                  formErrors?.data?.dfnv?.[entryIndex]
+                                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                                     ?.calibrationPoints?.[_pointIndex]?.[2]?.[
                                                     indexColumnData
                                                   ]?.message
@@ -1863,7 +1872,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 3,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${3}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${3}.${indexColumnData}`,
                                                   });
 
                                                   putCursorAtEnd(e.target);
@@ -1881,7 +1890,7 @@ const DFNVTest = ({ data }) => {
                                                     calibrationPointIndex: _pointIndex,
                                                     dataColumnIndex: 3,
                                                     dataIndex: indexColumnData,
-                                                    key: `data.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${3}.${indexColumnData}`,
+                                                    key: `data.${rangeIndex}.dfnv.${entryIndex}.calibrationPoints.${_pointIndex}.${3}.${indexColumnData}`,
                                                   });
                                                 }}
                                               >
@@ -1901,7 +1910,7 @@ const DFNVTest = ({ data }) => {
                                           )}
 
                                           {formErrors &&
-                                            formErrors?.data?.dfnv?.[entryIndex]
+                                            formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                               ?.calibrationPoints?.[_pointIndex]?.[3]?.[
                                               indexColumnData
                                             ]?.message && (
@@ -1911,7 +1920,7 @@ const DFNVTest = ({ data }) => {
                                                 contentEditable={false}
                                               >
                                                 {
-                                                  formErrors?.data?.dfnv?.[entryIndex]
+                                                  formErrors?.data?.[rangeIndex]?.dfnv?.[entryIndex]
                                                     ?.calibrationPoints?.[_pointIndex]?.[3]?.[
                                                     indexColumnData
                                                   ]?.message
@@ -1947,21 +1956,21 @@ const DFNVTest = ({ data }) => {
                       return (
                         <th key={`${_pointIndex}-measured-value`} className='align-middle'>
                           <Controller
-                            name={`data.measuredValues.${_pointIndex}.${measuredValueIndex}`}
+                            name={`data.${rangeIndex}.measuredValues.${_pointIndex}.${measuredValueIndex}`}
                             control={form.control}
                             render={({ field }) => (
                               <Form.Control
                                 onChange={(e) => {
                                   if (e.target.value === '') {
                                     form.setValue(
-                                      `data.measuredValues.${_pointIndex}.${measuredValueIndex}`,
+                                      `data.${rangeIndex}.measuredValues.${_pointIndex}.${measuredValueIndex}`,
                                       ''
                                     );
                                     return;
                                   }
 
                                   form.setValue(
-                                    `data.measuredValues.${_pointIndex}.${measuredValueIndex}`,
+                                    `data.${rangeIndex}.measuredValues.${_pointIndex}.${measuredValueIndex}`,
                                     isNaN(e.target.value) ? 0 : parseFloat(e.target.value)
                                   );
                                 }}

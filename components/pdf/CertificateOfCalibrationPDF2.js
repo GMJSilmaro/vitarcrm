@@ -81,7 +81,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: 19.836,
     paddingLeft: 54,
     paddingRight: 25.2,
   },
@@ -141,137 +140,19 @@ const CertificateOfCalibrationPDF2 = ({
     return '';
   }, [calibration.location]);
 
-  const calibrationPointNo = useMemo(() => {
-    const value = parseFloat(calibration?.calibrationPointNo);
-    return isNaN(value) ? undefined : value;
-  }, [calibration]);
+  const rangeDetails = calibration?.rangeDetails || [];
 
-  const resolution = useMemo(() => {
-    const value = parseFloat(calibration?.resolution);
-    return isNaN(value) ? 0 : value;
-  }, [calibration]);
-
-  const rangeMaxCalibration = useMemo(() => {
-    const value = parseFloat(calibration?.rangeMaxCalibration);
-    return isNaN(value) ? 0 : value;
-  }, [calibration]);
-
-  const rtestStd = useMemo(() => {
-    return calibration?.data?.rtest?.std || [];
-  }, [calibration]);
-
-  const rtestMaxDiffBetweenReadings = useMemo(() => {
-    return calibration?.data?.rtest?.maxDiffBetweenReadings || [];
-  }, [calibration]);
-
-  const etestValues = useMemo(() => {
-    return calibration?.data?.etest?.values || [];
-  }, [calibration]);
-
-  const unitUsedForCOC = useMemo(() => {
-    return calibration?.unitUsedForCOC || 'gram';
-  }, [calibration]);
-
-  const unitUsedForCOCAcronym = useMemo(() => {
-    if (!unitUsedForCOC) return 'g';
-    if (unitUsedForCOC === 'kilogram') return 'kg';
+  const unitUsedForCOCAcronym = (unit) => {
+    if (!unit) return 'g';
+    if (unit === 'kilogram') return 'kg';
     return 'g';
-  }, [unitUsedForCOC]);
-
-  const nominalValues = useMemo(() => {
-    return calibration?.data?.nominalValues || [];
-  }, [calibration]);
-
-  const corrections = useMemo(() => {
-    return calibration?.data?.corrections || [];
-  }, [calibration]);
-
-  const coverageFactors = useMemo(() => {
-    return calibration?.data?.coverageFactors || [];
-  }, [calibration]);
-
-  const expandedUncertainties = useMemo(() => {
-    return calibration?.data?.expandedUncertainties || [];
-  }, [calibration]);
+  };
 
   const cocInstruments = useMemo(() => {
     if (!instruments.data || instruments.data.length < 1) return [];
     const selectedInstruments = calibration?.cocInstruments || [];
     return instruments.data.filter((instrument) => selectedInstruments.includes(instrument.id));
   }, [calibration, instruments.data]);
-
-  const convertValueBasedOnUnit = useCallback(
-    (value) => {
-      console.log({ value });
-      const unit = unitUsedForCOC;
-
-      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
-        return '';
-      }
-
-      switch (unit) {
-        case 'gram': {
-          const precision = countDecimals(resolution);
-          return formatToDicimalString(value, precision);
-        }
-        case 'kilogram': {
-          const result = multiply(value, 0.001);
-          const precision = countDecimals(divide(resolution, 1000));
-          return formatToDicimalString(result, precision);
-        }
-
-        default:
-          return value;
-      }
-    },
-    [unitUsedForCOC, resolution]
-  );
-
-  const convertExpandedUncertaintyBasedOnUnit = useCallback(
-    (value) => {
-      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
-        return '';
-      }
-
-      const unit = unitUsedForCOC;
-      const factor = unit === 'gram' ? 1 : 0.001;
-      const scaledResolution = resolution * factor;
-      const result = ceil((value * factor) / scaledResolution) * scaledResolution;
-
-      switch (unit) {
-        case 'gram': {
-          const precision = countDecimals(resolution);
-          return formatToDicimalString(result, precision);
-        }
-        case 'kilogram': {
-          const precision = countDecimals(divide(resolution, 1000));
-          return formatToDicimalString(result, precision);
-        }
-        default:
-          return value;
-      }
-    },
-    [resolution]
-  );
-
-  const renderCorrectionValueWithSymbol = (value) => {
-    const parseValue = parseFloat(value);
-
-    if (isNaN(parseValue)) return value;
-
-    if (parseValue > 0) {
-      if (/^0+(\.0+)?$/.test(value)) return value;
-      return `+${value}`;
-    } else {
-      if (value.includes('-')) {
-        const valueWithoutSymbol = value.replace('-', '');
-        if (/^0+(\.0+)?$/.test(valueWithoutSymbol)) return valueWithoutSymbol;
-        return `-${valueWithoutSymbol}`;
-      }
-
-      return value;
-    }
-  };
 
   const dueDate = useMemo(() => {
     if (!calibration?.dueDateRequested || !calibration?.dateCalibrated) {
@@ -355,7 +236,48 @@ const CertificateOfCalibrationPDF2 = ({
     return [`${initials} - ${date}`, ...parts.slice(1)].join(' - ');
   };
 
-  console.log('COC PDF', { resolution, calibratedBy, approvedSignatory });
+  const convertValueBasedOnUnit = (value, resolutionToUsed, unitToUsed) => {
+    if ((!resolutionToUsed && resolutionToUsed !== 0) || !unitToUsed) return '';
+
+    if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+      return '';
+    }
+
+    switch (unitToUsed) {
+      case 'gram': {
+        const precision = countDecimals(resolutionToUsed);
+        return formatToDicimalString(value, precision);
+      }
+      case 'kilogram': {
+        const result = multiply(value, 0.001);
+        const precision = countDecimals(divide(resolutionToUsed, 1000));
+
+        return formatToDicimalString(result, precision);
+      }
+
+      default:
+        return value;
+    }
+  };
+
+  // console.log('COC PDF', {  calibratedBy, approvedSignatory });
+
+  console.log({
+    xx1: convertValueBasedOnUnit(
+      parseFloat(rangeDetails?.[0]?.rangeMinCalibration),
+      isNaN(rangeDetails?.[0]?.rangeMinCalibration)
+        ? 0
+        : parseFloat(rangeDetails?.[0]?.rangeMinCalibration),
+      rangeDetails?.[0]?.unitUsedForCOC
+    ),
+    yy1: convertValueBasedOnUnit(
+      parseFloat(rangeDetails?.[0]?.rangeMaxCalibration),
+      isNaN(rangeDetails?.[0]?.rangeMaxCalibration)
+        ? 0
+        : parseFloat(rangeDetails?.[0]?.rangeMaxCalibration),
+      rangeDetails?.[0]?.unitUsedForCOC
+    ),
+  });
 
   return (
     <Document>
@@ -581,10 +503,34 @@ const CertificateOfCalibrationPDF2 = ({
                   alignItems: 'center',
                 }}
               >
-                <Text>{calibration?.rangeMinCalibration}</Text>
-                <Text style={{ paddingLeft: 20, paddingRight: 20 }}>to</Text>
-                <Text>{calibration?.rangeMaxCalibration}</Text>
-                <Text style={{ paddingLeft: 10 }}>g</Text>
+                {rangeDetails?.length === 1 && (
+                  <>
+                    <Text>
+                      {convertValueBasedOnUnit(
+                        parseFloat(rangeDetails?.[0]?.rangeMinCalibration),
+                        isNaN(rangeDetails?.[0]?.rangeMinCalibration)
+                          ? 0
+                          : parseFloat(rangeDetails?.[0]?.rangeMinCalibration),
+                        rangeDetails?.[0]?.unitUsedForCOC
+                      )}
+                    </Text>
+                    <Text style={{ paddingLeft: 20, paddingRight: 20 }}>to</Text>
+                    <Text>
+                      {convertValueBasedOnUnit(
+                        parseFloat(rangeDetails?.[0]?.rangeMaxCalibration),
+                        isNaN(rangeDetails?.[0]?.rangeMaxCalibration)
+                          ? 0
+                          : parseFloat(rangeDetails?.[0]?.rangeMaxCalibration),
+                        rangeDetails?.[0]?.unitUsedForCOC
+                      )}
+                    </Text>
+                    <Text style={{ paddingLeft: 10 }}>
+                      {unitUsedForCOCAcronym(rangeDetails?.[0]?.unitUsedForCOC)}
+                    </Text>
+                  </>
+                )}
+
+                {rangeDetails?.length > 1 && <Text>Refer to individual result pages.</Text>}
               </View>
             </View>
           </View>
@@ -599,9 +545,20 @@ const CertificateOfCalibrationPDF2 = ({
             </View>
 
             <View style={styles.blockContentRight}>
-              <Text>
-                {convertValueBasedOnUnit(resolution)} {unitUsedForCOCAcronym}
-              </Text>
+              {rangeDetails?.length === 1 && (
+                <Text>
+                  {convertValueBasedOnUnit(
+                    parseFloat(rangeDetails?.[0]?.resolution),
+                    isNaN(parseFloat(rangeDetails?.[0]?.resolution))
+                      ? 0
+                      : parseFloat(rangeDetails?.[0]?.resolution),
+                    rangeDetails?.[0]?.unitUsedForCOC
+                  )}{' '}
+                  {unitUsedForCOCAcronym(rangeDetails?.[0]?.unitUsedForCOC)}
+                </Text>
+              )}
+
+              {rangeDetails?.length > 1 && <Text>Refer to individual result pages.</Text>}
             </View>
           </View>
 
@@ -837,546 +794,14 @@ const CertificateOfCalibrationPDF2 = ({
           </View>
         </View>
 
-        <View break style={styles.container}>
-          <View style={[styles.block, { marginBottom: 8 }]}>
-            <View style={styles.blockContentLeft}>
-              <Text style={styles.blockContentBold}>CERTIFICATE NO.</Text>
-            </View>
+        {rangeDetails.map((range, rangeIndex) => (
+          <CertificateOfCalibrationResultContent
+            calibration={calibration}
+            currentRange={range}
+            rangeIndex={rangeIndex}
+          />
+        ))}
 
-            <View style={styles.separator}>
-              <Text style={styles.blockContentBold}>:</Text>
-            </View>
-
-            <View style={styles.blockContentRight}>
-              <View
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <View style={[styles.blockContentBold, { flexGrow: 1 }]}>
-                  <Text>{formatCertNo(calibration?.certificateNumber)}</Text>
-                </View>
-
-                <View>
-                  <Text
-                    render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
-                    fixed
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View
-          style={{
-            width: '100%',
-            fontSize: 10,
-            fontFamily: 'TimesNewRomanBold',
-            textDecoration: 'underline',
-            marginBottom: 8,
-          }}
-        >
-          <Text>Result of Caliberation</Text>
-        </View>
-
-        <View
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            width: '80%',
-            margin: '0 auto',
-            fontSize: 10,
-          }}
-        >
-          <View style={{ width: '100%', marginBottom: 7 }}>
-            <Text>The result of calibration shown only relates to the range calibrated</Text>
-          </View>
-
-          <View>
-            <Text style={{ fontFamily: 'TimesNewRomanBold', marginLeft: 4 }}>Accuracy Test</Text>
-          </View>
-
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              border: '1px solid #00000',
-              marginBottom: 8,
-            }}
-          >
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                borderBottom: '1px solid #00000',
-              }}
-            >
-              <View style={{ width: '25%', textAlign: 'center' }}>
-                <Text> </Text>
-                <Text>Nominal Value</Text>
-                <Text>({unitUsedForCOCAcronym})</Text>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '25%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-                <Text>Correction</Text>
-                <Text>({unitUsedForCOCAcronym})</Text>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '30%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-                <Text>Expanded Uncertainty</Text>
-                <Text>({unitUsedForCOCAcronym})</Text>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '20%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-                <Text>Coverage</Text>
-                <Text>
-                  Factor,
-                  <Text style={{ fontFamily: 'TimesNewRomanItalic' }}>k</Text>
-                </Text>
-                <Text> </Text>
-              </View>
-            </View>
-
-            {/* //* empty for space */}
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
-              <View style={{ width: '25%', textAlign: 'center' }}>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '25%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '30%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '20%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-              </View>
-            </View>
-
-            {calibrationPointNo &&
-              Array.from({ length: calibrationPointNo }).map((_, i) => (
-                <View
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}
-                >
-                  <View style={{ width: '25%', textAlign: 'center' }}>
-                    <Text>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</Text>
-                  </View>
-                  <View
-                    style={{
-                      width: '25%',
-                      borderLeft: '1px solid #00000',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Text>
-                      {renderCorrectionValueWithSymbol(
-                        convertValueBasedOnUnit(corrections?.[i] ?? 0)
-                      )}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      width: '30%',
-                      borderLeft: '1px solid #00000',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Text>
-                      {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      width: '20%',
-                      borderLeft: '1px solid #00000',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Text>{coverageFactors?.[i] || 0}</Text>
-                  </View>
-                </View>
-              ))}
-
-            {/* //* empty for space */}
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
-              <View style={{ width: '25%', textAlign: 'center' }}>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '25%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '30%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '20%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-              </View>
-            </View>
-          </View>
-
-          <View>
-            <Text style={{ fontFamily: 'TimesNewRomanBold', marginLeft: 4 }}>
-              Repeatability Test
-            </Text>
-          </View>
-
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              border: '1px solid #00000',
-              marginBottom: 8,
-            }}
-          >
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                borderBottom: '1px solid #00000',
-              }}
-            >
-              <View style={{ width: '30%', textAlign: 'center' }}>
-                <Text> </Text>
-                <Text>Nominal Value</Text>
-                <Text>({unitUsedForCOCAcronym})</Text>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '30%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-                <Text>Standard Deviation</Text>
-                <Text>({unitUsedForCOCAcronym})</Text>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '40%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-                <Text>Maximum Difference</Text>
-                <Text>Between Readings ({unitUsedForCOCAcronym})</Text>
-                <Text> </Text>
-              </View>
-            </View>
-
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
-              {/* //* 1st row  */}
-              <View style={{ width: '30%', textAlign: 'center' }}>
-                <Text> </Text>
-                <Text>{convertValueBasedOnUnit(divide(rangeMaxCalibration, 2) ?? 0)}</Text>
-              </View>
-              <View
-                style={{
-                  width: '30%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-                <Text>{convertValueBasedOnUnit(rtestStd?.[0] ?? 0)}</Text>
-              </View>
-              <View
-                style={{
-                  width: '40%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text> </Text>
-                <Text>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[0])}</Text>
-              </View>
-            </View>
-
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
-              {/* //* 2nd row  */}
-              <View style={{ width: '30%', textAlign: 'center' }}>
-                <Text>{convertValueBasedOnUnit(rangeMaxCalibration) ?? 0}</Text>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '30%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text>{convertValueBasedOnUnit(rtestStd?.[1]) ?? 0}</Text>
-                <Text> </Text>
-              </View>
-              <View
-                style={{
-                  width: '40%',
-                  borderLeft: '1px solid #00000',
-                  textAlign: 'center',
-                }}
-              >
-                <Text>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[1] ?? 0)}</Text>
-                <Text> </Text>
-              </View>
-            </View>
-          </View>
-
-          <View
-            style={{
-              width: '90%',
-              display: 'flex',
-              flexDirection: 'column',
-              margin: '0 auto',
-              marginBottom: 10,
-            }}
-          >
-            <View>
-              <Text style={{ fontFamily: 'TimesNewRomanBold', marginLeft: 4 }}>Accuracy Test</Text>
-            </View>
-
-            <View
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                gap: 10,
-                alignItems: 'center',
-                marginBottom: 8,
-              }}
-            >
-              <View
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  width: '70%',
-                  marginRight: 20,
-                }}
-              >
-                <View
-                  style={{
-                    width: '75%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <View
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      border: '1px solid #00000',
-                      borderRight: 'none',
-                    }}
-                  >
-                    <View style={{ width: '50%', textAlign: 'center' }}>
-                      <Text>Test Load</Text>
-                    </View>
-
-                    <View
-                      style={{
-                        width: '50%',
-                        borderLeft: '1px solid #00000',
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Text>
-                        {convertValueBasedOnUnit(calibration?.data?.etest?.testLoad ?? 0)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {TEST_LOADS.map((testload, i) => (
-                    <View
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-
-                        borderBottom: '1px solid #00000',
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: '50%',
-                          textAlign: 'center',
-                          borderLeft: '1px solid #00000',
-                        }}
-                      >
-                        <Text>{testload}</Text>
-                      </View>
-
-                      <View
-                        style={{
-                          width: '50%',
-                          borderLeft: '1px solid #00000',
-                          textAlign: 'center',
-                        }}
-                      >
-                        <Text>{convertValueBasedOnUnit(etestValues?.[i] ?? 0)}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-
-                <View
-                  style={{
-                    width: '25%',
-                    border: '1px solid #000000',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    padding: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: 'TimesNewRomanBold',
-                      fontSize: 8,
-                      marginBottom: 4,
-                    }}
-                  >
-                    Max Error
-                  </Text>
-                  <Text style={{ fontSize: 8 }}>
-                    {convertValueBasedOnUnit(calibration?.data?.etest?.maxError ?? 0)}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ width: '30%' }}>
-                {calibration?.typeOfBalance && (
-                  <Image
-                    style={{ width: '70px', height: 'auto' }}
-                    src={`/images/balance-type-${calibration?.typeOfBalance}.png`}
-                  />
-                )}
-              </View>
-            </View>
-
-            <View>
-              <Text style={{ fontSize: 8 }}>
-                The expanded uncertainties and it's coverage factors for the calibration results
-                above are based on an estimated confidence probability of not less than 95%
-              </Text>
-            </View>
-          </View>
-
-          <View>
-            <Text style={{ fontSize: 7 }}>
-              Note : The result of calibration is obtained after the balance is leveled. If the
-              balance is moved to different location, user should always ensure that the balance is
-              leveled, where appropriate using the bubble level that is usually attached to the
-              frame.
-            </Text>
-            <Text style={{ fontSize: 7 }}>
-              Care should always be taken in the selection of location as all balance will be
-              affected to a greater or lesser extent by draughts, vibration, inadequate support
-              surfaces and temperature changes, whether across the machine or with time.
-            </Text>
-          </View>
-        </View>
-
-        {/* //* footer */}
         <View fixed style={styles.footer}>
           <View
             style={{
@@ -1457,7 +882,7 @@ const CertificateOfCalibrationPDF2 = ({
                 fontFamily: 'TimesNewRomanBold',
               }}
               render={({ pageNumber, totalPages }) => {
-                if (pageNumber === totalPages)
+                if (pageNumber > 1)
                   return (
                     <>
                       The expanded uncertainty is stated as the standard measurement uncertainty
@@ -1487,6 +912,730 @@ const CertificateOfCalibrationPDF2 = ({
         </View>
       </Page>
     </Document>
+  );
+};
+
+const CertificateOfCalibrationResultContent = ({ calibration, currentRange, rangeIndex }) => {
+  const currentCalibrationData = useMemo(() => {
+    return calibration?.data?.[rangeIndex];
+  }, [JSON.stringify(calibration), rangeIndex]);
+
+  const calibrationPointNo = useMemo(() => {
+    const value = parseFloat(currentRange?.calibrationPointNo);
+    return isNaN(value) ? undefined : value;
+  }, [JSON.stringify(currentRange)]);
+
+  const resolution = useMemo(() => {
+    const value = parseFloat(currentRange?.resolution);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
+
+  const rangeMaxCalibration = useMemo(() => {
+    const value = parseFloat(currentRange?.rangeMaxCalibration);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
+
+  const unitUsedForCOC = useMemo(() => {
+    return currentRange?.unitUsedForCOC || 'gram';
+  }, [JSON.stringify(currentRange)]);
+
+  const typeOFBalance = useMemo(() => {
+    return currentCalibrationData.typeOfBalance || '';
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const formattedRangeMaxCalibration = useMemo(() => {
+    if (unitUsedForCOC === 'gram') return rangeMaxCalibration;
+    return rangeMaxCalibration / 1000; //* convert to kilogram
+  }, [unitUsedForCOC]);
+
+  const rtestStd = useMemo(() => {
+    return currentCalibrationData?.rtest?.std || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const rtestMaxDiffBetweenReadings = useMemo(() => {
+    return currentCalibrationData?.rtest?.maxDiffBetweenReadings || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const etestValues = useMemo(() => {
+    return currentCalibrationData?.etest?.values || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const nominalValues = useMemo(() => {
+    return currentCalibrationData?.nominalValues || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const corrections = useMemo(() => {
+    return currentCalibrationData?.corrections || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const coverageFactors = useMemo(() => {
+    return currentCalibrationData?.coverageFactors || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const expandedUncertainties = useMemo(() => {
+    return currentCalibrationData?.expandedUncertainties || [];
+  }, [JSON.stringify(currentCalibrationData)]);
+
+  const unitUsedForCOCAcronym = useMemo(() => {
+    if (!unitUsedForCOC) return 'g';
+    if (unitUsedForCOC === 'kilogram') return 'kg';
+    return 'g';
+  }, [unitUsedForCOC]);
+
+  const formatCertNo = (certNo) => {
+    const parts = certNo.split('-');
+
+    if (!certNo || parts.length < 3) return '';
+
+    const part1 = parts[0];
+    const initials = part1.substring(0, 3);
+    const date = part1.slice(3);
+
+    return [`${initials} - ${date}`, ...parts.slice(1)].join(' - ');
+  };
+
+  const convertValueBasedOnUnit = useCallback(
+    (value) => {
+      console.log({ value });
+      const unit = unitUsedForCOC;
+
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+        return '';
+      }
+
+      switch (unit) {
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(value, precision);
+        }
+        case 'kilogram': {
+          const result = multiply(value, 0.001);
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+
+        default:
+          return value;
+      }
+    },
+    [unitUsedForCOC, resolution]
+  );
+
+  const convertExpandedUncertaintyBasedOnUnit = useCallback(
+    (value) => {
+      if (typeof value === 'string' || value === undefined || value === null || isNaN(value)) {
+        return '';
+      }
+
+      const unit = unitUsedForCOC;
+      const factor = unit === 'gram' ? 1 : 0.001;
+      const scaledResolution = resolution * factor;
+      const result = ceil((value * factor) / scaledResolution) * scaledResolution;
+
+      switch (unit) {
+        case 'gram': {
+          const precision = countDecimals(resolution);
+          return formatToDicimalString(result, precision);
+        }
+        case 'kilogram': {
+          const precision = countDecimals(divide(resolution, 1000));
+          return formatToDicimalString(result, precision);
+        }
+        default:
+          return value;
+      }
+    },
+    [resolution]
+  );
+
+  const renderCorrectionValueWithSymbol = (value) => {
+    const parseValue = parseFloat(value);
+
+    if (isNaN(parseValue)) return value;
+
+    if (parseValue > 0) {
+      if (/^0+(\.0+)?$/.test(value)) return value;
+      return `+${value}`;
+    } else {
+      if (value.includes('-')) {
+        const valueWithoutSymbol = value.replace('-', '');
+        if (/^0+(\.0+)?$/.test(valueWithoutSymbol)) return valueWithoutSymbol;
+        return `-${valueWithoutSymbol}`;
+      }
+
+      return value;
+    }
+  };
+
+  return (
+    <>
+      <View break style={styles.container}>
+        <View style={[styles.block, { marginBottom: 8 }]}>
+          <View style={styles.blockContentLeft}>
+            <Text style={styles.blockContentBold}>CERTIFICATE NO.</Text>
+          </View>
+
+          <View style={styles.separator}>
+            <Text style={styles.blockContentBold}>:</Text>
+          </View>
+
+          <View style={styles.blockContentRight}>
+            <View
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <View style={[styles.blockContentBold, { flexGrow: 1 }]}>
+                <Text>{formatCertNo(calibration?.certificateNumber)}</Text>
+              </View>
+
+              <View>
+                <Text
+                  render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+                  fixed
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          width: '100%',
+          fontSize: 10,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          marginBottom: 8,
+        }}
+      >
+        <View
+          style={{
+            width: '20%',
+            fontFamily: 'TimesNewRomanBold',
+            textDecoration: 'underline',
+          }}
+        >
+          <Text>Result of Caliberation</Text>
+        </View>
+
+        <View
+          style={{
+            width: '70%',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            border: '1px solid #00000',
+          }}
+        >
+          <View style={{ width: '50%', textAlign: 'center' }}>
+            <Text>
+              Range {rangeIndex + 1} : {formattedRangeMaxCalibration} {unitUsedForCOCAcronym}{' '}
+            </Text>
+          </View>
+          <View style={{ width: '50%', textAlign: 'center', borderLeft: '1px solid #00000' }}>
+            <Text>
+              Resolution : {convertValueBasedOnUnit(resolution)} {unitUsedForCOCAcronym}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          width: '80%',
+          margin: '0 auto',
+          fontSize: 10,
+        }}
+      >
+        <View style={{ width: '100%', marginBottom: 7 }}>
+          <Text>The result of calibration shown only relates to the range calibrated</Text>
+        </View>
+
+        <View>
+          <Text style={{ fontFamily: 'TimesNewRomanBold', marginLeft: 4 }}>Accuracy Test</Text>
+        </View>
+
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            border: '1px solid #00000',
+            marginBottom: 8,
+          }}
+        >
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderBottom: '1px solid #00000',
+            }}
+          >
+            <View style={{ width: '25%', textAlign: 'center' }}>
+              <Text> </Text>
+              <Text>Nominal Value</Text>
+              <Text>({unitUsedForCOCAcronym})</Text>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '25%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+              <Text>Correction</Text>
+              <Text>({unitUsedForCOCAcronym})</Text>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '30%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+              <Text>Expanded Uncertainty</Text>
+              <Text>({unitUsedForCOCAcronym})</Text>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '20%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+              <Text>Coverage</Text>
+              <Text>
+                Factor,
+                <Text style={{ fontFamily: 'TimesNewRomanItalic' }}>k</Text>
+              </Text>
+              <Text> </Text>
+            </View>
+          </View>
+
+          {/* //* empty for space */}
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            <View style={{ width: '25%', textAlign: 'center' }}>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '25%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '30%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '20%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+            </View>
+          </View>
+
+          {calibrationPointNo &&
+            Array.from({ length: calibrationPointNo }).map((_, i) => (
+              <View
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <View style={{ width: '25%', textAlign: 'center' }}>
+                  <Text>{convertValueBasedOnUnit(nominalValues?.[i] ?? 0)}</Text>
+                </View>
+                <View
+                  style={{
+                    width: '25%',
+                    borderLeft: '1px solid #00000',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Text>
+                    {renderCorrectionValueWithSymbol(
+                      convertValueBasedOnUnit(corrections?.[i] ?? 0)
+                    )}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    width: '30%',
+                    borderLeft: '1px solid #00000',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Text>
+                    {convertExpandedUncertaintyBasedOnUnit(expandedUncertainties?.[i] ?? 0)}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    width: '20%',
+                    borderLeft: '1px solid #00000',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Text>{coverageFactors?.[i] || 0}</Text>
+                </View>
+              </View>
+            ))}
+
+          {/* //* empty for space */}
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            <View style={{ width: '25%', textAlign: 'center' }}>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '25%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '30%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '20%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+            </View>
+          </View>
+        </View>
+
+        <View>
+          <Text style={{ fontFamily: 'TimesNewRomanBold', marginLeft: 4 }}>Repeatability Test</Text>
+        </View>
+
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            border: '1px solid #00000',
+            marginBottom: 8,
+          }}
+        >
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderBottom: '1px solid #00000',
+            }}
+          >
+            <View style={{ width: '30%', textAlign: 'center' }}>
+              <Text> </Text>
+              <Text>Nominal Value</Text>
+              <Text>({unitUsedForCOCAcronym})</Text>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '30%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+              <Text>Standard Deviation</Text>
+              <Text>({unitUsedForCOCAcronym})</Text>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '40%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+              <Text>Maximum Difference</Text>
+              <Text>Between Readings ({unitUsedForCOCAcronym})</Text>
+              <Text> </Text>
+            </View>
+          </View>
+
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            {/* //* 1st row  */}
+            <View style={{ width: '30%', textAlign: 'center' }}>
+              <Text> </Text>
+              <Text>{convertValueBasedOnUnit(divide(rangeMaxCalibration, 2) ?? 0)}</Text>
+            </View>
+            <View
+              style={{
+                width: '30%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+              <Text>{convertValueBasedOnUnit(rtestStd?.[0] ?? 0)}</Text>
+            </View>
+            <View
+              style={{
+                width: '40%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text> </Text>
+              <Text>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[0])}</Text>
+            </View>
+          </View>
+
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+          >
+            {/* //* 2nd row  */}
+            <View style={{ width: '30%', textAlign: 'center' }}>
+              <Text>{convertValueBasedOnUnit(rangeMaxCalibration) ?? 0}</Text>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '30%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text>{convertValueBasedOnUnit(rtestStd?.[1]) ?? 0}</Text>
+              <Text> </Text>
+            </View>
+            <View
+              style={{
+                width: '40%',
+                borderLeft: '1px solid #00000',
+                textAlign: 'center',
+              }}
+            >
+              <Text>{convertValueBasedOnUnit(rtestMaxDiffBetweenReadings?.[1] ?? 0)}</Text>
+              <Text> </Text>
+            </View>
+          </View>
+        </View>
+
+        <View
+          style={{
+            width: '90%',
+            display: 'flex',
+            flexDirection: 'column',
+            margin: '0 auto',
+            marginBottom: 10,
+          }}
+        >
+          <View>
+            <Text style={{ fontFamily: 'TimesNewRomanBold', marginLeft: 4 }}>Accuracy Test</Text>
+          </View>
+
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              gap: 10,
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <View
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                width: '70%',
+                marginRight: 20,
+              }}
+            >
+              <View
+                style={{
+                  width: '75%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
+                <View
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    border: '1px solid #00000',
+                    borderRight: 'none',
+                  }}
+                >
+                  <View style={{ width: '50%', textAlign: 'center' }}>
+                    <Text>Test Load</Text>
+                  </View>
+
+                  <View
+                    style={{
+                      width: '50%',
+                      borderLeft: '1px solid #00000',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Text>
+                      {convertValueBasedOnUnit(currentCalibrationData?.etest?.testLoad ?? 0)}
+                    </Text>
+                  </View>
+                </View>
+
+                {TEST_LOADS.map((testload, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+
+                      borderBottom: '1px solid #00000',
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: '50%',
+                        textAlign: 'center',
+                        borderLeft: '1px solid #00000',
+                      }}
+                    >
+                      <Text>{testload}</Text>
+                    </View>
+
+                    <View
+                      style={{
+                        width: '50%',
+                        borderLeft: '1px solid #00000',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Text>{convertValueBasedOnUnit(etestValues?.[i] ?? 0)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              <View
+                style={{
+                  width: '25%',
+                  border: '1px solid #000000',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'TimesNewRomanBold',
+                    fontSize: 8,
+                    marginBottom: 4,
+                  }}
+                >
+                  Max Error
+                </Text>
+                <Text style={{ fontSize: 8 }}>
+                  {convertValueBasedOnUnit(currentCalibrationData?.etest?.maxError ?? 0)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ width: '30%' }}>
+              {typeOFBalance && (
+                <Image
+                  style={{ width: '70px', height: 'auto' }}
+                  src={`/images/balance-type-${typeOFBalance}.png`}
+                />
+              )}
+            </View>
+          </View>
+
+          <View>
+            <Text style={{ fontSize: 8 }}>
+              The expanded uncertainties and it's coverage factors for the calibration results above
+              are based on an estimated confidence probability of not less than 95%
+            </Text>
+          </View>
+        </View>
+
+        <View>
+          <Text style={{ fontSize: 7 }}>
+            Note : The result of calibration is obtained after the balance is leveled. If the
+            balance is moved to different location, user should always ensure that the balance is
+            leveled, where appropriate using the bubble level that is usually attached to the frame.
+          </Text>
+          <Text style={{ fontSize: 7 }}>
+            Care should always be taken in the selection of location as all balance will be affected
+            to a greater or lesser extent by draughts, vibration, inadequate support surfaces and
+            temperature changes, whether across the machine or with time.
+          </Text>
+        </View>
+      </View>
+    </>
   );
 };
 
