@@ -33,7 +33,7 @@
 
 .e-more-appointment-wrapper .e-appointment {
   display: block !important;
-  width: 100 !important;
+  width: 100% !important;
 }
 
 .e-more-popup-wrapper .e-more-event-content {

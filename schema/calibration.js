@@ -23,7 +23,7 @@ export const PRINT_STATUS_COLOR = {
   reprinted: 'warning',
 };
 
-export const RANGE_TYPE = ['single', 'multiple']; //* Temporay remove "multiple" type
+export const RANGE_TYPE = ['single', 'multi'];
 export const RANGE_COUNT = ['1', '2', '3'];
 
 export const TRACEABILITY_TYPE = ['1', '2', '3'];
