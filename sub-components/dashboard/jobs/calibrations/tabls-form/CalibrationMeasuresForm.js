@@ -289,7 +289,7 @@ const CalibrationMeasures = ({ data, isLoading, handleNext, handlePrevious }) =>
                     instanceId='rangeCount'
                     onChange={(option) => handleRangeCountChange(option, field)}
                     options={rangeCountOptions.filter((option) => {
-                      if (rangeType?.value === 'multiple' && option.value === '1') return false;
+                      if (rangeType?.value === 'multi' && option.value === '1') return false;
                       return true;
                     })}
                     placeholder='Search by range count'
