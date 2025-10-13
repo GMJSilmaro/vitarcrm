@@ -386,7 +386,10 @@ const ViewJobCnDetails = ({ jobCn, job, customer, customerEquipments }) => {
 
       <p className='text-muted mb-4 d-inline-block w-100 text-center'>
         Should you have any further queries on the above mentioned, please contact{' '}
-        <span className='fw-bold'>Mr. Avinaash Palanisamy.</span> Thank you.
+        <span className='fw-bold'>
+          {worker?.data?.fullName ? worker?.data?.fullName : 'the technician'}.
+        </span>{' '}
+        Thank you.
       </p>
 
       <div className='d-flex flex-wrap justify-content-center align-items-end w-75 mx-auto column-gap-5 pb-5'>

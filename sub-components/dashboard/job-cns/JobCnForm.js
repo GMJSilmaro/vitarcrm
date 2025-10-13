@@ -85,6 +85,7 @@ const JobCnForm = ({ data, isAdmin = true }) => {
 
   const formErrors = form.formState.errors;
 
+  const worker = useWatch({ name: 'worker', control: form.control });
   const jobId = useWatch({ name: 'jobId', control: form.control });
   const cnId = useWatch({ name: 'cnId', control: form.control });
   const jobSelectedCalibrationItems = useWatch({
@@ -499,6 +500,9 @@ const JobCnForm = ({ data, isAdmin = true }) => {
 
       const formData = form.getValues();
 
+      const jobRequest = formData?.jobId?.jobRequest;
+      const salesperson = jobRequest?.createdBy?.uid;
+
       try {
         const isValid = await form.trigger();
         const parseData = customerNotificationSchema.safeParse(formData);
@@ -531,7 +535,7 @@ const JobCnForm = ({ data, isAdmin = true }) => {
           //* create notification for admin and supervisor when created a job cn
           await notifications.create({
             module: 'job-cn',
-            target: ['admin', 'supervisor'],
+            target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
             title: 'New job customer notification created',
             message: `
              A new job customer notification (#${actualFormData.cnId}) has been created by ${auth.currentUser.displayName} for job (#${actualFormData.jobId}).`,
@@ -542,7 +546,7 @@ const JobCnForm = ({ data, isAdmin = true }) => {
         } else {
           await notifications.create({
             module: 'job-cn',
-            target: ['admin', 'supervisor'],
+            target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
             title: 'Job customer notification updated',
             message: `
              A job customer notification (#${actualFormData.cnId}) has been updated by ${auth.currentUser.displayName} for job (#${actualFormData.jobId}).`,
@@ -640,12 +644,17 @@ const JobCnForm = ({ data, isAdmin = true }) => {
         const promises = jobDocs.map(async (job) => {
           try {
             const jobDetailsPromise = getDoc(doc(db, 'jobDetails', job.id));
+            const jobRequestPromise = job?.jobRequestId ? getDoc(doc(db, 'jobRequests', job?.jobRequestId)) : null; //prettier-ignore
 
-            const [jobDetailsDoc] = await Promise.all([jobDetailsPromise]);
+            const [jobDetailsDoc, jobRequestDoc] = await Promise.all([
+              jobDetailsPromise,
+              jobRequestPromise,
+            ]);
 
             return {
               ...job,
               details: jobDetailsDoc.exists() ? jobDetailsDoc.data() : null,
+              jobRequest: jobRequestDoc ? jobRequestDoc.data() : null,
             };
           } catch (error) {
             console.error(error);
@@ -677,6 +686,7 @@ const JobCnForm = ({ data, isAdmin = true }) => {
           customerId: job?.customer?.id,
           customerName: job?.customer?.name,
           workers: job?.workers || [],
+          jobRequest: job?.jobRequest,
         }));
 
         setJobOptions({
@@ -1354,7 +1364,10 @@ const JobCnForm = ({ data, isAdmin = true }) => {
                     <Lightbulb className='flex-shrink-0 me-1' size={20} />{' '}
                     <div>
                       Should you have any further queries on the above mentioned, please contact
-                      <span className='fw-bold ps-1'>Mr. Avinaash Palanisamy.</span> Thank you.
+                      <span className='fw-bold ps-1'>
+                        {worker?.name ? worker?.name : 'the technician'}.
+                      </span>{' '}
+                      Thank you.
                     </div>
                   </Alert>
                 </Col>
