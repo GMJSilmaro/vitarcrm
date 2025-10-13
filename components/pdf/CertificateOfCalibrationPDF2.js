@@ -930,6 +930,11 @@ const CertificateOfCalibrationResultContent = ({ calibration, currentRange, rang
     return isNaN(value) ? 0 : value;
   }, [JSON.stringify(currentRange)]);
 
+  const rangeMinCalibration = useMemo(() => {
+    const value = parseFloat(currentRange?.rangeMinCalibration);
+    return isNaN(value) ? 0 : value;
+  }, [JSON.stringify(currentRange)]);
+
   const rangeMaxCalibration = useMemo(() => {
     const value = parseFloat(currentRange?.rangeMaxCalibration);
     return isNaN(value) ? 0 : value;
@@ -939,14 +944,19 @@ const CertificateOfCalibrationResultContent = ({ calibration, currentRange, rang
     return currentRange?.unitUsedForCOC || 'gram';
   }, [JSON.stringify(currentRange)]);
 
-  const typeOFBalance = useMemo(() => {
-    return currentCalibrationData.typeOfBalance || '';
-  }, [JSON.stringify(currentCalibrationData)]);
+  const formattedRangeMinCalibration = useMemo(() => {
+    if (unitUsedForCOC === 'gram') return rangeMinCalibration;
+    return rangeMinCalibration / 1000; //* convert to kilogram
+  }, [unitUsedForCOC]);
 
   const formattedRangeMaxCalibration = useMemo(() => {
     if (unitUsedForCOC === 'gram') return rangeMaxCalibration;
     return rangeMaxCalibration / 1000; //* convert to kilogram
   }, [unitUsedForCOC]);
+
+  const typeOFBalance = useMemo(() => {
+    return currentCalibrationData.typeOfBalance || '';
+  }, [JSON.stringify(currentCalibrationData)]);
 
   const rtestStd = useMemo(() => {
     return currentCalibrationData?.rtest?.std || [];
@@ -1136,7 +1146,8 @@ const CertificateOfCalibrationResultContent = ({ calibration, currentRange, rang
         >
           <View style={{ width: '50%', textAlign: 'center' }}>
             <Text>
-              Range {rangeIndex + 1} : {formattedRangeMaxCalibration} {unitUsedForCOCAcronym}{' '}
+              Range {rangeIndex + 1} : {formattedRangeMinCalibration} -{' '}
+              {formattedRangeMaxCalibration} {unitUsedForCOCAcronym}
             </Text>
           </View>
           <View style={{ width: '50%', textAlign: 'center', borderLeft: '1px solid #00000' }}>

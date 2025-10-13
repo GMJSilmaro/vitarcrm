@@ -16,7 +16,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, onSnapshot, query } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
@@ -33,9 +33,13 @@ import {
 import { Button, Dropdown, OverlayTrigger, Spinner, Badge, Card } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobCnList = () => {
   const router = useRouter();
+  const notifications = useNotifications();
+  const auth = useAuth();
 
   const [jobCns, setJobCns] = useState({ data: [], isLoading: true, isError: false });
 
@@ -137,7 +141,7 @@ const JobCnList = () => {
         cell: ({ row }) => {
           const [isLoading, setIsLoading] = useState(false);
 
-          const { id } = row.original;
+          const { id, jobId } = row.original;
 
           const handleViewJobCn = (id) => {
             router.push(`/job-cns/view/${id}`);
@@ -147,7 +151,7 @@ const JobCnList = () => {
             router.push(`/job-cns/edit-job-cns/${id}`);
           };
 
-          const handleDeleteJobCn = (id) => {
+          const handleDeleteJobCn = (id, jobId) => {
             Swal.fire({
               title: 'Are you sure?',
               text: 'This action cannot be undone.',
@@ -164,6 +168,23 @@ const JobCnList = () => {
                 try {
                   setIsLoading(true);
 
+                  let jobRequest;
+
+                  //* get job
+                  const job = await getDoc(doc(db, 'jobHeaders', jobId));
+
+                  //* if job exists set job request
+                  if (job.exists()) {
+                    const jobData = job.data();
+
+                    if (jobData?.jobRequestId) {
+                      const jobRequestDoc = await getDoc(doc(db, 'jobRequests', jobData?.jobRequestId)); //prettier-ignore
+                      jobRequest = { id: jobRequestDoc.id, ...jobRequestDoc.data() };
+                    } else jobRequest = null;
+                  }
+
+                  const salesperson = jobRequest?.createdBy?.uid;
+
                   const jobCnDocRef = doc(db, 'jobCustomerNotifications', id);
 
                   await deleteDoc(jobCnDocRef);
@@ -172,6 +193,17 @@ const JobCnList = () => {
                     position: 'top-right',
                   });
                   setIsLoading(false);
+
+                  //* create notification when job cn is removed
+                  await notifications.create({
+                    module: 'job-cn',
+                    target: ['admin', 'supervisor', ...(salesperson ? [salesperson] : [])],
+                    title: 'Job customer notification removed',
+                    message: `Job custoner notification (#${id}) was removed by ${auth.currentUser.displayName}.`,
+                    data: {
+                      redirectUrl: `/job-cns`,
+                    },
+                  });
                 } catch (error) {
                   console.error('Error removing job customer notification:', error);
                   toast.error('Error removing job customer notification: ' + error.message, {
@@ -193,15 +225,15 @@ const JobCnList = () => {
                 <Dropdown.Menu show style={{ zIndex: 999 }}>
                   <Dropdown.Item onClick={() => handleViewJobCn(id)}>
                     <Eye className='me-2' size={16} />
-                    View Data
+                    View Job CN
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => handleEditJobCn(id)}>
                     <PencilSquare className='me-2' size={16} />
-                    Edit Data
+                    Edit Job CN
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleDeleteJobCn(id)}>
+                  <Dropdown.Item onClick={() => handleDeleteJobCn(id, jobId)}>
                     <Trash className='me-2' size={16} />
-                    Delete Data
+                    Delete Job CN
                   </Dropdown.Item>
                 </Dropdown.Menu>
               }
