@@ -818,14 +818,284 @@ export const processExcelUploadCalibrationCK = async ({
 
           const ckData = {
             refId,
-            dof: row?.DOF || -1,
-            value: row?.Value || -1,
+            dof: row?.DOF || '-1',
+            value: row?.Value || '-1',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           };
 
           batch.set(doc(db, dataKeyA, dataKeyB, dataKeyC, refId), ckData);
           existingCK.set(row?.Guid, refId);
+          stats[`${dataKey}Success`]++;
+          operationsInBatch++;
+        }
+
+        stats.processed++;
+
+        //* Update progress
+        onProgress(Math.round(((i + 1 - startIndex) / (data.length - startIndex)) * 100));
+        onStats({
+          ...stats,
+          currentItem: `Processing ${row.Guid}`,
+        });
+
+        //* Commit batch when limit reached
+        if (operationsInBatch === BATCH_SIZE) {
+          await batch.commit();
+
+          //* log
+          console.log(`Batch committed at row ${i + 1}. Waiting...`);
+
+          //* Delay
+          await delay(DELAY_BETWEEN_BATCHES);
+
+          //* Reset batch
+          batch = writeBatch(db);
+          operationsInBatch = 0;
+        }
+      } catch (error) {
+        console.error(`Error processing row ${i + 1}:`, error);
+        localStorage.setItem(`lastProcessed${dataKey}`, row.Guid);
+        stats.errors++;
+        await delay(DELAY_BETWEEN_BATCHES * 2);
+      }
+    }
+
+    //* Commit final batch
+    if (stats.processed > 0) {
+      console.log(`Committing final batch with No of operation: ${operationsInBatch}`);
+      await batch.commit();
+    }
+
+    localStorage.removeItem(`lastProcessed${dataKey}`);
+    stats.status = 'completed';
+    onStats(stats);
+    return stats;
+  } catch (error) {
+    console.error('FATAL ERROR  IN PROCESS_EXCEL_UPLOADER_CALIBRATION_CK:', error);
+    throw error;
+  }
+};
+
+export const processExcelUploadCalibrationACR = async ({
+  prefix,
+  dataKey,
+  data,
+  onProgress,
+  onStats,
+  lastDataId,
+}) => {
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+
+  let stats = {
+    total: data.length,
+    [`${dataKey}Success`]: 0,
+    processed: 0,
+    errors: 0,
+    currentItem: '',
+    status: 'processing',
+  };
+
+  // if (!currentUser) return;
+
+  try {
+    onStats(stats);
+
+    const BATCH_SIZE = 20; //* Reduced batch size
+    const DELAY_BETWEEN_BATCHES = 3000; //* 3 seconds delay
+
+    let batch = writeBatch(db);
+    let operationsInBatch = 0; //* Tracks number of operations in batch
+
+    //* Find starting index
+    let startIndex = 0;
+    if (lastDataId) {
+      startIndex = data.findIndex((row) => row.Guid === lastDataId);
+      if (startIndex === -1) startIndex = 0;
+    }
+
+    const [dataKeyA, dataKeyB, dataKeyC] = dataKey.split('_');
+
+    if ((!dataKeyA || !dataKeyB, !dataKeyC)) return;
+
+    const existingACR = new Map();
+
+    //* Get existing records
+    const calibrationACRsnapshot = await getDocs(collection(db, dataKeyA, dataKeyB, dataKeyC));
+
+    if (!calibrationACRsnapshot.empty) {
+      calibrationACRsnapshot.forEach((doc) => {
+        const data = doc.data();
+        existingACR.set(data.refId, data);
+      });
+    }
+
+    for (let i = startIndex; i < data.length; i++) {
+      const row = data[i];
+
+      try {
+        //* check if row has the required fields or not, if not skip
+        if (!row.Code) {
+          console.log('Skipping row due to missing required data:', row);
+          stats.errors++;
+          continue;
+        }
+
+        let refId = existingACR.get(row.Guid);
+        if (!refId) {
+          refId = `${prefix}${String(existingACR.size + 1).padStart(6, '0')}`;
+
+          const acrData = {
+            refId,
+            code: row?.Code || '',
+            e1: row?.E1 || '',
+            e2: row?.E2 || '',
+            f1: row?.F1 || '',
+            f2: row?.F2 || '',
+            m1: row?.M1 || '',
+            m2: row?.M2 || '',
+            m3: row?.M3 || '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+
+          batch.set(doc(db, dataKeyA, dataKeyB, dataKeyC, refId), acrData);
+          existingACR.set(row?.Guid, refId);
+          stats[`${dataKey}Success`]++;
+          operationsInBatch++;
+        }
+
+        stats.processed++;
+
+        //* Update progress
+        onProgress(Math.round(((i + 1 - startIndex) / (data.length - startIndex)) * 100));
+        onStats({
+          ...stats,
+          currentItem: `Processing ${row.Guid}`,
+        });
+
+        //* Commit batch when limit reached
+        if (operationsInBatch === BATCH_SIZE) {
+          await batch.commit();
+
+          //* log
+          console.log(`Batch committed at row ${i + 1}. Waiting...`);
+
+          //* Delay
+          await delay(DELAY_BETWEEN_BATCHES);
+
+          //* Reset batch
+          batch = writeBatch(db);
+          operationsInBatch = 0;
+        }
+      } catch (error) {
+        console.error(`Error processing row ${i + 1}:`, error);
+        localStorage.setItem(`lastProcessed${dataKey}`, row.Guid);
+        stats.errors++;
+        await delay(DELAY_BETWEEN_BATCHES * 2);
+      }
+    }
+
+    //* Commit final batch
+    if (stats.processed > 0) {
+      console.log(`Committing final batch with No of operation: ${operationsInBatch}`);
+      await batch.commit();
+    }
+
+    localStorage.removeItem(`lastProcessed${dataKey}`);
+    stats.status = 'completed';
+    onStats(stats);
+    return stats;
+  } catch (error) {
+    console.error('FATAL ERROR  IN PROCESS_EXCEL_UPLOADER_CALIBRATION_CK:', error);
+    throw error;
+  }
+};
+
+export const processExcelUploadCalibrationMaterials = async ({
+  prefix,
+  dataKey,
+  data,
+  onProgress,
+  onStats,
+  lastDataId,
+}) => {
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+
+  let stats = {
+    total: data.length,
+    [`${dataKey}Success`]: 0,
+    processed: 0,
+    errors: 0,
+    currentItem: '',
+    status: 'processing',
+  };
+
+  // if (!currentUser) return;
+
+  try {
+    onStats(stats);
+
+    const BATCH_SIZE = 20; //* Reduced batch size
+    const DELAY_BETWEEN_BATCHES = 3000; //* 3 seconds delay
+
+    let batch = writeBatch(db);
+    let operationsInBatch = 0; //* Tracks number of operations in batch
+
+    //* Find starting index
+    let startIndex = 0;
+    if (lastDataId) {
+      startIndex = data.findIndex((row) => row.Guid === lastDataId);
+      if (startIndex === -1) startIndex = 0;
+    }
+
+    const [dataKeyA, dataKeyB, dataKeyC] = dataKey.split('_');
+
+    if ((!dataKeyA || !dataKeyB, !dataKeyC)) return;
+
+    const existingMaterials = new Map();
+
+    //* Get existing records
+    const calibrationMaterialsSnapshot = await getDocs(
+      collection(db, dataKeyA, dataKeyB, dataKeyC)
+    );
+
+    if (!calibrationMaterialsSnapshot.empty) {
+      calibrationMaterialsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        existingMaterials.set(data.refId, data);
+      });
+    }
+
+    for (let i = startIndex; i < data.length; i++) {
+      const row = data[i];
+
+      try {
+        //* check if row has the required fields or not, if not skip
+        if (!row.Code || !row.Material) {
+          console.log('Skipping row due to missing required data:', row);
+          stats.errors++;
+          continue;
+        }
+
+        let refId = existingMaterials.get(row.Guid);
+        if (!refId) {
+          refId = `${prefix}${String(existingMaterials.size + 1).padStart(6, '0')}`;
+
+          const materialData = {
+            refId,
+            code: row?.Code || '',
+            material: row?.Material || '',
+            ptKgMn3: row?.Pt_KG_MN3 || '',
+            uPtKgMn3: row?.U_Pt_KG_MN3 || '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+
+          batch.set(doc(db, dataKeyA, dataKeyB, dataKeyC, refId), materialData);
+          existingMaterials.set(row?.Guid, refId);
           stats[`${dataKey}Success`]++;
           operationsInBatch++;
         }

@@ -186,19 +186,16 @@ const MpeDetails = () => {
                   <th>Uncertainty</th>
                   <td colSpan={5}>{mpe?.uncertainty || ''}</td>
                 </tr>
-
                 <tr>
                   <th>Date</th>
                   <td colSpan={5}>
                     {mpe?.createdAt ? format(mpe?.createdAt.toDate(), 'dd-MM-yyyy') : 'N/A'}
                   </td>
                 </tr>
-
                 <tr>
-                  <th>Created At</th>
+                  <th>Created By</th>
                   <td colSpan={5}>{mpe?.createdBy?.displayName || 'N/A'}</td>
                 </tr>
-
                 <tr>
                   <th>Last Updated</th>
                   <td colSpan={5}>

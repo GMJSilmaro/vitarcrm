@@ -238,8 +238,17 @@ const nextConfig = {
         source: '/reference-equipment/:category/view/:inventoryId',
         destination: '/dashboard/reference-equipment/:category/view/:inventoryId',
       },
+      {
+        source: '/reference-equipment/:category/create',
+        destination: '/dashboard/reference-equipment/:category/create',
+      },
+      {
+        source: '/reference-equipment/:category/edit-reference-equipment/:inventoryId',
+        destination:
+          '/dashboard/reference-equipment/:category/edit-reference-equipment/:inventoryId',
+      },
 
-      //* calibration references
+      //* CUSWD - Correction, Uncertainty of the Standard Weight & Draft
       {
         source: '/calibration-references/mass/cuswd',
         destination: '/dashboard/calibration-references/mass/cuswd/list',
@@ -256,6 +265,8 @@ const nextConfig = {
         source: '/calibration-references/mass/cuswd/view/:refId',
         destination: '/dashboard/calibration-references/mass/cuswd/view/:refId',
       },
+
+      //* MPE
       {
         source: '/calibration-references/mass/mpe',
         destination: '/dashboard/calibration-references/mass/mpe/list',
@@ -264,7 +275,6 @@ const nextConfig = {
         source: '/calibration-references/mass/mpe/create',
         destination: '/dashboard/calibration-references/mass/mpe/create',
       },
-
       {
         source: '/calibration-references/mass/mpe/edit-mpe/:refId',
         destination: '/dashboard/calibration-references/mass/mpe/edit-mpe/:refId',
@@ -273,6 +283,8 @@ const nextConfig = {
         source: '/calibration-references/mass/mpe/view/:refId',
         destination: '/dashboard/calibration-references/mass/mpe/view/:refId',
       },
+
+      //* CK
       {
         source: '/calibration-references/mass/ck',
         destination: '/dashboard/calibration-references/mass/ck/list',
@@ -288,6 +300,42 @@ const nextConfig = {
       {
         source: '/calibration-references/mass/ck/view/:refId',
         destination: '/dashboard/calibration-references/mass/ck/view/:refId',
+      },
+
+      //* ACR
+      {
+        source: '/calibration-references/mass/acr',
+        destination: '/dashboard/calibration-references/mass/acr/list',
+      },
+      {
+        source: '/calibration-references/mass/acr/create',
+        destination: '/dashboard/calibration-references/mass/acr/create',
+      },
+      {
+        source: '/calibration-references/mass/acr/edit-acr/:refId',
+        destination: '/dashboard/calibration-references/mass/acr/edit-acr/:refId',
+      },
+      {
+        source: '/calibration-references/mass/acr/view/:refId',
+        destination: '/dashboard/calibration-references/mass/acr/view/:refId',
+      },
+
+      //* Materials
+      {
+        source: '/calibration-references/mass/materials',
+        destination: '/dashboard/calibration-references/mass/materials/list',
+      },
+      {
+        source: '/calibration-references/mass/materials/create',
+        destination: '/dashboard/calibration-references/mass/materials/create',
+      },
+      {
+        source: '/calibration-references/mass/materials/edit-materials/:refId',
+        destination: '/dashboard/calibration-references/mass/materials/edit-materials/:refId',
+      },
+      {
+        source: '/calibration-references/mass/materials/view/:refId',
+        destination: '/dashboard/calibration-references/mass/materials/view/:refId',
       },
 
       // AUTHENTICATION

@@ -46,3 +46,23 @@ export const ckSchema = z.object({
   dof: z.string().min(1, 'DOF is required'),
   value: z.string().min(1, '95.45% is required'),
 });
+
+export const acrSchema = z.object({
+  refId: z.string().min(1, 'Reference ID is required'),
+  code: z.string().min(1, 'Code is required'),
+  e1: z.string().default(''),
+  e2: z.string().default(''),
+  f1: z.string().default(''),
+  f2: z.string().default(''),
+  m1: z.string().default(''),
+  m2: z.string().default(''),
+  m3: z.string().default(''),
+});
+
+export const materialSchema = z.object({
+  refId: z.string().min(1, 'Reference ID is required'),
+  code: z.string().min(1, 'Code is required'),
+  material: z.string().min(1, 'Material is required'),
+  ptKgMn3: z.string().default(''),
+  uPtKgMn3: z.string().default(''),
+});

@@ -184,6 +184,18 @@ export const getNavbarItems = (role) => {
                     link: '/calibration-references/mass/ck',
                     icon: 'Table',
                   },
+                  {
+                    id: uuid(),
+                    menuitem: 'Accuracy Class Reference',
+                    link: '/calibration-references/mass/acr',
+                    icon: 'Table',
+                  },
+                  {
+                    id: uuid(),
+                    menuitem: 'Materials',
+                    link: '/calibration-references/mass/materials',
+                    icon: 'Table',
+                  },
                 ],
               },
             ],

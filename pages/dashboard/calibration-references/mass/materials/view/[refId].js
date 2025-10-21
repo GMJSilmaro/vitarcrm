@@ -18,23 +18,23 @@ import {
   Table as TableIcon,
 } from 'react-bootstrap-icons';
 
-const CkDetails = () => {
+const MaterialDetails = () => {
   const router = useRouter();
   const { refId } = router.query;
 
-  const [ck, setCk] = useState();
+  const [material, setMaterial] = useState();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  //* query ck
+  //* query material
   useEffect(() => {
     if (refId) {
-      const ckDocRef = doc(db, 'jobCalibrationReferences', 'CR000003', 'data', refId);
+      const materialDocRef = doc(db, 'jobCalibrationReferences', 'CR000005', 'data', refId);
 
-      getDoc(ckDocRef)
+      getDoc(materialDocRef)
         .then((doc) => {
           if (doc.exists()) {
-            setCk({ id: doc.id, ...doc.data() });
+            setMaterial({ id: doc.id, ...doc.data() });
             setIsLoading(false);
           } else {
             setError('Reference Data not found');
@@ -57,8 +57,8 @@ const CkDetails = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <Button onClick={() => router.push('/calibration-references/mass/ck')}>
-            Back to CK List
+          <Button onClick={() => router.push('/calibration-references/mass/materials')}>
+            Back to Material List
           </Button>
         </div>
       </div>
@@ -74,7 +74,7 @@ const CkDetails = () => {
     );
   }
 
-  if (!ck) {
+  if (!material) {
     return (
       <div
         className='d-flex justify-content-center align-items-center text-center py-5'
@@ -82,9 +82,9 @@ const CkDetails = () => {
       >
         <div>
           <h3>Reference Data not found</h3>
-          <Link href='/calibration-references/mass/ck'>
+          <Link href='/calibration-references/mass/materials'>
             <Button variant='primary' className='mt-3'>
-              Back to CK List
+              Back to Material List
             </Button>
           </Link>
         </div>
@@ -94,10 +94,10 @@ const CkDetails = () => {
 
   return (
     <>
-      <GeeksSEO title={`View Details for CK #${ck.id} - VITAR Group | Portal`} />
+      <GeeksSEO title={`View Details for CK #${material.id} - VITAR Group | Portal`} />
 
       <ContentHeader
-        title={`View Details for CK #${ck.id}`}
+        title={`View Details for CK #${material.id}`}
         description='View comprehensive details of reference data'
         badgeText='Calibration References Data Management'
         badgeText2='View Reference Data'
@@ -109,17 +109,17 @@ const CkDetails = () => {
           },
           {
             text: 'Calibration References',
-            link: '/calibration-references/mass/ck',
+            link: '/calibration-references/mass/materials',
             icon: <ListColumns className='me-2' size={14} />,
           },
           {
             text: 'Mass',
-            link: '/calibration-references/mass/ck',
+            link: '/calibration-references/mass/materials',
             icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
             text: 'CK',
-            link: '/calibration-references/mass/ck',
+            link: '/calibration-references/mass/materials',
             icon: <TableIcon className='me-2' size={14} />,
           },
           ,
@@ -133,14 +133,15 @@ const CkDetails = () => {
             text: `Back`,
             icon: <ArrowLeftShort size={20} />,
             variant: 'outline-primary',
-            onClick: () => router.push('/calibration-references/mass/ck'),
+            onClick: () => router.push('/calibration-references/mass/materials'),
           },
         ]}
         dropdownItems={[
           {
-            label: 'Edit CK',
+            label: 'Edit Material',
             icon: PencilSquare,
-            onClick: () => router.push(`/calibration-references/mass/ck/edit-ck/${refId}`),
+            onClick: () =>
+              router.push(`/calibration-references/mass/materials/edit-materials/${refId}`),
           },
         ]}
       />
@@ -150,7 +151,7 @@ const CkDetails = () => {
           <Card.Header className='bg-transparent border-0 pb-0'>
             <div className='d-flex justify-content-between align-items-center'>
               <div>
-                <h4 className='mb-0'>CK</h4>
+                <h4 className='mb-0'>Material</h4>
                 <p className='text-muted fs-6 mb-0'>Details about the reference data.</p>
               </div>
             </div>
@@ -165,39 +166,55 @@ const CkDetails = () => {
               <tbody>
                 <tr>
                   <th>Reference ID</th>
-                  <td colSpan={5}>{ck?.refId || ''}</td>
+                  <td colSpan={5}>{material?.refId || ''}</td>
                 </tr>
                 <tr>
-                  <th>DOF</th>
-                  <td colSpan={5}>{ck?.dof || ''}</td>
+                  <th>Code</th>
+                  <td colSpan={5}>{material?.code || ''}</td>
                 </tr>
                 <tr>
-                  <th>95.45%</th>
-                  <td colSpan={5}>{ck?.value || ''}</td>
+                  <th>Material</th>
+                  <td colSpan={5}>{material?.material || ''}</td>
+                </tr>
+                <tr>
+                  <th>
+                    Density of Test Weight P<sub>t</sub> (kg m<sup>-3</sup>)
+                  </th>
+                  <td colSpan={5}>{material?.ptKgMn3 || ''}</td>
+                </tr>
+                <tr>
+                  <th>
+                    u(P<sub>t</sub>) (kg m<sup>-3</sup>)
+                  </th>
+                  <td colSpan={5}>{material?.uPtKgMn3 || ''}</td>
                 </tr>
 
                 <tr>
                   <th>Date</th>
                   <td colSpan={5}>
-                    {ck?.createdAt ? format(ck?.createdAt.toDate(), 'dd-MM-yyyy') : 'N/A'}
+                    {material?.createdAt
+                      ? format(material?.createdAt.toDate(), 'dd-MM-yyyy')
+                      : 'N/A'}
                   </td>
                 </tr>
 
                 <tr>
                   <th>Created By</th>
-                  <td colSpan={5}>{ck?.createdBy?.displayName || 'N/A'}</td>
+                  <td colSpan={5}>{material?.createdBy?.displayName || 'N/A'}</td>
                 </tr>
 
                 <tr>
                   <th>Last Updated</th>
                   <td colSpan={5}>
-                    {ck?.updatedAt ? format(ck?.updatedAt.toDate(), 'dd-MM-yyyy') : 'N/A'}
+                    {material?.updatedAt
+                      ? format(material?.updatedAt.toDate(), 'dd-MM-yyyy')
+                      : 'N/A'}
                   </td>
                 </tr>
 
                 <tr>
                   <th>Updated By</th>
-                  <td colSpan={5}>{ck?.updatedBy?.displayName || 'N/A'}</td>
+                  <td colSpan={5}>{material?.updatedBy?.displayName || 'N/A'}</td>
                 </tr>
               </tbody>
             </Table>
@@ -208,4 +225,4 @@ const CkDetails = () => {
   );
 };
 
-export default CkDetails;
+export default MaterialDetails;

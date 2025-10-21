@@ -15,27 +15,35 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import _ from 'lodash';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   BoxSeam,
+  BoxSeamFill,
   Eye,
   HouseDoorFill,
   PencilSquare,
   Plus,
+  PlusCircle,
   ThreeDotsVertical,
   Tools,
   Trash,
 } from 'react-bootstrap-icons';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const ReferenceEquipment = () => {
   const router = useRouter();
   const { category } = router.query;
 
-  const categoryTitle = category ? _.capitalize(category) : '';
+  const categoryTitle =
+    category
+      ?.split(' ')
+      ?.map((str) => _.capitalize(str))
+      ?.join(' ') || '';
 
   const [equipments, setEquipments] = useState({ data: [], isLoading: true, isError: false });
 
@@ -131,9 +139,45 @@ const ReferenceEquipment = () => {
             router.push(`/reference-equipment/${category}/view/${id}`);
           };
 
-          const handleEditEquipment = (id, category) => {};
+          const handleEditEquipment = (id, category) => {
+            router.push(`/reference-equipment/${category}/edit-reference-equipment/${id}`);
+          };
 
-          const handleDeleteEquipment = (id, category) => {};
+          const handleDeleteEquipment = (id) => {
+            Swal.fire({
+              title: 'Are you sure?',
+              text: 'This action cannot be undone.',
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirm',
+              cancelButtonText: 'Cancel',
+              customClass: {
+                confirmButton: 'btn btn-primary rounded',
+                cancelButton: 'btn btn-secondary rounded',
+              },
+            }).then(async (data) => {
+              if (data.isConfirmed) {
+                try {
+                  setIsLoading(true);
+
+                  const refEquipmentDocRef = doc(db, 'equipments', id);
+
+                  await deleteDoc(refEquipmentDocRef);
+
+                  toast.success('Refence equipment data removed successfully', {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                } catch (error) {
+                  console.error('Error removing refence data:', error);
+                  toast.error('Error removing refence data: ' + error.message, {
+                    position: 'top-right',
+                  });
+                  setIsLoading(false);
+                }
+              }
+            });
+          };
 
           const handleViewCertificate = (id, category) => {};
 
@@ -149,19 +193,21 @@ const ReferenceEquipment = () => {
                     View Equipment
                   </Dropdown.Item>
 
-                  <Dropdown.Item onClick={() => handleEditEquipment(id, category)}>
+                  <Dropdown.Item
+                    onClick={() => handleEditEquipment(id, String(category).toLowerCase())}
+                  >
                     <PencilSquare className='me-2' size={16} />
                     Edit Equipment
                   </Dropdown.Item>
-                  <Dropdown.Item onClick={() => handleDeleteEquipment(id, category)}>
+                  <Dropdown.Item onClick={() => handleDeleteEquipment(id)}>
                     <Trash className='me-2' size={16} />
                     Delete Equipment
                   </Dropdown.Item>
 
-                  <Dropdown.Item onClick={() => handleViewCertificate(id, category)}>
+                  {/* <Dropdown.Item onClick={() => handleViewCertificate(id, String(category).toLowerCase())}>
                     <Eye className='me-2' size={16} />
                     View Certificate
-                  </Dropdown.Item>
+                  </Dropdown.Item> */}
                 </Dropdown.Menu>
               }
             >
@@ -303,13 +349,18 @@ const ReferenceEquipment = () => {
             link: '/reference-equipment',
             icon: <Tools className='me-2' size={14} />,
           },
+          {
+            text: categoryTitle,
+            link: `/reference-equipment/${category}`,
+            icon: <BoxSeamFill className='me-2' size={14} />,
+          },
         ]}
         actionButtons={[
           {
-            text: 'Add Equipment',
+            text: 'Add Reference Equipment',
             icon: <Plus size={20} />,
             variant: 'light',
-            onClick: () => router.push('/reference-equipment/create'),
+            onClick: () => router.push(`/reference-equipment/${category}/create`),
           },
         ]}
       />

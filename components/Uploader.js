@@ -5,6 +5,8 @@ import {
   processExcelUploadCalibrationCUSWD,
   processExcelUploadCalibrationMPE,
   processExcelUploadCalibrationCK,
+  processExcelUploadCalibrationACR,
+  processExcelUploadCalibrationMaterials,
 } from '@/services/excelUploadService';
 import { parseExcelFile } from '@/utils/excelParser';
 
@@ -76,6 +78,8 @@ const CALIBRATION_CUSWD_HEADER = [
 
 const CALIBRATION_MPE = ['Guid', 'Code', 'Weight', 'MPE', 'Uncertainty'];
 const CALIBRATION_CK = ['Guid', 'DOF', 'Value'];
+const CALIBRATION_ACR = ['Guid', 'Code', 'E1', 'E2', 'F1', 'F2', 'M1', 'M2', 'M3'];
+const CALIBRATION_MATERIAL = ['Guid', 'Code', 'Material', 'Pt_KG_MN3', 'U_Pt_KG_MN3'];
 
 export const dataExcelParser = {
   locations: (file) => parseExcelFile(file, LOCATIONS_HEADERS),
@@ -91,6 +95,12 @@ export const dataExcelParser = {
   jobCalibrationReferences_CR000003_data: (file) => {
     return parseExcelFile(file, CALIBRATION_CK);
   },
+  jobCalibrationReferences_CR000004_data: (file) => {
+    return parseExcelFile(file, CALIBRATION_ACR);
+  },
+  jobCalibrationReferences_CR000005_data: (file) => {
+    return parseExcelFile(file, CALIBRATION_MATERIAL);
+  },
 };
 
 export const dataProcessExcelUploader = {
@@ -104,4 +114,6 @@ export const dataProcessExcelUploader = {
   jobCalibrationReferences_CR000001_data: (param) => processExcelUploadCalibrationCUSWD(param),
   jobCalibrationReferences_CR000002_data: (param) => processExcelUploadCalibrationMPE(param),
   jobCalibrationReferences_CR000003_data: (param) => processExcelUploadCalibrationCK(param),
+  jobCalibrationReferences_CR000004_data: (param) => processExcelUploadCalibrationACR(param),
+  jobCalibrationReferences_CR000005_data: (param) => processExcelUploadCalibrationMaterials(param),
 };

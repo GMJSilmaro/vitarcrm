@@ -1,23 +1,22 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
-import SummaryTab from '@/sub-components/dashboard/reference-equipment/view/SummaryTab';
-
+import ReferenceEquipmentForm from '@/sub-components/dashboard/reference-equipment/ReferenceEquipmentForm';
 import { GeeksSEO } from '@/widgets';
 import { doc, getDoc } from 'firebase/firestore';
-import _ from 'lodash';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
+import { Button, Card, Spinner } from 'react-bootstrap';
 import {
   ArrowLeftShort,
   BoxSeamFill,
-  EyeFill,
+  Eye,
   HouseDoorFill,
-  PencilSquare,
+  PencilFill,
   Tools,
 } from 'react-bootstrap-icons';
 
-const ReferenceEquipmentDetails = () => {
+function EditReferenceEquipment() {
   const router = useRouter();
   const { inventoryId, category } = router.query;
 
@@ -31,8 +30,6 @@ const ReferenceEquipmentDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [activeTab, setActiveTab] = useState('0');
-
   //* query ref equipment
   useEffect(() => {
     if (!inventoryId) {
@@ -40,36 +37,23 @@ const ReferenceEquipmentDetails = () => {
       return;
     }
 
-    getDoc(doc(db, 'equipments', inventoryId))
-      .then((doc) => {
-        console.log({ doc });
+    const refEquipmentDocRef = doc(db, 'equipments', inventoryId);
 
+    getDoc(refEquipmentDocRef)
+      .then((doc) => {
         if (doc.exists()) {
-          setRefEquipment({
-            id: doc.id,
-            ...doc.data(),
-          });
+          setRefEquipment({ id: doc.id, ...doc.data() });
           setIsLoading(false);
         } else {
-          setError('Reference Equipment not found');
+          setError('Reference equipment data not found');
           setIsLoading(false);
         }
       })
       .catch((err) => {
-        console.error(err.message);
-        setError(err.message || 'Error fetching reference equipment');
+        setError(err.message || 'Error fetching reference equipment data');
         setIsLoading(false);
       });
   }, [inventoryId]);
-
-  if (isLoading) {
-    return (
-      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
-        <Spinner animation='border' variant='primary' />
-        <span className='ms-3'>Loading Reference Equipment Data...</span>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -80,13 +64,21 @@ const ReferenceEquipmentDetails = () => {
         <div>
           <h3 className='text-danger'>Error</h3>
           <p className='text-muted'>{error}</p>
-          <button
-            className='btn btn-primary'
+          <Button
             onClick={() => router.push(`/reference-equipment/${String(category).toLowerCase()}`)}
           >
             Back to Reference Equipment List for {categoryTitle}
-          </button>
+          </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
+        <Spinner animation='border' variant='primary' />
+        <span className='ms-3'>Loading Reference Equipment Data...</span>
       </div>
     );
   }
@@ -98,7 +90,7 @@ const ReferenceEquipmentDetails = () => {
         style={{ height: '63vh' }}
       >
         <div>
-          <h3>Reference Equipment not found</h3>
+          <h3>Reference Data not found</h3>
           <Link href={`/reference-equipment/${String(category).toLowerCase()}`}>
             <Button variant='primary' className='mt-3'>
               Back to Reference Equipment List for {categoryTitle}
@@ -111,18 +103,18 @@ const ReferenceEquipmentDetails = () => {
 
   return (
     <>
-      <GeeksSEO title={`View Details for Reference Equipment #${refEquipment.id} | VITAR Group`} />
+      <GeeksSEO title={`Edit Reference Equipment for ${categoryTitle} - VITAR Group | Portal`} />
 
       <ContentHeader
-        title={`View Details for Reference Equipment #${refEquipment.id}`}
-        description='View comprehensive details about the reference equipment'
+        title={`Edit Reference Equipment for ${categoryTitle}`}
+        description='Edit reference equipment information'
         badgeText='Reference Equipment Management'
-        badgeText2='View Reference Equipment'
+        badgeText2='Edit Reference Equipment Data'
         breadcrumbItems={[
           {
             text: 'Dashboard',
             link: '/',
-            icon: <HouseDoorFill className='me-2' size={14} />,
+            icon: <HouseDoorFill className='me-2' style={{ fontSize: '14px' }} />,
           },
           {
             text: 'Reference Equipment',
@@ -135,19 +127,14 @@ const ReferenceEquipmentDetails = () => {
             icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
-            text: `View ${refEquipment.id}`,
-            icon: <EyeFill className='me-2' size={14} />,
-          },
-        ]}
-        customBadges={[
-          {
-            label: refEquipment?.qty > 0 ? 'Available' : 'Unavailable',
-            color: refEquipment?.qty > 0 ? 'success' : 'danger',
+            text: refEquipment ? refEquipment.id : 'Create',
+            link: `/reference-equipment/${String(category ).toLowerCase()}/edit-reference-equipment/${inventoryId}`, // prettier-ignore
+            icon: <PencilFill className='me-2' size={14} />,
           },
         ]}
         actionButtons={[
           {
-            text: 'Back',
+            text: `Back`,
             icon: <ArrowLeftShort size={20} />,
             variant: 'outline-primary',
             onClick: () => router.push(`/reference-equipment/${String(category).toLowerCase()}`),
@@ -155,38 +142,23 @@ const ReferenceEquipmentDetails = () => {
         ]}
         dropdownItems={[
           {
-            label: 'Edit Equipment',
-            icon: PencilSquare,
+            label: 'View Equipment',
+            icon: Eye,
             onClick: () =>
               router.push(
-                `/reference-equipment/${String(
-                  category
-                ).toLowerCase()}/edit-reference-equipment/${inventoryId}`
+                `/reference-equipment/${String(category).toLowerCase()}/view/${inventoryId}`
               ),
           },
         ]}
       />
 
-      <Card>
+      <Card className='shadow-sm'>
         <Card.Body>
-          <Tabs className='mb-1' activeKey={activeTab} onSelect={setActiveTab}>
-            <Tab eventKey='0' title='Summary'>
-              <SummaryTab refEquipment={refEquipment} />
-            </Tab>
-
-            <Tab eventKey='1' title='History'>
-              <Card className='shadow-none'>
-                <Card.Body className='text-center mt-5'>
-                  <h4 className='mb-0'>History not yet suppoted</h4>
-                  <p>Tab is under development</p>
-                </Card.Body>
-              </Card>
-            </Tab>
-          </Tabs>
+          <ReferenceEquipmentForm data={refEquipment} />
         </Card.Body>
       </Card>
     </>
   );
-};
+}
 
-export default ReferenceEquipmentDetails;
+export default EditReferenceEquipment;
