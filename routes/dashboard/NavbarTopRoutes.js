@@ -196,6 +196,18 @@ export const getNavbarItems = (role) => {
                     link: '/calibration-references/mass/materials',
                     icon: 'Table',
                   },
+                  {
+                    id: uuid(),
+                    menuitem: 'Reported Scope CMC (g)',
+                    link: '/calibration-references/mass/rscmc',
+                    icon: 'Table',
+                  },
+                  {
+                    id: uuid(),
+                    menuitem: 'Environmental',
+                    link: '/calibration-references/mass/environmental',
+                    icon: 'Table',
+                  },
                 ],
               },
             ],

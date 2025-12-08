@@ -5,7 +5,7 @@ import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import PageHeader from '@/components/common/PageHeader';
 import ContentHeader from '@/components/dashboard/ContentHeader';
-import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
+import CocWeightBalancePDF from '@/components/pdf/CocWeightBalancePDF';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useCertificateData } from '@/hooks/useCalibrationCertificateDate';
@@ -16,7 +16,7 @@ import {
   PRINT_STATUS_COLOR,
   STATUS,
   STATUS_COLOR,
-} from '@/schema/calibration';
+} from '@/schema/calibrations/common-constant';
 import CurrentJobCard from '@/sub-components/dashboard/user/jobs/CurrentJobCard';
 import { titleCase } from '@/utils/common';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
@@ -116,7 +116,7 @@ const DropdownItemPrintCoc = ({
       });
 
       updateInstance(
-        <CertificateOfCalibrationPDF2
+        <CocWeightBalancePDF
           calibration={calibration}
           instruments={{ data: instruments }}
           calibratedBy={calibratedBy}

@@ -27,7 +27,7 @@ export const cuswdSchema = z.object({
   uPrKgMn3: z.string().default(''),
   lastYearError: z.string().default(''),
   lastYearActualValue: z.string().default(''),
-  driftg: z.string().min(1, 'Drift (g) is required'),
+  driftg: z.string().default(''),
 });
 
 export const mpeSchema = z.object({
@@ -65,4 +65,19 @@ export const materialSchema = z.object({
   material: z.string().min(1, 'Material is required'),
   ptKgMn3: z.string().default(''),
   uPtKgMn3: z.string().default(''),
+});
+
+export const rscmcSchema = z.object({
+  refId: z.string().min(1, 'Reference ID is required'),
+  nominalValue: z.string().min(1, 'Nominal Value (g) is required'),
+  value: z.string().min(1, 'Value is required'),
+});
+
+export const environmentalSchema = z.object({
+  refId: z.string().min(1, 'Reference ID is required'),
+  code: z.string().min(1, 'Code is required'),
+  description: z.string().default(''),
+  u: z.string().min(1, 'U is required'),
+  unit: z.string().default(''),
+  dueDate: z.string().default(''),
 });

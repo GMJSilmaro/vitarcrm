@@ -25,7 +25,7 @@ export const referenceEquipmentSchema = z.object({
   rangeMaxPercent: z.string().default(''),
   certificateNo: z.string().default(''),
   traceability: z.string().default(''),
-  uncertainty: z.string().default(''),
+  uncertainty: z.string().default(''), //* Uncertainty COC in Share Data.xlsx
   uncertaintyUnit: z.string().default(''),
   k: z.string().default(''),
   dueDate: z.string().default(''),

@@ -338,6 +338,43 @@ const nextConfig = {
         destination: '/dashboard/calibration-references/mass/materials/view/:refId',
       },
 
+      //* RSCMC
+      {
+        source: '/calibration-references/mass/rscmc',
+        destination: '/dashboard/calibration-references/mass/rscmc/list',
+      },
+      {
+        source: '/calibration-references/mass/rscmc/create',
+        destination: '/dashboard/calibration-references/mass/rscmc/create',
+      },
+      {
+        source: '/calibration-references/mass/rscmc/edit-rscmc/:refId',
+        destination: '/dashboard/calibration-references/mass/rscmc/edit-rscmc/:refId',
+      },
+      {
+        source: '/calibration-references/mass/rscmc/view/:refId',
+        destination: '/dashboard/calibration-references/mass/rscmc/view/:refId',
+      },
+
+      //* Environmental
+      {
+        source: '/calibration-references/mass/environmental',
+        destination: '/dashboard/calibration-references/mass/environmental/list',
+      },
+      {
+        source: '/calibration-references/mass/environmental/create',
+        destination: '/dashboard/calibration-references/mass/environmental/create',
+      },
+      {
+        source: '/calibration-references/mass/environmental/edit-environmental/:refId',
+        destination:
+          '/dashboard/calibration-references/mass/environmental/edit-environmental/:refId',
+      },
+      {
+        source: '/calibration-references/mass/environmental/view/:refId',
+        destination: '/dashboard/calibration-references/mass/environmental/view/:refId',
+      },
+
       // AUTHENTICATION
       {
         source: '/sign-in',

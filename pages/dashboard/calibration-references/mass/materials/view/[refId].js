@@ -94,10 +94,10 @@ const MaterialDetails = () => {
 
   return (
     <>
-      <GeeksSEO title={`View Details for CK #${material.id} - VITAR Group | Portal`} />
+      <GeeksSEO title={`View Details for Material #${material.id} - VITAR Group | Portal`} />
 
       <ContentHeader
-        title={`View Details for CK #${material.id}`}
+        title={`View Details for Material #${material.id}`}
         description='View comprehensive details of reference data'
         badgeText='Calibration References Data Management'
         badgeText2='View Reference Data'
@@ -118,7 +118,7 @@ const MaterialDetails = () => {
             icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
-            text: 'CK',
+            text: 'Materials',
             link: '/calibration-references/mass/materials',
             icon: <TableIcon className='me-2' size={14} />,
           },

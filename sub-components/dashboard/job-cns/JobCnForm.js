@@ -1337,7 +1337,7 @@ const JobCnForm = ({ data, isAdmin = true }) => {
                           placeholder={
                             usersOptions.isLoading
                               ? 'Loading technician...'
-                              : "Search by technician' name"
+                              : 'Search by technician name'
                           }
                           isDisabled={usersOptions.isLoading}
                           noOptionsMessage={() =>

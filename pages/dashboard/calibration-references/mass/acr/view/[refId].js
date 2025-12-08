@@ -94,10 +94,10 @@ const ACRDetails = () => {
 
   return (
     <>
-      <GeeksSEO title={`View Details for CK #${acr.id} - VITAR Group | Portal`} />
+      <GeeksSEO title={`View Details for ACR #${acr.id} - VITAR Group | Portal`} />
 
       <ContentHeader
-        title={`View Details for CK #${acr.id}`}
+        title={`View Details for ACR #${acr.id}`}
         description='View comprehensive details of reference data'
         badgeText='Calibration References Data Management'
         badgeText2='View Reference Data'
@@ -118,7 +118,7 @@ const ACRDetails = () => {
             icon: <BoxSeamFill className='me-2' size={14} />,
           },
           {
-            text: 'CK',
+            text: 'ACR',
             link: '/calibration-references/mass/acr',
             icon: <TableIcon className='me-2' size={14} />,
           },

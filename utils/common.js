@@ -35,3 +35,49 @@ export async function getFileFromBlobUrl(url) {
 
   return new File([blob], uuidv4(), { type: blob.type });
 }
+
+export function toKebabCase(text, toLowerCase = false) {
+  let result = text;
+
+  if (!text) return '';
+
+  if (toLowerCase) result = result.toLowerCase();
+
+  return result
+    .replace(/[^a-zA-Z0-9-]+/g, '-') //* Replace any character that is not a-z, A-Z, 0-9, or dash with dash
+    .replace(/-+/g, '-'); //* Collapse multiple dashes
+}
+
+export function safeParseFloat(value) {
+  const num = parseFloat(value);
+  return isNaN(num) || !isFinite(num) ? 0 : num;
+}
+
+export function getArrayType(arr) {
+  if (!Array.isArray(arr)) return 'not-array';
+  if (arr.length === 0) return 'empty-array';
+
+  const first = arr[0];
+
+  if (Array.isArray(first)) {
+    return 'array-of-arrays';
+  }
+
+  if (typeof first === 'string') {
+    return 'array-of-strings';
+  }
+
+  if (typeof first === 'number') {
+    return 'array-of-numbers';
+  }
+
+  if (typeof first === 'boolean') {
+    return 'array-of-booleans';
+  }
+
+  if (first !== null && typeof first === 'object') {
+    return 'array-of-objects';
+  }
+
+  return 'unknown-array-type';
+}

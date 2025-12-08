@@ -6,6 +6,7 @@ import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
+import { safeParseFloat } from '@/utils/common';
 import { globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
 import {
@@ -16,9 +17,18 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { collection, deleteDoc, doc, onSnapshot, query } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  writeBatch,
+} from 'firebase/firestore';
+import { abs, divide, subtract, sum } from 'mathjs';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Card, Dropdown, OverlayTrigger, Spinner } from 'react-bootstrap';
 import {
   Eye,
@@ -41,6 +51,7 @@ const CUSWDList = () => {
   const auth = useAuth();
 
   const [cuswd, setCuswd] = useState({ data: [], isLoading: true, isError: false });
+  const [isLoading, setIsLoading] = useState(false);
 
   const columnHelper = createColumnHelper();
 
@@ -528,6 +539,82 @@ const CUSWDList = () => {
     return () => unsubscribe();
   }, []);
 
+  //? Use function to update cuswd data, using write batch update
+  //? Useful function to update all the data of cuswd to make other fields auto calculate
+  const updateCUSWD = useCallback(async () => {
+    try {
+      if (cuswd.data.length < 1) return;
+
+      const batch = writeBatch(db);
+      const updatedCuswd = [];
+
+      setIsLoading(true);
+
+      cuswd.data.forEach((cuswdData) => {
+        const nominalValue = safeParseFloat(cuswdData?.nominalValue);
+        const currentYearError = safeParseFloat(cuswdData?.currentYearError);
+        const lastYearError = safeParseFloat(cuswdData?.lastYearError);
+
+        const currentYearActualValue = () => {
+          const x = safeParseFloat(nominalValue);
+          const y = divide(safeParseFloat(currentYearError), 1000);
+
+          if (!currentYearError) return '';
+
+          const result = sum(x, y);
+          return String(result);
+        };
+
+        const lastYearActualValue = () => {
+          const x = safeParseFloat(nominalValue);
+          const y = divide(safeParseFloat(lastYearError), 1000);
+
+          if (!lastYearError) return '';
+
+          const result = sum(x, y);
+          return String(result);
+        };
+
+        const driftg = () => {
+          const result = abs(subtract(currentYearActualValue(), lastYearActualValue()));
+          return String(result);
+        };
+
+        //* push to updatedCuswd
+        updatedCuswd.push({
+          ...cuswdData,
+          currentYearActualValue: currentYearActualValue(),
+          lastYearActualValue: lastYearActualValue(),
+          driftg: driftg(),
+          updatedAt: serverTimestamp(),
+          updatedBy: auth.currentUser,
+        });
+
+        //* set batch
+        const cuswdDocRef = doc(db, 'jobCalibrationReferences', 'CR000001', 'data', cuswdData.id);
+
+        batch.update(cuswdDocRef, {
+          currentYearActualValue: currentYearActualValue(),
+          lastYearActualValue: lastYearActualValue(),
+          driftg: driftg(),
+          updatedAt: serverTimestamp(),
+          updatedBy: auth.currentUser,
+        });
+      });
+
+      console.log({ updatedCuswd });
+
+      //* Commit the batch
+      await batch.commit();
+      setIsLoading(false);
+
+      console.log('Batch committed successfully!');
+    } catch (error) {
+      setIsLoading(false);
+      console.error('Error updating cuswd data:', error);
+    }
+  }, [JSON.stringify(cuswd)]);
+
   return (
     <>
       <GeeksSEO title='Correction, Uncertainty of the Standard Weight & Drift - VITAR Group | Portal' />
@@ -568,6 +655,10 @@ const CUSWDList = () => {
           },
         ]}
       />
+
+      {/* <Button disabled={isLoading} onClick={updateCUSWD} className='my-4'>
+        {isLoading ? 'Updating...' : 'Update'} CUSWD Data
+      </Button> */}
 
       <Card className='shadow-sm'>
         <Card.Body className='p-4'>

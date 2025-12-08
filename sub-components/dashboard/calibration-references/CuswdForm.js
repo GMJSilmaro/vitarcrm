@@ -5,14 +5,17 @@ import Select from '@/components/Form/Select';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { CLASS_TYPE, cuswdSchema } from '@/schema/calibrationReferences';
+import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
+import { safeParseFloat } from '@/utils/common';
 import { getFormDefaultValues } from '@/utils/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { collection, doc, onSnapshot, query, serverTimestamp, setDoc } from 'firebase/firestore';
+import { abs, divide, subtract, sum } from 'mathjs';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Col, Form, OverlayTrigger, Row, Spinner, Tooltip } from 'react-bootstrap';
 import { Save } from 'react-bootstrap-icons';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 import toast from 'react-hot-toast';
 
 const CuswdForm = ({ data }) => {
@@ -31,6 +34,48 @@ const CuswdForm = ({ data }) => {
   });
 
   const formErrors = form.formState.errors;
+
+  //TODO: Make other fields auto calculate for exact values, Note: Refer to share data 'Correction, Uncertainty of the Standard Weight & Drift'
+  const nominalValue = useWatch({ control: form.control, name: 'nominalValue' });
+  const currentYearError = useWatch({ control: form.control, name: 'currentYearError' });
+  const lastYearError = useWatch({ control: form.control, name: 'lastYearError' });
+
+  const currentYearActualValue = useMemo(() => {
+    const x = safeParseFloat(nominalValue);
+    const y = divide(safeParseFloat(currentYearError), 1000);
+
+    if (!currentYearError) return '';
+
+    const result = sum(x, y);
+
+    //* set currentYearActualValue
+    form.setValue('currentYearActualValue', String(result));
+
+    return result;
+  }, [nominalValue, currentYearError]);
+
+  const lastYearActualValue = useMemo(() => {
+    const x = safeParseFloat(nominalValue);
+    const y = divide(safeParseFloat(lastYearError), 1000);
+
+    const result = sum(x, y);
+
+    if (!lastYearError) return '';
+
+    //* set lastYearActualValue
+    form.setValue('lastYearActualValue', String(result));
+
+    return result;
+  }, [nominalValue, lastYearError]);
+
+  const driftg = useMemo(() => {
+    const result = abs(subtract(currentYearActualValue, lastYearActualValue));
+
+    //* set driftg
+    form.setValue('driftg', String(result));
+
+    return result;
+  }, [currentYearActualValue, lastYearActualValue]);
 
   const handleSubmit = async (formData) => {
     try {
@@ -233,6 +278,16 @@ const CuswdForm = ({ data }) => {
                 </Form.Group>
 
                 <Form.Group as={Col} md={3}>
+                  <Form.Label>Current Year Actual Value (g)</Form.Label>
+                  <Form.Control
+                    type='text'
+                    value={formatToDicimalString(currentYearActualValue, 6)}
+                    readOnly
+                    disabled
+                  />
+                </Form.Group>
+
+                {/* <Form.Group as={Col} md={3}>
                   <Form.Label htmlFor='currentYearActualValue'>
                     Current Year Actual Value (g)
                   </Form.Label>
@@ -258,7 +313,7 @@ const CuswdForm = ({ data }) => {
                       </>
                     )}
                   />
-                </Form.Group>
+                </Form.Group> */}
 
                 <Form.Group as={Col} md={3}>
                   <Form.Label htmlFor='lastYearError'>Last Year Year Error (mg)</Form.Label>
@@ -287,28 +342,12 @@ const CuswdForm = ({ data }) => {
                 </Form.Group>
 
                 <Form.Group as={Col} md={3}>
-                  <Form.Label htmlFor='lastYearActualValue'>Last Year Actual Value (g)</Form.Label>
-
-                  <Controller
-                    name='lastYearActualValue'
-                    control={form.control}
-                    render={({ field }) => (
-                      <>
-                        <Form.Control
-                          {...field}
-                          id='lastYearActualValue'
-                          placeholder='Enter Last Year Actual Value (g)'
-                          type='number'
-                          step='any'
-                        />
-
-                        {formErrors && formErrors.lastYearActualValue?.message && (
-                          <Form.Text className='text-danger'>
-                            {formErrors.lastYearActualValue?.message}
-                          </Form.Text>
-                        )}
-                      </>
-                    )}
+                  <Form.Label>Last Year Actual Value (g)</Form.Label>
+                  <Form.Control
+                    type='text'
+                    value={formatToDicimalString(lastYearActualValue, 6)}
+                    readOnly
+                    disabled
                   />
                 </Form.Group>
 
@@ -629,28 +668,12 @@ const CuswdForm = ({ data }) => {
                 </Form.Group>
 
                 <Form.Group as={Col} md={3}>
-                  <RequiredLabel label='Drift (g)' id='driftg' />
-
-                  <Controller
-                    name='driftg'
-                    control={form.control}
-                    render={({ field }) => (
-                      <>
-                        <Form.Control
-                          {...field}
-                          id='driftg'
-                          placeholder='Enter Drift (g)'
-                          type='number'
-                          step='any'
-                        />
-
-                        {formErrors && formErrors.driftg?.message && (
-                          <Form.Text className='text-danger'>
-                            {formErrors.driftg?.message}
-                          </Form.Text>
-                        )}
-                      </>
-                    )}
+                  <Form.Label>Drift (g)</Form.Label>
+                  <Form.Control
+                    type='text'
+                    value={formatToDicimalString(driftg, 6)}
+                    readOnly
+                    disabled
                   />
                 </Form.Group>
               </Row>
