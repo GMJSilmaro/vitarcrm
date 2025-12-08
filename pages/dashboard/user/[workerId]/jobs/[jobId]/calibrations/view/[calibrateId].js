@@ -2,7 +2,7 @@ import { db } from '@/firebase';
 import CalibrationSummary from '@/sub-components/dashboard/jobs/calibrations/view/CalibrationSummary';
 import CalibrationRefInstrument from '@/sub-components/dashboard/jobs/calibrations/view/CalibrationRefInstrument';
 import { GeeksSEO } from '@/widgets';
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -15,6 +15,10 @@ import WBCalibrationMeasurements from '@/sub-components/dashboard/jobs/calibrati
 import WBCalibrationTemplate from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCalibrationTemplate';
 import WBCalibrationResult from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCalibrationResult';
 import WBCertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCertificateOfCalibration';
+import SWCalibrationMeasurements from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCalibrationMeasurements';
+import SWCalibrationTemplate from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCalibrationTemplate';
+import SWCalibrationResult from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCalibrationResult';
+import SWCertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCertificateOfCalibration';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -22,6 +26,8 @@ const CalibrationDetails = () => {
 
   const [calibration, setCalibration] = useState();
   const [instruments, setInstruments] = useState({ data: [], isLoading: true, isError: false });
+  const [materials, setMaterials] = useState({ data: [], isLoading: true, isError: false });
+  const [environmental, setEnvironmental] = useState({ data: [], isLoading: true, isError: false });
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,6 +62,30 @@ const CalibrationDetails = () => {
 
             <Tab eventKey='6' title='COC'>
               <WBCertificateOfCalibration {...props} />
+            </Tab>,
+          ];
+        }
+
+        if (variantValue === 'standard-weight') {
+          return [
+            <Tab eventKey='1' title='Measurements'>
+              <SWCalibrationMeasurements {...props} />
+            </Tab>,
+
+            <Tab eventKey='2' title='Reference Instruments'>
+              <CalibrationRefInstrument {...props} />
+            </Tab>,
+
+            <Tab eventKey='3' title='Calibration'>
+              <SWCalibrationTemplate {...props} />
+            </Tab>,
+
+            <Tab eventKey='4' title='Result'>
+              <SWCalibrationResult {...props} />
+            </Tab>,
+
+            <Tab eventKey='5' title='COC'>
+              <SWCertificateOfCalibration {...props} />
             </Tab>,
           ];
         }
@@ -151,6 +181,58 @@ const CalibrationDetails = () => {
         });
     }
   }, [calibration]);
+
+  //* query materials
+  useEffect(() => {
+    const q = query(collection(db, 'jobCalibrationReferences', 'CR000005', 'data'));
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const materialDocs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setMaterials({
+            data: materialDocs,
+            isLoading: false,
+            isError: false,
+          });
+
+          return;
+        }
+
+        setMaterials({ data: [], isLoading: false, isError: false });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setMaterials({ data: [], isLoading: false, isError: true });
+      });
+  }, []);
+
+  //* query environmental
+  useEffect(() => {
+    const q = query(collection(db, 'jobCalibrationReferences', 'CR000007', 'data'));
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const environmentalDocs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setEnvironmental({
+            data: environmentalDocs,
+            isLoading: false,
+            isError: false,
+          });
+
+          return;
+        }
+
+        setEnvironmental({ data: [], isLoading: false, isError: false });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setEnvironmental({ data: [], isLoading: false, isError: true });
+      });
+  }, []);
 
   if (isLoading) {
     return (
@@ -248,7 +330,7 @@ const CalibrationDetails = () => {
                 <CalibrationSummary calibration={calibration} />
               </Tab>
 
-              {renderTabs({ calibration, instruments })}
+              {renderTabs({ calibration, instruments, materials, environmental })}
             </Tabs>
           </Card.Body>
         </Card>
