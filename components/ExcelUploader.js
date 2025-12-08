@@ -16,6 +16,10 @@ import { dataExcelParser, dataProcessExcelUploader } from './Uploader';
 //* - data/upload/jobCalibrationReferences_CR000001_data/CR
 //* - data/upload/jobCalibrationReferences_CR000002_data/CR
 //* - data/upload/jobCalibrationReferences_CR000003_data/CR
+//* - data/upload/jobCalibrationReferences_CR000004_data/CR
+//* - data/upload/jobCalibrationReferences_CR000005_data/CR
+//* - data/upload/jobCalibrationReferences_CR000006_data/CR
+//* - data/upload/jobCalibrationReferences_CR000007_data/CR
 
 const ExcelUploader = ({ dataKey, prefix }) => {
   const [loading, setLoading] = useState(false);

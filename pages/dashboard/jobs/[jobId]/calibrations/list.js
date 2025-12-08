@@ -4,7 +4,8 @@ import DataTableFilter from '@/components/common/DataTableFilter';
 import DataTableSearch from '@/components/common/DataTableSearch';
 import DataTableViewOptions from '@/components/common/DataTableViewOptions';
 import ContentHeader from '@/components/dashboard/ContentHeader';
-import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
+import CocStandardWeightPDF from '@/components/pdf/CocStandardWeightPDF';
+import CocWeightBalancePDF from '@/components/pdf/CocWeightBalancePDF';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useCertificateData } from '@/hooks/useCalibrationCertificateDate';
@@ -15,7 +16,8 @@ import {
   PRINT_STATUS_COLOR,
   STATUS,
   STATUS_COLOR,
-} from '@/schema/calibration';
+} from '@/schema/calibrations/common-constant';
+
 import { titleCase } from '@/utils/common';
 import { fuzzyFilter, globalSearchFilter } from '@/utils/datatable';
 import { GeeksSEO } from '@/widgets';
@@ -87,6 +89,35 @@ const DropdownItemPrintCoc = ({
 
   const showLoading = isLoading || instance.loading || calibratedBy.isLoading || approvedSignatory.isLoading; //prettier-ignore
 
+  const categoryValue = useMemo(() => {
+    if (!calibration?.category) return null;
+    return calibration?.category;
+  }, [JSON.stringify(calibration)]);
+
+  const variantValue = useMemo(() => {
+    if (!calibration?.variant) return null;
+    return calibration?.variant;
+  }, [JSON.stringify(calibration)]);
+
+  const renderPDF = (props) => {
+    if (!categoryValue || !variantValue) return null;
+
+    switch (categoryValue) {
+      case 'MASS': {
+        if (variantValue === 'weight-balance') {
+          return updateInstance(<CocWeightBalancePDF {...props} />);
+        }
+
+        if (variantValue === 'standard-weight') {
+          return updateInstance(<CocStandardWeightPDF {...props} />);
+        }
+      }
+
+      default:
+        return null;
+    }
+  };
+
   const PDF = () => {
     useEffect(() => {
       if (iframeRef.current && instance.url) {
@@ -118,14 +149,12 @@ const DropdownItemPrintCoc = ({
         approvedSignatory,
       });
 
-      updateInstance(
-        <CertificateOfCalibrationPDF2
-          calibration={calibration}
-          instruments={{ data: instruments }}
-          calibratedBy={calibratedBy}
-          approvedSignatory={approvedSignatory}
-        />
-      );
+      renderPDF({
+        calibration,
+        instruments: { data: instruments },
+        calibratedBy,
+        approvedSignatory,
+      });
     }
   }, [
     isLoading,

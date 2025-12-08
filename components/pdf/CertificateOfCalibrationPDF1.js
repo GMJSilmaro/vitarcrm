@@ -5,16 +5,16 @@ import InterItalic from 'public/fonts/inter/Inter-Italic.ttf';
 import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { useCallback, useMemo } from 'react';
 import { add, format } from 'date-fns';
+import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
+import { ceil, divide, multiply, row } from 'mathjs';
+import { countDecimals } from '@/utils/common';
+import { TEST_LOADS } from '@/schema/calibrations/mass/weight-balance';
 import {
-  TEST_LOADS,
   TRACEABILITY_ACCREDITATION_BODY,
   TRACEABILITY_CALIBRATION_LAB,
   TRACEABILITY_COUNTRY,
   TRACEABILITY_MAP,
-} from '@/schema/calibration';
-import { formatToDicimalString } from '@/utils/calibrations/data-formatter';
-import { ceil, divide, multiply, row } from 'mathjs';
-import { countDecimals } from '@/utils/common';
+} from '@/schema/calibrations/common-constant';
 
 const styles = StyleSheet.create({
   body: {
@@ -601,12 +601,12 @@ const CertificateOfCalibrationPDF1 = ({ calibration, instruments }) => {
             <View style={[styles.value, { flexDirection: 'row', gap: 20 }]}>
               <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
                 <Text style={{ fontFamily: 'InterBold' }}>Max:</Text>
-                <Text>{calibration?.rangeMaxRHumidity ?? 0} %rh</Text>
+                <Text>{calibration?.maxRHumidity ?? 0} %rh</Text>
               </View>
 
               <View style={{ display: 'flex', flexDirection: 'row', gap: 4 }}>
                 <Text style={{ fontFamily: 'InterBold' }}>Min:</Text>
-                <Text>{calibration?.rangeMinRHumidity ?? 0} %rh</Text>
+                <Text>{calibration?.minRHumidity ?? 0} %rh</Text>
               </View>
             </View>
           </View>

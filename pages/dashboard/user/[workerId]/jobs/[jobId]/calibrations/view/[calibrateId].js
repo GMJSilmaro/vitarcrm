@@ -1,9 +1,6 @@
 import { db } from '@/firebase';
-import Calibration from '@/sub-components/dashboard/jobs/calibrations/view/Calibration';
-import SummaryTab from '@/sub-components/dashboard/jobs/calibrations/view/SummaryTab';
-import Result from '@/sub-components/dashboard/jobs/calibrations/view/Result';
-import Measurements from '@/sub-components/dashboard/jobs/calibrations/view/Measurements';
-import ReferenceInstruments from '@/sub-components/dashboard/jobs/calibrations/view/ReferenceInstruments';
+import CalibrationSummary from '@/sub-components/dashboard/jobs/calibrations/view/CalibrationSummary';
+import CalibrationRefInstrument from '@/sub-components/dashboard/jobs/calibrations/view/CalibrationRefInstrument';
 import { GeeksSEO } from '@/widgets';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import Link from 'next/link';
@@ -11,10 +8,13 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Spinner, Tab, Tabs } from 'react-bootstrap';
 import { ArrowLeftShort, PencilSquare } from 'react-bootstrap-icons';
-import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
 import PageHeader from '@/components/common/PageHeader';
 import _ from 'lodash';
-import { STATUS_COLOR } from '@/schema/calibration';
+import { STATUS_COLOR } from '@/schema/calibrations/common-constant';
+import WBCalibrationMeasurements from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBMeasurements';
+import WBCalibrationTemplate from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCalibrationTemplate';
+import WBCalibrationResult from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCalibrationResult';
+import WBCertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCertificateOfCalibration';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -27,6 +27,44 @@ const CalibrationDetails = () => {
   const [error, setError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('0');
+
+  const renderTabs = (props) => {
+    const categoryValue = calibration?.category;
+    const variantValue = calibration?.variant;
+
+    if (!categoryValue || !variantValue) return null;
+
+    switch (categoryValue) {
+      case 'MASS': {
+        if (variantValue === 'weight-balance') {
+          return [
+            <Tab eventKey='1' title='Measurements'>
+              <WBCalibrationMeasurements {...props} />
+            </Tab>,
+
+            <Tab eventKey='2' title='Reference Instruments'>
+              <CalibrationRefInstrument {...props} />
+            </Tab>,
+
+            <Tab eventKey='3' title='Calibration'>
+              <WBCalibrationTemplate {...props} />
+            </Tab>,
+
+            <Tab eventKey='4' title='Result'>
+              <WBCalibrationResult {...props} />
+            </Tab>,
+
+            <Tab eventKey='6' title='COC'>
+              <WBCertificateOfCalibration {...props} />
+            </Tab>,
+          ];
+        }
+      }
+
+      default:
+        return null;
+    }
+  };
 
   //* query calibration & job header
   useEffect(() => {
@@ -207,28 +245,10 @@ const CalibrationDetails = () => {
           <Card.Body>
             <Tabs activeKey={activeTab} onSelect={setActiveTab}>
               <Tab eventKey='0' title='Summary'>
-                <SummaryTab calibration={calibration} />
+                <CalibrationSummary calibration={calibration} />
               </Tab>
 
-              <Tab eventKey='1' title='Measurements'>
-                <Measurements calibration={calibration} />
-              </Tab>
-
-              <Tab eventKey='2' title='Reference Instruments'>
-                <ReferenceInstruments calibration={calibration} instruments={instruments} />
-              </Tab>
-
-              <Tab eventKey='3' title='Calibration'>
-                <Calibration calibration={calibration} />
-              </Tab>
-
-              <Tab eventKey='4' title='Result'>
-                <Result calibration={calibration} />
-              </Tab>
-
-              <Tab eventKey='6' title='COC'>
-                <CertificateOfCalibration calibration={calibration} instruments={instruments} />
-              </Tab>
+              {renderTabs({ calibration, instruments })}
             </Tabs>
           </Card.Body>
         </Card>

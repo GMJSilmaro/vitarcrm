@@ -1,32 +1,28 @@
 import { useRouter } from 'next/router';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  calibrationInfoSchema,
-  calibrationMassSchema,
-  calibrationMeasurementSchema,
-  calibrationReferenceInstrumentsSchema,
-  calibrationSchema,
-} from '@/schema/calibration';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Accordion, Col, Form, Nav, Row, Tab, Tabs } from 'react-bootstrap';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { getFormDefaultValues } from '@/utils/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import FormDebug from '@/components/Form/FormDebug';
-
-import CalibrationMeasures from './tabls-form/CalibrationMeasuresForm';
-import CalibrateSummaryForm from './tabls-form/CalibrateSummaryForm';
-import CalibrationReferenceInstrumentsForm from './tabls-form/CalibrationReferenceInstrumentsForm';
+import CalibrationSummaryForm from './tabls-form/CalibrateSummaryForm';
+import CalibrationRefInstrumentForm from './tabls-form/CalibrationRefInstrumentForm';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import CalibrationTemplateForm from './tabls-form/CalibrationTemplateForm';
 import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
 import { CardList, ExclamationTriangleFill } from 'react-bootstrap-icons';
 import useMounted from '@/hooks/useMounted';
-import { format } from 'date-fns';
 import { useNotifications } from '@/hooks/useNotifications';
+
+import { CATEGORY_VARIANTS_MAP } from '@/schema/calibrations/common-index';
+import { calibrationSummarySchema } from '@/schema/calibrations/common-schema';
+import WBCalibrationMeasurementsForm from './tabls-form/mass/weight-balance/WBCalibrationMeasurementsForm';
+import WBCalibrationTemplateForm from './tabls-form/mass/weight-balance/WBCalibrationTemplateForm';
+import SWCalibrationMeasurementsForm from './tabls-form/mass/standard-weight/SWCalibrationMeasurementsForm';
+import SWCalibrationTemplateForm from './tabls-form/mass/standard-weight/SWCalibrationTemplateForm';
 
 const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
   const auth = useAuth();
@@ -37,15 +33,16 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
 
   const notifications = useNotifications();
 
-  const tabsLength = 3;
-  const tabSchema = [
-    calibrationInfoSchema,
-    calibrationMeasurementSchema,
-    calibrationReferenceInstrumentsSchema,
-    calibrationMassSchema,
-  ];
+  //? tabSchema will be based of what category is selected and variant is selected and mainly the schema associated with the variant
+  const [tabSchema, setTabsSchema1] = useState([calibrationSummarySchema]);
+  const [finalSchema, setFinalSchema] = useState(calibrationSummarySchema);
+  const tabsLength = useMemo(() => tabSchema?.length ? tabSchema?.length - 1: 1, [JSON.stringify(tabSchema)]); //prettier-ignore
 
-  const [job, setJob] = useState({ data: null, isLoading: true, isError: false });
+  const [job, setJob] = useState({
+    data: null,
+    isLoading: true,
+    isError: false,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [activeKey, setActiveKey] = useState('0');
   const [reminded, setReminded] = useState(false);
@@ -54,7 +51,7 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
   const [isLoadingClearCache, setIsLoadingClearCache] = useState(false);
 
   const schema = useMemo(() => {
-    return tabSchema[Number(activeKey)] ?? calibrationInfoSchema;
+    return tabSchema[Number(activeKey)] ?? calibrationSummarySchema;
   }, [activeKey]);
 
   const form = useForm({
@@ -62,6 +59,7 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
     defaultValues: {
       ...getFormDefaultValues(schema),
       ...data,
+      variant: '',
       traceabilityCalibrationLab: null,
       cocInstruments: [],
       data: [],
@@ -69,6 +67,9 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
     },
     resolver: zodResolver(schema),
   });
+
+  const category = useWatch({ control: form.control, name: 'category' });
+  const variant = useWatch({ control: form.control, name: 'variant' });
 
   const formErrors = form.formState.errors;
 
@@ -90,7 +91,7 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
     return duplicates.size > 0 ? Array.from(duplicates) : [];
   };
 
-  const validateCalibrationPointsData = (calibrationPoints) => {
+  const validateWBCalibrationPointsData = (calibrationPoints) => {
     if (!calibrationPoints) return [];
 
     let conflict = [];
@@ -119,22 +120,36 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
 
   const handleNext = useCallback(async () => {
     //* only trigger form.trigger at top if its not the final part of form becauase it clears all errors which is not needed
-    if (Number(activeKey) < tabSchema.length - 1) {
+    if (
+      (Number(activeKey) === 0 && tabSchema.length - 1 === 0) ||
+      Number(activeKey) < tabSchema.length - 1
+    ) {
       const isValid = await form.trigger();
 
       if (!isValid) {
-        toast.error('Please fix the errors in the form and try again.', { position: 'top-right' });
+        toast.error('Please fix the errors in the form and try again.', {
+          position: 'top-right',
+        });
         return;
       }
     }
+
+    const categoryValue = typeof category === 'object' ? category?.value : category;
+    const variantValue = typeof variant === 'object' ? variant?.value : variant;
 
     if (Number(activeKey) <= tabSchema.length - 1) {
       const nextActiveKey = String(Number(activeKey) + 1);
       setActiveKey(nextActiveKey);
 
-      if (Number(activeKey) === tabSchema.length - 1) {
+      if (Number(activeKey) === tabSchema.length - 1 && tabSchema.length > 1) {
+        await form.trigger(); //* trigger validation for the current tab to show errros if any
         const formValues = form.getValues();
-        const parseData = calibrationSchema.safeParse(formValues);
+        const parseData = finalSchema.safeParse(formValues);
+
+        console.log({ formValues, categoryValue, variantValue });
+        // return;
+
+        // console.log({ parseData });
 
         if (parseData.success) {
           const formData = parseData.data;
@@ -142,158 +157,193 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
           //* check conflict
           const formCData = formData?.data || [];
 
-          const rangeConflicts = formCData.map((cData) => {
-            return validateCalibrationPointsData(cData?.dfnv?.[0]?.calibrationPoints);
-          });
+          //* do checkings based on the selected category and variant
+          switch (categoryValue) {
+            case 'MASS': {
+              //* checkings/validation for Mass - weight-balance
+              if (variantValue === 'weight-balance') {
+                const rangeConflicts = formCData.map((cData) => {
+                  return validateWBCalibrationPointsData(cData?.dfnv?.[0]?.calibrationPoints);
+                });
 
-          //* check if any of the range has conflict show popup
-          if (rangeConflicts.some((c) => c.length > 0)) {
-            console.log({ rangeConflicts });
+                //* check if any of the range has conflict show popup
+                if (rangeConflicts.some((c) => c.length > 0)) {
+                  console.log({ rangeConflicts });
 
-            setActiveKey((prev) => prev - 1);
-            setIsLoading(false);
+                  setActiveKey((prev) => prev - 1);
+                  setIsLoading(false);
 
-            //* Swal popup with range conflict, using accordion
-            await withReactContent(Swal).fire({
-              title: 'Duplicate Value Error',
-              icon: 'error',
-              showConfirmButton: false,
-              showCloseButton: true,
-              cancelButtonText: 'Ok',
-              width: '600px',
-              html: (
-                <Tab.Container defaultActiveKey='0'>
-                  <Row>
-                    <Col className='px-0' xs={12}>
-                      <Nav
-                        variant='pills'
-                        className='d-flex justify-content-center align-items-center gap-3'
-                      >
-                        {rangeConflicts?.length > 0 &&
-                          Array.from({ length: rangeConflicts?.length }).map(
-                            (_, rangeConflictIndex) => (
-                              <Nav.Item
-                                key={`${rangeConflictIndex}-nav-item`}
-                                className='d-flex align-items-center'
-                              >
-                                <Nav.Link eventKey={`${rangeConflictIndex}`}>
-                                  <CardList size={18} />
-                                  Range {rangeConflictIndex + 1}
-                                </Nav.Link>
-                              </Nav.Item>
-                            )
-                          )}
-                      </Nav>
-                    </Col>
-
-                    <Col xs={12}>
-                      <Tab.Content>
-                        {rangeConflicts.map((conflicts, rangeConflictIndex) => {
-                          return (
-                            <Tab.Pane
-                              key={`${rangeConflictIndex}-tab-pane-range-conflict`}
-                              className='h-100'
-                              eventKey={rangeConflictIndex}
+                  //* Swal popup with range conflict, using accordion
+                  await withReactContent(Swal).fire({
+                    title: 'Duplicate Value Error',
+                    icon: 'error',
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    cancelButtonText: 'Ok',
+                    width: '600px',
+                    html: (
+                      <Tab.Container defaultActiveKey='0'>
+                        <Row>
+                          <Col className='px-0' xs={12}>
+                            <Nav
+                              variant='pills'
+                              className='d-flex justify-content-center align-items-center gap-3'
                             >
-                              <div className='fs-5 mt-3'>
-                                The following calibration points have duplicate values. Please fix
-                                the errors and try again.
-                              </div>
-
-                              <Accordion className='mt-4'>
-                                {conflicts.length > 0 ? (
-                                  conflicts.map((conflict, i) => (
-                                    <Accordion.Item eventKey={`${i}-${conflict.pointIndex}`}>
-                                      <Accordion.Header className='text-danger'>
-                                        <ExclamationTriangleFill className='me-3' size={17} />
-                                        {conflict.message}
-                                      </Accordion.Header>
-                                      <Accordion.Body className='fs-6'>
-                                        <div className='d-flex flex-column align-items-start gap-2'>
-                                          <div>
-                                            <span className='fw-bold me-2'>Duplicates:</span>{' '}
-                                            {conflict?.duplicates?.join(', ')}
-                                          </div>
-                                          <div>
-                                            <span className='fw-bold me-2'>Values:</span>{' '}
-                                            {conflict?.values?.join(', ')}
-                                          </div>
-                                        </div>
-                                      </Accordion.Body>
-                                    </Accordion.Item>
-                                  ))
-                                ) : (
-                                  <div className='text-center fs-5'>No conflict found</div>
+                              {rangeConflicts?.length > 0 &&
+                                Array.from({ length: rangeConflicts?.length }).map(
+                                  (_, rangeConflictIndex) => (
+                                    <Nav.Item
+                                      key={`${rangeConflictIndex}-nav-item`}
+                                      className='d-flex align-items-center'
+                                    >
+                                      <Nav.Link eventKey={`${rangeConflictIndex}`}>
+                                        <CardList size={18} />
+                                        Range {rangeConflictIndex + 1}
+                                      </Nav.Link>
+                                    </Nav.Item>
+                                  )
                                 )}
-                              </Accordion>
-                            </Tab.Pane>
-                          );
-                        })}
-                      </Tab.Content>
-                    </Col>
-                  </Row>
-                </Tab.Container>
-              ),
-            });
+                            </Nav>
+                          </Col>
 
-            return;
-          }
+                          <Col xs={12}>
+                            <Tab.Content>
+                              {rangeConflicts.map((conflicts, rangeConflictIndex) => {
+                                return (
+                                  <Tab.Pane
+                                    key={`${rangeConflictIndex}-tab-pane-range-conflict`}
+                                    className='h-100'
+                                    eventKey={rangeConflictIndex}
+                                  >
+                                    <div className='fs-5 mt-3'>
+                                      The following calibration points have duplicate values. Please
+                                      fix the errors and try again.
+                                    </div>
 
-          const formValueCData = formValues?.data || [];
-          let dfnvHasData = true;
+                                    <Accordion className='mt-4'>
+                                      {conflicts.length > 0 ? (
+                                        conflicts.map((conflict, i) => (
+                                          <Accordion.Item eventKey={`${i}-${conflict.pointIndex}`}>
+                                            <Accordion.Header className='text-danger'>
+                                              <ExclamationTriangleFill className='me-3' size={17} />
+                                              {conflict.message}
+                                            </Accordion.Header>
+                                            <Accordion.Body className='fs-6'>
+                                              <div className='d-flex flex-column align-items-start gap-2'>
+                                                <div>
+                                                  <span className='fw-bold me-2'>Duplicates:</span>{' '}
+                                                  {conflict?.duplicates?.join(', ')}
+                                                </div>
+                                                <div>
+                                                  <span className='fw-bold me-2'>Values:</span>{' '}
+                                                  {conflict?.values?.join(', ')}
+                                                </div>
+                                              </div>
+                                            </Accordion.Body>
+                                          </Accordion.Item>
+                                        ))
+                                      ) : (
+                                        <div className='text-center fs-5'>No conflict found</div>
+                                      )}
+                                    </Accordion>
+                                  </Tab.Pane>
+                                );
+                              })}
+                            </Tab.Content>
+                          </Col>
+                        </Row>
+                      </Tab.Container>
+                    ),
+                  });
 
-          const filterNullUndefined = (v) => v !== null && v !== undefined && v !== '';
+                  return;
+                }
 
-          // prettier-ignore
-          if (
-            formValues.data?.dfnv?.[0]?.calibrationPoints?.length === 0 || 
-            formValues.data?.dfnv?.[0]?.calibrationPoints?.every((point) => point?.data?.filter(filterNullUndefined).every((columnData) => columnData?.filter(filterNullUndefined).length === 0)) || 
-            formValues?.data?.nominalValues?.filter(filterNullUndefined).length === 0 ||
-            formValues?.data?.measuredValues?.filter(filterNullUndefined).every((mValues) =>mValues?.filter(filterNullUndefined).length === 0)
-          ) {
-            dfnvHasData = false;
-          }
+                const formValueCData = formValues?.data || [];
+                let dfnvHasData = true;
 
-          //* check if some of the range data dont have dfnv data then dfnvHasData will be false,
-          dfnvHasData = !formValueCData.some((fcData) => {
-            // prettier-ignore
-            if (
-              fcData?.dfnv?.[0]?.calibrationPoints?.length === 0 ||
-              fcData?.dfnv?.[0]?.calibrationPoints?.every((point) => point?.data ?.filter(filterNullUndefined) .every((columnData) => columnData?.filter(filterNullUndefined).length === 0)) ||
-              fcData?.nominalValues?.filter(filterNullUndefined).length === 0 ||
-              fcData?.measuredValues ?.filter(filterNullUndefined).every((mValues) => mValues?.filter(filterNullUndefined).length === 0)
-            ) {
-              return true;
-            }
-          });
+                const filterNullUndefined = (v) => v !== null && v !== undefined && v !== '';
 
-          //* check if there are some of the range that dont have dfnv data, no nominal values , measuredValues and the other measurement show popup
-          if (
-            !reminded &&
-            (!dfnvHasData ||
-              (!formValues.minTemperature && !formValues.minTemperature !== 0) ||
-              (!formValues.maxTemperature && !formValues.maxTemperature !== 0) ||
-              (!formValues.rangeMinRHumidity && !formValues.rangeMinRHumidity !== 0) ||
-              (!formValues.rangeMaxRHumidity && !formValues.rangeMaxRHumidity !== 0) ||
-              formValueCData.some((fcData) => !fcData?.typeOfBalance))
-          ) {
-            await Swal.fire({
-              title: 'Reminder!',
-              text: 'Please fill-in the data in "Departure From Nominal Value (g)" and "Other Measurements"',
-              icon: 'warning',
-              showCancelButton: false,
-              confirmButtonText: 'Ok',
-              customClass: {
-                confirmButton: 'btn btn-primary rounded',
-              },
-            }).then((data) => {
-              if (data.isConfirmed) {
-                setReminded(true);
-                setActiveKey((prev) => prev - 1);
+                // prettier-ignore
+                if (
+                    formValues.data?.dfnv?.[0]?.calibrationPoints?.length === 0 || 
+                    formValues.data?.dfnv?.[0]?.calibrationPoints?.every((point) => point?.data?.filter(filterNullUndefined).every((columnData) => columnData?.filter(filterNullUndefined).length === 0)) || 
+                    formValues?.data?.nominalValues?.filter(filterNullUndefined).length === 0 ||
+                    formValues?.data?.measuredValues?.filter(filterNullUndefined).every((mValues) =>mValues?.filter(filterNullUndefined).length === 0)
+                  ) {
+                    dfnvHasData = false;
+                  }
+
+                //* check if some of the range data dont have dfnv data then dfnvHasData will be false,
+                dfnvHasData = !formValueCData.some((fcData) => {
+                  // prettier-ignore
+                  if (
+                      fcData?.dfnv?.[0]?.calibrationPoints?.length === 0 ||
+                      fcData?.dfnv?.[0]?.calibrationPoints?.every((point) => point?.data ?.filter(filterNullUndefined) .every((columnData) => columnData?.filter(filterNullUndefined).length === 0)) ||
+                      fcData?.nominalValues?.filter(filterNullUndefined).length === 0 ||
+                      fcData?.measuredValues ?.filter(filterNullUndefined).every((mValues) => mValues?.filter(filterNullUndefined).length === 0)
+                    ) {
+                      return true;
+                    }
+                });
+
+                //* check if there are some of the range that dont have dfnv data, no nominal values , measuredValues and the other measurement show popup
+                if (
+                  !reminded &&
+                  (!dfnvHasData ||
+                    (!formValues.minTemperature && !formValues.minTemperature !== 0) ||
+                    (!formValues.maxTemperature && !formValues.maxTemperature !== 0) ||
+                    (!formValues.minRHumidity && !formValues.minRHumidity !== 0) ||
+                    (!formValues.maxRHumidity && !formValues.maxRHumidity !== 0) ||
+                    formValueCData.some((fcData) => !fcData?.typeOfBalance))
+                ) {
+                  await Swal.fire({
+                    title: 'Reminder!',
+                    text: 'Please fill-in the data in "Departure From Nominal Value (g)" and "Other Measurements"',
+                    icon: 'warning',
+                    showCancelButton: false,
+                    confirmButtonText: 'Ok',
+                    customClass: {
+                      confirmButton: 'btn btn-primary rounded',
+                    },
+                  }).then((data) => {
+                    if (data.isConfirmed) {
+                      setReminded(true);
+                      setActiveKey((prev) => prev - 1);
+                    }
+                  });
+
+                  return;
+                }
               }
-            });
 
-            return;
+              if (variantValue === 'standard-weight') {
+                const weights = formCData?.map((cData) => cData?.weights || [])?.filter(Boolean) || []; //prettier-ignore
+
+                console.log('trigger... standard weight', { weights });
+
+                //* check if some og the point dont have weights, if so show popup
+                if (!reminded && weights.some((w) => w.length < 1)) {
+                  await Swal.fire({
+                    title: 'Reminder!',
+                    text: 'Please fill-in the data in "Weight(s) Used"',
+                    icon: 'warning',
+                    showCancelButton: false,
+                    confirmButtonText: 'Ok',
+                    customClass: {
+                      confirmButton: 'btn btn-primary rounded',
+                    },
+                  }).then((data) => {
+                    if (data.isConfirmed) {
+                      setReminded(true);
+                      setActiveKey((prev) => prev - 1);
+                    }
+                  });
+
+                  return;
+                }
+              }
+            }
           }
 
           handleSubmit(formData);
@@ -303,50 +353,89 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
         }
       }
     }
-  }, [activeKey]);
+  }, [activeKey, JSON.stringify(tabSchema), JSON.stringify(category), JSON.stringify(variant)]);
 
   const handlePrevious = useCallback(() => {
     if (Number(activeKey) > 0) handleOnSelect(activeKey - 1);
   }, [activeKey]);
 
+  const getResult = (formData) => {
+    const category = formData?.category;
+    const variant = formData?.variant;
+
+    if (!category || !variant) return null;
+
+    const formCalibrationData = formData?.data || [];
+
+    switch (category) {
+      case 'MASS': {
+        if (variant === 'weight-balance') {
+          return formCalibrationData.map((cData, i) => {
+            const rangeDetails = formData?.rangeDetails || [];
+            const currentRange = rangeDetails.find((_, rIndex) => rIndex === i);
+
+            return {
+              nominalValues: cData?.nominalValues || [],
+              measuredValuesM: cData?.measuredValuesM || [],
+              corrections: cData?.corrections || [],
+              expandedUncertainties: cData?.expandedUncertainties || [],
+              rangeType: formData?.rangeType || 'single',
+              resolution: !isNaN(parseFloat(currentRange?.resolution))
+                ? parseFloat(currentRange?.resolution)
+                : 0,
+              rtestMaxError: cData?.rtest?.maxError || 0,
+            };
+          });
+        }
+
+        if (variant === 'standard-weight') {
+          return {
+            nominalValues: formData?.nominalValues || [],
+            isNominalValueWithAsterisks: formData?.isNominalValueWithAsterisks || [],
+            resultExpandedUncertainties: formData?.resultExpandedUncertainties || [],
+            conventionalValues: formData?.conventionalValues || [],
+            mpes: formData?.mpes || [],
+            unitsUsedForCOC: formData?.unitsUsedForCOC || [],
+            coverageFactors: formData?.coverageFactors || [],
+            massComparatorUsedRefIds:
+              formData?.massComparatorRefEquipment?.map((eq) => eq?.id).filter(Boolean) || [],
+          };
+        }
+
+        return null;
+      }
+    }
+
+    return null;
+  };
+
   const handleSubmit = useCallback(
-    async (formData) => {
+    async ({ massComparatorRefEquipment, ...formData }) => {
       console.log({ formData });
 
       try {
         setIsLoading(true);
 
-        const formCalibrationData = formData?.data || [];
-
-        const results = formCalibrationData.map((cData, i) => {
-          const rangeDetails = formData?.rangeDetails || [];
-          const currentRange = rangeDetails.find((_, rIndex) => rIndex === i);
-
-          return {
-            nominalValues: cData?.nominalValues || [],
-            measuredValuesM: cData?.measuredValuesM || [],
-            corrections: cData?.corrections || [],
-            expandedUncertainties: cData?.expandedUncertainties || [],
-            rangeType: formData?.rangeType || 'single',
-            resolution: !isNaN(parseFloat(currentRange?.resolution))
-              ? parseFloat(currentRange?.resolution)
-              : 0,
-            rtestMaxError: cData?.rtest?.maxError || 0,
-          };
-        });
+        const results = getResult({ ...formData, massComparatorRefEquipment });
 
         const promises = [
           setDoc(
             doc(db, 'jobCalibrations', formData.calibrateId),
             {
               ...formData,
-              ...(data && data?.status === 'data-rejected' && { status: 'data-resubmission' }),
+              ...(data &&
+                data?.status === 'data-rejected' && {
+                  status: 'data-resubmission',
+                }),
               approvedSignatory: {
                 id: formData.approvedSignatory.id,
                 name: formData.approvedSignatory.name,
               },
               data: JSON.stringify(formData.data),
-              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+              ...(!data && {
+                createdAt: serverTimestamp(),
+                createdBy: auth.currentUser,
+              }),
               updatedAt: serverTimestamp(),
               updatedBy: auth.currentUser,
             },
@@ -359,7 +448,10 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
               jobId: formData.jobId,
               calibrateId: formData.calibrateId,
               certificateNumber: formData.certificateNumber,
-              ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
+              ...(!data && {
+                createdAt: serverTimestamp(),
+                createdBy: auth.currentUser,
+              }),
               updatedAt: serverTimestamp(),
               updatedBy: auth.currentUser,
             },
@@ -448,7 +540,9 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
   const handleOnSelect = async (key) => {
     const isValid = await form.trigger();
     if (!isValid && activeKey !== key) {
-      toast.error('Please fix the errors in the form and try again.', { position: 'top-right' });
+      toast.error('Please fix the errors in the form and try again.', {
+        position: 'top-right',
+      });
       return;
     }
 
@@ -462,6 +556,8 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
     const cacheKey = `calibration-${auth.currentUser.uid}-${auth.workerId}${calibrationId ? `-${calibrationId}` : ''}`; //prettier-ignore
     const cachedData = localStorage.getItem(cacheKey);
 
+    //TODO: Handle Cashe based on Calibration 'Category' and 'Variants' and other respective differences per variants
+
     if (cachedData) {
       const formData = JSON.parse(cachedData);
 
@@ -474,9 +570,18 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
             { name: 'serialNumber', value: formData.serialNumber },
           ],
         },
-        { delay: 500, group: [{ name: 'description', value: formData.description }] },
-        { delay: 500, group: [{ name: 'dateCalibrated', value: formData.dateCalibrated }] },
-        { delay: 500, group: [{ name: 'dueDateRequested', value: formData.dueDateRequested }] },
+        {
+          delay: 500,
+          group: [{ name: 'description', value: formData.description }],
+        },
+        {
+          delay: 500,
+          group: [{ name: 'dateCalibrated', value: formData.dateCalibrated }],
+        },
+        {
+          delay: 500,
+          group: [{ name: 'dueDateRequested', value: formData.dueDateRequested }],
+        },
         {
           delay: 500,
           group: [
@@ -484,27 +589,45 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
             { name: 'dueDate', value: formData.dueDate },
           ],
         },
-        { delay: 500, group: [{ name: 'rangeType', value: formData.rangeType }] },
+        {
+          delay: 500,
+          group: [{ name: 'rangeType', value: formData.rangeType }],
+        },
         {
           delay: 500,
           group: [
-            { name: 'rangeMinCalibration', value: formData.rangeMinCalibration },
-            { name: 'rangeMaxCalibration', value: formData.rangeMaxCalibration },
+            {
+              name: 'rangeMinCalibration',
+              value: formData.rangeMinCalibration,
+            },
+            {
+              name: 'rangeMaxCalibration',
+              value: formData.rangeMaxCalibration,
+            },
           ],
         },
         {
           delay: 500,
           group: [
             { name: 'traceabilityType', value: formData.traceabilityType },
-            { name: 'traceabilityCountry', value: formData.traceabilityCountry },
-            { name: 'traceabilityCalibrationLab', value: formData.traceabilityCalibrationLab },
+            {
+              name: 'traceabilityCountry',
+              value: formData.traceabilityCountry,
+            },
+            {
+              name: 'traceabilityCalibrationLab',
+              value: formData.traceabilityCalibrationLab,
+            },
             {
               name: 'traceabilityAccreditationBody',
               value: formData.traceabilityAccreditationBody,
             },
           ],
         },
-        { delay: 1000, group: [{ name: 'resolution', value: formData.resolution }] },
+        {
+          delay: 1000,
+          group: [{ name: 'resolution', value: formData.resolution }],
+        },
         {
           delay: 2500,
           group: [
@@ -552,6 +675,71 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
     setIsLoadingClearCache(false);
   }, [auth, data]);
 
+  const renderTabs = (props) => {
+    if (!category || !variant) return null;
+
+    const categoryValue = typeof category === 'object' ? category?.value : category;
+    const variantValue = typeof variant === 'object' ? variant?.value : variant;
+
+    if (!categoryValue || !variantValue) return null;
+
+    switch (categoryValue) {
+      case 'MASS': {
+        if (variantValue === 'weight-balance') {
+          return [
+            <Tab eventKey='1' title='Measurements'>
+              <WBCalibrationMeasurementsForm {...props} />
+            </Tab>,
+
+            <Tab eventKey='2' title='Reference Instruments'>
+              <CalibrationRefInstrumentForm {...props} />
+            </Tab>,
+
+            <Tab eventKey='3' title='Calibration'>
+              <WBCalibrationTemplateForm {...props} />
+            </Tab>,
+          ];
+        }
+
+        if (variantValue === 'standard-weight') {
+          return [
+            <Tab eventKey='1' title='Measurements'>
+              <SWCalibrationMeasurementsForm {...props} />
+            </Tab>,
+
+            <Tab eventKey='2' title='Reference Instruments'>
+              <CalibrationRefInstrumentForm {...props} />
+            </Tab>,
+
+            <Tab eventKey='3' title='Calibration'>
+              <SWCalibrationTemplateForm {...props} />
+            </Tab>,
+          ];
+        }
+      }
+
+      default:
+        return null;
+    }
+  };
+
+  //* set tabs schemas and final schema
+  useEffect(() => {
+    if (!category || !variant) return;
+
+    const categoryValue = typeof category === 'object' ? category?.value : category;
+    const variantValue = typeof variant === 'object' ? variant?.value : variant;
+
+    const variantObj = CATEGORY_VARIANTS_MAP?.[categoryValue]?.find((variantObj) =>  variantObj?.value === variantValue); //prettier-ignore
+    const schema = variantObj?.schema;
+    const schemas = variantObj?.schemas || [];
+
+    if (!variantObj || schemas?.length < 1) return;
+
+    setTabsSchema1(schemas);
+    setFinalSchema(schema);
+  }, [JSON.stringify(category), JSON.stringify(variant)]);
+
   //* query job
   useEffect(() => {
     if (jobId) {
@@ -593,24 +781,52 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
     }
   }, [JSON.stringify(form.watch()), auth, data, isLoadingCache]);
 
-  console.log({ data, jobCalibrations: calibrations, calibratedCustomerEquipmentIds });
+  // useEffect(() => {
+  //   console.log({ formValues: form.getValues() });
+  // }, [form.watch()]);
+
+  // console.log({ data, jobCalibrations: calibrations, calibratedCustomerEquipmentIds });
 
   return (
     <>
       {/* <FormDebug
         form={form}
-        keys={[
-          'rangeCount',
-          'rangeDetails',
-          'rangeType',
-          'resolution',
-          'unitUsedForCOC',
-          'calibrationPointNo',
-          'data',
-        ]}
- 
+        keys={
+          [
+            // 'minTemperature',
+            // 'maxTemperature',
+            // 'minRHumidity',
+            // 'maxRHumidity',
+            // 'minAPressure',
+            // 'maxAPressure',
+            // 'testWeightNo',
+            // 'unitUsedForCOC',
+            // 'material',
+            // 'ptKgMn3',
+            // 'uPtKgMn3',
+            // 'data',
+            // 'data.weights',
+            // 'densityOfMoistAir',
+            // 'accuracyClass',
+            // `data.${0}`,
+            // 'envUP',
+            // 'envUT',
+            // 'envUHr',
+            // 'ck',
+            // 'data',
+            // 'coverageFactors',
+            // 'expandedUncertainties',
+            // 'ck',
+            // 'accuracyClass',
+            // 'instruments',
+            // 'unitsUsedForCOC',
+            // 'mpes',
+          ]
+        }
       /> */}
+      {/* <FormDebug form={form} keys={['massComparatorRefEquipmentIds']} /> */}
 
+      {/* //* Render specific tabs based on the category and variant selected */}
       <FormProvider {...form}>
         <Form>
           <Tabs
@@ -619,7 +835,7 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
             onSelect={handleOnSelect}
           >
             <Tab eventKey='0' title='Summary'>
-              <CalibrateSummaryForm
+              <CalibrationSummaryForm
                 job={job}
                 data={data}
                 isLoading={isLoading}
@@ -633,33 +849,21 @@ const CalibrationForm = ({ data, isAdmin = true, calibrations }) => {
               />
             </Tab>
 
-            <Tab eventKey='1' title='Measurements'>
-              <CalibrationMeasures
-                data={data}
-                isLoading={isLoading}
-                handleNext={handleNext}
-                handlePrevious={handlePrevious}
-              />
-            </Tab>
-
-            <Tab eventKey='2' title='Reference Instruments'>
-              <CalibrationReferenceInstrumentsForm
-                job={job}
-                data={data}
-                isLoading={isLoading}
-                handleNext={handleNext}
-                handlePrevious={handlePrevious}
-              />
-            </Tab>
-
-            <Tab eventKey='3' title='Calibration'>
-              <CalibrationTemplateForm
-                data={data}
-                isLoading={isLoading}
-                handleNext={handleNext}
-                handlePrevious={handlePrevious}
-              />
-            </Tab>
+            {renderTabs({
+              category,
+              variant,
+              job,
+              data,
+              isLoading,
+              handleNext,
+              handlePrevious,
+              isAdmin,
+              handleLoadDataCache,
+              handleClearCache,
+              isLoadingCache,
+              isLoadingClearCache,
+              calibratedCustomerEquipmentIds,
+            })}
           </Tabs>
         </Form>
       </FormProvider>

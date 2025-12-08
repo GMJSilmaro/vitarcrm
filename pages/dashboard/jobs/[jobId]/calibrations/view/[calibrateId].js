@@ -1,17 +1,13 @@
 import ContentHeader from '@/components/dashboard/ContentHeader';
 import { db } from '@/firebase';
-import Calibration from '@/sub-components/dashboard/jobs/calibrations/view/Calibration';
-import SummaryTab from '@/sub-components/dashboard/jobs/calibrations/view/SummaryTab';
-import Result from '@/sub-components/dashboard/jobs/calibrations/view/Result';
-import Measurements from '@/sub-components/dashboard/jobs/calibrations/view/Measurements';
-import ReferenceInstruments from '@/sub-components/dashboard/jobs/calibrations/view/ReferenceInstruments';
+import CalibrationSummary from '@/sub-components/dashboard/jobs/calibrations/view/CalibrationSummary';
+import CalibrationRefInstrument from '@/sub-components/dashboard/jobs/calibrations/view/CalibrationRefInstrument';
 import { GeeksSEO } from '@/widgets';
 import {
   collection,
   doc,
   getDoc,
   getDocs,
-  limit,
   query,
   serverTimestamp,
   updateDoc,
@@ -31,17 +27,21 @@ import {
   ShieldCheck,
   Speedometer,
 } from 'react-bootstrap-icons';
-import CertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/CertificateOfCalibration';
-import { PDFViewer } from '@react-pdf/renderer';
-import CertificateOfCalibrationPDF1 from '@/components/pdf/CertificateOfCalibrationPDF1';
-import CertificateOfCalibrationPDF2 from '@/components/pdf/CertificateOfCalibrationPDF2';
-import { PRINT_STATUS_COLOR, STATUS_COLOR } from '@/schema/calibration';
+import { PRINT_STATUS_COLOR, STATUS_COLOR } from '@/schema/calibrations/common-constant';
 import _ from 'lodash';
 import { useNotifications } from '@/hooks/useNotifications';
 import withReactContent from 'sweetalert2-react-content';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import WBCalibrationMeasurements from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBMeasurements';
+import WBCalibrationTemplate from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCalibrationTemplate';
+import WBCalibrationResult from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCalibrationResult';
+import WBCertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/mass/weight-balance/WBCertificateOfCalibration';
+import SWCalibrationMeasurements from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCalibrationMeasurements';
+import SWCalibrationResult from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCalibrationResult';
+import SWCalibrationTemplate from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCalibrationTemplate';
+import SWCertificateOfCalibration from '@/sub-components/dashboard/jobs/calibrations/view/mass/standard-weight/SWCertificateOfCalibration';
 
 const CalibrationDetails = () => {
   const router = useRouter();
@@ -50,6 +50,8 @@ const CalibrationDetails = () => {
 
   const [calibration, setCalibration] = useState();
   const [instruments, setInstruments] = useState({ data: [], isLoading: true, isError: false });
+  const [materials, setMaterials] = useState({ data: [], isLoading: true, isError: false });
+  const [environmental, setEnvironmental] = useState({ data: [], isLoading: true, isError: false });
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -225,6 +227,69 @@ const CalibrationDetails = () => {
     });
   };
 
+  const renderTabs = (props) => {
+    const categoryValue = calibration?.category;
+    const variantValue = calibration?.variant;
+
+    if (!categoryValue || !variantValue) return null;
+
+    switch (categoryValue) {
+      case 'MASS':
+        {
+          if (variantValue === 'weight-balance') {
+            return [
+              <Tab eventKey='1' title='Measurements'>
+                <WBCalibrationMeasurements {...props} />
+              </Tab>,
+
+              <Tab eventKey='2' title='Reference Instruments'>
+                <CalibrationRefInstrument {...props} />
+              </Tab>,
+
+              <Tab eventKey='3' title='Calibration'>
+                <WBCalibrationTemplate {...props} />
+              </Tab>,
+
+              <Tab eventKey='4' title='Result'>
+                <WBCalibrationResult {...props} />
+              </Tab>,
+
+              <Tab eventKey='6' title='COC'>
+                <WBCertificateOfCalibration {...props} />
+              </Tab>,
+            ];
+          }
+        }
+
+        if (variantValue === 'standard-weight') {
+          return [
+            <Tab eventKey='1' title='Measurements'>
+              <SWCalibrationMeasurements {...props} />
+            </Tab>,
+
+            <Tab eventKey='2' title='Reference Instruments'>
+              <CalibrationRefInstrument {...props} />
+            </Tab>,
+
+            <Tab eventKey='3' title='Calibration'>
+              <SWCalibrationTemplate {...props} />
+            </Tab>,
+
+            <Tab eventKey='4' title='Result'>
+              <SWCalibrationResult {...props} />
+            </Tab>,
+
+            <Tab eventKey='5' title='COC'>
+              <SWCertificateOfCalibration {...props} />
+            </Tab>,
+          ];
+        }
+
+      default:
+        return null;
+    }
+  };
+
   //* query calibration & job header
   useEffect(() => {
     if (calibrateId) {
@@ -242,6 +307,8 @@ const CalibrationDetails = () => {
             const calibrationData = calibrationSnapshot.data();
             const certificateData = certificateSnapshot.data();
             const jobHeaderData = { jobId: jobHeaderSnapshot.id, ...jobHeaderSnapshot.data() };
+
+            console.log({ certificateData });
 
             const locationSnapshot = jobHeaderData.location.id
               ? await getDoc(doc(db, 'locations', jobHeaderData.location.id))
@@ -297,6 +364,8 @@ const CalibrationDetails = () => {
                   serialNumber: data.serialNumber,
                   traceability: data.traceability,
                   certificateNo: data.certificateNo,
+                  uncertainty: data?.uncertainty,
+                  uncertaintyUnit: data?.uncertaintyUnit,
                   dueDate: undefined, //TODO: due date not yet available in the equipment's property
                 };
               });
@@ -310,6 +379,58 @@ const CalibrationDetails = () => {
         });
     }
   }, [calibration]);
+
+  //* query materials
+  useEffect(() => {
+    const q = query(collection(db, 'jobCalibrationReferences', 'CR000005', 'data'));
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const materialDocs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setMaterials({
+            data: materialDocs,
+            isLoading: false,
+            isError: false,
+          });
+
+          return;
+        }
+
+        setMaterials({ data: [], isLoading: false, isError: false });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setMaterials({ data: [], isLoading: false, isError: true });
+      });
+  }, []);
+
+  //* query environmental
+  useEffect(() => {
+    const q = query(collection(db, 'jobCalibrationReferences', 'CR000007', 'data'));
+
+    getDocs(q)
+      .then((snapshot) => {
+        if (!snapshot.empty) {
+          const environmentalDocs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setEnvironmental({
+            data: environmentalDocs,
+            isLoading: false,
+            isError: false,
+          });
+
+          return;
+        }
+
+        setEnvironmental({ data: [], isLoading: false, isError: false });
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setEnvironmental({ data: [], isLoading: false, isError: true });
+      });
+  }, []);
 
   if (isLoading) {
     return (
@@ -441,41 +562,10 @@ const CalibrationDetails = () => {
         <Card.Body>
           <Tabs activeKey={activeTab} onSelect={setActiveTab}>
             <Tab eventKey='0' title='Summary'>
-              <SummaryTab calibration={calibration} />
+              <CalibrationSummary calibration={calibration} />
             </Tab>
 
-            <Tab eventKey='1' title='Measurements'>
-              <Measurements calibration={calibration} />
-            </Tab>
-
-            <Tab eventKey='2' title='Reference Instruments'>
-              <ReferenceInstruments calibration={calibration} instruments={instruments} />
-            </Tab>
-
-            <Tab eventKey='3' title='Calibration'>
-              <Calibration calibration={calibration} />
-            </Tab>
-
-            <Tab eventKey='4' title='Result'>
-              <Result calibration={calibration} />
-            </Tab>
-
-            <Tab eventKey='6' title='COC'>
-              <CertificateOfCalibration calibration={calibration} instruments={instruments} />
-            </Tab>
-
-            {/* <Tab eventKey='7' title='PDF COC'>
-              <Card className='border-0 shadow-none'>
-                <Card.Body>
-                  <PDFViewer height={800} width='100%'>
-                    <CertificateOfCalibrationPDF2
-                      calibration={calibration}
-                      instruments={instruments}
-                    />
-                  </PDFViewer>
-                </Card.Body>
-              </Card>
-            </Tab> */}
+            {renderTabs({ calibration, instruments, materials, environmental })}
           </Tabs>
         </Card.Body>
       </Card>

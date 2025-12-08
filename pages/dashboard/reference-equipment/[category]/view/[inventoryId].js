@@ -1,182 +1,192 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import ContentHeader from '@/components/dashboard/ContentHeader';
+import { db } from '@/firebase';
+import SummaryTab from '@/sub-components/dashboard/reference-equipment/view/SummaryTab';
+
+import { GeeksSEO } from '@/widgets';
+import { doc, getDoc } from 'firebase/firestore';
+import _ from 'lodash';
 import { useRouter } from 'next/router';
-import { Card, Row, Col, Button, Badge, Nav, Tab } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Card, Spinner, Tab, Tabs } from 'react-bootstrap';
 import {
-  FileText,
-  Pencil,
-  Calendar3,
-  GraphUp,
+  ArrowLeftShort,
+  BoxSeamFill,
+  EyeFill,
+  HouseDoorFill,
+  PencilSquare,
   Tools,
-  InfoCircle,
-  ExclamationTriangle,
-  Clock,
 } from 'react-bootstrap-icons';
 
-import {
-  mechanicalData,
-  pressureData,
-  temperatureData,
-  electricalData,
-  dimensionalData,
-  volumetricData,
-} from '@/mocks/calibration/mechanicalData';
-import CalibrationHistory from '@/components/dashboard/calibration/CalibrationHistory';
-import CalibrationGraph from '@/components/dashboard/calibration/CalibrationGraph';
-import CalibrationSchedule from '@/components/dashboard/calibration/CalibrationSchedule';
-import { CategoryDetails } from '@/components/dashboard/calibration/sections';
-import CalibrationDetailsLayout from '../../layouts/CalibrationDetailsLayout';
-import CertificatePreview from '@/components/dashboard/calibration/CertificatePreview';
-import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
-import { orderBy } from 'lodash';
-import { db } from '@/firebase';
-
-const CATEGORY_DATA_MAP = {
-  mechanical: mechanicalData,
-  pressure: pressureData,
-  temperature: temperatureData,
-  electrical: electricalData,
-  dimensional: dimensionalData,
-  volumetric: volumetricData,
-};
-
-const CalibrationDetails = () => {
+const ReferenceEquipmentDetails = () => {
   const router = useRouter();
   const { inventoryId, category } = router.query;
-  const [loading, setLoading] = useState(true);
-  const [equipment, setEquipment] = useState(null);
-  const [showCertificate, setShowCertificate] = useState(false);
-  const [activeTab, setActiveTab] = useState('details');
+
+  const categoryTitle =
+    category
+      ?.split(' ')
+      ?.map((str) => _.capitalize(str))
+      ?.join(' ') || '';
+
+  const [refEquipment, setRefEquipment] = useState();
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [activeTab, setActiveTab] = useState('0');
+
+  //* query ref equipment
   useEffect(() => {
-    if (category && inventoryId) {
-      const q = query(
-        collection(db, 'equipments'),
-        where('category', '==', category.toUpperCase()),
-        where('inventoryId', '==', inventoryId)
-      );
-
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          if (!snapshot.empty) {
-            setEquipment(snapshot.docs[0].data());
-            setLoading(false);
-          }
-        },
-        (err) => {
-          setLoading(false);
-          console.error(err.message);
-        }
-      );
-      return () => unsubscribe();
+    if (!inventoryId) {
+      setRefEquipment({ data: {}, isLoading: false, isError: false });
+      return;
     }
-  }, [category, inventoryId]);
 
-  console.log('equipment:', equipment);
+    getDoc(doc(db, 'equipments', inventoryId))
+      .then((doc) => {
+        console.log({ doc });
 
-  const renderDetailsComponent = useMemo(() => {
-    if (!category || !equipment) return null;
-    const DetailComponent = CategoryDetails[category.toUpperCase()];
+        if (doc.exists()) {
+          setRefEquipment({
+            id: doc.id,
+            ...doc.data(),
+          });
+          setIsLoading(false);
+        } else {
+          setError('Reference Equipment not found');
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error(err.message);
+        setError(err.message || 'Error fetching reference equipment');
+        setIsLoading(false);
+      });
+  }, [inventoryId]);
 
-    return DetailComponent ? <DetailComponent equipment={equipment} /> : null;
-  }, [category, equipment]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <CalibrationDetailsLayout>
-        <div className='text-center py-5'>
-          <div className='spinner-border text-primary' role='status'>
-            <span className='visually-hidden'>Loading...</span>
-          </div>
-        </div>
-      </CalibrationDetailsLayout>
+      <div className='d-flex justify-content-center align-items-center' style={{ height: '100vh' }}>
+        <Spinner animation='border' variant='primary' />
+        <span className='ms-3'>Loading Reference Equipment Data...</span>
+      </div>
     );
   }
 
-  if (error || !equipment) {
+  if (error) {
     return (
-      <CalibrationDetailsLayout>
-        <Card className='border-0 shadow-sm'>
-          <Card.Body className='text-center py-5'>
-            <div className='text-danger mb-3'>
-              <ExclamationTriangle size={48} />
-            </div>
-            <h5>{error || 'Equipment not found'}</h5>
-            <Button variant='outline-primary' className='mt-3' onClick={() => router.back()}>
-              Go Back
+      <div
+        className='d-flex justify-content-center align-items-center text-center py-5'
+        style={{ height: '63vh' }}
+      >
+        <div>
+          <h3 className='text-danger'>Error</h3>
+          <p className='text-muted'>{error}</p>
+          <button
+            className='btn btn-primary'
+            onClick={() => router.push(`/reference-equipment/${String(category).toLowerCase()}`)}
+          >
+            Back to Reference Equipment List for {categoryTitle}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!refEquipment) {
+    return (
+      <div
+        className='d-flex justify-content-center align-items-center text-center py-5'
+        style={{ height: '63vh' }}
+      >
+        <div>
+          <h3>Reference Equipment not found</h3>
+          <Link href={`/reference-equipment/${String(category).toLowerCase()}`}>
+            <Button variant='primary' className='mt-3'>
+              Back to Reference Equipment List for {categoryTitle}
             </Button>
-          </Card.Body>
-        </Card>
-      </CalibrationDetailsLayout>
+          </Link>
+        </div>
+      </div>
     );
   }
 
   return (
-    <CalibrationDetailsLayout
-      equipment={equipment}
-      showCertificate={showCertificate}
-      onHideCertificate={() => setShowCertificate(false)}
-    >
-      <Card className='border-0 shadow-sm'>
-        <Card.Header className='bg-transparent border-0 pt-4 pb-0'>
-          <Nav variant='tabs'>
-            <Nav.Item>
-              <Nav.Link
-                eventKey='details'
-                active={activeTab === 'details'}
-                onClick={() => setActiveTab('details')}
-                className='d-flex align-items-center'
-              >
-                <InfoCircle className='me-2' />
-                Details
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link
-                eventKey='history'
-                active={activeTab === 'history'}
-                onClick={() => setActiveTab('history')}
-                className='d-flex align-items-center'
-              >
-                <FileText className='me-2' />
-                History
-              </Nav.Link>
-            </Nav.Item>
+    <>
+      <GeeksSEO title={`View Details for Reference Equipment #${refEquipment.id} | VITAR Group`} />
 
-            <Nav.Item>
-              <Nav.Link
-                eventKey='schedule'
-                active={activeTab === 'schedule'}
-                onClick={() => setActiveTab('schedule')}
-                className='d-flex align-items-center'
-              >
-                <Clock className='me-2' />
-                Schedule
-              </Nav.Link>
-            </Nav.Item>
-          </Nav>
-        </Card.Header>
+      <ContentHeader
+        title={`View Details for Reference Equipment #${refEquipment.id}`}
+        description='View comprehensive details about the reference equipment'
+        badgeText='Reference Equipment Management'
+        badgeText2='View Reference Equipment'
+        breadcrumbItems={[
+          {
+            text: 'Dashboard',
+            link: '/',
+            icon: <HouseDoorFill className='me-2' size={14} />,
+          },
+          {
+            text: 'Reference Equipment',
+            link: '/reference-equipment',
+            icon: <Tools className='me-2' size={14} />,
+          },
+          {
+            text: categoryTitle,
+            link: `/reference-equipment/${String(category).toLowerCase()}`,
+            icon: <BoxSeamFill className='me-2' size={14} />,
+          },
+          {
+            text: `View ${refEquipment.id}`,
+            icon: <EyeFill className='me-2' size={14} />,
+          },
+        ]}
+        customBadges={[
+          {
+            label: refEquipment?.qty > 0 ? 'Available' : 'Unavailable',
+            color: refEquipment?.qty > 0 ? 'success' : 'danger',
+          },
+        ]}
+        actionButtons={[
+          {
+            text: 'Back',
+            icon: <ArrowLeftShort size={20} />,
+            variant: 'outline-primary',
+            onClick: () => router.push(`/reference-equipment/${String(category).toLowerCase()}`),
+          },
+        ]}
+        dropdownItems={[
+          {
+            label: 'Edit Equipment',
+            icon: PencilSquare,
+            onClick: () =>
+              router.push(
+                `/reference-equipment/${String(
+                  category
+                ).toLowerCase()}/edit-reference-equipment/${inventoryId}`
+              ),
+          },
+        ]}
+      />
 
-        <Card.Body className='p-4'>
-          {activeTab === 'details' && renderDetailsComponent}
-          {activeTab === 'history' && <CalibrationHistory equipment={equipment} />}
-          {activeTab === 'trends' && <CalibrationGraph equipment={equipment} />}
-          {activeTab === 'schedule' && <CalibrationSchedule equipment={equipment} />}
+      <Card>
+        <Card.Body>
+          <Tabs className='mb-1' activeKey={activeTab} onSelect={setActiveTab}>
+            <Tab eventKey='0' title='Summary'>
+              <SummaryTab refEquipment={refEquipment} />
+            </Tab>
+
+            <Tab eventKey='1' title='History'>
+              <Card className='shadow-none'>
+                <Card.Body className='text-center mt-5'>
+                  <h4 className='mb-0'>History not yet suppoted</h4>
+                  <p>Tab is under development</p>
+                </Card.Body>
+              </Card>
+            </Tab>
+          </Tabs>
         </Card.Body>
       </Card>
-      <CertificatePreview
-        show={showCertificate}
-        onHide={() => setShowCertificate(false)}
-        equipment={equipment}
-        category={category}
-        certificate={{
-          certificateNo: equipment.certificateNo,
-          // ... other certificate data
-        }}
-      />
-    </CalibrationDetailsLayout>
+    </>
   );
 };
 
-export default CalibrationDetails;
+export default ReferenceEquipmentDetails;

@@ -5,12 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import useMounted from '@/hooks/useMounted';
 import {
-  CALIBRATED_AT,
   CATEGORY,
   DATE_RECEIVED_REQUESTED,
   DUE_DATE_REQUESTED,
   STATUS,
-} from '@/schema/calibration';
+} from '@/schema/calibrations/common-constant';
+import { CATEGORY_VARIANTS_MAP } from '@/schema/calibrations/common-index';
 import { SCOPE_TYPE } from '@/schema/job';
 import { add, format } from 'date-fns';
 import {
@@ -40,10 +40,15 @@ import {
   Tooltip,
 } from 'react-bootstrap';
 import { ArrowClockwise, Exclamation, ExclamationCircle, X } from 'react-bootstrap-icons';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import toast from 'react-hot-toast';
 
-const CalibrateSummaryForm = ({
+//* List of supported categories and variants as of the moment
+const SUPPORTED_CATEGORY = {
+  MASS: { variants: ['standard-weight', 'weight-balance'] },
+};
+
+const CalibrationSummaryForm = ({
   job,
   data,
   isLoading,
@@ -58,6 +63,12 @@ const CalibrateSummaryForm = ({
   const router = useRouter();
   const { workerId } = router.query;
 
+  const form = useFormContext();
+  const formErrors = form.formState.errors;
+
+  const category = useWatch({ control: form.control, name: 'category' });
+  const variant = useWatch({ control: form.control, name: 'variant' });
+
   const [location, setLocation] = useState({ data: undefined, isLoading: true, isError: false });
   const [customer, setCustomer] = useState({ data: undefined, isLoading: true, isError: false });
 
@@ -65,13 +76,40 @@ const CalibrateSummaryForm = ({
   const [usersOptions, setUsersOptions] = useState({ data: [], isLoading: true, isError: false });
   const [calibratedByOptions, setCalibratedByOptions] = useState([]);
 
-  const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: _.capitalize(category) }))); //prettier-ignore
+  const [categoryOptions] = useState(CATEGORY.map((category) => ({ value: category, label: category.split(' ').map(str => _.capitalize(str)).join(' ') }))); //prettier-ignore
+
+  const variantOptions = useMemo(() => {
+    const value = category?.value || '';
+    const variants = CATEGORY_VARIANTS_MAP?.[value] || [];
+
+    if (!value || !variants || variants?.length < 1) return [];
+
+    return variants
+      .map((variantObj) => variantObj.value)
+      .map((variant) => ({
+        value: variant,
+        label: variant
+          .split('-')
+          .map((str) => _.capitalize(str))
+          .join(' '),
+      }));
+  }, [JSON.stringify(category)]);
+
+  const supportedCategory = useMemo(() => {
+    const categoryValue = typeof category === 'object' ? category?.value : category;
+    const variantValue = typeof variant === 'object' ? variant?.value : variant;
+
+    const supportedObj = {
+      category: SUPPORTED_CATEGORY?.[categoryValue],
+      variant: SUPPORTED_CATEGORY?.[categoryValue]?.variants?.find((v) => v === variantValue),
+    };
+
+    return supportedObj;
+  }, [JSON.stringify(category), JSON.stringify(variant)]);
+
   const [dueDateRequestedOptions] = useState(DUE_DATE_REQUESTED.map((dueDateRequested) => ({ value: dueDateRequested, label: _.capitalize(dueDateRequested) }))); //prettier-ignore
   const [dateReceivedRequestedOptions] = useState(DATE_RECEIVED_REQUESTED.map((dateReceivedRequested) => ({ value: dateReceivedRequested, label: _.capitalize(dateReceivedRequested) }))); //prettier-ignore
   const [statusesOptions] = useState(STATUS.map((status) => ({ value: status, label: _.startCase(status) }))); //prettier-ignore
-
-  const form = useFormContext();
-  const formErrors = form.formState.errors;
 
   const handleDueDateRequestedChange = (option, field) => {
     field.onChange(option);
@@ -445,11 +483,18 @@ const CalibrateSummaryForm = ({
       const category = categoryOptions.find((option) => option.value === data.category);
       form.setValue('category', category);
     }
-  }, [data, categoryOptions]);
+  }, [JSON.stringify(data), JSON.stringify(categoryOptions)]);
+
+  //* set variant, if data exist
+  useEffect(() => {
+    if (data && variantOptions.length > 0) {
+      const variant = variantOptions.find((option) => option.value === data.variant);
+      form.setValue('variant', variant);
+    }
+  }, [JSON.stringify(data), JSON.stringify(variantOptions)]);
 
   //* set approved signatory, if data exist
   useEffect(() => {
-    console.log({ calibratedByOptions });
     if (data && usersOptions.data.length > 0) {
       const signatory = usersOptions.data.find((option) => option.id === data.approvedSignatory.id);
       form.setValue('approvedSignatory', signatory);
@@ -637,7 +682,9 @@ const CalibrateSummaryForm = ({
             </div>
 
             <div className='d-flex align-items-center gap-2'>
-              <Button
+              {/* //TODO: temporary commented out, load data cache button, need to refactor to cater for loading cache based on selected category and variant */}
+
+              {/* <Button
                 variant='outline-primary'
                 onClick={() => handleLoadDataCache()}
                 disabled={
@@ -654,7 +701,7 @@ const CalibrateSummaryForm = ({
                   <ArrowClockwise size={18} className='me-2' />
                 )}
                 {isLoadingCache ? 'Loading' : 'Load'} Data Cache
-              </Button>
+              </Button> */}
 
               {/* <Button
                 variant='outline-primary'
@@ -710,8 +757,27 @@ const CalibrateSummaryForm = ({
           <h4 className='mb-0'>Calibration Info</h4>
           <p className='text-muted fs-6'>Details about the calibration.</p>
 
+          {category && !supportedCategory.category && (
+            <Alert className='mb-5' style={{ width: 'fit-content' }} variant='danger'>
+              <ExclamationCircle className='me-1' size={20} /> The selected category and its
+              respective variant is not yet supported. Please select other category
+            </Alert>
+          )}
+
+          {category && variant && supportedCategory.category && !supportedCategory.variant && (
+            <Alert className='mb-5' style={{ width: 'fit-content' }} variant='danger'>
+              <ExclamationCircle className='me-1' size={20} /> The selected variant of the category
+              "
+              {category?.value
+                ?.split(' ')
+                .map((str) => _.capitalize(str))
+                .join(' ')}
+              " is not yet supported. Please select other variant.
+            </Alert>
+          )}
+
           <Row className='mb-3 row-gap-3'>
-            <Form.Group as={Col} md={3}>
+            <Form.Group as={Col} xs={12}>
               <Form.Label>Calibrate ID</Form.Label>
               <Form.Control type='text' value={form.watch('calibrateId')} readOnly disabled />
             </Form.Group>
@@ -749,6 +815,47 @@ const CalibrateSummaryForm = ({
 
                     {formErrors && formErrors.category?.message && (
                       <Form.Text className='text-danger'>{formErrors.category?.message}</Form.Text>
+                    )}
+                  </>
+                )}
+              />
+            </Form.Group>
+
+            <Form.Group as={Col} md={3}>
+              <RequiredLabel label='Variant' id='variant' />
+
+              <OverlayTrigger
+                placement='right'
+                overlay={
+                  <Tooltip>
+                    <TooltipContent
+                      title='Calibration Variant Search'
+                      info={['Search by variant']}
+                    />
+                  </Tooltip>
+                }
+              >
+                <i className='fe fe-help-circle text-muted' style={{ cursor: 'pointer' }} />
+              </OverlayTrigger>
+
+              <Controller
+                name='variant'
+                control={form.control}
+                render={({ field }) => (
+                  <>
+                    <Select
+                      {...field}
+                      isDisabled={!category?.value}
+                      inputId='variant'
+                      instanceId='variant'
+                      onChange={(option) => field.onChange(option)}
+                      options={variantOptions}
+                      placeholder='Search by calibration variant'
+                      noOptionsMessage={() => 'No calibration variant found'}
+                    />
+
+                    {formErrors && formErrors.variant?.message && (
+                      <Form.Text className='text-danger'>{formErrors.variant?.message}</Form.Text>
                     )}
                   </>
                 )}
@@ -1230,4 +1337,4 @@ const CalibrateSummaryForm = ({
   );
 };
 
-export default CalibrateSummaryForm;
+export default CalibrationSummaryForm;

@@ -1,6 +1,6 @@
 import PageHeader from '@/components/common/PageHeader';
 import { db } from '@/firebase';
-import { STATUS_COLOR } from '@/schema/calibration';
+import { STATUS_COLOR } from '@/schema/calibrations/common-constant';
 import CalibrationForm from '@/sub-components/dashboard/jobs/calibrations/CalibrationForm';
 import { GeeksSEO } from '@/widgets';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';

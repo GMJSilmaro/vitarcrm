@@ -334,7 +334,7 @@ const CuswdDetails = () => {
                 </tr>
 
                 <tr>
-                  <th>Created At</th>
+                  <th>Created By</th>
                   <td colSpan={5}>{cuswd?.createdBy?.displayName || 'N/A'}</td>
                 </tr>
 

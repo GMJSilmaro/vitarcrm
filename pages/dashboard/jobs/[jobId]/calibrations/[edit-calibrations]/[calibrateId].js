@@ -2,7 +2,7 @@ import ContentHeader from '@/components/dashboard/ContentHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import { useNotifications } from '@/hooks/useNotifications';
-import { PRINT_STATUS_COLOR, STATUS_COLOR } from '@/schema/calibration';
+import { PRINT_STATUS_COLOR, STATUS_COLOR } from '@/schema/calibrations/common-constant';
 import CalibrationForm from '@/sub-components/dashboard/jobs/calibrations/CalibrationForm';
 import { GeeksSEO } from '@/widgets';
 import {

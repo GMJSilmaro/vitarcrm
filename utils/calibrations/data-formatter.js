@@ -10,6 +10,7 @@ export const formatToDicimalString = (value, dicimalPlaces = 4) => {
     return math.format(value, { notation: 'fixed', precision: dicimalPlaces });
   } catch (error) {
     console.error(err);
+    console.trace();
     console.error('Error formatting decimal value:', value);
     return '';
   }
@@ -21,6 +22,8 @@ export function formatScientific(value, precision = 4) {
     if (value === undefined || value === null) return '';
     if (isNaN(value)) return '';
 
+    if (math.isComplex(value)) return '';
+
     let formatted = math.format(math.bignumber(value), { notation: 'exponential', precision });
     formatted = formatted.replace('e', 'E'); //* Convert 'e' to 'E'
 
@@ -30,6 +33,7 @@ export function formatScientific(value, precision = 4) {
     return formatted;
   } catch (err) {
     console.error(err);
+    console.trace();
     console.error('Error formatting scientific value:', value);
     return '';
   }

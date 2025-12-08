@@ -6,6 +6,8 @@ export function getZodEffectShape(schema) {
 }
 
 export function getFormDefaultValues(schema) {
+  if (!schema) return undefined;
+
   function getValue(typeName, schema) {
     switch (typeName) {
       case 'ZodNullable':
