@@ -63,7 +63,6 @@ const JobCnForm = ({ data, isAdmin = true }) => {
   const notifications = useNotifications();
 
   const columnHelper = createColumnHelper();
-
   const [isLoading, setIsLoading] = useState(false);
 
   const [jobOptions, setJobOptions] = useState({ data: [], isLoading: true, isError: false });
@@ -100,6 +99,11 @@ const JobCnForm = ({ data, isAdmin = true }) => {
   const telFax = useWatch({ name: 'jobId.telFax', control: form.control });
   const isOthers = useWatch({ name: 'isOthers', control: form.control });
   const forVitarLabUseIsOthers = useWatch({ name: 'forVitarLabUseIsOthers', control: form.control }); //prettier-ignore
+
+  const isTechnician = useMemo(
+    () => !auth.role || auth.role === 'technician',
+    [JSON.stringify(auth)]
+  );
 
   const workerOptions = useMemo(() => {
     if (usersOptions.data.length > 0 && workers?.length > 0) {
@@ -1451,42 +1455,46 @@ const JobCnForm = ({ data, isAdmin = true }) => {
                       />
                     </Form.Group>
 
-                    <Form.Group className='px-0' xs={12} as={Col}>
-                      <RequiredLabel
-                        label='Authorized by Head of Section'
-                        id='forVitarLabUseAuthorizeBy'
-                      />
+                    {!isTechnician && (
+                      <Form.Group className='px-0' xs={12} as={Col}>
+                        <RequiredLabel
+                          label='Authorized by Head of Section'
+                          id='forVitarLabUseAuthorizeBy'
+                        />
 
-                      <Controller
-                        name='forVitarLabUseAuthorizeBy'
-                        control={form.control}
-                        render={({ field }) => (
-                          <>
-                            <Select
-                              {...field}
-                              inputId='forVitarLabUseAuthorizeBy'
-                              instanceId='forVitarLabUseAuthorizeBy'
-                              onChange={(option) => field.onChange(option)}
-                              options={adminSupervisorOptions}
-                              isLoading={usersOptions.isLoading}
-                              placeholder={
-                                usersOptions.isLoading ? 'Loading user...' : "Search by user' name"
-                              }
-                              isDisabled={usersOptions.isLoading}
-                              noOptionsMessage={() =>
-                                usersOptions.isLoading ? 'Loading...' : 'No user found'
-                              }
-                            />
+                        <Controller
+                          name='forVitarLabUseAuthorizeBy'
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <Select
+                                {...field}
+                                inputId='forVitarLabUseAuthorizeBy'
+                                instanceId='forVitarLabUseAuthorizeBy'
+                                onChange={(option) => field.onChange(option)}
+                                options={adminSupervisorOptions}
+                                isLoading={usersOptions.isLoading}
+                                placeholder={
+                                  usersOptions.isLoading
+                                    ? 'Loading user...'
+                                    : "Search by user' name"
+                                }
+                                isDisabled={usersOptions.isLoading}
+                                noOptionsMessage={() =>
+                                  usersOptions.isLoading ? 'Loading...' : 'No user found'
+                                }
+                              />
 
-                            {formErrors && formErrors.forVitarLabUseAuthorizeBy?.message && (
-                              <Form.Text className='text-danger'>
-                                {formErrors.forVitarLabUseAuthorizeBy?.message}
-                              </Form.Text>
-                            )}
-                          </>
-                        )}
-                      />
-                    </Form.Group>
+                              {formErrors && formErrors.forVitarLabUseAuthorizeBy?.message && (
+                                <Form.Text className='text-danger'>
+                                  {formErrors.forVitarLabUseAuthorizeBy?.message}
+                                </Form.Text>
+                              )}
+                            </>
+                          )}
+                        />
+                      </Form.Group>
+                    )}
 
                     <Form.Group className='px-0' xs={12} as={Col}>
                       <Form.Label>Date</Form.Label>

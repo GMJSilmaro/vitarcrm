@@ -1,8 +1,12 @@
 import FormDebug from '@/components/Form/FormDebug';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
+import Select from '@/components/Form/Select';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
-import { environmentalSchema } from '@/schema/calibrationReferences';
+import {
+  ENVIRONMENTAL_DEFAULT_FIELD_OPTIONS,
+  environmentalSchema,
+} from '@/schema/calibrationReferences';
 import { getFormDefaultValues } from '@/utils/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -17,12 +21,13 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { Save } from 'react-bootstrap-icons';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 import toast from 'react-hot-toast';
 
 const EnvironmentalForm = ({ data }) => {
@@ -40,14 +45,25 @@ const EnvironmentalForm = ({ data }) => {
 
   const formErrors = form.formState.errors;
 
+  const isDefault = useWatch({ control: form.control, name: 'isDefault' });
+
+  const formatEnvironmentalFieldOptionLabel = (data) => {
+    const html = data.html;
+    return html;
+  };
+
   const handleSubmit = async (formData) => {
     try {
       setIsLoading(true);
 
       const collectionRef = collection(db, 'jobCalibrationReferences', 'CR000007', 'data');
 
-      await setDoc(
-        doc(collectionRef, formData.refId),
+      const batch = writeBatch(db);
+
+      //* add the main document to the batch
+      const mainDocRef = doc(collectionRef, formData.refId);
+      batch.set(
+        mainDocRef,
         {
           ...formData,
           ...(!data && { createdAt: serverTimestamp(), createdBy: auth.currentUser }),
@@ -56,6 +72,28 @@ const EnvironmentalForm = ({ data }) => {
         },
         { merge: true }
       );
+
+      //* if isDefault, find all other docs with the same field and isDefault: true, then set them to false
+      if (formData.isDefault) {
+        const q = query(
+          collectionRef,
+          where('field', '==', formData.field),
+          where('isDefault', '==', true),
+          where('refId', '!=', formData.refId) //* exclude the current document
+        );
+
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach((docSnap) => {
+          batch.update(docSnap.ref, {
+            isDefault: false,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser,
+          });
+        });
+      }
+
+      await batch.commit();
 
       toast.success(
         `Reference data #${formData.refId} ${data ? 'updated' : 'created'} successfully.`,
@@ -104,6 +142,21 @@ const EnvironmentalForm = ({ data }) => {
 
     return () => unsubscribe();
   }, []);
+
+  //* set field empty if isDefault is false
+  useEffect(() => {
+    if (!isDefault) form.setValue('field', '');
+  }, [isDefault]);
+
+  //* set field if data exist
+  useEffect(() => {
+    if (data && data.field) {
+      const selectedOption = ENVIRONMENTAL_DEFAULT_FIELD_OPTIONS.find(
+        (option) => option.value === data.field
+      );
+      form.setValue('field', selectedOption);
+    } else form.setValue('field', '');
+  }, [data]);
 
   return (
     <>
@@ -231,6 +284,60 @@ const EnvironmentalForm = ({ data }) => {
                     )}
                   />
                 </Form.Group>
+
+                <Form.Group as={Col} md='3'>
+                  <Form.Label htmlFor='isDefault'>Default</Form.Label>
+
+                  <Controller
+                    name='isDefault'
+                    control={form.control}
+                    render={({ field }) => (
+                      <>
+                        <Form.Check
+                          {...field}
+                          id='isDefault'
+                          type='checkbox'
+                          checked={field.value}
+                          label='Make this the default environmental?'
+                        />
+                      </>
+                    )}
+                  />
+                </Form.Group>
+
+                {isDefault && (
+                  <Form.Group as={Col} md='3'>
+                    <Form.Label htmlFor='field'>Field</Form.Label>
+
+                    <Controller
+                      name='field'
+                      control={form.control}
+                      render={({ field }) => (
+                        <>
+                          <div className='d-flex flex-column gap-1'>
+                            <Select
+                              {...field}
+                              inputId='field'
+                              instanceId='field'
+                              onChange={(option) => field.onChange(option)}
+                              formatOptionLabel={formatEnvironmentalFieldOptionLabel}
+                              options={ENVIRONMENTAL_DEFAULT_FIELD_OPTIONS}
+                              placeholder='Search by field'
+                              noOptionsMessage={() => 'No field found'}
+                            />
+                            <p className='text-muted fs-6 mb-0'>Only one default per field</p>
+                          </div>
+
+                          {formErrors && formErrors.field?.message && (
+                            <Form.Text className='text-danger'>
+                              {formErrors.field?.message}
+                            </Form.Text>
+                          )}
+                        </>
+                      )}
+                    />
+                  </Form.Group>
+                )}
               </Row>
 
               <div className='mt-4 d-flex justify-content-between align-items-center'>

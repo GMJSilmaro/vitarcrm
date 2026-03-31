@@ -1,6 +1,7 @@
 import { TooltipContent } from '@/components/common/ToolTipContent';
 import { RequiredLabel } from '@/components/Form/RequiredLabel';
 import Select from '@/components/Form/Select';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/firebase';
 import {
   TRACEABILITY_ACCREDITATION_BODY,
@@ -29,6 +30,13 @@ import {
 import { Controller, useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 const SWCalibrationMeasurementsForm = ({ data, isLoading, handleNext, handlePrevious }) => {
+  const auth = useAuth();
+
+  const isDisabledField = useMemo(
+    () => !auth.role || auth.role === 'technician',
+    [JSON.stringify(auth)]
+  );
+
   const form = useFormContext();
   const formErrors = form.formState.errors;
 
@@ -229,6 +237,8 @@ const SWCalibrationMeasurementsForm = ({ data, isLoading, handleNext, handlePrev
               u: envDoc?.u || '',
               unit: envDoc?.unit || '',
               dueDate: envDoc?.dueDate || '',
+              field: envDoc?.field || '',
+              isDefault: envDoc?.isDefault || false,
             })),
             isLoading: false,
             isError: false,
@@ -301,27 +311,42 @@ const SWCalibrationMeasurementsForm = ({ data, isLoading, handleNext, handlePrev
     traceabilityAccreditationBodyOptions,
   ]);
 
-  //* set environmental uP, if data exist
+  //* set environmental uP, if data exist and if no data exist, set the default value
   useEffect(() => {
     if (data && environmentalOptions.data.length > 0) {
       const selectedEnvironmental = environmentalOptions.data.find( (option) => option.value === data.envUP); //prettier-ignore
       form.setValue('envUP', selectedEnvironmental);
     }
+
+    if (!data) {
+      const defaultValue = environmentalOptions.data.find((option) => option.isDefault && option.field === 'envUP'); //prettier-ignore
+      form.setValue('envUP', defaultValue);
+    }
   }, [data, JSON.stringify(environmentalOptions)]);
 
-  //* set environmental uT, if data exist
+  //* set environmental uT, if data exist and if no data exist, set the default value
   useEffect(() => {
     if (data && environmentalOptions.data.length > 0) {
       const selectedEnvironmental = environmentalOptions.data.find( (option) => option.value === data.envUT); //prettier-ignore
       form.setValue('envUT', selectedEnvironmental);
     }
+
+    if (!data) {
+      const defaultValue = environmentalOptions.data.find((option) => option.isDefault && option.field === 'envUT'); //prettier-ignore
+      form.setValue('envUT', defaultValue);
+    }
   }, [data, JSON.stringify(environmentalOptions)]);
 
-  //* set environmental uHr, if data exist
+  //* set environmental uHr, if data exist and if no data exist, set the default value
   useEffect(() => {
     if (data && environmentalOptions.data.length > 0) {
       const selectedEnvironmental = environmentalOptions.data.find( (option) => option.value === data.envUHr); //prettier-ignore
       form.setValue('envUHr', selectedEnvironmental);
+    }
+
+    if (!data) {
+      const defaultValue = environmentalOptions.data.find((option) => option.isDefault && option.field === 'envUHr'); //prettier-ignore
+      form.setValue('envUHr', defaultValue);
     }
   }, [data, JSON.stringify(environmentalOptions)]);
 
@@ -816,7 +841,7 @@ const SWCalibrationMeasurementsForm = ({ data, isLoading, handleNext, handlePrev
                         ? 'Loading environmental value...'
                         : 'Search by environmental code & description'
                     }
-                    isDisabled={environmentalOptions.isLoading}
+                    isDisabled={environmentalOptions.isLoading || isDisabledField}
                     noOptionsMessage={() =>
                       environmentalOptions.isLoading ? 'Loading...' : 'No environmental found'
                     }
@@ -878,7 +903,7 @@ const SWCalibrationMeasurementsForm = ({ data, isLoading, handleNext, handlePrev
                         ? 'Loading environmental value...'
                         : 'Search by environmental code & description'
                     }
-                    isDisabled={environmentalOptions.isLoading}
+                    isDisabled={environmentalOptions.isLoading || isDisabledField}
                     noOptionsMessage={() =>
                       environmentalOptions.isLoading ? 'Loading...' : 'No environmental found'
                     }
@@ -940,7 +965,7 @@ const SWCalibrationMeasurementsForm = ({ data, isLoading, handleNext, handlePrev
                         ? 'Loading environmental value...'
                         : 'Search by environmental code & description'
                     }
-                    isDisabled={environmentalOptions.isLoading}
+                    isDisabled={environmentalOptions.isLoading || isDisabledField}
                     noOptionsMessage={() =>
                       environmentalOptions.isLoading ? 'Loading...' : 'No environmental found'
                     }

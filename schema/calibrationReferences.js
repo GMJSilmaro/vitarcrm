@@ -73,11 +73,57 @@ export const rscmcSchema = z.object({
   value: z.string().min(1, 'Value is required'),
 });
 
-export const environmentalSchema = z.object({
-  refId: z.string().min(1, 'Reference ID is required'),
-  code: z.string().min(1, 'Code is required'),
-  description: z.string().default(''),
-  u: z.string().min(1, 'U is required'),
-  unit: z.string().default(''),
-  dueDate: z.string().default(''),
-});
+//** a key which the default environmental will be assigned to
+//* only one default per key
+export const ENVIRONMENTAL_DEFAULT_FIELD_OPTIONS = [
+  {
+    label: 'Up',
+    value: 'envUP',
+    html: (
+      <span>
+        U<sub>p</sub>
+      </span>
+    ),
+  },
+  {
+    label: 'Ut',
+    value: 'envUT',
+    html: (
+      <span>
+        U<sub>t</sub>
+      </span>
+    ),
+  },
+  {
+    label: 'Uhr',
+    value: 'envUHr',
+    html: (
+      <span>
+        U<sub>hr</sub>
+      </span>
+    ),
+  },
+];
+
+export const environmentalSchema = z
+  .object({
+    refId: z.string().min(1, 'Reference ID is required'),
+    code: z.string().min(1, 'Code is required'),
+    description: z.string().default(''),
+    u: z.string().min(1, 'U is required'),
+    unit: z.string().default(''),
+    dueDate: z.string().default(''),
+    isDefault: z.boolean().default(false),
+    field: z.union([z.string(), z.record(z.string(), z.any())]).transform((formData) => {
+      if (typeof formData === 'object') return formData.value;
+      return formData;
+    }),
+  })
+  .refine(
+    (formObj) => {
+      const { isDefault, field } = formObj;
+      if (isDefault && !field) return false;
+      return true;
+    },
+    { message: 'Please select a field', path: ['field'] }
+  );
