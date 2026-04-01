@@ -52,7 +52,7 @@ export default async function handler(req, res) {
 
     console.log('Found user with matching UID:', user.uid);
     console.log('Using role from userData:', userRole);
-    console.log('User Data:', userData);
+    // console.log('User Data:', userData);
 
     const customToken = await user.getIdToken();
 
