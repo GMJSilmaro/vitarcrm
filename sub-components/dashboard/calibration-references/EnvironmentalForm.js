@@ -87,6 +87,7 @@ const EnvironmentalForm = ({ data }) => {
         snapshot.forEach((docSnap) => {
           batch.update(docSnap.ref, {
             isDefault: false,
+            field: '',
             updatedAt: serverTimestamp(),
             updatedBy: auth.currentUser,
           });
